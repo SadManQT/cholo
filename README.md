@@ -1,6 +1,8 @@
 # Cholo (চলো)
 
-A ride-sharing platform for Bangladesh, built as a learning project. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
+A ride-sharing platform for Bangladesh, built as a learning project by two people. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
+
+**Working on this repo?** Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it explains the workflow and how the two of us (plus whichever AI coding agent either of us is using) stay in sync via [`AGENTS.md`](./AGENTS.md).
 
 ## Quickstart (5 minutes)
 
@@ -57,10 +59,10 @@ docker compose up -d
 
 ### Port already in use?
 
-If `docker compose up` fails with `address already in use` on 5432 (common if you already have a local Postgres install or another project running), set a different host port in your `.env`:
+The default host port is `5433` (not Postgres's usual `5432`) precisely because `5432` is commonly already taken by a local Postgres install. If `5433` is *also* taken on your machine, set a different one in your `.env`:
 
 ```
-POSTGRES_PORT=5433
+POSTGRES_PORT=5434
 ```
 
 and re-run `docker compose up -d`. The container's internal port doesn't change — only how you reach it from the host.
@@ -76,6 +78,9 @@ cholo/
 ├── docs/                  # the design blueprint (read before changing schema/API/architecture)
 ├── docker-compose.yml     # PostgreSQL 16, auto-loads schema.sql
 ├── .env.example           # every env var this project needs, with fake values
+├── AGENTS.md              # shared conventions for any AI coding agent (Claude Code, Codex, ...)
+├── CLAUDE.md              # imports AGENTS.md, so Claude Code stays in sync
+├── CONTRIBUTING.md        # workflow + how the two agents/contributors stay in sync
 └── README.md              # this file
 ```
 
