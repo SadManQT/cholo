@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jatra — Normalization & SQL Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b1f3a; --body:#2c3d54; --muted:#5b6b82; --accent:#175cd3; --accent-dark:#0f3f95;
+    --line:#d9e2ef; --line-soft:#e8eef7; --wash:#f4f7fc; --card:#ffffff; --code-bg:#f6f8fb;
+    --amber:#b45309; --green:#047857;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--body);background:#fff;font-size:16px;line-height:1.65}
+  /* ---------- header ---------- */
+  header.band{border-bottom:3px solid var(--ink);padding:34px 5% 26px;background:linear-gradient(180deg,#fbfcfe 0%,#f2f6fc 100%)}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px}
+  h1.masthead{font-size:clamp(26px,4vw,44px);color:var(--ink);margin:0 0 6px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
+  .sub{font-size:17px;color:var(--muted);margin:0 0 20px;max-width:860px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 12px}
+  .chip b{color:var(--accent)}
+  /* ---------- layout ---------- */
+  .wrap{display:flex;gap:0;align-items:flex-start}
+  nav#toc{position:sticky;top:0;width:280px;flex:0 0 280px;max-height:100vh;overflow-y:auto;padding:28px 18px 40px 5%;border-right:1px solid var(--line-soft);font-size:13.5px}
+  nav#toc .toc-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600}
+  nav#toc a{display:block;color:var(--body);text-decoration:none;padding:5px 8px;border-left:2px solid transparent;border-radius:0 4px 4px 0;line-height:1.35;margin-bottom:1px}
+  nav#toc a:hover{background:var(--wash);color:var(--accent-dark)}
+  nav#toc a.active{border-left-color:var(--accent);color:var(--accent-dark);background:var(--wash);font-weight:600}
+  main{flex:1;min-width:0;padding:30px clamp(20px,4%,64px) 90px}
+  #content{max-width:1080px}
+  /* ---------- typography ---------- */
+  #content h1{display:none}
+  #content h2{font-size:clamp(21px,2.6vw,30px);color:var(--ink);margin:58px 0 16px;padding-top:18px;border-top:2px solid var(--ink);letter-spacing:-.01em;line-height:1.2}
+  #content h2:first-of-type{margin-top:10px}
+  #content h3{font-size:18px;color:var(--ink);margin:34px 0 10px}
+  #content p{margin:0 0 14px;max-width:940px}
+  #content li{margin-bottom:6px}
+  #content strong{color:var(--ink)}
+  #content a{color:var(--accent)}
+  #content blockquote{margin:14px 0;padding:10px 18px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
+  #content hr{border:none;border-top:1px solid var(--line-soft);margin:34px 0}
+  /* ---------- tables ---------- */
+  .tbl-scroll{overflow-x:auto;margin:16px 0 26px;border:1px solid var(--line);border-radius:8px}
+  #content table{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}
+  #content th{background:var(--ink);color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;position:sticky;top:0}
+  #content td{padding:8px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
+  #content tbody tr:nth-child(even){background:#f9fbfe}
+  #content td code, #content p code, #content li code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--code-bg);border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px;color:var(--accent-dark);white-space:nowrap}
+  /* ---------- code & diagrams ---------- */
+  pre.codeblock{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.55;color:var(--ink);margin:14px 0 24px}
+  pre.codeblock code{background:none;border:none;padding:0}
+  .diagram{border:1px solid var(--line);border-radius:10px;background:#fff;margin:18px 0 30px;overflow:hidden}
+  .diagram .diagram-bar{display:flex;justify-content:space-between;align-items:center;background:var(--wash);border-bottom:1px solid var(--line-soft);padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .diagram .diagram-scroll{overflow:auto;padding:18px;max-height:82vh}
+  .diagram pre.mermaid{margin:0;display:flex;justify-content:center}
+  .diagram svg{max-width:none !important;height:auto}
+  .mermaid-error{padding:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber)}
+  /* ---------- print ---------- */
+  @media print{
+    nav#toc{display:none}
+    header.band{padding:16px 0}
+    main{padding:0}
+    .diagram .diagram-scroll{max-height:none;overflow:visible}
+    .diagram, .tbl-scroll, h2, h3{page-break-inside:avoid}
+    #content h2{page-break-before:always}
+    #content h2:first-of-type{page-break-before:avoid}
+  }
+  @media (max-width:960px){
+    nav#toc{display:none}
+    main{padding:22px 5% 70px}
+  }
+</style>
+<style>
+.ha-img-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f4f4f5;border:1px dashed #d4d4d8;border-radius:8px;color:#71717a;font-size:12px;font-family:system-ui,sans-serif;min-height:80px;padding:16px;box-sizing:border-box;animation:ha-img-pulse 1.5s ease-in-out infinite}
+.ha-img-placeholder.ha-failed{animation:none;opacity:.7}
+@keyframes ha-img-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media(prefers-color-scheme:dark){.ha-img-placeholder{background:#27272a;border-color:#3f3f46;color:#a1a1aa}}
+</style>
+</head>
+<body>
+<header class="band">
+  <p class="eyebrow">Database Engineering &middot; Documents 02 + 03 &middot; v1.0 &middot; 14 July 2026</p>
+  <h1 class="masthead">Jatra (যাত্রা) — Normalization<br>&amp; The Runnable SQL Schema</h1>
+  <p class="sub">From first principles to a trigger-tested PostgreSQL 16 schema — normalization proofs for all 51 tables, worked UNF→BCNF examples, and every SQL feature in schema.sql explained for a first-time builder.</p>
+  <div class="chips">
+    <span class="chip"><b>5</b> normal forms &middot; <b>3</b> worked examples</span>
+    <span class="chip"><b>51</b> tables verified BCNF</span>
+    <span class="chip"><b>106</b> foreign keys</span>
+    <span class="chip"><b>30</b> named CHECKs</span>
+    <span class="chip"><b>4</b> views &middot; <b>19</b> triggers</span>
+    <span class="chip">validated on PostgreSQL <b>16.12</b></span>
+  </div>
+</header>
+<div class="wrap">
+  <nav id="toc"><div class="toc-title">Contents</div><div id="toc-links"></div></nav>
+  <main><div id="content"><p style="color:var(--muted)">Rendering document…</p></div></main>
+</div>
+
+<script type="text/plain" id="md-src">## Document 02 — Normalization: UNF → 1NF → 2NF → 3NF → BCNF
+
+| | |
+|---|---|
+| **Document** | 02 — Normalization Walkthrough |
+| **Version** | 1.0 — 14 July 2026 |
+| **Depends on** | Document 01 (ER Design) — every table analyzed here is defined there |
+| **What you will learn** | Why normalization exists, how to *see* functional dependencies, how to walk any table up the normal-form ladder, and how to defend the places where we deliberately stop |
+
+---
+
+## 1. Why Normalization Exists
+
+Normalization is not an academic ritual — it is the cure for three concrete diseases. Imagine the whole platform stored as **one big spreadsheet**, one row per trip:
+
+| trip_code | passenger_name | passenger_phone | driver_name | driver_phone | vehicle_reg | category | per_km_rate | total_fare |
+|---|---|---|---|---|---|---|---|---|
+| JT-000140 | Nusrat Jahan | 01712-345678 | Rafiq Islam | 01898-765432 | DHAKA METRO GA 21-7788 | Car | 22.00 | 310.00 |
+| JT-000141 | Tanvir Ahmed | 01815-112233 | Rafiq Islam | 01898-765432 | DHAKA METRO GA 21-7788 | Car | 22.00 | 185.50 |
+| JT-000142 | Nusrat Jahan | 01712-345678 | Rafiq Islam | 01898-765432 | DHAKA METRO GA 21-7788 | Car | 22.00 | 387.80 |
+
+Three diseases, visible immediately:
+
+1. **Update anomaly.** Rafiq changes his phone number. You must find and update *every row he ever drove* — thousands. Miss one and the database now contains two "truths." Redundant data *will* eventually disagree with itself.
+2. **Insert anomaly.** A new driver joins today. You cannot store him at all — there is no row until he completes a trip, because the table's identity is the trip. Facts about drivers are held hostage by facts about trips.
+3. **Delete anomaly.** A test trip is deleted. If it was Rafiq's only row, *Rafiq vanishes from the database* — his license, his phone, everything. Deleting one fact destroyed an unrelated fact.
+
+**Normalization is the systematic removal of these anomalies** by splitting data so that *every fact is stored exactly once, in exactly one place*. The normal forms (1NF, 2NF, 3NF, BCNF) are checkpoints on that path — each one eliminates a specific *kind* of redundancy.
+
+> **One sentence for your viva:** "Normalization means every fact lives in one place, so it can never contradict itself."
+
+---
+
+## 2. Functional Dependencies — The Tool Behind Everything
+
+Every normal form is defined in terms of **functional dependencies (FDs)**, so learn to see them first.
+
+**Definition.** In a table, attribute set `X` *functionally determines* attribute `Y` — written **`X → Y`** — if knowing the value of `X` tells you *exactly one* possible value of `Y`. "Same X ⇒ same Y, always."
+
+Real examples from our data:
+
+| FD | Read as | True because |
+|---|---|---|
+| `driver_license → driver_name` | license number determines the driver's name | one license belongs to one human |
+| `trip_code → total_fare` | a trip has exactly one final fare | fare is a fact about the trip |
+| `(city, category, effective_from) → per_km_rate` | a tariff row is pinned by market + tier + start date | that triple is the tariff's identity |
+| `passenger_phone → driver_name` ❌ | **not** an FD | the same passenger rides with many drivers |
+
+**Key vocabulary** (used constantly below):
+
+- **Superkey** — any set of columns that determines *every* column in the table.
+- **Candidate key** — a *minimal* superkey (no column can be removed). A table can have several: `vehicles` is determined by `id` and also by `registration_no` — two candidate keys.
+- **Primary key** — the candidate key we *choose* to reference. We use surrogate `bigint id` everywhere, and declare the natural keys `UNIQUE` so they still act as candidate keys.
+- **Prime attribute** — a column that belongs to at least one candidate key. Everything else is **non-prime**.
+
+> **Important habit:** when we analyze normal forms below, we analyze the FDs among *natural* (business) attributes. A surrogate `id` makes any table look trivially fine — the real test is whether the natural candidate keys (`phone`, `registration_no`, `(city, category, effective_from)`, …) are the *only* determinants. That is why every natural key in the schema is declared `UNIQUE`.
+
+---
+
+## 3. The Ladder — All Five Forms in Plain Language
+
+| Form | Rule (plain) | Rule (formal) | Kills which disease |
+|---|---|---|---|
+| **UNF** | Raw data as humans jot it down: multiple values per cell, repeating groups, mixed facts | — | nothing (this is the disease) |
+| **1NF** | Every cell holds exactly **one atomic value**; no repeating groups; every row unique | Domains are atomic; a key exists | multi-value chaos: you can finally *query* the data |
+| **2NF** | 1NF **+** no column depends on only *part* of a composite key | No non-prime attribute is FD on a *proper subset* of any candidate key | redundancy from **partial dependency** |
+| **3NF** | 2NF **+** no column depends on another **non-key** column | For every FD `X → Y`: `X` is a superkey, or `Y` is prime | redundancy from **transitive dependency** (facts about a *referenced thing* stored on the *referencing thing*) |
+| **BCNF** | For **every** FD, the left side must be a candidate key — no exceptions | For every non-trivial FD `X → Y`: `X` is a superkey | the last exotic cases 3NF lets through (overlapping candidate keys) |
+
+Memory aid you can quote: *"Every attribute must depend on **the key** (1NF), **the whole key** (2NF), **and nothing but the key** (3NF) — so help me Codd."* BCNF then adds: *"…and that must be true for **every** determinant, not just the primary key."*
+
+---
+
+## 4. Worked Example A — "The Ride Sheet" (the full ladder)
+
+This is the example to present. We start from the spreadsheet a small Dhaka taxi office actually keeps, and walk it up the entire ladder until it *becomes* our schema.
+
+### 4.1 UNF — the office spreadsheet
+
+One row, exactly as a human typed it:
+
+| Field | Value |
+|---|---|
+| Trip | `JT-2026-000142` |
+| Passenger | `Nusrat Jahan, 01712-345678, nusrat@gmail.com` |
+| Driver | `Rafiq Islam, 01898-765432, Lic DK-0112233, NID 19901234567` |
+| Vehicle | `DHAKA METRO GA 21-7788, Toyota Axio, Car` |
+| Route | `Dhanmondi 27 → Gulshan 2 (via Banani 11)` |
+| Fare | `60 + 12.4km×22 + 38min×2.5 + 10 booking − 50 promo EID50 = ৳387.80` |
+| Payments | `bKash FAIL 11:02; bKash OK 11:04 ref BKA-8827` |
+| Ratings | `P→D 5 "good driving"; D→P 4` |
+
+Why this is UNF (i.e., not even 1NF):
+
+- **Non-atomic cells** — "Passenger" packs name + phone + email into one string. You cannot `WHERE phone = …` against a blob.
+- **Repeating groups** — "Payments" holds *two* payment attempts in one cell; "Route" hides a variable-length stop list; "Ratings" holds two facts.
+- **Mixed entities** — one row describes a trip AND a person AND a vehicle AND a tariff AND two payments.
+
+### 4.2 → 1NF: atomize and give repeating groups their own rows
+
+Rules applied: split every compound cell into columns; move each repeating group into its own table where *each occurrence is a row*; define keys.
+
+**`RIDES_1NF`** — primary key `trip_code`:
+
+| trip_code | pax_phone | pax_name | pax_email | drv_license | drv_name | drv_phone | drv_nid | veh_reg | veh_model | category | per_km_rate | per_min_rate | dist_km | dur_min | total_fare |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| JT-…142 | 01712-345678 | Nusrat Jahan | nusrat@… | DK-0112233 | Rafiq Islam | 01898-765432 | 19901234567 | GA 21-7788 | Toyota Axio | Car | 22.00 | 2.50 | 12.4 | 38 | 387.80 |
+
+**`STOPS_1NF`** — key `(trip_code, stop_order)`:
+
+| trip_code | stop_order | stop_address | drv_name |
+|---|---|---|---|
+| JT-…142 | 1 | Banani 11 | Rafiq Islam |
+| JT-…142 | 2 | Gulshan 2 | Rafiq Islam |
+
+**`PAYMENT_ATTEMPTS_1NF`** — key `(trip_code, attempt_no)`:
+
+| trip_code | attempt_no | method | status | gateway_ref | attempted_at | pax_name |
+|---|---|---|---|---|---|---|
+| JT-…142 | 1 | bkash | failed | — | 11:02 | Nusrat Jahan |
+| JT-…142 | 2 | bkash | succeeded | BKA-8827 | 11:04 | Nusrat Jahan |
+
+✅ Now every cell is atomic and queryable. ❌ But look at the redundancy: Rafiq's name is in every ride *and* every stop row; Nusrat's name rides along with every payment attempt. 1NF made the diseases *visible*, not cured.
+
+### 4.3 → 2NF: remove *partial* dependencies
+
+2NF only bites where a **composite key** exists — so look at `STOPS_1NF` and `PAYMENT_ATTEMPTS_1NF`.
+
+FDs in `STOPS_1NF` (key = `trip_code, stop_order`):
+
+- `(trip_code, stop_order) → stop_address` ✅ full-key dependency — fine.
+- `trip_code → drv_name` ❌ **partial dependency** — the driver is a fact about the *trip alone*; `stop_order` contributes nothing. Rafiq's name is duplicated once per stop, and renaming him means touching N stop rows.
+
+FDs in `PAYMENT_ATTEMPTS_1NF` (key = `trip_code, attempt_no`):
+
+- `(trip_code, attempt_no) → method, status, gateway_ref, attempted_at` ✅
+- `trip_code → pax_name` ❌ partial — payer identity belongs to the trip, not to attempt #2.
+
+**Fix:** remove the partially-dependent columns; they already live (or belong) in the trip table.
+
+- `STOPS_2NF(trip_code, stop_order, stop_address)`
+- `PAYMENT_ATTEMPTS_2NF(trip_code, attempt_no, method, status, gateway_ref, attempted_at)`
+- `RIDES_2NF` — unchanged from `RIDES_1NF` (its key is the single column `trip_code`; a single-column key **cannot** have partial dependencies, so any 1NF table with a simple key is automatically 2NF).
+
+> **Presentation line:** "2NF asks one question: *does anything depend on only a piece of the key?* Our stop rows knew the driver's name — that was a fact about the whole trip hiding inside a child table."
+### 4.4 → 3NF: remove *transitive* dependencies
+
+Now attack `RIDES_2NF`. Its key is `trip_code`, and every column *does* depend on the key — but some depend on it only **through** another non-key column. That chain `key → non-key → other non-key` is a **transitive dependency**, and it means the table is storing facts about a *different entity*.
+
+FDs hiding inside `RIDES_2NF`:
+
+| Chain | The smell |
+|---|---|
+| `trip_code → drv_license → (drv_name, drv_phone, drv_nid)` | name/phone/NID are facts about **the driver**, not the trip |
+| `trip_code → pax_phone → (pax_name, pax_email)` | facts about **the passenger** |
+| `trip_code → veh_reg → (veh_model, category)` | facts about **the vehicle** |
+| `trip_code → category → (per_km_rate, per_min_rate)` | facts about **the tariff** |
+
+Every one of those is the update anomaly from §1 wearing a different hat: change Rafiq's phone → touch every trip he drove; change the Car per-km rate → *rewrite history* (older trips suddenly "cost" differently — a correctness disaster, not just redundancy).
+
+**Fix:** extract each referenced entity into its own table and leave only a foreign key behind.
+
+```text
+DRIVERS_3NF     (drv_license PK, drv_name, drv_phone, drv_nid)
+PASSENGERS_3NF  (pax_phone PK, pax_name, pax_email)
+VEHICLES_3NF    (veh_reg PK, veh_model, category → CATEGORIES)
+CATEGORIES_3NF  (category PK, per_km_rate, per_min_rate)
+RIDES_3NF       (trip_code PK, pax_phone FK, drv_license FK, veh_reg FK,
+                 dist_km, dur_min, total_fare)
+STOPS_2NF       (already 3NF)
+PAYMENT_ATTEMPTS_2NF (already 3NF)
+```
+
+Each fact now lives once. Rafiq's phone changes in exactly one row. ✅ 3NF achieved.
+
+### 4.5 → BCNF: check *every* determinant
+
+3NF has a small loophole: it tolerates an FD `X → Y` when `Y` is a **prime attribute** (part of some candidate key), even if `X` is not a key. BCNF closes it: **every determinant must be a candidate key, full stop.**
+
+Our 3NF tables above pass BCNF already (check each: the only determinants are the keys — `drv_nid` also determines the driver, but `drv_nid` is `UNIQUE`, i.e. itself a candidate key, so it's allowed). To *see* a genuine BCNF violation, take a realistic "what if":
+
+> **Scenario.** Suppose surge is set manually and we record *which operations manager set it*, in one table:
+> `SURGE_SETTING(zone, category, manager, multiplier)` with two business rules:
+> **(a)** per `(zone, category)` there is one multiplier → `(zone, category) → manager, multiplier`
+> **(b)** each manager owns exactly **one** zone → `manager → zone`
+
+Candidate keys: `(zone, category)` and — because `manager` determines `zone` — also `(manager, category)`. Now test rule (b): `manager → zone`. Is `manager` alone a candidate key? **No.** But is `zone` prime? **Yes** (it's inside a candidate key). So 3NF says "fine" — yet the table still repeats the manager→zone fact on every category row, with the usual anomaly (reassigning a manager = updating many rows, inconsistently if you miss one).
+
+**BCNF fix — decompose on the offending FD:**
+
+```text
+MANAGER_ZONE (manager PK, zone)              -- rule (b), stored once
+SURGE_BCNF   (manager, category, multiplier) -- key (manager, category)
+```
+
+Honest footnote (teachers respect this): the decomposition is lossless, but the FD `(zone, category) → multiplier` is no longer enforceable by a key in a single table — the classic **BCNF vs dependency-preservation trade-off**. Our real schema avoids the dilemma by design: `surge_pricing` records *what* (zone, category, multiplier, window) and `created_by` records *who* — manager-to-zone assignment is simply not conflated into the pricing fact.
+
+### 4.6 Where every UNF fragment landed in the real schema
+
+| Ride-sheet fragment | Final table(s) |
+|---|---|
+| Passenger blob | `users` + `passenger_profiles` |
+| Driver blob (license, NID, phone) | `users` + `driver_profiles` |
+| Vehicle blob | `vehicles` + `vehicle_categories` |
+| Tariff numbers | `pricing_rules` (effective-dated) |
+| Route + "via" stops | `ride_requests` (endpoints) + `trip_stops` (weak) |
+| Fare arithmetic line | fare-component columns on `trips` (snapshot) |
+| Payment attempts cell | `payments` (one row per attempt) |
+| Ratings cell | `ratings` (one row per direction) |
+| The trip line itself | `ride_requests` → `trips` |
+
+---
+
+## 5. Worked Example B — `pricing_rules` and the surrogate + natural key pattern
+
+Natural identity of a tariff: **(city, category, effective_from)**. Analysis on natural attributes:
+
+- FDs: `(city_id, category_id, effective_from) → base_fare, per_km_rate, per_min_rate, minimum_fare, booking_fee, …`
+- **1NF** ✅ atomic. **2NF**: does anything depend on a *subset*? If we stored `city_name`, then `city_id → city_name` — partial → violation. We store only `city_id`; the name lives in `cities`. ✅ **3NF**: no non-key column determines another (all rate columns are mutually independent facts about the tariff). ✅ **BCNF**: the only determinant is the candidate key triple. ✅
+- In the physical table we add surrogate `id BIGINT PRIMARY KEY` **and** declare `UNIQUE (city_id, category_id, effective_from)`. The surrogate is for cheap, stable foreign keys; the unique constraint is what *keeps the natural key honest* — drop it and the table silently stops being BCNF-verifiable (two rows could claim the same tariff identity).
+
+> **Rule to quote:** "A surrogate key never *makes* a table normalized — it just renames the rows. Normal-form analysis always runs on the natural keys, which is why every natural key in the schema carries a `UNIQUE` constraint."
+
+---
+
+## 6. Worked Example C — the ledger and the snapshots ("looks redundant, isn't wrong")
+
+Two places *look* like normalization violations and are not. Knowing the difference is senior-engineer material.
+
+**C1. `wallet_transactions.balance_after`.** Isn't the balance derivable by summing all prior rows — a stored computation? Two answers:
+- Formally: normal forms are about FDs *among columns of one row*. `balance_after` is not determined by other columns *of its own row* — it depends on the entire prior history. No FD is violated; no normal form is broken.
+- Practically: it is an **audit snapshot** — "what the wallet held the moment this transaction committed." Banks store exactly this (your bank statement shows a running balance). It converts "trust me, replay 10,000 rows" into "read the row."
+
+**C2. Fare and commission snapshots (`trips.base_fare…`, `driver_earnings.commission_pct`).** Doesn't `trips → pricing_rules` make the copied numbers transitive? **No — because the FD does not actually hold.** `commission_rule_id → commission_pct` is only true *at one moment in time*; the rule row's percentage may be superseded, while the earning's percentage is frozen history. Since "current value of the rule" and "value applied to this trip" are *different facts*, storing both is not redundancy — removing the snapshot would be a **correctness bug** (history rewriting), which we already saw in §4.4.
+
+**C3. What actually IS deliberate denormalization** — kept in a register (§9) with its consistency mechanism. Example: `wallets.balance` (cache of the ledger, maintained by trigger in one transaction) and `driver_profiles.rating_avg` (cache over `ratings`, maintained by trigger). These *are* derivable-now facts stored for speed — the honest engineering trade, documented instead of denied.
+
+---
+
+## 7. JSONB Columns and 1NF — the modern footnote
+
+Four columns hold JSON documents: `ratings.tags`, `notifications.payload`, `zones.boundary_geojson`, `audit_logs.old_value/new_value`. Is that a 1NF violation? Say this:
+
+- We treat each JSONB value as **one atomic value** — an opaque document. The relational core never enforces integrity *inside* it, never joins *into* it, and no FD targets its internals. Under the modern reading of 1NF (atomic = indivisible *as far as the schema is concerned*), this passes.
+- Each use is justified: a GeoJSON polygon is a single geometric value (the strict-relational alternative — a `zone_vertices` table — models nothing we ever query row-wise); an audit diff is a snapshot blob *by design*; notification payload is display data, not relational data.
+- Where the data *is* relational, we did make a table: rating **rows**, stop **rows**, payment attempt **rows**. The strict-1NF alternative for tags (`rating_tags(rating_id, tag)`) is noted as an acceptable variant if your instructor prefers it.
+
+---
+
+## 8. Normal-Form Verification — All 51 Tables
+
+Method for every row below: identify candidate keys (surrogate `id` **plus** the declared natural `UNIQUE` keys) → confirm atomic columns (1NF) → check partial dependencies against composite candidate keys (2NF) → check non-key → non-key FDs (3NF) → confirm every determinant is a candidate key (BCNF).
+
+| # | Table | Candidate key(s) beyond `id` | NF | Why it holds |
+|---|---|---|---|---|
+| 1 | `users` | `phone`, `email`, `public_id`, `referral_code` | BCNF | Every determinant (each unique identifier) is a candidate key; all other columns are direct single-valued facts about the person |
+| 2 | `roles` | `name` | BCNF | Two-column lookup; name ↔ id |
+| 3 | `user_roles` | `(user_id, role_id)` | BCNF | All-key relation + grant metadata dependent on the full pair |
+| 4 | `passenger_profiles` | `user_id` (PK=FK) | BCNF | Single-attribute key ⇒ 2NF trivial; aggregates are facts about the passenger (see denorm register) |
+| 5 | `driver_profiles` | `user_id`; `nid_number`; `license_number` | BCNF | Three candidate keys, all declared unique; no non-key determinant |
+| 6 | `admin_profiles` | `user_id` | BCNF | Simple extension |
+| 7 | `refresh_tokens` | `token_hash` | BCNF | Token facts depend on the token |
+| 8 | `password_reset_tokens` | `token_hash` | BCNF | Same shape |
+| 9 | `otp_verifications` | — (id only) | BCNF | Event log row; no natural FDs among phone/purpose/times |
+| 10 | `login_sessions` | — | BCNF | Event row; device fields describe the session only |
+| 11 | `vehicle_categories` | `name` | BCNF | Lookup |
+| 12 | `vehicles` | `registration_no` | BCNF | Brand/model/color depend on the vehicle, not on each other (model → brand is *not* enforced — "Axio" could exist under licensed assembly; we store facts per vehicle) |
+| 13 | `driver_documents` | — | BCNF | Document event rows; re-uploads are new rows, so `(driver_id, doc_type)` is deliberately **not** a key |
+| 14 | `vehicle_documents` | — | BCNF | Same shape |
+| 15 | `driver_availability` | `driver_id` | BCNF | Hot 1:1 state row |
+| 16 | `cities` | `name` | BCNF | Lookup; timezone/currency are facts about the city |
+| 17 | `zones` | `(city_id, name)` | BCNF | Composite natural key; boundary/type depend on the whole zone identity — no partial deps (name alone determines nothing across cities) |
+| 18 | `saved_places` | `(user_id, label)` | BCNF | Coordinates depend on the full pair ("Home" differs per user) |
+| 19 | `pricing_rules` | `(city_id, category_id, effective_from)` | BCNF | Worked example B |
+| 20 | `surge_pricing` | — | BCNF | Window rows; multiplier depends on the row's own scope+window |
+| 21 | `commission_rules` | `(category_id, city_id, effective_from)` | BCNF | Same pattern as pricing |
+| 22 | `ride_requests` | `public_id` | BCNF | Snapshot columns (est_fare, surge, addresses) are facts about *this request at this moment* — no FD to live rule tables (§6-C2) |
+| 23 | `ride_offers` | `(request_id, driver_id)` | BCNF | Associative; response/timing depend on the full pair — `round` depends on the pair too (a driver is offered once, in one wave) |
+| 24 | `trips` | `trip_code`, `request_id` | BCNF | Fare components are frozen facts of the trip; `total_fare` is row-internal arithmetic enforced by CHECK, not an inter-entity FD |
+| 25 | `trip_stops` | `(trip_id, stop_order)` | BCNF | Weak; address/coords depend on full pair — the §4.3 lesson applied |
+| 26 | `trip_status_history` | — | BCNF | Append-only event rows |
+| 27 | `trip_location_pings` | — | BCNF | Time-series; each ping is an independent fact |
+| 28 | `trip_cancellations` | `trip_id` | BCNF | 1:1 weak; all columns describe *this* cancellation |
+| 29 | `trip_messages` | — | BCNF | Chat rows |
+| 30 | `payment_methods` | `(user_id) partial-unique on default` — key is id; `gateway_token` unique per provider | BCNF | Label/token depend on the instrument |
+| 31 | `payments` | `gateway_txn_id` (when present); partial unique `(trip_id) WHERE succeeded` | BCNF | Attempt rows; the partial unique encodes the business rule, not an FD violation |
+| 32 | `wallets` | `user_id` | BCNF | 1:1; `balance` is a registered cache (§9) |
+| 33 | `wallet_transactions` | `idempotency_key` | BCNF | Ledger; `balance_after` justified in §6-C1 |
+| 34 | `promo_codes` | `code` | BCNF | Campaign facts depend on the code; scope FKs are independent facts |
+| 35 | `promo_redemptions` | `trip_id`; `(promo_code_id, user_id, trip_id)` | BCNF | Associative with per-trip uniqueness |
+| 36 | `receipts` | `receipt_no`, `trip_id` | BCNF | Document snapshot totals — frozen facts (§6-C2) |
+| 37 | `driver_earnings` | `trip_id` | BCNF | `net_earning = gross − commission` is row-internal arithmetic (CHECK), `commission_pct` is a snapshot, not transitive (§6-C2) |
+| 38 | `driver_payout_accounts` | — (masked no. not unique by design) | BCNF | Instrument facts |
+| 39 | `withdrawals` | `public_id` | BCNF | Workflow rows |
+| 40 | `invoices` | `invoice_no`; `(driver_id, period_start, period_end)` | BCNF | Totals are frozen statement facts |
+| 41 | `ratings` | `(trip_id, rater_id)` | BCNF | Score/comment depend on the full pair; `rater_role` is determined by the pair as well (the rater has one role in one trip) |
+| 42 | `favorite_drivers` | `(passenger_id, driver_id)` | BCNF | All-key + timestamp |
+| 43 | `referrals` | `referee_id` | BCNF | One referral per referee; bonuses are facts of this referral |
+| 44 | `emergency_contacts` | `(user_id, phone)` | BCNF | Name/relationship depend on the pair |
+| 45 | `sos_alerts` | — | BCNF | Event rows with frozen coordinates |
+| 46 | `notifications` | — | BCNF | Delivery rows |
+| 47 | `user_reports` | — | BCNF | Case rows |
+| 48 | `support_tickets` | `ticket_no` | BCNF | Case facts depend on ticket |
+| 49 | `support_ticket_messages` | — | BCNF | Thread rows |
+| 50 | `disputes` | `dispute_no` | BCNF | Workflow rows; `disputed_amount` is the claim, not derived |
+| 51 | `audit_logs` | — | BCNF | Append-only; `actor_role` is a deliberate historical snapshot (§9) |
+
+**Result: every table satisfies BCNF** on its natural candidate keys, with the derivable-value exceptions *registered* below rather than hidden.
+
+---
+
+## 9. The Deliberate Denormalization Register
+
+Professional schemas are "normalized until it hurts, denormalized until it works" — but every exception must be **listed, justified, and given a consistency mechanism**. Ours:
+
+| Column(s) | Derivable from | Why we store it anyway | Kept consistent by |
+|---|---|---|---|
+| `wallets.balance` | ledger sum | O(1) balance reads on every screen; ledger replay is O(n) | trigger applies each ledger insert to the balance in the same transaction |
+| `passenger_profiles.rating_avg/rating_count/total_trips` and same on `driver_profiles` | `ratings`, `trips` | shown on every card/list; recomputing per view is wasteful | `AFTER INSERT` trigger on `ratings` (and trip completion logic) |
+| `trips.base_fare … total_fare` | `pricing_rules` + route | **not truly derivable later** — rules change; this is history protection | written once at completion; CHECK enforces the sum identity |
+| `ride_requests.est_*`, `surge_multiplier` | rules at quote time | the quote must be provable afterwards ("you were promised ৳387") | written once at request time; never updated |
+| `driver_earnings.commission_pct/amount` | `commission_rules` | same history protection | written once; CHECK enforces `net = gross − commission` |
+| `receipts`/`invoices` totals | `trips`/`driver_earnings` | numbered financial documents must be self-contained | generated once, immutable |
+| `audit_logs.actor_role` | `user_roles` | must describe the actor *as they were then* | append-only table |
+| address text on requests/stops/saved places | geocoder | geocoding output changes over time; snapshot = truth at booking | written once |
+
+---
+
+## 10. One-Liners for the Viva
+
+- "Every table is in **BCNF over its natural candidate keys**; surrogate ids are for cheap joins, and the `UNIQUE` constraints are what keep the analysis honest."
+- "2NF failures live in child tables with composite keys — our stop rows once knew the driver's name."
+- "3NF failures are *someone else's facts on my row* — driver phone numbers on trips."
+- "BCNF adds: check every determinant, not just the primary key — and sometimes you trade dependency preservation for it."
+- "`balance_after` breaks no normal form: normal forms constrain FDs within a row, not aggregates across rows."
+- "Fare snapshots aren't redundancy — the FD to the rule table doesn't hold over time, so the copy is the only correct design."
+
+
+---
+
+## Document 03 — SQL Design & The Runnable Schema
+
+| | |
+|---|---|
+| **Document** | 03 — SQL Design |
+| **Version** | 1.0 — 14 July 2026 |
+| **Companion file** | `schema.sql` — 54 tables, 106 foreign keys, 30 named CHECKs, 4 views, 19 triggers, seed data |
+| **Verified** | Loaded into a real PostgreSQL 16.12 with `ON_ERROR_STOP` — zero errors — then exercised with an end-to-end ride test (§11) |
+
+This document does not repeat the schema — it teaches you to **read** it. Every section names the concept, explains *why it exists*, then points at the real example inside `schema.sql`.
+
+---
+
+## 1. From ER Diagram to DDL — The Mapping Rules
+
+DDL (*Data Definition Language*) is the subset of SQL that creates structure: `CREATE`, `ALTER`, `DROP`. Converting the ER design (doc 01) into DDL is mechanical once you know five rules:
+
+| ER concept | Becomes in SQL | Example in `schema.sql` |
+|---|---|---|
+| Strong entity | `CREATE TABLE` with its own surrogate PK | `users`, `trips`, `cities` |
+| 1:1 extension (subtype) | Table whose **PK is also the FK** to the parent | `driver_profiles.user_id BIGINT PRIMARY KEY REFERENCES users(id)` |
+| 1:N relationship | FK column on the **N side** | `vehicles.driver_id` |
+| M:N relationship | Junction table with **composite PK** (or surrogate + composite UNIQUE) | `user_roles (user_id, role_id)`; `ride_offers` with `UNIQUE (request_id, driver_id)` |
+| Weak entity | Child table with FK `ON DELETE CASCADE` + a uniqueness rule tied to the parent | `trip_stops` with `UNIQUE (trip_id, stop_order)` |
+
+One special case worth naming in your presentation: the **circular reference**. `vehicles.driver_id` → `driver_profiles`, but `driver_profiles.active_vehicle_id` → `vehicles`. You cannot create both tables with both FKs — whichever comes first references a table that doesn't exist yet. The standard solution (§4 of `schema.sql`): create `driver_profiles` with the column but **no constraint**, create `vehicles`, then `ALTER TABLE driver_profiles ADD CONSTRAINT … FOREIGN KEY …`. Order of creation is why the whole file is arranged by dependency.
+
+---
+
+## 2. Anatomy of a CREATE TABLE — Reading `trips`
+
+Open `schema.sql` §6 and keep this decoder next to it:
+
+```sql
+CREATE TABLE trips (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--  │        │                             └─ PK: unique + NOT NULL + backing index, one per table
+--  │        └─ the DB generates the number; "ALWAYS" forbids the app from supplying its own
+--  └─ 64-bit: never worry about running out (2^63 rows)
+
+    trip_code VARCHAR(20) NOT NULL UNIQUE
+        DEFAULT 'JT-' || to_char(now(),'YYYY') || '-' || lpad(nextval('seq_trip_code')::text, 6, '0'),
+--      └─ a DEFAULT can be an expression: this one builds JT-2026-000142 from a sequence (§9)
+
+    request_id BIGINT NOT NULL UNIQUE REFERENCES ride_requests(id) ON DELETE RESTRICT,
+--                            │      │                             └─ deleting a request with a trip: refused
+--                            │      └─ FK: value must exist in ride_requests.id
+--                            └─ UNIQUE on an FK = "at most one trip per request" = the 1:0..1 from the ERD
+
+    total_fare NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (total_fare >= 0),
+--             └─ exact decimal: 12 digits, 2 after the point. NEVER float for money.
+
+    CONSTRAINT chk_fare_identity CHECK (
+        total_fare = base_fare + distance_fare + time_fare + waiting_fare
+                   + surge_amount + booking_fee - discount_amount)
+--  └─ a NAMED, multi-column CHECK: a row with broken fare math is physically unstorable
+);
+```
+
+**The mindset shift:** each line is not "a field" — it is a *rule about reality* that PostgreSQL will enforce against every INSERT and UPDATE forever, including the buggy ones you haven't written yet. The database is the last line of defense; the Express code is the first.
+
+---
+
+## 3. Datatype Decisions (and the wrong choices they prevent)
+
+| Type used | Where | Why — and what the naive choice breaks |
+|---|---|---|
+| `BIGINT GENERATED ALWAYS AS IDENTITY` | every PK | `SERIAL` is the legacy spelling; `IDENTITY` is the SQL standard. `ALWAYS` stops apps inserting ids manually and corrupting the sequence |
+| `NUMERIC(12,2)` | all money | `FLOAT` cannot represent 0.1: `0.1+0.2 = 0.30000000000000004`. Fares would drift by poisha until the books don't balance |
+| `TIMESTAMPTZ` | all times | plain `TIMESTAMP` stores wall-clock with no zone — a 6-hour bug waiting for the first non-Dhaka server. `TIMESTAMPTZ` stores UTC and converts on display |
+| `NUMERIC(9,6)` | lat/lng | ~11 cm precision, provider-agnostic (OSM & Google both speak WGS-84). `FLOAT` jitter moves pins |
+| ENUM types | every closed vocabulary | a `VARCHAR` status can hold `'complated'`; the enum physically cannot. 40 enums in §1 |
+| `UUID DEFAULT gen_random_uuid()` | `public_id` columns | sequential ids leak business volume (`/trips/12045` → "they do ~12k trips"); UUIDs are unguessable |
+| `CHAR(64)` | token hashes | SHA-256 hex is *always* 64 chars — fixed length documents the invariant |
+| `INET` | IP addresses | validates and supports subnet queries, unlike VARCHAR |
+| `JSONB` | tags, payloads, GeoJSON, audit diffs | binary JSON, indexable; used only for opaque documents (doc 02 §7), never for relational facts |
+| `TEXT` vs `VARCHAR(n)` | URLs vs names | rule of thumb: `VARCHAR(n)` when a length limit *is a business rule* (phone, code), `TEXT` when it isn't (URLs) |
+
+---
+
+## 4. The Constraint Toolbox
+
+Constraints are the reason a DBMS beats a spreadsheet. All six kinds, with our sharpest real examples:
+
+**NOT NULL / DEFAULT** — the basics: `status trip_status NOT NULL DEFAULT 'assigned'`. Every column should be NOT NULL *unless NULL genuinely means something* (`completed_at IS NULL` = "not finished yet"; `email IS NULL` = "never provided" — a real state in a phone-first market).
+
+**PRIMARY KEY** — identity. Composite where the pair *is* the identity: `user_roles (user_id, role_id)`, `favorite_drivers (passenger_id, driver_id)`.
+
+**UNIQUE** — three escalating flavors:
+1. Plain: `users.phone`, `vehicles.registration_no` — the natural keys that keep normalization honest (doc 02 §5).
+2. **Partial unique index** — a business rule with a WHERE clause:
+   ```sql
+   CREATE UNIQUE INDEX ux_payment_one_success ON payments (trip_id)
+       WHERE status = 'succeeded' AND purpose = 'trip';
+   ```
+   Unlimited failed attempts, exactly one success. We *proved* this fires (§11).
+3. **`UNIQUE NULLS NOT DISTINCT`** (PG15+) — on `commission_rules`, because in a plain UNIQUE two rows with `city_id NULL` don't conflict (SQL says NULL ≠ NULL); this variant makes "countrywide" rules unique too.
+
+**CHECK** — from trivial to clever:
+- Range: `score BETWEEN 1 AND 5`, `multiplier BETWEEN 1.00 AND 5.00`.
+- Format: `phone ~ '^01[3-9][0-9]{8}$'` (BD mobile), NID length regex.
+- Cross-column arithmetic: `chk_fare_identity`, `net_earning = gross_fare - commission_amount`, `total = subtotal - discount`.
+- Timeline ordering: `completed_at >= started_at` (each guard tolerating NULLs of unreached stages).
+- **The boolean-equality trick** — a conditional constraint in one expression:
+  ```sql
+  CHECK ((purpose = 'trip') = (trip_id IS NOT NULL))
+  ```
+  Read: "purpose is trip *exactly when* a trip is attached." Two states, both directions, one line.
+- Self-reference bans: `rater_id <> ratee_id`, `reporter_id <> reported_id`.
+
+**FOREIGN KEY + referential actions.** The `ON DELETE` clause answers: *"if the parent row dies, what happens to me?"*
+
+| Action | Meaning | Our policy |
+|---|---|---|
+| `RESTRICT` | refuse the delete while children exist | **default for anything financial or historical** — trips, payments, earnings, disputes. History is physically undeletable |
+| `CASCADE` | children die with the parent | pure children only: tokens, pings, stops, status history, messages, profiles |
+| `SET NULL` | child survives, pointer blanks | optional references: `reviewed_by`, `resolved_by`, `current_zone_id` — losing an admin account must not delete KYC evidence |
+| `NO ACTION` | like RESTRICT, checked at transaction end | not used — RESTRICT's eager failure is easier to debug |
+
+`ON UPDATE` is left at default everywhere — and that is itself a lesson: surrogate `IDENTITY` keys **never change**, so `ON UPDATE CASCADE` has nothing to do. Natural keys that might change (phone numbers) are deliberately *not* used as FK targets.
+---
+
+## 5. Indexes — Making Queries Fast Without Guessing
+
+**Mental model.** A table is a pile of pages on disk; without an index, `WHERE phone = '017…'` reads *every page* (a **sequential scan**). An index is a sorted lookup structure (B-tree by default) on the side — like a phone book — that jumps straight to matching rows. PKs and UNIQUEs create indexes automatically; everything else is your call.
+
+**When to add one:** columns you filter on constantly, FK columns you join through, and columns you sort by. **When not to:** small lookup tables (seq scan is faster than the detour), columns you almost never query, write-hot tables where every extra index taxes every INSERT.
+
+The notable indexes in `schema.sql`, each tied to the query it serves:
+
+| Index | Shape | The query it answers |
+|---|---|---|
+| `idx_availability_dispatch` | composite **partial**: `(current_zone_id, status) WHERE status='online'` | THE dispatch query — "online drivers in this zone" — reads a tiny index containing only online drivers |
+| `idx_requests_open` | partial: `(city_id, requested_at) WHERE status IN ('pending','searching')` | the dispatcher's work queue; completed requests never bloat it |
+| `idx_trips_driver` / `idx_trips_passenger` | `(driver_id, created_at DESC)` | ride-history screens, newest first — index order matches `ORDER BY`, so no sort step |
+| `idx_notifications_unread` | partial: `(user_id, created_at DESC) WHERE read_at IS NULL` | the badge count; reading a notification *removes it from the index* |
+| `ux_refresh_active_per_session` | **unique partial** | doubles as constraint ("one live token per session") and lookup |
+| `idx_redemptions_promo_user` | `(promo_code_id, user_id)` | counting a user's redemptions to enforce `usage_limit_per_user` |
+
+**Composite-index column order rule:** equality columns first, range/sort columns second. `(driver_id, created_at DESC)` works for "this driver, newest first"; the reverse order would not.
+
+---
+
+## 6. Views — Saved Queries With Names
+
+A view stores no data; it stores a `SELECT` and pretends to be a table. Why bother? **(a)** complex joins get written once, correctly, by the person who understands the schema; **(b)** dashboards/reports read `SELECT * FROM v_trip_details` instead of re-inventing a 6-table join; **(c)** you can grant access to a view without exposing base tables.
+
+| View | Question it answers |
+|---|---|
+| `v_active_drivers` | "who can I dispatch right now?" — approved + online + active vehicle, with position |
+| `v_trip_details` | "show me this trip like a human would describe it" — names, phones, addresses, fare |
+| `v_driver_daily_earnings` | the driver app's earnings tab: trips/gross/commission/net per day |
+| `v_city_monthly_revenue` | the admin headline chart: completed trips, gross and platform revenue per city per month |
+
+When a view's underlying query becomes too slow to run per-request (big aggregations), the upgrade path is a **materialized view** — same idea, but the result is stored and refreshed on a schedule (`REFRESH MATERIALIZED VIEW`). Not needed at course scale; know the term.
+
+---
+
+## 7. Triggers & Functions — Code That Lives in the Database
+
+A **function** is a stored program (ours are `plpgsql` or plain `sql`). A **trigger** binds a function to a table event: *"BEFORE/AFTER INSERT/UPDATE/DELETE, run this."* Use them for invariants that must hold **no matter which code path writes** — and resist using them for business logic that belongs in Express (hidden magic is hard to debug). Ours, and why each is trigger-worthy:
+
+| # | Trigger/Function | Job | Why the DB and not Express |
+|---|---|---|---|
+| 1 | `fn_touch_updated_at` (×7 tables) | stamp `updated_at` on every UPDATE | works even for manual `psql` fixes; zero app code |
+| 2 | `fn_create_user_wallet` | new user ⇒ wallet row | **enforces total 1:1 participation** — no code path can forget the wallet |
+| 3 | `fn_create_driver_availability` | new driver ⇒ availability row | same guarantee for the dispatch row |
+| 4 | `fn_log_trip_status` | INSERT/UPDATE on trips ⇒ history row | audit must be unskippable; reads `app.user_id` session var (below) |
+| 5 | `fn_apply_wallet_txn` | ledger insert ⇒ lock wallet, compute + stamp `balance_after`, update cached balance | money math must be atomic with the row that records it — `FOR UPDATE` serializes concurrent spends |
+| 6 | `fn_block_mutation` (×3 tables) | reject UPDATE/DELETE on ledger, audit log, status history | append-only **by mechanism, not by promise** |
+| 7 | `fn_apply_rating` | rating insert ⇒ update profile aggregates | the registered denormalization (doc 02 §9) maintains itself, O(1) incremental formula |
+| 8 | `fn_current_pricing(city, category, at)` | effective-dated tariff lookup | one canonical implementation of "which rule applies?" |
+| 9 | `fn_wallet_balance_audit(wallet)` | recompute balance from the ledger | the auditor: if it ever disagrees with `wallets.balance`, you found a bug |
+
+**The session-variable trick (worth presenting).** Triggers can't know *which human* caused a change — unless the backend tells them. Express sets a per-transaction variable, and the trigger reads it:
+
+```sql
+BEGIN;
+SET LOCAL app.user_id = '42';          -- SET LOCAL dies with the transaction
+UPDATE trips SET status = 'in_progress' WHERE id = 7;
+COMMIT;                                 -- history row records changed_by = 42
+```
+
+```js
+// Express side (node-postgres): same connection, same transaction
+await client.query('BEGIN');
+await client.query("SET LOCAL app.user_id = $1", [req.user.id]);
+await client.query("UPDATE trips SET status='in_progress' WHERE id=$1", [tripId]);
+await client.query('COMMIT');
+```
+
+---
+
+## 8. Transactions — All or Nothing
+
+A transaction makes several statements **atomic**: either all commit or none do. The ACID promise — **A**tomic (all-or-nothing), **C**onsistent (constraints hold at commit), **I**solated (concurrent transactions don't see each other's half-work), **D**urable (committed = survives a crash). Three moments in Jatra genuinely need them:
+
+**T1 — Driver accepts an offer (the race).** Two drivers tap *Accept* for the same request in the same second. Naive code creates two trips. The fix is two-layered:
+
+```sql
+BEGIN;
+SET LOCAL app.user_id = '42';
+SELECT status FROM ride_requests WHERE id = 1 FOR UPDATE;   -- 🔒 row lock: second driver WAITS here
+-- app checks: status = 'searching'? if not → ROLLBACK, tell driver "already taken"
+UPDATE ride_requests SET status = 'matched' WHERE id = 1;
+UPDATE ride_offers  SET response = 'accepted', responded_at = now()
+    WHERE request_id = 1 AND driver_id = 42;
+INSERT INTO trips (request_id, passenger_id, driver_id, vehicle_id) VALUES (1, 9, 42, 7);
+UPDATE driver_availability SET status = 'on_trip' WHERE driver_id = 42;
+COMMIT;
+```
+
+`FOR UPDATE` makes the second transaction *wait*, re-read `matched`, and back off. And if the lock is ever forgotten, `trips.request_id UNIQUE` is the unbypassable last line — the second INSERT dies on the constraint. **Belt and suspenders: the lock prevents the race, the constraint makes it impossible.**
+
+**T2 — Completing a cash trip.** Cash means the platform's commission is *owed*, collected by debiting the driver's wallet:
+
+```sql
+BEGIN;
+UPDATE trips SET status='completed', completed_at=now(), base_fare=60, distance_fare=272.80,
+       time_fare=95, booking_fee=10, discount_amount=50, total_fare=387.80, payment_status='paid'
+   WHERE id = 1;                                              -- fare identity CHECK verifies the math
+INSERT INTO payments (purpose, trip_id, payer_id, method_type, gateway, amount, status, completed_at)
+   VALUES ('trip', 1, 9, 'cash', 'none', 387.80, 'succeeded', now());
+INSERT INTO driver_earnings (trip_id, driver_id, gross_fare, commission_rule_id,
+                             commission_pct, commission_amount, net_earning)
+   VALUES (1, 42, 387.80, 3, 15.00, 58.17, 329.63);           -- earning math CHECK verifies
+INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, reference_type, reference_id, idempotency_key)
+   VALUES (708, 'commission', 'debit', 58.17, 'trip', 1, 'commission-trip-1');  -- trigger stamps balance_after
+COMMIT;
+```
+
+If *any* statement fails — a CHECK, a duplicate idempotency key, a crash — the whole story rolls back. There is no state where the trip is paid but the commission vanished.
+
+**T3 — Wallet payment.** Debit the passenger wallet + mark the payment succeeded, atomically; the `FOR UPDATE` inside `fn_apply_wallet_txn` prevents two simultaneous spends from both passing a balance check.
+
+**Isolation level:** PostgreSQL's default `READ COMMITTED` plus explicit `FOR UPDATE` row locks is exactly right here — know that `REPEATABLE READ` / `SERIALIZABLE` exist for when you can't lock explicitly. **Idempotency:** bKash may deliver the same webhook twice; the retry hits `idempotency_key UNIQUE` and becomes a harmless error instead of double money.
+
+---
+
+## 9. Sequences & Human-Readable Codes
+
+`CREATE SEQUENCE seq_trip_code` is a thread-safe counter. A `DEFAULT` expression turns it into a document number: `'JT-' || to_char(now(),'YYYY') || '-' || lpad(nextval(...)::text, 6, '0')` → `JT-2026-000142`. Same pattern mints `JTR-…` receipts, `INV-…` invoices, `TKT-…` tickets, `DSP-…` disputes. Why not use `id`? Internal ids are forever and private; document numbers are a *presentation* concern (support agents read them over the phone) and may embed the year.
+
+## 10. Partitioning — Built for the Firehose
+
+`trip_location_pings` receives a row every ~4 seconds per active trip — millions of rows/month at scale. §6 declares it `PARTITION BY RANGE (recorded_at)` with monthly children plus a `DEFAULT` partition. Queries with a time filter touch only the matching partitions (**partition pruning**); archiving a month is `DROP TABLE trip_location_pings_2026_07` — instant, no million-row DELETE. Two PostgreSQL rules you must be able to explain: the **PK must include the partition key** (`(id, recorded_at)`), and on PG16 the id uses `BIGSERIAL` because identity columns on partitioned tables only arrived in PG17.
+
+## 11. Proof It Runs — The Validation Session
+
+This exact sequence was executed against **PostgreSQL 16.12** while writing this document:
+
+| Step | Result |
+|---|---|
+| `psql -f schema.sql` with `ON_ERROR_STOP=1` | **zero errors** |
+| Object counts | 54 base tables (51 entities + 3 ping partitions) · **106 FKs** · 30 named CHECKs · 4 views · 19 triggers |
+| `fn_current_pricing(Dhaka, Car)` | returned the ৳60 / ৳22-per-km tariff row |
+| INSERT user | wallet auto-created at ৳0 (trigger 2) |
+| Ledger credit ৳500, debit ৳187.50 | `balance_after` stamped 500.00 → 312.50; cached balance = recomputed balance ✓ |
+| UPDATE a ledger row | ❌ **rejected**: "wallet_transactions is append-only" (designed) |
+| Full ride: driver → vehicle → request → offer → trip | `trip_code` minted `JT-2026-000001`; history rows self-wrote (∅→assigned→completed) |
+| Second `succeeded` payment on the same trip | ❌ **rejected** by `ux_payment_one_success` (designed) |
+| Rating insert | driver aggregate updated to 5.00 / 1 (trigger 7) |
+| `UPDATE trips SET total_fare = 999` | ❌ **rejected** by `chk_fare_identity` (designed) |
+
+Present that table: *"the schema doesn't just describe the rules — it was demonstrated enforcing them."*
+
+## 12. Beginner Mistakes This Schema Is Protecting You From
+
+1. **Money in FLOAT** → `NUMERIC(12,2)` everywhere.
+2. **`TIMESTAMP` without time zone** → `TIMESTAMPTZ`, UTC in storage.
+3. **Status strings in VARCHAR** → 40 ENUMs; typos are unstorable.
+4. **No FK indexes** → every FK used in joins has one; joins stay fast as data grows.
+5. **Business rules only in app code** → the critical ones are constraints; the app can have bugs, the schema cannot be bypassed.
+6. **`ON DELETE CASCADE` everywhere** → CASCADE only for pure children; RESTRICT guards money; SET NULL for optional refs.
+7. **Editing history** → ledgers/audit/history are append-only *by trigger*, not by convention.
+8. **Trusting client-sent totals** → totals are CHECK-verified arithmetic; quotes and rates are server-side snapshots.
+9. **One giant `locations` table** → snapshots embedded; only genuinely reusable places normalized (doc 01 §13.6).
+10. **Forgetting the race condition** → `FOR UPDATE` + unique constraints; tested in §11.
+
+**Next document:** the full **Data Dictionary** (04) — every table, every column, purpose, sample rows — then the backend architecture that speaks to this schema.
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+const raw = document.getElementById("md-src").textContent;
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+const renderer = new marked.Renderer();
+let diagramNo = 0;
+renderer.code = (code, lang) => {
+  if (lang === "mermaid") {
+    diagramNo += 1;
+    return `<div class="diagram"><div class="diagram-bar"><span>Diagram ${String(diagramNo).padStart(2,"0")}</span><span>scroll / zoom to explore</span></div><div class="diagram-scroll"><pre class="mermaid">${esc(code)}</pre></div></div>`;
+  }
+  return `<pre class="codeblock"><code>${esc(code)}</code></pre>`;
+};
+const origTable = renderer.table.bind(renderer);
+renderer.table = (h, b) => `<div class="tbl-scroll">${origTable(h, b)}</div>`;
+
+marked.setOptions({ renderer, gfm: true, headerIds: true, mangle: false });
+document.getElementById("content").innerHTML = marked.parse(raw);
+
+/* TOC from h2 */
+const links = document.getElementById("toc-links");
+const heads = [...document.querySelectorAll("#content h2")];
+heads.forEach(h => {
+  const a = document.createElement("a");
+  a.href = `#${h.id}`;
+  a.textContent = h.textContent.replace(/&/g, "&");
+  links.appendChild(a);
+});
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.querySelectorAll("a").forEach(a => a.classList.toggle("active", a.getAttribute("href") === `#${e.target.id}`));
+    }
+  });
+}, { rootMargin: "0px 0px -75% 0px" });
+heads.forEach(h => obs.observe(h));
+
+/* Mermaid */
+mermaid.initialize({
+  startOnLoad: false,
+  theme: "neutral",
+  securityLevel: "loose",
+  er: { useMaxWidth: false },
+  flowchart: { useMaxWidth: false },
+  themeVariables: {
+    fontFamily: "IBM Plex Sans, sans-serif",
+    primaryColor: "#eaf1fb",
+    primaryBorderColor: "#175cd3",
+    primaryTextColor: "#0b1f3a",
+    lineColor: "#5b6b82",
+    tertiaryColor: "#f4f7fc"
+  }
+});
+try {
+  await mermaid.run({ querySelector: ".mermaid", suppressErrors: true });
+} catch (e) {
+  console.warn("mermaid", e);
+}
+</script>
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && window.parent !== window) {
+    window.parent.postMessage({ type: 'close-fullscreen' }, '*');
+  }
+});
+</script>
+<!-- broken-img-handler -->
+<script>
+(function(){
+  if(window.__brokenImgHandler)return;
+  window.__brokenImgHandler=true;
+  var MAX=5,DELAYS=[2000,4000,8000,16000,32000];
+  document.addEventListener('error',function(e){
+    var img=e.target;
+    if(!img||img.tagName!=='IMG')return;
+    var liveSrc=img.getAttribute('src');
+    var src=img.dataset.haOriginalSrc||liveSrc;
+    if(!src)return;
+    if(img.dataset.haOriginalSrc&&liveSrc&&liveSrc!==img.dataset.haOriginalSrc&&liveSrc.indexOf('_r=')<0){src=liveSrc;img.dataset.haOriginalSrc=src;img.dataset.haRetryCount='0'}
+    else if(!img.dataset.haOriginalSrc){img.dataset.haOriginalSrc=src}
+    var attempt=parseInt(img.dataset.haRetryCount||'0',10);
+    if(img.dataset.haPhId){var old=document.getElementById(img.dataset.haPhId);if(old)old.remove()}
+    var ph=document.createElement('div');
+    ph.className='ha-img-placeholder'+(attempt>=MAX?' ha-failed':'');
+    ph.id='ha-ph-'+Math.random().toString(36).slice(2,9);
+    var w=img.getAttribute('width');var h=img.getAttribute('height');
+    if(w)ph.style.width=w+(isNaN(Number(w))?'':'px');
+    else if(img.style.width)ph.style.width=img.style.width;
+    else if(img.width>1)ph.style.width=img.width+'px';
+    if(h)ph.style.height=h+(isNaN(Number(h))?'':'px');
+    else if(img.style.height)ph.style.height=img.style.height;
+    else if(img.height>1)ph.style.height=img.height+'px';
+    ph.textContent=attempt>=MAX?'Image unavailable':'Loading image\u2026';
+    img.dataset.haPhId=ph.id;
+    if(img.dataset.haOrigDisplay==null)img.dataset.haOrigDisplay=img.style.display||'';
+    img.style.display='none';
+    img.insertAdjacentElement('afterend',ph);
+    if(attempt<MAX){
+      img.dataset.haRetryCount=String(attempt+1);
+      setTimeout(function(){
+        if(!img.isConnected)return;
+        if(img.dataset.haOriginalSrc!==src)return;
+        if(img.complete&&img.naturalWidth>0)return;
+        var curSrc=img.getAttribute('src');
+        if(curSrc&&curSrc.indexOf(src)!==0)return;
+        var fresh=src+(src.indexOf('?')>=0?'&':'?')+'_r='+(attempt+1)+'_'+Date.now();
+        img.src=fresh;
+      },DELAYS[attempt]);
+    }
+  },true);
+  document.addEventListener('load',function(e){
+    var img=e.target;
+    if(!img||img.tagName!=='IMG')return;
+    if(img.dataset.haPhId){
+      var ph=document.getElementById(img.dataset.haPhId);
+      if(ph)ph.remove();
+      delete img.dataset.haPhId;
+      img.style.display=img.dataset.haOrigDisplay||'';
+      delete img.dataset.haOrigDisplay;
+      delete img.dataset.haOriginalSrc;
+      delete img.dataset.haRetryCount;
+    }
+  },true);
+})();
+</script>
+</body>
+</html>
