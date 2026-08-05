@@ -1,6 +1,6 @@
 # Cholo (চলো)
 
-A ride-sharing platform for Bangladesh, built as a learning project. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
+A ride-sharing platform for Bangladesh, built as a learning project by two people. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
 
 ## Quickstart (5 minutes)
 
@@ -57,10 +57,10 @@ docker compose up -d
 
 ### Port already in use?
 
-If `docker compose up` fails with `address already in use` on 5432 (common if you already have a local Postgres install or another project running), set a different host port in your `.env`:
+The default host port is `5433` (not Postgres's usual `5432`) precisely because `5432` is commonly already taken by a local Postgres install. If `5433` is *also* taken on your machine, set a different one in your `.env`:
 
 ```
-POSTGRES_PORT=5433
+POSTGRES_PORT=5434
 ```
 
 and re-run `docker compose up -d`. The container's internal port doesn't change — only how you reach it from the host.
