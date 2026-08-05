@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # named volume: the actual data directory, survives `docker compose down`
+      - cholo_pgdata:/var/lib/postgresql/data
+      # bind mount: runs once against an EMPTY data dir (first boot only).
+      # `docker compose down -v` wipes the volume to force a clean re-init
+      # after editing database/schema.sql.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cholo_pgdata:

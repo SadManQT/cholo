@@ -1,113 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jatra — Frontend & UI/UX Planning</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#0b1f3a; --body:#2c3d54; --muted:#5b6b82; --accent:#175cd3; --accent-dark:#0f3f95;
-    --line:#d9e2ef; --line-soft:#e8eef7; --wash:#f4f7fc; --card:#ffffff; --code-bg:#f6f8fb;
-    --amber:#b45309; --green:#047857;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--body);background:#fff;font-size:16px;line-height:1.65}
-  /* ---------- header ---------- */
-  header.band{border-bottom:3px solid var(--ink);padding:34px 5% 26px;background:linear-gradient(180deg,#fbfcfe 0%,#f2f6fc 100%)}
-  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px}
-  h1.masthead{font-size:clamp(26px,4vw,44px);color:var(--ink);margin:0 0 6px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
-  .sub{font-size:17px;color:var(--muted);margin:0 0 20px;max-width:860px}
-  .chips{display:flex;flex-wrap:wrap;gap:10px}
-  .chip{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 12px}
-  .chip b{color:var(--accent)}
-  /* ---------- layout ---------- */
-  .wrap{display:flex;gap:0;align-items:flex-start}
-  nav#toc{position:sticky;top:0;width:280px;flex:0 0 280px;max-height:100vh;overflow-y:auto;padding:28px 18px 40px 5%;border-right:1px solid var(--line-soft);font-size:13.5px}
-  nav#toc .toc-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600}
-  nav#toc a{display:block;color:var(--body);text-decoration:none;padding:5px 8px;border-left:2px solid transparent;border-radius:0 4px 4px 0;line-height:1.35;margin-bottom:1px}
-  nav#toc a:hover{background:var(--wash);color:var(--accent-dark)}
-  nav#toc a.active{border-left-color:var(--accent);color:var(--accent-dark);background:var(--wash);font-weight:600}
-  main{flex:1;min-width:0;padding:30px clamp(20px,4%,64px) 90px}
-  #content{max-width:1080px}
-  /* ---------- typography ---------- */
-  #content h1{display:none}
-  #content h2{font-size:clamp(21px,2.6vw,30px);color:var(--ink);margin:58px 0 16px;padding-top:18px;border-top:2px solid var(--ink);letter-spacing:-.01em;line-height:1.2}
-  #content h2:first-of-type{margin-top:10px}
-  #content h3{font-size:18px;color:var(--ink);margin:34px 0 10px}
-  #content p{margin:0 0 14px;max-width:940px}
-  #content li{margin-bottom:6px}
-  #content strong{color:var(--ink)}
-  #content a{color:var(--accent)}
-  #content blockquote{margin:14px 0;padding:10px 18px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
-  #content hr{border:none;border-top:1px solid var(--line-soft);margin:34px 0}
-  /* ---------- tables ---------- */
-  .tbl-scroll{overflow-x:auto;margin:16px 0 26px;border:1px solid var(--line);border-radius:8px}
-  #content table{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}
-  #content th{background:var(--ink);color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;position:sticky;top:0}
-  #content td{padding:8px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
-  #content tbody tr:nth-child(even){background:#f9fbfe}
-  #content td code, #content p code, #content li code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--code-bg);border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px;color:var(--accent-dark);white-space:nowrap}
-  /* ---------- code & diagrams ---------- */
-  pre.codeblock{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.55;color:var(--ink);margin:14px 0 24px}
-  pre.codeblock code{background:none;border:none;padding:0}
-  .diagram{border:1px solid var(--line);border-radius:10px;background:#fff;margin:18px 0 30px;overflow:hidden}
-  .diagram .diagram-bar{display:flex;justify-content:space-between;align-items:center;background:var(--wash);border-bottom:1px solid var(--line-soft);padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .diagram .diagram-scroll{overflow:auto;padding:18px;max-height:82vh}
-  .diagram pre.mermaid{margin:0;display:flex;justify-content:center}
-  .diagram svg{max-width:none !important;height:auto}
-  .mermaid-error{padding:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber)}
-  /* ---------- print ---------- */
-  @media print{
-    nav#toc{display:none}
-    header.band{padding:16px 0}
-    main{padding:0}
-    .diagram .diagram-scroll{max-height:none;overflow:visible}
-    .diagram, .tbl-scroll, h2, h3{page-break-inside:avoid}
-    #content h2{page-break-before:always}
-    #content h2:first-of-type{page-break-before:avoid}
-  }
-  @media (max-width:960px){
-    nav#toc{display:none}
-    main{padding:22px 5% 70px}
-  }
-</style>
-<style>
-.ha-img-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f4f4f5;border:1px dashed #d4d4d8;border-radius:8px;color:#71717a;font-size:12px;font-family:system-ui,sans-serif;min-height:80px;padding:16px;box-sizing:border-box;animation:ha-img-pulse 1.5s ease-in-out infinite}
-.ha-img-placeholder.ha-failed{animation:none;opacity:.7}
-@keyframes ha-img-pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@media(prefers-color-scheme:dark){.ha-img-placeholder{background:#27272a;border-color:#3f3f46;color:#a1a1aa}}
-</style>
-</head>
-<body>
-<header class="band">
-  <p class="eyebrow">Frontend Engineering &middot; Documents 11 + 12 &middot; v1.0 &middot; 14 July 2026</p>
-  <h1 class="masthead">Jatra (যাত্রা) — React Frontend<br>&amp; UI/UX Planning</h1>
-  <p class="sub">React from UI = f(state) to custom hooks — every concept landing on a real Jatra screen — then all 34 screens planned: the booking sheet, the 15-second offer card, the admin console, and the Rickshaw Modern design system.</p>
-  <div class="chips">
-    <span class="chip"><b>2</b> documents</span>
-    <span class="chip"><b>34</b> screens planned</span>
-    <span class="chip"><b>13</b> design-system components</span>
-    <span class="chip"><b>4</b> roles &middot; <b>3</b> navigation shells</span>
-    <span class="chip"><b>10</b> React beginner traps</span>
-    <span class="chip">four-states rule on every list</span>
-  </div>
-</header>
-<div class="wrap">
-  <nav id="toc"><div class="toc-title">Contents</div><div id="toc-links"></div></nav>
-  <main><div id="content"><p style="color:var(--muted)">Rendering document…</p></div></main>
-</div>
-
-<script type="text/plain" id="md-src">## Document 11 — Frontend: React, Explained Through the App
+## Document 11 — Frontend: React, Explained Through the App
 
 | | |
 |---|---|
 | **Document** | 11 — Frontend (React + TypeScript) |
 | **Version** | 1.0 — 14 July 2026 |
-| **Approach** | Every concept lands on a real Jatra screen. Snippets are TypeScript, short, and educational — you write the real thing |
+| **Approach** | Every concept lands on a real Cholo screen. Snippets are TypeScript, short, and educational — you write the real thing |
 | **Builds on** | Doc 06 (trust boundary, request lifecycle), doc 07 (`client/` structure), doc 09 (the API these screens call) |
 
 ---
@@ -116,14 +13,14 @@
 
 One equation: **UI = f(state).** You never command the page ("append a div, change that text") — you *describe* what the screen should look like for the current data, and React makes the browser match. When the data changes, React re-runs your description and updates only what differs.
 
-Why this matters for Jatra specifically: a live trip screen shows a moving driver marker, a status stepper, an updating ETA, and a chat badge — all changing every few seconds. In vanilla JS you would hand-wire dozens of DOM updates and their interactions (this is how spaghetti is born). In React you hold one piece of state — `trip` — and one description of the screen; every socket event just updates the state, and the whole screen follows. **State is the single source of truth; the screen is its shadow.**
+Why this matters for Cholo specifically: a live trip screen shows a moving driver marker, a status stepper, an updating ETA, and a chat badge — all changing every few seconds. In vanilla JS you would hand-wire dozens of DOM updates and their interactions (this is how spaghetti is born). In React you hold one piece of state — `trip` — and one description of the screen; every socket event just updates the state, and the whole screen follows. **State is the single source of truth; the screen is its shadow.**
 
 ## 2. Components & JSX
 
 A component is a function that returns markup. JSX is that markup — HTML-looking syntax with three rules: `{expression}` embeds any JavaScript, attributes are camelCase (`className`, `onClick`), and a component returns one parent element.
 
 ```tsx
-// components/ride/FareEstimateCard.tsx — a real Jatra component
+// components/ride/FareEstimateCard.tsx — a real Cholo component
 interface FareEstimateProps {
   categoryName: string;
   estFare: string;              // money is a STRING from the API (doc 09 §1)
@@ -174,7 +71,7 @@ Three rules that prevent 90% of beginner confusion:
 
 1. **Setting state = requesting a re-render.** `setPhone('017…')` doesn't change `phone` *now* — it schedules a re-run of the component where `phone` has the new value. State is a *snapshot per render*.
 2. **Never mutate.** `trips.push(newTrip)` changes the array in place — React can't see it. Always produce a new value: `setTrips([newTrip, ...trips])`.
-3. **Controlled inputs** (value from state + onChange into state) make the form data instantly available for validation, submission and disabling the button — every Jatra form works this way.
+3. **Controlled inputs** (value from state + onChange into state) make the form data instantly available for validation, submission and disabling the button — every Cholo form works this way.
 
 ## 5. Lists & Conditional Rendering
 
@@ -210,7 +107,7 @@ The three-part contract: **effect** (subscribe), **cleanup** (unsubscribe — fo
 
 ## 7. Custom Hooks — Packaging Logic for Reuse
 
-Any function starting with `use` that calls other hooks is a custom hook: **logic without UI**, reusable across screens. This is where Jatra's cross-cutting behaviors live (doc 07: `client/src/hooks/`):
+Any function starting with `use` that calls other hooks is a custom hook: **logic without UI**, reusable across screens. This is where Cholo's cross-cutting behaviors live (doc 07: `client/src/hooks/`):
 
 ```tsx
 // hooks/useRideTracking.ts — the LiveTripPage effect, extracted and shareable
@@ -225,7 +122,7 @@ export function useRideTracking(tripCode: string) {
 const { driverPos, status } = useRideTracking(tripCode);
 ```
 
-Jatra's core custom hooks: `useAuth()` (current user + login/logout — wraps AuthContext), `useGeolocation()` (browser GPS with permission states), `useRideTracking(tripCode)` (above), `useCountdown(deadline)` (the driver's 15-second offer timer). Notice each hook has *one job* and a screen composes several.
+Cholo's core custom hooks: `useAuth()` (current user + login/logout — wraps AuthContext), `useGeolocation()` (browser GPS with permission states), `useRideTracking(tripCode)` (above), `useCountdown(deadline)` (the driver's 15-second offer timer). Notice each hook has *one job* and a screen composes several.
 ## 8. React Router — Screens Become URLs
 
 An SPA has one HTML page; the router fakes many. Three pieces: a **route table**, **`<Link>`/`useNavigate`** for moving, **`useParams`** for reading URL data — plus the layout trick that keeps role chrome in one place:
@@ -291,7 +188,7 @@ Remember the doc 07 contract: components import from `api/`, and `api/client.ts`
 
 ## 10. Component Communication — The Four Patterns
 
-| Relationship | Pattern | Jatra example |
+| Relationship | Pattern | Cholo example |
 |---|---|---|
 | Parent → child | **props** | `BookRidePage` passes `estFare` into `FareEstimateCard` |
 | Child → parent | **callback prop** | card calls `onSelect()` → page updates `selectedCategory` |
@@ -318,8 +215,8 @@ Climb only as high as the pain requires:
 
 1. **Local `useState`** — form fields, open/closed sheets. *Most state lives here. Leave it here.*
 2. **Lifted state** — two siblings need it → their parent owns it.
-3. **Context** — genuinely app-wide: `AuthContext`, `SocketContext`. Jatra needs exactly these two.
-4. **A store (Zustand/Redux)** — many unrelated screens writing shared client state. *Jatra does not need this*; adding Redux here is résumé-driven development.
+3. **Context** — genuinely app-wide: `AuthContext`, `SocketContext`. Cholo needs exactly these two.
+4. **A store (Zustand/Redux)** — many unrelated screens writing shared client state. *Cholo does not need this*; adding Redux here is résumé-driven development.
 
 One reframe that prevents architecture mistakes: most "state" on your screens is really **server state** — a cached copy of PostgreSQL truth (trips, wallet, offers). Your job is *fetch, show, refetch when stale* — not to maintain a second database in the browser. Keep server data in page-level state (or later, a fetch-cache library like TanStack Query — noted as an upgrade, not a requirement), and keep client state (which sheet is open) separate.
 
@@ -391,9 +288,9 @@ Deep green for trust and motion, marigold for energy — drawn from Dhaka's stre
 
 | Token | Hex | Usage |
 |---|---|---|
-| `jatra-700` (primary) | `#0E7A5F` | primary buttons, active tab, links, driver-online state |
-| `jatra-800` | `#0A5C48` | button hover/pressed |
-| `jatra-50` | `#E9F5F1` | selected-card wash, success backgrounds |
+| `cholo-700` (primary) | `#0E7A5F` | primary buttons, active tab, links, driver-online state |
+| `cholo-800` | `#0A5C48` | button hover/pressed |
+| `cholo-50` | `#E9F5F1` | selected-card wash, success backgrounds |
 | `ink-900` | `#0B1F2E` | headings, body text |
 | `ink-500` | `#5A6B7A` | secondary text, captions |
 | `marigold-500` (accent) | `#F5A623` | surge chips, star ratings, promo highlights |
@@ -407,7 +304,7 @@ Deep green for trust and motion, marigold for energy — drawn from Dhaka's stre
 |---|---|---|
 | `searching` | marigold pulse | working on it |
 | `assigned` / `arrived` | info blue | driver inbound |
-| `in_progress` | jatra green | moving |
+| `in_progress` | cholo green | moving |
 | `completed` | green ✓ | done |
 | `cancelled` / `expired` | red / gray | closed |
 
@@ -601,7 +498,7 @@ Mobile-first in code (`class="grid-cols-1 lg:grid-cols-[1fr_380px]"`): base styl
 
 ## 10. Accessibility & Bangladesh-Specific UX
 
-- **Touch & vision:** targets ≥ 44 px; text contrast ≥ 4.5:1 (the palette passes — ink-900 on white = 14:1, white on jatra-700 = 5.2:1); driver screens use larger type (sunlight, vibration).
+- **Touch & vision:** targets ≥ 44 px; text contrast ≥ 4.5:1 (the palette passes — ink-900 on white = 14:1, white on cholo-700 = 5.2:1); driver screens use larger type (sunlight, vibration).
 - **Semantics:** real `<button>`/`<label>`; focus-visible rings (`focus-visible:ring-2`); OTP inputs announce position; status conveyed by **badge text + color**, never color alone (color-blind riders).
 - **Bangla:** `lang` attribute switches with preference; Noto Sans Bengali subset preloaded; all layouts tested with the longer script; numerals stay Latin for fares (matches receipts).
 - **Network reality:** map tiles cached; booking sheet tolerates 3G (optimistic sheet transitions, server confirms); socket reconnection shows a quiet "reconnecting…" pill, not a modal.
@@ -612,134 +509,3 @@ Mobile-first in code (`class="grid-cols-1 lg:grid-cols-[1fr_380px]"`): base styl
 For every page you build, walk this list: **1)** route + layout registered (doc 11 §8) · **2)** page composed from `ui/` components only — no raw one-off styling · **3)** data via `api/` + tri-state (doc 11 §9) · **4)** all four states designed · **5)** buttons have loading/disabled · **6)** works one-handed at 360 px width · **7)** Bangla strings fit · **8)** status uses `StatusBadge` semantics · **9)** errors map doc 09 codes to human messages · **10)** navigation in and out matches the §3 map.
 
 **Next:** the final batch — development plan, exact build order with reasoning, and the complete best-practices compendium; then everything ships as one packaged blueprint.
-</script>
-<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-<script type="module">
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-
-const raw = document.getElementById("md-src").textContent;
-const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-
-const renderer = new marked.Renderer();
-let diagramNo = 0;
-renderer.code = (code, lang) => {
-  if (lang === "mermaid") {
-    diagramNo += 1;
-    return `<div class="diagram"><div class="diagram-bar"><span>Diagram ${String(diagramNo).padStart(2,"0")}</span><span>scroll / zoom to explore</span></div><div class="diagram-scroll"><pre class="mermaid">${esc(code)}</pre></div></div>`;
-  }
-  return `<pre class="codeblock"><code>${esc(code)}</code></pre>`;
-};
-const origTable = renderer.table.bind(renderer);
-renderer.table = (h, b) => `<div class="tbl-scroll">${origTable(h, b)}</div>`;
-
-marked.setOptions({ renderer, gfm: true, headerIds: true, mangle: false });
-document.getElementById("content").innerHTML = marked.parse(raw);
-
-/* TOC from h2 */
-const links = document.getElementById("toc-links");
-const heads = [...document.querySelectorAll("#content h2")];
-heads.forEach(h => {
-  const a = document.createElement("a");
-  a.href = `#${h.id}`;
-  a.textContent = h.textContent.replace(/&/g, "&");
-  links.appendChild(a);
-});
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      links.querySelectorAll("a").forEach(a => a.classList.toggle("active", a.getAttribute("href") === `#${e.target.id}`));
-    }
-  });
-}, { rootMargin: "0px 0px -75% 0px" });
-heads.forEach(h => obs.observe(h));
-
-/* Mermaid */
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "neutral",
-  securityLevel: "loose",
-  er: { useMaxWidth: false },
-  flowchart: { useMaxWidth: false },
-  themeVariables: {
-    fontFamily: "IBM Plex Sans, sans-serif",
-    primaryColor: "#eaf1fb",
-    primaryBorderColor: "#175cd3",
-    primaryTextColor: "#0b1f3a",
-    lineColor: "#5b6b82",
-    tertiaryColor: "#f4f7fc"
-  }
-});
-try {
-  await mermaid.run({ querySelector: ".mermaid", suppressErrors: true });
-} catch (e) {
-  console.warn("mermaid", e);
-}
-</script>
-<script>
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && window.parent !== window) {
-    window.parent.postMessage({ type: 'close-fullscreen' }, '*');
-  }
-});
-</script>
-<!-- broken-img-handler -->
-<script>
-(function(){
-  if(window.__brokenImgHandler)return;
-  window.__brokenImgHandler=true;
-  var MAX=5,DELAYS=[2000,4000,8000,16000,32000];
-  document.addEventListener('error',function(e){
-    var img=e.target;
-    if(!img||img.tagName!=='IMG')return;
-    var liveSrc=img.getAttribute('src');
-    var src=img.dataset.haOriginalSrc||liveSrc;
-    if(!src)return;
-    if(img.dataset.haOriginalSrc&&liveSrc&&liveSrc!==img.dataset.haOriginalSrc&&liveSrc.indexOf('_r=')<0){src=liveSrc;img.dataset.haOriginalSrc=src;img.dataset.haRetryCount='0'}
-    else if(!img.dataset.haOriginalSrc){img.dataset.haOriginalSrc=src}
-    var attempt=parseInt(img.dataset.haRetryCount||'0',10);
-    if(img.dataset.haPhId){var old=document.getElementById(img.dataset.haPhId);if(old)old.remove()}
-    var ph=document.createElement('div');
-    ph.className='ha-img-placeholder'+(attempt>=MAX?' ha-failed':'');
-    ph.id='ha-ph-'+Math.random().toString(36).slice(2,9);
-    var w=img.getAttribute('width');var h=img.getAttribute('height');
-    if(w)ph.style.width=w+(isNaN(Number(w))?'':'px');
-    else if(img.style.width)ph.style.width=img.style.width;
-    else if(img.width>1)ph.style.width=img.width+'px';
-    if(h)ph.style.height=h+(isNaN(Number(h))?'':'px');
-    else if(img.style.height)ph.style.height=img.style.height;
-    else if(img.height>1)ph.style.height=img.height+'px';
-    ph.textContent=attempt>=MAX?'Image unavailable':'Loading image\u2026';
-    img.dataset.haPhId=ph.id;
-    if(img.dataset.haOrigDisplay==null)img.dataset.haOrigDisplay=img.style.display||'';
-    img.style.display='none';
-    img.insertAdjacentElement('afterend',ph);
-    if(attempt<MAX){
-      img.dataset.haRetryCount=String(attempt+1);
-      setTimeout(function(){
-        if(!img.isConnected)return;
-        if(img.dataset.haOriginalSrc!==src)return;
-        if(img.complete&&img.naturalWidth>0)return;
-        var curSrc=img.getAttribute('src');
-        if(curSrc&&curSrc.indexOf(src)!==0)return;
-        var fresh=src+(src.indexOf('?')>=0?'&':'?')+'_r='+(attempt+1)+'_'+Date.now();
-        img.src=fresh;
-      },DELAYS[attempt]);
-    }
-  },true);
-  document.addEventListener('load',function(e){
-    var img=e.target;
-    if(!img||img.tagName!=='IMG')return;
-    if(img.dataset.haPhId){
-      var ph=document.getElementById(img.dataset.haPhId);
-      if(ph)ph.remove();
-      delete img.dataset.haPhId;
-      img.style.display=img.dataset.haOrigDisplay||'';
-      delete img.dataset.haOrigDisplay;
-      delete img.dataset.haOriginalSrc;
-      delete img.dataset.haRetryCount;
-    }
-  },true);
-})();
-</script>
-</body>
-</html>

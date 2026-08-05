@@ -1,106 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jatra — Roadmap, Architecture & Folder Structure</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#0b1f3a; --body:#2c3d54; --muted:#5b6b82; --accent:#175cd3; --accent-dark:#0f3f95;
-    --line:#d9e2ef; --line-soft:#e8eef7; --wash:#f4f7fc; --card:#ffffff; --code-bg:#f6f8fb;
-    --amber:#b45309; --green:#047857;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--body);background:#fff;font-size:16px;line-height:1.65}
-  /* ---------- header ---------- */
-  header.band{border-bottom:3px solid var(--ink);padding:34px 5% 26px;background:linear-gradient(180deg,#fbfcfe 0%,#f2f6fc 100%)}
-  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px}
-  h1.masthead{font-size:clamp(26px,4vw,44px);color:var(--ink);margin:0 0 6px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
-  .sub{font-size:17px;color:var(--muted);margin:0 0 20px;max-width:860px}
-  .chips{display:flex;flex-wrap:wrap;gap:10px}
-  .chip{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 12px}
-  .chip b{color:var(--accent)}
-  /* ---------- layout ---------- */
-  .wrap{display:flex;gap:0;align-items:flex-start}
-  nav#toc{position:sticky;top:0;width:280px;flex:0 0 280px;max-height:100vh;overflow-y:auto;padding:28px 18px 40px 5%;border-right:1px solid var(--line-soft);font-size:13.5px}
-  nav#toc .toc-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600}
-  nav#toc a{display:block;color:var(--body);text-decoration:none;padding:5px 8px;border-left:2px solid transparent;border-radius:0 4px 4px 0;line-height:1.35;margin-bottom:1px}
-  nav#toc a:hover{background:var(--wash);color:var(--accent-dark)}
-  nav#toc a.active{border-left-color:var(--accent);color:var(--accent-dark);background:var(--wash);font-weight:600}
-  main{flex:1;min-width:0;padding:30px clamp(20px,4%,64px) 90px}
-  #content{max-width:1080px}
-  /* ---------- typography ---------- */
-  #content h1{display:none}
-  #content h2{font-size:clamp(21px,2.6vw,30px);color:var(--ink);margin:58px 0 16px;padding-top:18px;border-top:2px solid var(--ink);letter-spacing:-.01em;line-height:1.2}
-  #content h2:first-of-type{margin-top:10px}
-  #content h3{font-size:18px;color:var(--ink);margin:34px 0 10px}
-  #content p{margin:0 0 14px;max-width:940px}
-  #content li{margin-bottom:6px}
-  #content strong{color:var(--ink)}
-  #content a{color:var(--accent)}
-  #content blockquote{margin:14px 0;padding:10px 18px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
-  #content hr{border:none;border-top:1px solid var(--line-soft);margin:34px 0}
-  /* ---------- tables ---------- */
-  .tbl-scroll{overflow-x:auto;margin:16px 0 26px;border:1px solid var(--line);border-radius:8px}
-  #content table{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}
-  #content th{background:var(--ink);color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;position:sticky;top:0}
-  #content td{padding:8px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
-  #content tbody tr:nth-child(even){background:#f9fbfe}
-  #content td code, #content p code, #content li code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--code-bg);border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px;color:var(--accent-dark);white-space:nowrap}
-  /* ---------- code & diagrams ---------- */
-  pre.codeblock{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.55;color:var(--ink);margin:14px 0 24px}
-  pre.codeblock code{background:none;border:none;padding:0}
-  .diagram{border:1px solid var(--line);border-radius:10px;background:#fff;margin:18px 0 30px;overflow:hidden}
-  .diagram .diagram-bar{display:flex;justify-content:space-between;align-items:center;background:var(--wash);border-bottom:1px solid var(--line-soft);padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .diagram .diagram-scroll{overflow:auto;padding:18px;max-height:82vh}
-  .diagram pre.mermaid{margin:0;display:flex;justify-content:center}
-  .diagram svg{max-width:none !important;height:auto}
-  .mermaid-error{padding:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber)}
-  /* ---------- print ---------- */
-  @media print{
-    nav#toc{display:none}
-    header.band{padding:16px 0}
-    main{padding:0}
-    .diagram .diagram-scroll{max-height:none;overflow:visible}
-    .diagram, .tbl-scroll, h2, h3{page-break-inside:avoid}
-    #content h2{page-break-before:always}
-    #content h2:first-of-type{page-break-before:avoid}
-  }
-  @media (max-width:960px){
-    nav#toc{display:none}
-    main{padding:22px 5% 70px}
-  }
-</style>
-<style>
-.ha-img-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f4f4f5;border:1px dashed #d4d4d8;border-radius:8px;color:#71717a;font-size:12px;font-family:system-ui,sans-serif;min-height:80px;padding:16px;box-sizing:border-box;animation:ha-img-pulse 1.5s ease-in-out infinite}
-.ha-img-placeholder.ha-failed{animation:none;opacity:.7}
-@keyframes ha-img-pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@media(prefers-color-scheme:dark){.ha-img-placeholder{background:#27272a;border-color:#3f3f46;color:#a1a1aa}}
-</style>
-</head>
-<body>
-<header class="band">
-  <p class="eyebrow">Engineering Blueprint &middot; Documents 05 + 06 + 07 &middot; v1.0 &middot; 14 July 2026</p>
-  <h1 class="masthead">Jatra (যাত্রা) — Learning Roadmap, Architecture<br>&amp; Folder Structure</h1>
-  <p class="sub">What to learn and in what order, how one button tap travels through React → Axios → Express → PostgreSQL and back, how Socket.io pushes the world to your screen, and the folder home of every file you will write.</p>
-  <div class="chips">
-    <span class="chip"><b>24</b> topics &middot; <b>~300 h</b> mapped</span>
-    <span class="chip"><b>7</b> Mermaid diagrams</span>
-    <span class="chip"><b>1</b> request traced in 15 steps</span>
-    <span class="chip"><b>40+</b> folders explained</span>
-    <span class="chip"><b>16</b>-row "where does X go" table</span>
-  </div>
-</header>
-<div class="wrap">
-  <nav id="toc"><div class="toc-title">Contents</div><div id="toc-links"></div></nav>
-  <main><div id="content"><p style="color:var(--muted)">Rendering document…</p></div></main>
-</div>
-
-<script type="text/plain" id="md-src">## Document 05 — Learning Roadmap
+## Document 05 — Learning Roadmap
 
 | | |
 |---|---|
@@ -115,8 +13,8 @@
 
 Three rules that separate people who finish from people who collect tutorials:
 
-1. **Learn ~70%, then build.** Do not finish a whole course before touching Jatra. Learn enough to attempt the next milestone, hit a wall, and come back with a *specific* question. Walls are where learning happens; "tutorial hell" is where it goes to die.
-2. **Every topic below ends with a checkpoint** — a small Jatra-specific task. If you can do the checkpoint without a tutorial open, you are ready to move on. If not, you know exactly what to re-study.
+1. **Learn ~70%, then build.** Do not finish a whole course before touching Cholo. Learn enough to attempt the next milestone, hit a wall, and come back with a *specific* question. Walls are where learning happens; "tutorial hell" is where it goes to die.
+2. **Every topic below ends with a checkpoint** — a small Cholo-specific task. If you can do the checkpoint without a tutorial open, you are ready to move on. If not, you know exactly what to re-study.
 3. **Type everything.** Never copy-paste from a lesson. Your fingers are part of your memory.
 
 **Difficulty scale:** 1 = a weekend · 3 = a solid week of evenings · 5 = will take a month to feel natural. **Hours** assume you are new to the topic; halve them where you have experience.
@@ -140,7 +38,7 @@ flowchart LR
 
 ## 3. Phase 0 — Foundations (≈ 60–80 h)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **HTML & CSS essentials** | The skeleton and skin of every page. Tailwind is *shorthand for CSS* — it will make no sense without the real thing (box model, flexbox, grid, responsive units) | 2 | 15–20 | none | MDN "Learn web development"; web.dev *Learn CSS*; flexboxfroggy.com | Every screen; Tailwind classes in every component |
 | **Modern JavaScript (ES6+)** | The one language of your whole stack. `let/const`, arrow functions, destructuring, spread, template literals, array methods (`map/filter/reduce`), modules, classes, `this` | 3 | 25–30 | none | **javascript.info** (parts 1–2 — the best free JS book); MDN JS Guide | Literally everything: React components, Express handlers, validators |
@@ -152,7 +50,7 @@ flowchart LR
 
 ## 4. Phase 1 — Database Track (≈ 35–45 h — *compressed: docs 01–04 already did the design*)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **SQL fundamentals** | Talking to relational data: `SELECT`, `WHERE`, `JOIN` (inner/left), `GROUP BY`, aggregates, subqueries, `INSERT/UPDATE/DELETE` | 3 | 20–25 | none | **pgexercises.com** (do all of it); SQLBolt; postgresqltutorial.com | Every repository function; the 4 views in `schema.sql` |
 | **PostgreSQL & psql** | Installing PG 16, creating databases, running scripts, `\d` inspection commands, reading error messages | 2 | 6–8 | SQL basics | PostgreSQL official tutorial (docs part I–II); our `schema.sql` header | Loading `schema.sql`; debugging every constraint error the app triggers |
@@ -163,7 +61,7 @@ flowchart LR
 
 ## 5. Phase 2 — Backend Track (≈ 60–75 h)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **Node.js & npm** | JS outside the browser: the runtime, `package.json`, scripts, `node_modules`, semver, ESM imports | 2 | 8–10 | Async JS | nodejs.org "Learn Node.js" course; npm docs | `server/` is a Node project; every `npm install` |
 | **Express fundamentals** | The minimal web framework: routing, `req`/`res`, middleware chain (the core mental model), routers, static serving | 3 | 15–18 | Node | expressjs.com Guide; MDN Express tutorial (parts 1–4) | `server/src/app.js`, all routes — doc 08 builds on this |
@@ -177,7 +75,7 @@ flowchart LR
 
 ## 6. Phase 3 — Frontend Track (≈ 70–90 h)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **React fundamentals** | UI as a function of state: components, JSX, props, `useState`, lists & keys, controlled forms, lifting state up | 4 | 25–30 | Modern JS | **react.dev "Learn React"** (official, superb — do *Thinking in React*) | Every screen in doc 12 |
 | **Hooks beyond state** | `useEffect` (and when *not* to use it), `useRef`, `useMemo`, custom hooks — where logic lives | 4 | 10–12 | React basics | react.dev "Escape Hatches"; "You Might Not Need an Effect" | `useAuth`, `useRideTracking`, `useGeolocation` |
@@ -191,7 +89,7 @@ flowchart LR
 
 ## 7. Phase 4 — Realtime & Maps (≈ 25–35 h)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **Socket.io** | Two-way, server-push messaging over WebSocket: events, rooms, namespaces, auth handshake, reconnection | 3 | 12–15 | Express + React | socket.io official tutorial (build the chat) | Live tracking, dispatch offers, trip chat — doc 06 §7 |
 | **Maps: Leaflet + OSM** | Rendering maps, markers, polylines; browser Geolocation API; geocoding (Nominatim) & routing (OSRM) — free stack | 3 | 10–14 | React | leafletjs.com tutorials; react-leaflet.js.org | Booking screen, live trip map; the geo abstraction in doc 06 §9 |
@@ -201,7 +99,7 @@ flowchart LR
 
 ## 8. Phase 5 — Professional Practice (≈ 25–35 h)
 
-| Topic | What it is & why Jatra needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
+| Topic | What it is & why Cholo needs it | Diff. | Hours | Prereqs | Best free resources | Where it's used |
 |---|---|---|---|---|---|---|
 | **Docker & docker-compose** | Reproducible environments: one command starts PG + API + client identically on any machine | 3 | 10–12 | Terminal | docker.com "Get started"; docker-curriculum.com | `docker-compose.yml`; deployment |
 | **Testing basics** | Unit tests (Vitest/Jest) for services & fare math; API tests (supertest) against endpoints | 3 | 10–12 | Backend | vitest.dev; jestjs.io; supertest README | `server/tests/`; the testing strategy doc |
@@ -248,7 +146,7 @@ flowchart LR
 
 ## 1. The Big Picture — Three Tiers
 
-Every serious web application — Uber, Pathao, and Jatra — is the same three-tier shape. Memorize this before anything else:
+Every serious web application — Uber, Pathao, and Cholo — is the same three-tier shape. Memorize this before anything else:
 
 ```mermaid
 flowchart LR
@@ -390,7 +288,7 @@ Everything server-side follows one direction: **route → controller → service
 | **Services** | "what are the rules?" | fare math, state transitions, permissions, orchestration, transactions | `req`/`res` objects, SQL strings |
 | **Repositories** | "how is it stored?" | **all** SQL, parameterized; row ⇄ object mapping | business decisions |
 
-Why bother? **(1) Testability** — services are plain functions, testable without HTTP or a browser. **(2) Single reason to change** — a new fare rule touches one service; a schema rename touches one repository. **(3) Readability** — a new developer (or examiner) finds anything in seconds because *kind* determines *location*. The full backend teaching document (doc 08) walks each layer with Jatra examples.
+Why bother? **(1) Testability** — services are plain functions, testable without HTTP or a browser. **(2) Single reason to change** — a new fare rule touches one service; a schema rename touches one repository. **(3) Readability** — a new developer (or examiner) finds anything in seconds because *kind* determines *location*. The full backend teaching document (doc 08) walks each layer with Cholo examples.
 
 ## 6. Authentication Flow — The 30-Second Version
 
@@ -495,7 +393,7 @@ flowchart TB
         CDN["Vercel CDN<br/>vite build output: static HTML/JS/CSS"]
         API["Render/Railway container<br/>node src/server.js"]
         PGP[("Managed PostgreSQL<br/>Render/Railway/Neon + backups")]
-        CDN -- "HTTPS api.jatra.app" --> API --> PGP
+        CDN -- "HTTPS api.cholo.app" --> API --> PGP
     end
     DEV -. "git push → CI builds" .-> PROD
 ```
@@ -503,7 +401,7 @@ flowchart TB
 | Concern | Development | Production |
 |---|---|---|
 | Frontend | Vite dev server, instant hot-reload | `vite build` → static files on a CDN — **no Node needed to serve React** |
-| API base URL | Vite proxy makes `/api` same-origin (no CORS pain) | `VITE_API_URL=https://api.jatra.app`; CORS allows exactly that origin |
+| API base URL | Vite proxy makes `/api` same-origin (no CORS pain) | `VITE_API_URL=https://api.cholo.app`; CORS allows exactly that origin |
 | Database | Docker container, disposable, seeded | managed instance: backups, TLS, connection limits — `DATABASE_URL` env var |
 | Secrets | `.env` file (git-ignored) | platform dashboard env vars |
 | Errors | stack traces on screen | logged server-side; client gets safe messages |
@@ -543,7 +441,7 @@ Every abandoned first project dies the same way: one `app.js` that grows to 2,00
 
 Two conventions used throughout:
 
-- **Layer-first, feature-named:** folders are layers (`controllers/`), files are features (`rides.controller.js`). At Jatra's size this beats feature-first folders; the naming keeps features greppable (`rides.*` finds the whole vertical).
+- **Layer-first, feature-named:** folders are layers (`controllers/`), files are features (`rides.controller.js`). At Cholo's size this beats feature-first folders; the naming keeps features greppable (`rides.*` finds the whole vertical).
 - **`feature.layer.ext` file naming:** `auth.service.js`, `trips.repository.js`, `RideCard.tsx`. A filename alone tells you *what* and *which layer*.
 
 ## 2. The Monorepo Root
@@ -551,7 +449,7 @@ Two conventions used throughout:
 One repository, two applications, one database, one blueprint — everything versioned together so a single commit can change an endpoint and the screen that calls it.
 
 ```text
-jatra/
+cholo/
 ├── client/                # React SPA (Vite + TypeScript + Tailwind)
 ├── server/                # Express API + Socket.io (Node.js)
 ├── database/              # schema.sql, migrations, seeds — the DB as code
@@ -634,7 +532,7 @@ server/
 | `config/` | configuration is read once, validated once — not scattered `process.env` reads | env parsing, pg Pool, constants | request handling, queries |
 | `routes/` | the API's table of contents; reviewers read it like a menu | URL + verb + middleware chain + controller reference | logic, SQL, validation bodies |
 | `controllers/` | the HTTP translator | `req` unpacking, one service call, status code, DTO response | business rules, SQL, multi-service orchestration beyond trivial |
-| `services/` | the rules of Jatra live here — the most-tested code | fare math, transitions, permissions, **transactions** (BEGIN/COMMIT), calls to repositories/gateways | `req`/`res`, SQL strings, `res.send` |
+| `services/` | the rules of Cholo live here — the most-tested code | fare math, transitions, permissions, **transactions** (BEGIN/COMMIT), calls to repositories/gateways | `req`/`res`, SQL strings, `res.send` |
 | `repositories/` | one home for SQL = injection-proof by habit, schema changes localized | parameterized queries, row→object mapping | decisions ("if balance < …"), HTTP anything |
 | `middlewares/` | cross-cutting steps every request may pass through | auth, role gate, validation runner, error handler, rate limit | feature-specific logic |
 | `validators/` | request *shapes* as data (zod), reusable and testable | schemas: body/params/query per endpoint | DB checks (that's services) |
@@ -782,134 +680,3 @@ The `.env` discipline: commit **`.env.example`** with every variable name and a 
 | Git branches | `type/short-name` | `feat/driver-offers`, `fix/fare-rounding` |
 
 **Next:** doc 08 opens `server/src/` file by file — the Express teaching document — followed by the complete REST API catalog (09) and the authentication deep-dive (10).
-</script>
-<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-<script type="module">
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-
-const raw = document.getElementById("md-src").textContent;
-const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-
-const renderer = new marked.Renderer();
-let diagramNo = 0;
-renderer.code = (code, lang) => {
-  if (lang === "mermaid") {
-    diagramNo += 1;
-    return `<div class="diagram"><div class="diagram-bar"><span>Diagram ${String(diagramNo).padStart(2,"0")}</span><span>scroll / zoom to explore</span></div><div class="diagram-scroll"><pre class="mermaid">${esc(code)}</pre></div></div>`;
-  }
-  return `<pre class="codeblock"><code>${esc(code)}</code></pre>`;
-};
-const origTable = renderer.table.bind(renderer);
-renderer.table = (h, b) => `<div class="tbl-scroll">${origTable(h, b)}</div>`;
-
-marked.setOptions({ renderer, gfm: true, headerIds: true, mangle: false });
-document.getElementById("content").innerHTML = marked.parse(raw);
-
-/* TOC from h2 */
-const links = document.getElementById("toc-links");
-const heads = [...document.querySelectorAll("#content h2")];
-heads.forEach(h => {
-  const a = document.createElement("a");
-  a.href = `#${h.id}`;
-  a.textContent = h.textContent.replace(/&/g, "&");
-  links.appendChild(a);
-});
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      links.querySelectorAll("a").forEach(a => a.classList.toggle("active", a.getAttribute("href") === `#${e.target.id}`));
-    }
-  });
-}, { rootMargin: "0px 0px -75% 0px" });
-heads.forEach(h => obs.observe(h));
-
-/* Mermaid */
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "neutral",
-  securityLevel: "loose",
-  er: { useMaxWidth: false },
-  flowchart: { useMaxWidth: false },
-  themeVariables: {
-    fontFamily: "IBM Plex Sans, sans-serif",
-    primaryColor: "#eaf1fb",
-    primaryBorderColor: "#175cd3",
-    primaryTextColor: "#0b1f3a",
-    lineColor: "#5b6b82",
-    tertiaryColor: "#f4f7fc"
-  }
-});
-try {
-  await mermaid.run({ querySelector: ".mermaid", suppressErrors: true });
-} catch (e) {
-  console.warn("mermaid", e);
-}
-</script>
-<script>
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && window.parent !== window) {
-    window.parent.postMessage({ type: 'close-fullscreen' }, '*');
-  }
-});
-</script>
-<!-- broken-img-handler -->
-<script>
-(function(){
-  if(window.__brokenImgHandler)return;
-  window.__brokenImgHandler=true;
-  var MAX=5,DELAYS=[2000,4000,8000,16000,32000];
-  document.addEventListener('error',function(e){
-    var img=e.target;
-    if(!img||img.tagName!=='IMG')return;
-    var liveSrc=img.getAttribute('src');
-    var src=img.dataset.haOriginalSrc||liveSrc;
-    if(!src)return;
-    if(img.dataset.haOriginalSrc&&liveSrc&&liveSrc!==img.dataset.haOriginalSrc&&liveSrc.indexOf('_r=')<0){src=liveSrc;img.dataset.haOriginalSrc=src;img.dataset.haRetryCount='0'}
-    else if(!img.dataset.haOriginalSrc){img.dataset.haOriginalSrc=src}
-    var attempt=parseInt(img.dataset.haRetryCount||'0',10);
-    if(img.dataset.haPhId){var old=document.getElementById(img.dataset.haPhId);if(old)old.remove()}
-    var ph=document.createElement('div');
-    ph.className='ha-img-placeholder'+(attempt>=MAX?' ha-failed':'');
-    ph.id='ha-ph-'+Math.random().toString(36).slice(2,9);
-    var w=img.getAttribute('width');var h=img.getAttribute('height');
-    if(w)ph.style.width=w+(isNaN(Number(w))?'':'px');
-    else if(img.style.width)ph.style.width=img.style.width;
-    else if(img.width>1)ph.style.width=img.width+'px';
-    if(h)ph.style.height=h+(isNaN(Number(h))?'':'px');
-    else if(img.style.height)ph.style.height=img.style.height;
-    else if(img.height>1)ph.style.height=img.height+'px';
-    ph.textContent=attempt>=MAX?'Image unavailable':'Loading image\u2026';
-    img.dataset.haPhId=ph.id;
-    if(img.dataset.haOrigDisplay==null)img.dataset.haOrigDisplay=img.style.display||'';
-    img.style.display='none';
-    img.insertAdjacentElement('afterend',ph);
-    if(attempt<MAX){
-      img.dataset.haRetryCount=String(attempt+1);
-      setTimeout(function(){
-        if(!img.isConnected)return;
-        if(img.dataset.haOriginalSrc!==src)return;
-        if(img.complete&&img.naturalWidth>0)return;
-        var curSrc=img.getAttribute('src');
-        if(curSrc&&curSrc.indexOf(src)!==0)return;
-        var fresh=src+(src.indexOf('?')>=0?'&':'?')+'_r='+(attempt+1)+'_'+Date.now();
-        img.src=fresh;
-      },DELAYS[attempt]);
-    }
-  },true);
-  document.addEventListener('load',function(e){
-    var img=e.target;
-    if(!img||img.tagName!=='IMG')return;
-    if(img.dataset.haPhId){
-      var ph=document.getElementById(img.dataset.haPhId);
-      if(ph)ph.remove();
-      delete img.dataset.haPhId;
-      img.style.display=img.dataset.haOrigDisplay||'';
-      delete img.dataset.haOrigDisplay;
-      delete img.dataset.haOriginalSrc;
-      delete img.dataset.haRetryCount;
-    }
-  },true);
-})();
-</script>
-</body>
-</html>
