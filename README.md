@@ -2,6 +2,8 @@
 
 A ride-sharing platform for Bangladesh, built as a learning project by two people. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
 
+**Deciding what to build next?** Open [`docs/cholo-feature-roadmap.html`](./docs/cholo-feature-roadmap.html) in a browser — it's the 24-step build order from `docs/13-14`, broken into per-feature prompts (one to build it, one to make your agent explain it back to you), with a personal checklist. Progress is saved per-browser only; GitHub Issues is still the shared source of truth for who's doing what.
+
 ## Quickstart (5 minutes)
 
 **Prerequisite:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) running.
