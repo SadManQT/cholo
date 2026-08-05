@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jatra — Data Dictionary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b1f3a; --body:#2c3d54; --muted:#5b6b82; --accent:#175cd3; --accent-dark:#0f3f95;
+    --line:#d9e2ef; --line-soft:#e8eef7; --wash:#f4f7fc; --card:#ffffff; --code-bg:#f6f8fb;
+    --amber:#b45309; --green:#047857;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--body);background:#fff;font-size:16px;line-height:1.65}
+  /* ---------- header ---------- */
+  header.band{border-bottom:3px solid var(--ink);padding:34px 5% 26px;background:linear-gradient(180deg,#fbfcfe 0%,#f2f6fc 100%)}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px}
+  h1.masthead{font-size:clamp(26px,4vw,44px);color:var(--ink);margin:0 0 6px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
+  .sub{font-size:17px;color:var(--muted);margin:0 0 20px;max-width:860px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 12px}
+  .chip b{color:var(--accent)}
+  /* ---------- layout ---------- */
+  .wrap{display:flex;gap:0;align-items:flex-start}
+  nav#toc{position:sticky;top:0;width:280px;flex:0 0 280px;max-height:100vh;overflow-y:auto;padding:28px 18px 40px 5%;border-right:1px solid var(--line-soft);font-size:13.5px}
+  nav#toc .toc-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600}
+  nav#toc a{display:block;color:var(--body);text-decoration:none;padding:5px 8px;border-left:2px solid transparent;border-radius:0 4px 4px 0;line-height:1.35;margin-bottom:1px}
+  nav#toc a:hover{background:var(--wash);color:var(--accent-dark)}
+  nav#toc a.active{border-left-color:var(--accent);color:var(--accent-dark);background:var(--wash);font-weight:600}
+  main{flex:1;min-width:0;padding:30px clamp(20px,4%,64px) 90px}
+  #content{max-width:1080px}
+  /* ---------- typography ---------- */
+  #content h1{display:none}
+  #content h2{font-size:clamp(21px,2.6vw,30px);color:var(--ink);margin:58px 0 16px;padding-top:18px;border-top:2px solid var(--ink);letter-spacing:-.01em;line-height:1.2}
+  #content h2:first-of-type{margin-top:10px}
+  #content h3{font-size:18px;color:var(--ink);margin:34px 0 10px}
+  #content p{margin:0 0 14px;max-width:940px}
+  #content li{margin-bottom:6px}
+  #content strong{color:var(--ink)}
+  #content a{color:var(--accent)}
+  #content blockquote{margin:14px 0;padding:10px 18px;border-left:3px solid var(--accent);background:var(--wash);border-radius:0 6px 6px 0}
+  #content hr{border:none;border-top:1px solid var(--line-soft);margin:34px 0}
+  /* ---------- tables ---------- */
+  .tbl-scroll{overflow-x:auto;margin:16px 0 26px;border:1px solid var(--line);border-radius:8px}
+  #content table{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}
+  #content th{background:var(--ink);color:#fff;text-align:left;padding:9px 12px;font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap;position:sticky;top:0}
+  #content td{padding:8px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
+  #content tbody tr:nth-child(even){background:#f9fbfe}
+  #content td code, #content p code, #content li code{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:var(--code-bg);border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px;color:var(--accent-dark);white-space:nowrap}
+  /* ---------- code & diagrams ---------- */
+  pre.codeblock{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.55;color:var(--ink);margin:14px 0 24px}
+  pre.codeblock code{background:none;border:none;padding:0}
+  .diagram{border:1px solid var(--line);border-radius:10px;background:#fff;margin:18px 0 30px;overflow:hidden}
+  .diagram .diagram-bar{display:flex;justify-content:space-between;align-items:center;background:var(--wash);border-bottom:1px solid var(--line-soft);padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .diagram .diagram-scroll{overflow:auto;padding:18px;max-height:82vh}
+  .diagram pre.mermaid{margin:0;display:flex;justify-content:center}
+  .diagram svg{max-width:none !important;height:auto}
+  .mermaid-error{padding:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber)}
+  /* ---------- print ---------- */
+  @media print{
+    nav#toc{display:none}
+    header.band{padding:16px 0}
+    main{padding:0}
+    .diagram .diagram-scroll{max-height:none;overflow:visible}
+    .diagram, .tbl-scroll, h2, h3{page-break-inside:avoid}
+    #content h2{page-break-before:always}
+    #content h2:first-of-type{page-break-before:avoid}
+  }
+  @media (max-width:960px){
+    nav#toc{display:none}
+    main{padding:22px 5% 70px}
+  }
+</style>
+<style>
+.ha-img-placeholder{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f4f4f5;border:1px dashed #d4d4d8;border-radius:8px;color:#71717a;font-size:12px;font-family:system-ui,sans-serif;min-height:80px;padding:16px;box-sizing:border-box;animation:ha-img-pulse 1.5s ease-in-out infinite}
+.ha-img-placeholder.ha-failed{animation:none;opacity:.7}
+@keyframes ha-img-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media(prefers-color-scheme:dark){.ha-img-placeholder{background:#27272a;border-color:#3f3f46;color:#a1a1aa}}
+</style>
+</head>
+<body>
+<header class="band">
+  <p class="eyebrow">Database Reference &middot; Document 04 &middot; v1.0 &middot; 14 July 2026</p>
+  <h1 class="masthead">Jatra (যাত্রা) — Data Dictionary<br>Every Table, Every Column</h1>
+  <p class="sub">Generated by introspecting the live validated database — purpose, type, nullability, default, keys and delete rules for all 505 columns, with genuine sample rows you can trace across tables.</p>
+  <div class="chips">
+    <span class="chip"><b>51</b> tables</span>
+    <span class="chip"><b>505</b> columns documented</span>
+    <span class="chip"><b>106</b> FKs with delete rules</span>
+    <span class="chip"><b>40</b> enums cataloged</span>
+    <span class="chip"><b>16</b> tables with live sample rows</span>
+    <span class="chip">introspected from PostgreSQL <b>16.12</b></span>
+  </div>
+</header>
+<div class="wrap">
+  <nav id="toc"><div class="toc-title">Contents</div><div id="toc-links"></div></nav>
+  <main><div id="content"><p style="color:var(--muted)">Rendering document…</p></div></main>
+</div>
+
+<script type="text/plain" id="md-src">## Document 04 — Data Dictionary: Every Table, Every Column
+
+| | |
+|---|---|
+| **Document** | 04 — Data Dictionary |
+| **Version** | 1.0 — 14 July 2026 |
+| **Source of truth** | Generated by introspecting the live validation database (PostgreSQL 16.12) loaded from `schema.sql` — the dictionary cannot drift from the DDL |
+| **Coverage** | 51 tables · 505 columns · 40 enums · every constraint and index |
+
+**How to read each table:** *Nullable* = whether NULL is a legal value (NULL always *means* something: "not yet", "not provided", "system-caused"). *Default* = value PostgreSQL supplies when the INSERT omits the column. *Key / FK* = key participation and foreign-key target with its ON DELETE rule. Sample rows are genuine `SELECT` output from the validated database of document 03 — the Nusrat/Rafiq ride you can trace across tables: request → offer → trip `JT-2026-000001` → payment `BKA-8827` → earning → rating → receipt.
+
+## Domain 1 — Identity & Access
+
+### `users`
+
+Single account per human. Every passenger, driver, and admin is first a row here; role-specific data lives in the 1:1 profile extensions. Soft-deleted (deleted_at), never physically removed, so historical trips always reference a real party.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `public_id` | uuid | no | auto UUID | UNIQUE | UUID exposed by the API instead of the sequential id — prevents enumeration. |
+| `full_name` | character varying(120) | no |  |  | Display name shown to counterparties. |
+| `phone` | character varying(20) | no |  | UNIQUE | Login identifier — BD mobile format enforced by CHECK; phone-first market. |
+| `email` | character varying(255) | yes |  | UNIQUE | Optional in Bangladesh context; unique when present. |
+| `password_hash` | character varying(100) | no |  |  | bcrypt output. Plain passwords never stored, never logged. |
+| `gender` | user_gender *(enum)* | yes |  |  | Optional; powers women-only ride matching. |
+| `date_of_birth` | date | yes |  |  | For age gates and KYC cross-checks. |
+| `photo_url` | text | yes |  |  | Profile photo (object storage URL). |
+| `preferred_language` | user_language *(enum)* | no | 'bn' |  | UI language: Bangla or English. |
+| `status` | user_status *(enum)* | no | 'active' |  | Account lifecycle: active / suspended / deleted. |
+| `referral_code` | character varying(12) | no | auto UUID | UNIQUE | Shareable invite code, auto-generated 8 chars. |
+| `phone_verified_at` | timestamp with time zone | yes |  |  | When OTP verification succeeded; NULL = unverified. |
+| `email_verified_at` | timestamp with time zone | yes |  |  | When the email link was clicked. |
+| `last_login_at` | timestamp with time zone | yes |  |  | Denormalized convenience for admin screens. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+| `deleted_at` | timestamp with time zone | yes |  |  | Soft-delete marker; NULL = live. |
+
+**CHECK rules:** `(((email IS NULL) OR ((email)~ '^[^@\s]+@[^@\s]+\.[^@\s]+$')))` · `(((phone)~ '^01[3-9][0-9]{8}$'))`
+
+**Indexes:** `idx_users_status ON users (status) WHERE (status <> 'active'::user_status)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | full_name | phone | gender | status | referral_code |
+|---|---|---|---|---|---|
+| 1 | Nusrat Jahan | 01712345678 | female | active | 44CD1E5C |
+| 2 | Rafiq Islam | 01898765432 | male | active | 880ED611 |
+| 3 | Sadia Rahman | 01611223344 | female | active | D05484A2 |
+
+
+### `roles`
+
+RBAC role catalog (PASSENGER, DRIVER, ADMIN, SUPPORT). A lookup table — adding a future role is an INSERT, not a migration.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | smallint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `name` | character varying(30) | no |  | UNIQUE | Machine name: PASSENGER / DRIVER / ADMIN / SUPPORT. |
+| `description` | character varying(200) | yes |  |  | Human explanation for the admin UI. |
+
+### `user_roles`
+
+Junction resolving the users ↔ roles many-to-many. The composite PK makes 'granted twice' unrepresentable; granted_by records the responsible admin.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `user_id` | bigint | no |  | **PK**; FK → `users.id` (CASCADE) | References the owning `users` row. |
+| `role_id` | smallint | no |  | **PK**; FK → `roles.id` (RESTRICT) | References the owning `roles` row. |
+| `granted_at` | timestamp with time zone | no | now() |  | When the role was granted. |
+| `granted_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin who granted it; NULL for self-service signup grants. |
+
+**Indexes:** `idx_user_roles_role ON user_roles (role_id)`
+
+
+### `passenger_profiles`
+
+1:1 extension of users for passenger-only data. PK = FK to users — that shared key IS the 1:1 constraint. Rating/trip aggregates are registered caches (doc 02 §9).
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `user_id` | bigint | no |  | **PK**; FK → `users.id` (CASCADE) | PK = FK: identifies the `users` row this 1:1 extension belongs to. |
+| `rating_avg` | numeric(3,2) | no | 0 |  | Cached average of ratings received (trigger-maintained). |
+| `rating_count` | integer | no | 0 |  | How many ratings the average is built from. |
+| `total_trips` | integer | no | 0 |  | Completed trips as passenger (cache). |
+| `default_city_id` | smallint | yes |  | FK → `cities.id` (SET NULL) | Pre-selects the market in the app. |
+| `women_only_mode` | boolean | no | false |  | When true, requests default to female-driver matching. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+**CHECK rules:** `(((rating_avg >= (0)) AND (rating_avg <= (5))))` · `((rating_count >= 0))` · `((total_trips >= 0))`
+
+
+### `driver_profiles`
+
+1:1 extension of users holding driver KYC (NID, license) and the performance metrics dispatch reads (rating, acceptance rate). Verification workflow fields record who approved and when.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `user_id` | bigint | no |  | **PK**; FK → `users.id` (CASCADE) | PK = FK: identifies the `users` row this 1:1 extension belongs to. |
+| `nid_number` | character varying(17) | no |  | UNIQUE | Bangladesh National ID — 10/13/17 digits (CHECK). KYC anchor. |
+| `license_number` | character varying(30) | no |  | UNIQUE | Driving license number; unique nationally. |
+| `license_expiry` | date | no |  |  | Drives automated re-verification reminders. |
+| `verification_status` | kyc_status *(enum)* | no | 'pending' |  | KYC gate: only approved drivers can go online. |
+| `verified_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin who approved (accountability). |
+| `verified_at` | timestamp with time zone | yes |  |  | When approval happened. |
+| `active_vehicle_id` | bigint | yes |  | FK → `vehicles.id` (SET NULL); UNIQUE | The one vehicle currently on duty — circular FK added via ALTER; UNIQUE makes it 0..1:0..1. |
+| `rating_avg` | numeric(3,2) | no | 0 |  | Cached average rating (trigger-maintained). |
+| `rating_count` | integer | no | 0 |  | Count behind the average. |
+| `total_trips` | integer | no | 0 |  | Completed trips as driver (cache). |
+| `acceptance_rate` | numeric(5,2) | no | 0 |  | % of dispatch offers accepted — derived from ride_offers. |
+| `cancellation_rate` | numeric(5,2) | no | 0 |  | % of accepted trips later cancelled by the driver. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+**CHECK rules:** `((rating_count >= 0))` · `((total_trips >= 0))` · `(((acceptance_rate >= (0)) AND (acceptance_rate <= (100))))` · `(((rating_avg >= (0)) AND (rating_avg <= (5))))` · `(((nid_number)~ '^([0-9]{10}|[0-9]{13}|[0-9]{17})$'))` · `(((cancellation_rate >= (0)) AND (cancellation_rate <= (100))))`
+
+**Indexes:** `idx_driver_profiles_status ON driver_profiles (verification_status) WHERE (verification_status <> 'approved'::kyc_status)` · `ux_driver_active_vehicle ON driver_profiles (active_vehicle_id)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| user_id | nid_number | license_number | verification_status | rating_avg | total_trips | active_vehicle_id |
+|---|---|---|---|---|---|---|
+| 2 | 1990123456789 | DK-0112233 | approved | 5.00 | 1 | 1 |
+
+
+### `admin_profiles`
+
+1:1 extension of users for staff: designation and coarse access tier (fine permissions come from roles).
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `user_id` | bigint | no |  | **PK**; FK → `users.id` (CASCADE) | PK = FK: identifies the `users` row this 1:1 extension belongs to. |
+| `designation` | character varying(80) | yes |  |  | Job title, e.g. Operations Lead. |
+| `access_level` | admin_access_level *(enum)* | no | 'support' |  | Coarse tier: super / ops / finance / support. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+### `refresh_tokens`
+
+Long-lived credentials for silent re-login. Only the SHA-256 hash is stored; replaced_by forms the rotation chain that exposes stolen-token replay.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE) | References `users`. |
+| `session_id` | bigint | no |  | FK → `login_sessions.id` (CASCADE) | Login session this token belongs to — rotation is per-session. |
+| `token_hash` | character(64) | no |  | UNIQUE | SHA-256 of the token; a DB leak leaks nothing usable. |
+| `issued_at` | timestamp with time zone | no | now() |  | Issue instant. |
+| `expires_at` | timestamp with time zone | no |  |  | Hard expiry (e.g. 30 days). |
+| `revoked_at` | timestamp with time zone | yes |  |  | Set on logout/rotation/theft response; NULL = live. |
+| `replaced_by` | bigint | yes |  | FK → `refresh_tokens.id` (SET NULL) | Self-FK to the successor token — the rotation chain. |
+
+**CHECK rules:** `((expires_at > issued_at))`
+
+**Indexes:** `ux_refresh_active_per_session ON refresh_tokens (session_id) WHERE (revoked_at IS NULL)` · `idx_refresh_user ON refresh_tokens (user_id)`
+
+
+### `password_reset_tokens`
+
+Single-use, short-lived reset links (hashed). used_at flips exactly once.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE) | References `users`. |
+| `token_hash` | character(64) | no |  | UNIQUE | SHA-256 of the emailed/SMSed token. |
+| `expires_at` | timestamp with time zone | no |  |  | Short window (e.g. 15 min). |
+| `used_at` | timestamp with time zone | yes |  |  | Set exactly once — makes the link single-use. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+### `otp_verifications`
+
+Phone OTP challenges for signup/login/payout. user_id is nullable because a signup OTP is sent before the account exists. attempts caps brute force at 5.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | yes |  | FK → `users.id` (CASCADE) | References `users`. |
+| `phone` | character varying(20) | no |  |  | Target phone (may precede any user row). |
+| `otp_hash` | character(64) | no |  |  | Hashed 6-digit code — never stored plain. |
+| `purpose` | otp_purpose *(enum)* | no |  |  | What the OTP authorizes: signup / login / password_reset / payout. |
+| `attempts` | smallint | no | 0 |  | Failed tries; CHECK caps at 5 (lockout). |
+| `expires_at` | timestamp with time zone | no |  |  | OTP validity window (minutes). |
+| `verified_at` | timestamp with time zone | yes |  |  | When the correct code was entered. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((attempts >= 0) AND (attempts <= 5)))`
+
+**Indexes:** `idx_otp_phone ON otp_verifications (phone, created_at DESC)`
+
+
+### `login_sessions`
+
+One row per device sign-in — the audit trail behind 'active devices' and 'log out everywhere'. Anchors refresh-token rotation per session.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE) | References `users`. |
+| `device_type` | device_type *(enum)* | no |  |  | android / ios / web. |
+| `device_name` | character varying(120) | yes |  |  | Human-readable device label. |
+| `ip_address` | inet | yes |  |  | INET-typed source address. |
+| `user_agent` | text | yes |  |  | Raw client string for forensics. |
+| `logged_in_at` | timestamp with time zone | no | now() |  | Session start. |
+| `logged_out_at` | timestamp with time zone | yes |  |  | Explicit logout instant. |
+| `is_active` | boolean | no | true |  | Quick filter for the active-devices screen. |
+
+**Indexes:** `idx_sessions_user ON login_sessions (user_id, logged_in_at DESC)`
+
+
+
+## Domain 2 — Fleet & Compliance
+
+### `vehicle_categories`
+
+Service tiers (Bike, CNG, Car, Car Premium). Pricing rules, commission rules, and dispatch all key off this lookup.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | smallint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `name` | character varying(40) | no |  | UNIQUE | Tier name: Bike / CNG / Car / Car Premium. |
+| `description` | character varying(200) | yes |  |  | Marketing copy for the picker. |
+| `seat_capacity` | smallint | no |  |  | Max passengers (CHECK 1–8). |
+| `icon_url` | text | yes |  |  | Category icon in the app. |
+| `is_active` | boolean | no | true |  | Enabled/disabled switch without deleting history. |
+| `sort_order` | smallint | no | 0 |  | Display ordering in the picker. |
+
+**CHECK rules:** `(((seat_capacity >= 1) AND (seat_capacity <= 8)))`
+
+
+### `vehicles`
+
+Physical vehicle registry. A driver may register several; the active one is pointed at by driver_profiles.active_vehicle_id (the deliberate circular FK).
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (RESTRICT) | References `driver_profiles`. |
+| `category_id` | smallint | no |  | FK → `vehicle_categories.id` (RESTRICT) | References `vehicle_categories`. |
+| `registration_no` | character varying(40) | no |  | UNIQUE | BRTA plate, e.g. DHAKA METRO GA 21-7788; unique. |
+| `brand` | character varying(50) | yes |  |  | Manufacturer. |
+| `model` | character varying(50) | yes |  |  | Model name. |
+| `model_year` | smallint | yes |  |  | CHECK 1990–2100. |
+| `color` | character varying(30) | yes |  |  | For passenger identification at pickup. |
+| `verification_status` | kyc_status *(enum)* | no | 'pending' |  | Vehicle-level KYC gate. |
+| `is_active` | boolean | no | true |  | Owner can shelve a vehicle without deleting history. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+**CHECK rules:** `(((model_year >= 1990) AND (model_year <= 2100)))`
+
+**Indexes:** `idx_vehicles_driver ON vehicles (driver_id)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | driver_id | category_id | registration_no | brand | model | verification_status |
+|---|---|---|---|---|---|---|
+| 1 | 2 | 3 | DHAKA METRO GA 21-7788 | Toyota | Axio | approved |
+
+
+### `driver_documents`
+
+KYC evidence per driver (license, NID, photo, police clearance). Re-uploads are new rows, preserving the full review history.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (CASCADE) | References `driver_profiles`. |
+| `doc_type` | driver_doc_type *(enum)* | no |  |  | license / nid / photo / police_clearance. |
+| `doc_number` | character varying(50) | yes |  |  | Number printed on the document. |
+| `file_url` | text | no |  |  | Uploaded scan (object storage). |
+| `issue_date` | date | yes |  |  | As printed. |
+| `expiry_date` | date | yes |  |  | Drives auto-expiry; CHECK > issue_date. |
+| `status` | document_status *(enum)* | no | 'pending' |  | Review outcome; expired set by scheduled job. |
+| `reviewed_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin reviewer (SET NULL if account removed). |
+| `reviewed_at` | timestamp with time zone | yes |  |  | Review instant. |
+| `rejection_reason` | character varying(300) | yes |  |  | Feedback shown to the driver. |
+| `uploaded_at` | timestamp with time zone | no | now() |  | Upload instant — re-uploads are new rows. |
+
+**CHECK rules:** `(((expiry_date IS NULL) OR (issue_date IS NULL) OR (expiry_date > issue_date)))`
+
+**Indexes:** `idx_driver_docs ON driver_documents (driver_id, doc_type, uploaded_at DESC)`
+
+
+### `vehicle_documents`
+
+Roadworthiness evidence per vehicle (registration, fitness, insurance, tax token) with expiry tracking.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `vehicle_id` | bigint | no |  | FK → `vehicles.id` (CASCADE) | References `vehicles`. |
+| `doc_type` | vehicle_doc_type *(enum)* | no |  |  | registration / fitness / insurance / tax_token. |
+| `doc_number` | character varying(50) | yes |  |  | Printed number. |
+| `file_url` | text | no |  |  | Uploaded scan. |
+| `issue_date` | date | yes |  |  | As printed. |
+| `expiry_date` | date | yes |  |  | CHECK > issue_date. |
+| `status` | document_status *(enum)* | no | 'pending' |  | Review outcome. |
+| `reviewed_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin reviewer. |
+| `reviewed_at` | timestamp with time zone | yes |  |  | Review instant. |
+| `uploaded_at` | timestamp with time zone | no | now() |  | Upload instant. |
+
+**CHECK rules:** `(((expiry_date IS NULL) OR (issue_date IS NULL) OR (expiry_date > issue_date)))`
+
+**Indexes:** `idx_vehicle_docs ON vehicle_documents (vehicle_id, doc_type, uploaded_at DESC)`
+
+
+### `driver_availability`
+
+The hot 1:1 row: live status + last GPS fix, rewritten every few seconds. Isolated from driver_profiles so the heartbeat write-storm never touches stable data. Auto-created by trigger.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `driver_id` | bigint | no |  | **PK**; FK → `driver_profiles.user_id` (CASCADE) | PK = FK: identifies the `driver_profiles` row this 1:1 extension belongs to. |
+| `status` | availability_status *(enum)* | no | 'offline' |  | offline / online / on_trip / break — the dispatch gate. |
+| `current_lat` | numeric(9,6) | yes |  |  | Last GPS latitude. |
+| `current_lng` | numeric(9,6) | yes |  |  | Last GPS longitude. |
+| `heading` | numeric(5,2) | yes |  |  | Compass bearing 0–360 for map arrows. |
+| `current_zone_id` | bigint | yes |  | FK → `zones.id` (SET NULL) | Zone derived from the fix; feeds surge supply counts. |
+| `last_ping_at` | timestamp with time zone | yes |  |  | Heartbeat freshness — stale drivers drop from dispatch. |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+**CHECK rules:** `(((heading >= (0)) AND (heading <= (360))))` · `(((current_lat >= ('-90')) AND (current_lat <= (90))))` · `(((current_lng >= ('-180')) AND (current_lng <= (180))))`
+
+**Indexes:** `idx_availability_dispatch ON driver_availability (current_zone_id, status) WHERE (status = 'online'::availability_status)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| driver_id | status | current_lat | current_lng | current_zone_id | heading |
+|---|---|---|---|---|---|
+| 2 | online | 23.780100 | 90.416200 | 1 | 45.00 |
+
+
+
+## Domain 3 — Geography & Pricing
+
+### `cities`
+
+Operational markets (Dhaka, Chattogram, Sylhet). Everything money-related is city-scoped.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | smallint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `name` | character varying(80) | no |  | UNIQUE | Market name; unique. |
+| `country` | character varying(60) | no | 'Bangladesh' |  | Defaults to Bangladesh. |
+| `timezone` | character varying(40) | no | 'Asia/Dhaka' |  | IANA zone for display math. |
+| `currency` | character(3) | no | 'BDT' |  | ISO-4217; BDT. |
+| `is_active` | boolean | no | true |  | Market open/closed switch. |
+| `launched_at` | date | yes |  |  | Go-live date. |
+
+### `zones`
+
+Sub-city geofences (Gulshan, Uttara, Airport…). The unit of surge pricing, driver-supply metrics, and dispatch search.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `city_id` | smallint | no |  | FK → `cities.id` (RESTRICT); UNIQUE(city_id, name) | References `cities`. |
+| `name` | character varying(80) | no |  | UNIQUE(city_id, name) | Zone name, unique within its city. |
+| `zone_type` | zone_type *(enum)* | no | 'regular' |  | regular / airport / station / restricted — airport zones can carry special rules. |
+| `boundary_geojson` | jsonb | yes |  |  | Polygon as GeoJSON (JSONB); PostGIS GEOMETRY is the production upgrade. |
+| `is_active` | boolean | no | true |  | Zone on/off. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**Indexes:** `ux_zone_city_name ON zones (city_id, name)`
+
+
+### `saved_places`
+
+User bookmarks (Home / Work / custom) — the only genuinely reusable location entity; all other coordinates are point-in-time snapshots (doc 01 §13.6).
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE); UNIQUE(user_id, label) | References `users`. |
+| `label` | character varying(40) | no |  | UNIQUE(user_id, label) | Home / Office / custom — unique per user. |
+| `address_text` | character varying(300) | no |  |  | Human address snapshot at save time. |
+| `lat` | numeric(9,6) | no |  |  | Latitude. |
+| `lng` | numeric(9,6) | no |  |  | Longitude. |
+| `is_default` | boolean | no | false |  | Pre-selected pickup suggestion. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((lng >= ('-180')) AND (lng <= (180))))` · `(((lat >= ('-90')) AND (lat <= (90))))`
+
+**Indexes:** `ux_saved_place ON saved_places (user_id, label)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| user_id | label | address_text | lat | lng | is_default |
+|---|---|---|---|---|---|
+| 1 | Home | House 27, Road 27, Dhanmondi, Dhaka | 23.746000 | 90.376000 | t |
+| 1 | Office | Gulshan 2 Circle, Dhaka | 23.792000 | 90.407000 | f |
+
+
+### `pricing_rules`
+
+Effective-dated tariff cards, one per (city, category, validity window). Old rows are never edited — new rows supersede them, which is what keeps historical fares explainable.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `city_id` | smallint | no |  | FK → `cities.id` (RESTRICT); UNIQUE(city_id, category_id, effective_from) | References `cities`. |
+| `category_id` | smallint | no |  | FK → `vehicle_categories.id` (RESTRICT); UNIQUE(city_id, category_id, effective_from) | References `vehicle_categories`. |
+| `base_fare` | numeric(12,2) | no |  |  | Flag-fall charged on every trip (BDT). |
+| `per_km_rate` | numeric(12,2) | no |  |  | Distance component rate. |
+| `per_min_rate` | numeric(12,2) | no |  |  | Time component rate. |
+| `minimum_fare` | numeric(12,2) | no |  |  | Floor applied after computation. |
+| `booking_fee` | numeric(12,2) | no | 0 |  | Fixed platform fee per booking. |
+| `waiting_per_min` | numeric(12,2) | no | 0 |  | Charged beyond the free waiting window. |
+| `free_wait_minutes` | smallint | no | 3 |  | Grace period before waiting charges. |
+| `cancellation_fee` | numeric(12,2) | no | 0 |  | Charged on late passenger cancellation. |
+| `effective_from` | timestamp with time zone | no |  | UNIQUE(city_id, category_id, effective_from) | Tariff becomes active (part of the natural key). |
+| `effective_to` | timestamp with time zone | yes |  |  | Superseded moment; NULL = still current. |
+| `is_active` | boolean | no | true |  | Emergency kill-switch without editing history. |
+| `created_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin who published the tariff. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `((per_km_rate >= (0)))` · `((per_min_rate >= (0)))` · `((minimum_fare >= (0)))` · `((booking_fee >= (0)))` · `((waiting_per_min >= (0)))` · `((cancellation_fee >= (0)))` · `((free_wait_minutes >= 0))` · `(((effective_to IS NULL) OR (effective_to > effective_from)))` · `((base_fare >= (0)))`
+
+**Indexes:** `ux_pricing_natural ON pricing_rules (city_id, category_id, effective_from)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| city_id | category_id | base_fare | per_km_rate | per_min_rate | minimum_fare | booking_fee |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 25.00 | 12.00 | 1.00 | 40.00 | 5.00 |
+| 1 | 2 | 40.00 | 15.00 | 1.50 | 70.00 | 5.00 |
+| 1 | 3 | 60.00 | 22.00 | 2.50 | 120.00 | 10.00 |
+| 1 | 4 | 90.00 | 30.00 | 3.50 | 200.00 | 10.00 |
+
+
+### `surge_pricing`
+
+Temporary zone-scoped multipliers with a validity window and a reason. The multiplier actually applied to a ride is snapshotted onto the request.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `zone_id` | bigint | no |  | FK → `zones.id` (CASCADE) | References `zones`. |
+| `category_id` | smallint | yes |  | FK → `vehicle_categories.id` (CASCADE) | References `vehicle_categories`. |
+| `multiplier` | numeric(3,2) | no |  |  | Fare multiplier; CHECK 1.00–5.00 caps abuse. |
+| `reason` | surge_reason *(enum)* | no |  |  | demand / weather / event / peak_hour — shown to riders. |
+| `starts_at` | timestamp with time zone | no |  |  | Window start. |
+| `ends_at` | timestamp with time zone | no |  |  | Window end (CHECK > start). |
+| `is_active` | boolean | no | true |  | Manual kill-switch. |
+| `created_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin or NULL for automation. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `((ends_at > starts_at))` · `(((multiplier >= 1.00) AND (multiplier <= 5.00)))`
+
+**Indexes:** `idx_surge_lookup ON surge_pricing (zone_id, starts_at, ends_at) WHERE is_active`
+
+
+### `commission_rules`
+
+Effective-dated platform cut per category (optionally per city; NULL city = countrywide). Referenced AND percentage-snapshotted by every earning.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `category_id` | smallint | no |  | FK → `vehicle_categories.id` (RESTRICT); UNIQUEⁿ (category_id, city_id, effective_from) | References `vehicle_categories`. |
+| `city_id` | smallint | yes |  | FK → `cities.id` (RESTRICT); UNIQUEⁿ (category_id, city_id, effective_from) | References `cities`. |
+| `commission_pct` | numeric(5,2) | no |  |  | Platform cut in percent; CHECK 0–100. |
+| `effective_from` | timestamp with time zone | no |  | UNIQUEⁿ (category_id, city_id, effective_from) | Rule activation (natural key part). |
+| `effective_to` | timestamp with time zone | yes |  |  | Superseded; NULL = current. |
+| `created_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Admin who set it — driver income changes are audited. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((effective_to IS NULL) OR (effective_to > effective_from)))` · `(((commission_pct >= (0)) AND (commission_pct <= (100))))`
+
+**Indexes:** `ux_commission_natural ON commission_rules (category_id, city_id, effective_from) NULLS NOT DISTINCT`
+
+
+
+## Domain 4 — Ride Lifecycle
+
+### `ride_requests`
+
+Demand: what the passenger asked for, where, and the exact quote shown before booking. Exists even when no driver is found — that is how lost demand is measured. scheduled_for makes ride scheduling a column, not a table.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `public_id` | uuid | no | auto UUID | UNIQUE | UUID exposed by the API instead of the sequential id — prevents enumeration. |
+| `passenger_id` | bigint | no |  | FK → `passenger_profiles.user_id` (RESTRICT) | Who is asking. |
+| `city_id` | smallint | no |  | FK → `cities.id` (RESTRICT) | Selects the tariff card. |
+| `category_id` | smallint | no |  | FK → `vehicle_categories.id` (RESTRICT) | Requested service tier. |
+| `pickup_lat` | numeric(9,6) | no |  |  | Pickup latitude (snapshot). |
+| `pickup_lng` | numeric(9,6) | no |  |  | Pickup longitude (snapshot). |
+| `pickup_address` | character varying(300) | no |  |  | Geocoder text at request time — deliberately embedded (doc 01 §13.6). |
+| `pickup_zone_id` | bigint | yes |  | FK → `zones.id` (SET NULL) | Zone containing pickup; feeds surge + heatmaps. |
+| `dropoff_lat` | numeric(9,6) | no |  |  | Destination latitude. |
+| `dropoff_lng` | numeric(9,6) | no |  |  | Destination longitude. |
+| `dropoff_address` | character varying(300) | no |  |  | Destination text snapshot. |
+| `est_distance_km` | numeric(7,2) | yes |  |  | Routing-engine estimate behind the quote. |
+| `est_duration_min` | smallint | yes |  |  | Estimated minutes. |
+| `est_fare` | numeric(12,2) | yes |  |  | THE QUOTE — what the passenger was promised. |
+| `surge_multiplier` | numeric(3,2) | no | 1.00 |  | Multiplier applied to the quote (frozen). |
+| `payment_intent` | pay_method_type *(enum)* | no | 'cash' |  | How the passenger plans to pay (may differ from final payment). |
+| `promo_code_id` | bigint | yes |  | FK → `promo_codes.id` (SET NULL) | Promo reserved at booking; redeemed on completion. |
+| `women_only` | boolean | no | false |  | Restrict matching to female drivers. |
+| `scheduled_for` | timestamp with time zone | yes |  |  | Future dispatch time; NULL = ride now. |
+| `status` | request_status *(enum)* | no | 'pending' |  | pending → searching → matched \| expired \| cancelled. |
+| `requested_at` | timestamp with time zone | no | now() |  | Demand timestamp. |
+| `expires_at` | timestamp with time zone | yes |  |  | Search deadline before auto-expiry. |
+| `cancelled_at` | timestamp with time zone | yes |  |  | Passenger cancelled while searching. |
+
+**CHECK rules:** `(((pickup_lat >= ('-90')) AND (pickup_lat <= (90))))` · `(((pickup_lng >= ('-180')) AND (pickup_lng <= (180))))` · `(((dropoff_lat >= ('-90')) AND (dropoff_lat <= (90))))` · `(((dropoff_lng >= ('-180')) AND (dropoff_lng <= (180))))` · `((est_distance_km >= (0)))` · `((est_duration_min >= 0))` · `(((surge_multiplier >= 1.00) AND (surge_multiplier <= 5.00)))` · `((est_fare >= (0)))`
+
+**Indexes:** `idx_requests_passenger ON ride_requests (passenger_id, requested_at DESC)` · `idx_requests_open ON ride_requests (city_id, requested_at) WHERE (status = ANY (ARRAY['pending'::request_status, 'searching'::request_status]))`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | passenger_id | pickup_address | dropoff_address | est_fare | surge_multiplier | payment_intent | status |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | Dhanmondi 27 | Gulshan 2 | 437.80 | 1.00 | wallet | matched |
+
+
+### `ride_offers`
+
+The dispatch log — associative entity between requests and drivers. One row per driver offered per request; the source of acceptance-rate and time-to-match analytics.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `request_id` | bigint | no |  | FK → `ride_requests.id` (CASCADE); UNIQUE(request_id, driver_id) | The request being dispatched. |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (CASCADE); UNIQUE(request_id, driver_id) | Driver who received the offer. |
+| `round` | smallint | no | 1 |  | Dispatch wave (nearest first, widening). |
+| `driver_distance_km` | numeric(6,2) | yes |  |  | Driver-to-pickup distance at offer time — dispatch evidence. |
+| `response` | offer_response *(enum)* | no | 'pending' |  | pending / accepted / rejected / timed_out / withdrawn. |
+| `offered_at` | timestamp with time zone | no | now() |  | Offer sent. |
+| `responded_at` | timestamp with time zone | yes |  |  | Driver answered. |
+
+**CHECK rules:** `((driver_distance_km >= (0)))` · `((round >= 1))`
+
+**Indexes:** `ux_offer_once ON ride_offers (request_id, driver_id)` · `idx_offers_driver ON ride_offers (driver_id, offered_at DESC)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | request_id | driver_id | round | driver_distance_km | response |
+|---|---|---|---|---|---|
+| 1 | 1 | 2 | 1 | 1.20 | accepted |
+
+
+### `trips`
+
+Fulfillment: created on acceptance. Owns the real timeline, the actual route stats, and the immutable fare-breakdown snapshot whose arithmetic is CHECK-enforced.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_code` | character varying(20) | no | auto-number (sequence) | UNIQUE | Human-readable code (JT-2026-000142) minted from a sequence. |
+| `request_id` | bigint | no |  | FK → `ride_requests.id` (RESTRICT); UNIQUE | Origin request; UNIQUE = one trip per request. |
+| `passenger_id` | bigint | no |  | FK → `passenger_profiles.user_id` (RESTRICT) | Rider (direct FK keeps joins cheap). |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (RESTRICT) | Driver who fulfilled. |
+| `vehicle_id` | bigint | no |  | FK → `vehicles.id` (RESTRICT) | Physical vehicle used (insurance/disputes). |
+| `status` | trip_status *(enum)* | no | 'assigned' |  | assigned → arrived → in_progress → completed \| cancelled. |
+| `assigned_at` | timestamp with time zone | no | now() |  | Acceptance instant. |
+| `arrived_at` | timestamp with time zone | yes |  |  | Driver at pickup. |
+| `started_at` | timestamp with time zone | yes |  |  | Ride began. |
+| `completed_at` | timestamp with time zone | yes |  |  | Ride ended. |
+| `actual_distance_km` | numeric(7,2) | yes |  |  | Measured route distance. |
+| `actual_duration_min` | integer | yes |  |  | Measured minutes. |
+| `base_fare` | numeric(12,2) | no | 0 |  | Snapshot: flag-fall applied. |
+| `distance_fare` | numeric(12,2) | no | 0 |  | Snapshot: km × rate. |
+| `time_fare` | numeric(12,2) | no | 0 |  | Snapshot: minutes × rate. |
+| `waiting_fare` | numeric(12,2) | no | 0 |  | Snapshot: waiting charges. |
+| `surge_amount` | numeric(12,2) | no | 0 |  | Snapshot: extra from surge. |
+| `booking_fee` | numeric(12,2) | no | 0 |  | Snapshot: platform fee. |
+| `discount_amount` | numeric(12,2) | no | 0 |  | Promo discount applied. |
+| `total_fare` | numeric(12,2) | no | 0 |  | CHECK-enforced sum of all components. |
+| `currency` | character(3) | no | 'BDT' |  | ISO-4217 code; 'BDT' at launch. |
+| `payment_status` | character varying(10) | no | 'unpaid' |  | unpaid / paid / refunded — quick filter; detail in payments. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+**CHECK rules:** `((distance_fare >= (0)))` · `((time_fare >= (0)))` · `((waiting_fare >= (0)))` · `((surge_amount >= (0)))` · `((booking_fee >= (0)))` · `((discount_amount >= (0)))` · `((total_fare >= (0)))` · `(((payment_status)= ANY ((ARRAY['unpaid', 'paid', 'refunded']))))` · `((total_fare = ((((((base_fare + distance_fare) + time_fare) + waiting_fare) + surge_amount) + booking_fee) - discount_amount)))` · `(((arrived_at IS NULL) OR (arrived_at >= assigned_at)))` · `(((started_at IS NULL) OR (arrived_at IS NULL) OR (started_at >= arrived_at)))` · `(((completed_at IS NULL) OR (started_at IS NULL) OR (completed_at >= started_at)))` · `((actual_distance_km >= (0)))` · `((actual_duration_min >= 0))` · `((base_fare >= (0)))`
+
+**Indexes:** `idx_trips_driver ON trips (driver_id, created_at DESC)` · `idx_trips_passenger ON trips (passenger_id, created_at DESC)` · `idx_trips_live ON trips (status) WHERE (status = ANY (ARRAY['assigned'::trip_status, 'arrived'::trip_status, 'in_progress'::trip_status]))`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| trip_code | status | actual_distance_km | base_fare | distance_fare | time_fare | booking_fee | discount_amount | total_fare | payment_status |
+|---|---|---|---|---|---|---|---|---|---|
+| JT-2026-000001 | completed | 12.40 | 60.00 | 272.80 | 95.00 | 10.00 | 50.00 | 387.80 | paid |
+
+
+### `trip_stops`
+
+Weak entity: ordered intermediate stops for multi-stop rides. UNIQUE (trip_id, stop_order) is the 2NF lesson enforced.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (CASCADE); UNIQUE(trip_id, stop_order) | References `trips`. |
+| `stop_order` | smallint | no |  | UNIQUE(trip_id, stop_order) | 1-based position; UNIQUE with trip. |
+| `lat` | numeric(9,6) | no |  |  | Stop latitude. |
+| `lng` | numeric(9,6) | no |  |  | Stop longitude. |
+| `address_text` | character varying(300) | yes |  |  | Stop address snapshot. |
+| `arrived_at` | timestamp with time zone | yes |  |  | When the driver reached this stop. |
+
+**CHECK rules:** `(((lng >= ('-180')) AND (lng <= (180))))` · `((stop_order >= 1))` · `(((lat >= ('-90')) AND (lat <= (90))))`
+
+**Indexes:** `ux_trip_stop ON trip_stops (trip_id, stop_order)`
+
+
+### `trip_status_history`
+
+Append-only audit of every trip state change, written by trigger — includes who caused it via the app.user_id session variable. Settles 'driver never came' disputes.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (CASCADE) | References `trips`. |
+| `from_status` | trip_status *(enum)* | yes |  |  | Previous state; NULL on the birth row. |
+| `to_status` | trip_status *(enum)* | no |  |  | New state. |
+| `changed_by` | bigint | yes |  | FK → `users.id` (SET NULL) | User responsible; NULL = system (from app.user_id session var). |
+| `note` | character varying(300) | yes |  |  | Optional context. |
+| `changed_at` | timestamp with time zone | no | now() |  | Transition instant. |
+
+**Indexes:** `idx_status_history_trip ON trip_status_history (trip_id, changed_at)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| trip_id | from_status | to_status | changed_by | changed_at |
+|---|---|---|---|---|
+| 1 | ∅ | assigned | ∅ | 12:07:50 |
+| 1 | assigned | completed | ∅ | 12:07:50 |
+
+
+### `trip_location_pings`
+
+GPS breadcrumb trail (~1 row / 4 s per live trip). Range-partitioned by month; powers live tracking, route replay, and fare audits.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no | auto-number (sequence) | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (CASCADE) | References `trips`. |
+| `lat` | numeric(9,6) | no |  |  | Ping latitude. |
+| `lng` | numeric(9,6) | no |  |  | Ping longitude. |
+| `speed_kmh` | numeric(5,1) | yes |  |  | Instant speed — feeds safety and ETA models. |
+| `heading` | numeric(5,2) | yes |  |  | Bearing 0–360. |
+| `recorded_at` | timestamp with time zone | no | now() | **PK** | Ping time — the monthly partition key. |
+
+**CHECK rules:** `(((heading >= (0)) AND (heading <= (360))))` · `(((lng >= ('-180')) AND (lng <= (180))))` · `((speed_kmh >= (0)))` · `(((lat >= ('-90')) AND (lat <= (90))))`
+
+**Indexes:** `idx_pings_trip ON ONLY trip_location_pings (trip_id, recorded_at)`
+
+
+### `trip_cancellations`
+
+1:1 weak entity holding cancellation details only for trips that were cancelled — instead of six NULL columns on every completed trip.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `trip_id` | bigint | no |  | **PK**; FK → `trips.id` (CASCADE) | PK = FK: at most one cancellation per trip. |
+| `cancelled_by_role` | actor_role *(enum)* | no |  |  | passenger / driver / system / admin. |
+| `cancelled_by` | bigint | yes |  | FK → `users.id` (SET NULL) | The user, when a human did it. |
+| `reason_code` | cancel_reason *(enum)* | no |  |  | Structured reason for analytics. |
+| `reason_text` | character varying(300) | yes |  |  | Free-text elaboration. |
+| `fee_charged` | numeric(12,2) | no | 0 |  | Cancellation fee actually applied. |
+| `cancelled_at` | timestamp with time zone | no | now() |  | When. |
+
+**CHECK rules:** `((fee_charged >= (0)))`
+
+
+### `trip_messages`
+
+In-ride chat between passenger and driver, scoped to the trip and retained for safety investigations.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (CASCADE) | References `trips`. |
+| `sender_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Author (passenger or driver). |
+| `message_type` | message_type *(enum)* | no | 'text' |  | text / quick_reply / location. |
+| `body` | text | no |  |  | Message content — retained for safety review. |
+| `sent_at` | timestamp with time zone | no | now() |  | Sent instant. |
+| `read_at` | timestamp with time zone | yes |  |  | Read receipt; NULL = unread. |
+
+**Indexes:** `idx_trip_messages ON trip_messages (trip_id, sent_at)`
+
+
+
+## Domain 5 — Payments, Wallet & Settlement
+
+### `payment_methods`
+
+Saved payment instruments. Stores only the gateway token and a display mask — real card/bKash numbers never touch this database.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE) | References `users`. |
+| `method_type` | pay_method_type *(enum)* | no |  |  | bkash / nagad / card (cash & wallet are not saved instruments — CHECK). |
+| `provider` | pay_gateway *(enum)* | no |  |  | Gateway that tokenized it. |
+| `display_label` | character varying(60) | no |  |  | Mask shown in UI: 'bKash ****1234'. |
+| `gateway_token` | text | no |  |  | Opaque gateway reference — the only 'number' we hold. |
+| `is_default` | boolean | no | false |  | One default per user (partial unique index). |
+| `is_verified` | boolean | no | false |  | Passed a verification charge/OTP. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `deleted_at` | timestamp with time zone | yes |  |  | Soft-delete marker; NULL = live. |
+
+**CHECK rules:** `((method_type = ANY (ARRAY['bkash', 'nagad', 'card'])))`
+
+**Indexes:** `ux_payment_method_default ON payment_methods (user_id) WHERE (is_default AND (deleted_at IS NULL))`
+
+
+### `payments`
+
+Every money-in attempt: trip payments and wallet top-ups (purpose discriminator). Many attempts may exist; a partial unique index guarantees at most one success per trip.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `public_id` | uuid | no | auto UUID | UNIQUE | UUID exposed by the API instead of the sequential id — prevents enumeration. |
+| `purpose` | pay_purpose *(enum)* | no |  |  | trip payment or wallet top-up — CHECK ties trip_id presence to it. |
+| `trip_id` | bigint | yes |  | FK → `trips.id` (RESTRICT) | Paid trip; NULL for top-ups. |
+| `payer_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Accountable payer. |
+| `payment_method_id` | bigint | yes |  | FK → `payment_methods.id` (SET NULL) | Saved instrument used; NULL for cash/wallet/one-off. |
+| `method_type` | pay_method_type *(enum)* | no |  |  | cash / wallet / bkash / nagad / card as actually used. |
+| `gateway` | pay_gateway *(enum)* | no | 'none' |  | none / bkash / nagad / sslcommerz. |
+| `gateway_txn_id` | character varying(100) | yes |  | UNIQUE | Gateway's reference (unique when present) — reconciliation anchor. |
+| `amount` | numeric(12,2) | no |  |  | Charged amount; CHECK > 0. |
+| `currency` | character(3) | no | 'BDT' |  | ISO-4217 code; 'BDT' at launch. |
+| `status` | pay_status *(enum)* | no | 'initiated' |  | initiated → pending → succeeded \| failed \| refunded. |
+| `failure_reason` | character varying(300) | yes |  |  | Gateway error text for support. |
+| `refund_amount` | numeric(12,2) | yes |  |  | CHECK ≤ amount. |
+| `initiated_at` | timestamp with time zone | no | now() |  | Attempt started. |
+| `completed_at` | timestamp with time zone | yes |  |  | Terminal state reached. |
+| `refunded_at` | timestamp with time zone | yes |  |  | Refund executed. |
+
+**CHECK rules:** `((amount > (0)))` · `(((purpose = 'trip') = (trip_id IS NOT NULL)))` · `(((refund_amount IS NULL) OR (refund_amount > (0))))` · `(((refund_amount IS NULL) OR (refund_amount <= amount)))` · `(((method_type <> 'cash') OR ((gateway = 'none') AND (payment_method_id IS NULL))))`
+
+**Indexes:** `ux_payment_one_success ON payments (trip_id) WHERE ((status = 'succeeded'::pay_status) AND (purpose = 'trip'::pay_purpose))` · `idx_payments_payer ON payments (payer_id, initiated_at DESC)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | purpose | trip_id | method_type | gateway | gateway_txn_id | amount | status |
+|---|---|---|---|---|---|---|---|
+| 1 | trip | 1 | bkash | bkash | BKA-8827 | 387.80 | succeeded |
+
+
+### `wallets`
+
+Exactly one BDT wallet per user, auto-created by trigger. balance is a cache of the ledger; driver balances may legally go negative (commission owed from cash trips).
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE); UNIQUE | UNIQUE — exactly one wallet per user; auto-created by trigger. |
+| `balance` | numeric(12,2) | no | 0 |  | Cached ledger sum; drivers may go negative (cash-trip commission owed). |
+| `currency` | character(3) | no | 'BDT' |  | ISO-4217 code; 'BDT' at launch. |
+| `status` | wallet_status *(enum)* | no | 'active' |  | active / frozen — frozen blocks spending. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `updated_at` | timestamp with time zone | no | now() |  | Last change instant — trigger-maintained. |
+
+### `wallet_transactions`
+
+The append-only ledger — the financial truth. balance_after is stamped by trigger inside the same transaction; idempotency_key makes retried gateway webhooks harmless. UPDATE/DELETE are physically rejected.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `wallet_id` | bigint | no |  | FK → `wallets.id` (RESTRICT) | Ledgered wallet. |
+| `txn_type` | wallet_txn_type *(enum)* | no |  |  | Business meaning: topup, trip_payment, trip_earning, commission, withdrawal, refund, promo_credit, referral_bonus, adjustment. |
+| `direction` | txn_direction *(enum)* | no |  |  | credit or debit — amount is always positive. |
+| `amount` | numeric(12,2) | no |  |  | Magnitude; CHECK > 0. |
+| `balance_after` | numeric(12,2) | no |  |  | Running balance stamped by trigger — the bank-statement column. |
+| `reference_type` | wallet_ref_type *(enum)* | yes |  |  | What caused it (trip/payment/withdrawal/promo/referral/manual). |
+| `reference_id` | bigint | yes |  |  | Row id in the referenced table (pairs with reference_type — CHECK). |
+| `idempotency_key` | character varying(80) | no |  | UNIQUE | UNIQUE — a retried webhook cannot double-post. |
+| `note` | character varying(300) | yes |  |  | Human annotation. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `((amount > (0)))` · `(((reference_type IS NULL) = (reference_id IS NULL)))`
+
+**Indexes:** `idx_wallet_txn ON wallet_transactions (wallet_id, created_at DESC)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| id | wallet_id | txn_type | direction | amount | balance_after | idempotency_key |
+|---|---|---|---|---|---|---|
+| 1 | 1 | topup | credit | 500.00 | 500.00 | demo-1 |
+| 2 | 1 | trip_payment | debit | 187.50 | 312.50 | demo-2 |
+| 3 | 2 | trip_earning | credit | 329.63 | 329.63 | earning-trip-1 |
+
+
+### `promo_codes`
+
+Campaigns: percentage promos and fixed-amount coupons in one table (promo_type). Scope by city/category, cap by usage limits and validity window.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `code` | character varying(20) | no |  | UNIQUE | Uppercase code (CHECK), unique. |
+| `description` | character varying(200) | yes |  |  | Human-readable explanation shown in the UI. |
+| `promo_type` | promo_type *(enum)* | no |  |  | percentage or fixed_amount — 'coupons' are the latter. |
+| `value` | numeric(12,2) | no |  |  | Percent (≤100, CHECK) or taka amount. |
+| `max_discount` | numeric(12,2) | yes |  |  | Cap for percentage promos. |
+| `min_fare` | numeric(12,2) | no | 0 |  | Minimum fare to qualify. |
+| `usage_limit_total` | integer | yes |  |  | Global redemption budget; NULL = unlimited. |
+| `usage_limit_per_user` | smallint | no | 1 |  | Per-user cap, enforced by counting redemptions. |
+| `first_ride_only` | boolean | no | false |  | New-user promos. |
+| `city_id` | smallint | yes |  | FK → `cities.id` (SET NULL) | Scope; NULL = all cities. |
+| `category_id` | smallint | yes |  | FK → `vehicle_categories.id` (SET NULL) | Scope; NULL = all categories. |
+| `valid_from` | timestamp with time zone | no |  |  | Window start. |
+| `valid_until` | timestamp with time zone | no |  |  | Window end (CHECK > start). |
+| `is_active` | boolean | no | true |  | Enabled/disabled switch without deleting history. |
+| `created_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Marketing admin. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `((value > (0)))` · `(((max_discount IS NULL) OR (max_discount > (0))))` · `((min_fare >= (0)))` · `(((usage_limit_total IS NULL) OR (usage_limit_total > 0)))` · `((usage_limit_per_user > 0))` · `(((code)= upper((code))))` · `((valid_until > valid_from))` · `(((promo_type <> 'percentage') OR (value <= (100))))`
+
+
+### `promo_redemptions`
+
+Associative record of promo × user × trip. Usage limits are enforced by counting these rows; one redemption per trip.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `promo_code_id` | bigint | no |  | FK → `promo_codes.id` (RESTRICT) | Which campaign. |
+| `user_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Who redeemed. |
+| `trip_id` | bigint | no |  | FK → `trips.id` (RESTRICT); UNIQUE | UNIQUE — one discount per trip; redemption happens at completion. |
+| `discount_amount` | numeric(12,2) | no |  |  | Actual taka discounted. |
+| `redeemed_at` | timestamp with time zone | no | now() |  | When. |
+
+**CHECK rules:** `((discount_amount > (0)))`
+
+**Indexes:** `idx_redemptions_promo_user ON promo_redemptions (promo_code_id, user_id)`
+
+
+### `receipts`
+
+Passenger-facing numbered financial document per completed trip. Self-contained totals (CHECK-verified) so the document never depends on later state.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `receipt_no` | character varying(24) | no | auto-number (sequence) | UNIQUE | Public document number (JTR-2026-000142) from a sequence. |
+| `trip_id` | bigint | no |  | FK → `trips.id` (RESTRICT); UNIQUE | UNIQUE — one receipt per trip. |
+| `issued_to` | bigint | no |  | FK → `users.id` (RESTRICT) | The paying passenger. |
+| `subtotal` | numeric(12,2) | no |  |  | Fare before discount. |
+| `discount` | numeric(12,2) | no | 0 |  | Promo applied. |
+| `total` | numeric(12,2) | no |  |  | CHECK: subtotal − discount. |
+| `pdf_url` | text | yes |  |  | Rendered PDF location. |
+| `issued_at` | timestamp with time zone | no | now() |  | Issue instant. |
+
+**CHECK rules:** `((total = (subtotal - discount)))` · `((subtotal >= (0)))` · `((discount >= (0)))` · `((total >= (0)))`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| receipt_no | trip_id | subtotal | discount | total |
+|---|---|---|---|---|
+| JTR-2026-000001 | 1 | 437.80 | 50.00 | 387.80 |
+
+
+### `driver_earnings`
+
+Per-trip money split: gross fare, commission (rule FK + frozen percentage), net. RESTRICT everywhere — earnings are undeletable history.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (RESTRICT); UNIQUE | UNIQUE — one earning row per completed trip. |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (RESTRICT) | Earner. |
+| `gross_fare` | numeric(12,2) | no |  |  | Trip total before platform cut. |
+| `commission_rule_id` | bigint | no |  | FK → `commission_rules.id` (RESTRICT) | Rule applied (lineage). |
+| `commission_pct` | numeric(5,2) | no |  |  | FROZEN percentage actually applied (doc 02 §6-C2). |
+| `commission_amount` | numeric(12,2) | no |  |  | Taka taken by platform. |
+| `net_earning` | numeric(12,2) | no |  |  | CHECK: gross − commission. |
+| `settlement_status` | settlement_status *(enum)* | no | 'pending' |  | pending / settled / withheld. |
+| `invoice_id` | bigint | yes |  | FK → `invoices.id` (SET NULL) | Settlement statement; NULL until settled. |
+| `earned_at` | timestamp with time zone | no | now() |  | Trip completion. |
+| `settled_at` | timestamp with time zone | yes |  |  | Paid out / invoiced. |
+
+**CHECK rules:** `((net_earning = (gross_fare - commission_amount)))` · `((gross_fare >= (0)))` · `(((commission_pct >= (0)) AND (commission_pct <= (100))))` · `((commission_amount >= (0)))`
+
+**Indexes:** `idx_earnings_driver ON driver_earnings (driver_id, earned_at DESC)` · `idx_earnings_unsettled ON driver_earnings (driver_id) WHERE (settlement_status = 'pending'::settlement_status)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| trip_id | driver_id | gross_fare | commission_pct | commission_amount | net_earning | settlement_status |
+|---|---|---|---|---|---|---|
+| 1 | 2 | 387.80 | 15.00 | 58.17 | 329.63 | pending |
+
+
+### `driver_payout_accounts`
+
+Where withdrawals land: bKash / Nagad / bank, stored masked and verified before first payout.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (CASCADE) | References `driver_profiles`. |
+| `account_type` | payout_account_type *(enum)* | no |  |  | bkash / nagad / bank. |
+| `account_name` | character varying(120) | no |  |  | Account holder name. |
+| `account_no_masked` | character varying(40) | no |  |  | Masked number — full number lives at the gateway only. |
+| `bank_name` | character varying(120) | yes |  |  | Required when type = bank (CHECK). |
+| `is_default` | boolean | no | false |  | One default per driver (partial unique). |
+| `is_verified` | boolean | no | false |  | Micro-deposit/OTP verified. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((account_type <> 'bank') OR (bank_name IS NOT NULL)))`
+
+**Indexes:** `ux_payout_default ON driver_payout_accounts (driver_id) WHERE is_default`
+
+
+### `withdrawals`
+
+Driver cash-out requests with an approval workflow (requested → approved → processing → paid) and finance-admin attribution.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `public_id` | uuid | no | auto UUID | UNIQUE | UUID exposed by the API instead of the sequential id — prevents enumeration. |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (RESTRICT) | Requester. |
+| `payout_account_id` | bigint | no |  | FK → `driver_payout_accounts.id` (RESTRICT) | Destination account. |
+| `amount` | numeric(12,2) | no |  |  | Requested taka; CHECK > 0. |
+| `fee` | numeric(12,2) | no | 0 |  | Payout fee deducted. |
+| `status` | withdrawal_status *(enum)* | no | 'requested' |  | requested → approved → processing → paid \| rejected \| failed. |
+| `gateway_ref` | character varying(100) | yes |  |  | Disbursement reference from bKash/bank. |
+| `processed_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Finance admin who acted. |
+| `rejection_reason` | character varying(300) | yes |  |  | Shown to the driver. |
+| `requested_at` | timestamp with time zone | no | now() |  | Asked. |
+| `processed_at` | timestamp with time zone | yes |  |  | Finished. |
+
+**CHECK rules:** `((amount > (0)))` · `((fee >= (0)))`
+
+**Indexes:** `idx_withdrawals_driver ON withdrawals (driver_id, requested_at DESC)` · `idx_withdrawals_queue ON withdrawals (status) WHERE (status = ANY (ARRAY['requested'::withdrawal_status, 'approved'::withdrawal_status, 'processing'::withdrawal_status]))`
+
+
+### `invoices`
+
+Weekly settlement statements grouping a driver's earnings for a period; totals are frozen document facts.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `invoice_no` | character varying(28) | no | auto-number (sequence) | UNIQUE | Statement number (INV-2026-000001). |
+| `driver_id` | bigint | no |  | FK → `driver_profiles.user_id` (RESTRICT); UNIQUE(driver_id, period_start, period_end) | Statement owner. |
+| `period_start` | date | no |  | UNIQUE(driver_id, period_start, period_end) | Settlement window start. |
+| `period_end` | date | no |  | UNIQUE(driver_id, period_start, period_end) | Window end (CHECK ≥ start). |
+| `trips_count` | integer | no | 0 |  | Trips settled in this statement. |
+| `total_gross` | numeric(12,2) | no | 0 |  | Sum of gross fares. |
+| `total_commission` | numeric(12,2) | no | 0 |  | Sum of platform cuts. |
+| `total_net` | numeric(12,2) | no | 0 |  | Sum of net earnings. |
+| `status` | invoice_status *(enum)* | no | 'draft' |  | draft / finalized / paid. |
+| `pdf_url` | text | yes |  |  | Rendered statement. |
+| `generated_at` | timestamp with time zone | no | now() |  | Generation instant. |
+
+**CHECK rules:** `((total_gross >= (0)))` · `((trips_count >= 0))` · `((total_commission >= (0)))` · `((period_end >= period_start))`
+
+**Indexes:** `ux_invoice_period ON invoices (driver_id, period_start, period_end)`
+
+
+
+## Domain 6 — Engagement & Safety
+
+### `ratings`
+
+Bidirectional trip ratings: up to two rows per trip (passenger→driver, driver→passenger). The 'review' is the optional comment; aggregates are cached on profiles by trigger.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (CASCADE); UNIQUE(trip_id, rater_id) | Rated trip; UNIQUE with rater ⇒ ≤2 rows per trip. |
+| `rater_id` | bigint | no |  | FK → `users.id` (CASCADE); UNIQUE(trip_id, rater_id) | Who scored (CHECK ≠ ratee). |
+| `ratee_id` | bigint | no |  | FK → `users.id` (CASCADE) | Who was scored — aggregates cache onto their profile. |
+| `rater_role` | actor_role *(enum)* | no |  |  | passenger or driver (enum narrowed by CHECK). |
+| `score` | smallint | no |  |  | 1–5 (CHECK). |
+| `comment` | text | yes |  |  | The optional 'review' text. |
+| `tags` | jsonb | yes |  |  | Structured chips like clean_car (JSONB, opaque). |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((score >= 1) AND (score <= 5)))` · `((rater_id <> ratee_id))` · `((rater_role = ANY (ARRAY['passenger', 'driver'])))`
+
+**Indexes:** `ux_rating_once ON ratings (trip_id, rater_id)` · `idx_ratings_ratee ON ratings (ratee_id, created_at DESC)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| trip_id | rater_id | ratee_id | rater_role | score | comment |
+|---|---|---|---|---|---|
+| 1 | 1 | 2 | passenger | 5 | Good driving |
+
+
+### `favorite_drivers`
+
+Associative bookmark: passengers ↔ drivers M:N. Dispatch can prefer favorites.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `passenger_id` | bigint | no |  | **PK**; FK → `passenger_profiles.user_id` (CASCADE) | Bookmarker (composite PK part). |
+| `driver_id` | bigint | no |  | **PK**; FK → `driver_profiles.user_id` (CASCADE) | Bookmarked driver (composite PK part). |
+| `created_at` | timestamp with time zone | no | now() |  | When favorited. |
+
+**CHECK rules:** `((passenger_id <> driver_id))`
+
+
+### `referrals`
+
+Growth loop: who invited whom. Reward unlocks only when the referee completes a qualifying first trip (anti-fraud); referee can be referred exactly once.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `referrer_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Inviter. |
+| `referee_id` | bigint | no |  | FK → `users.id` (RESTRICT); UNIQUE | UNIQUE — a person can be referred once, ever. |
+| `code_used` | character varying(12) | no |  |  | Referral code entered at signup. |
+| `status` | referral_status *(enum)* | no | 'pending' |  | pending → qualified → rewarded. |
+| `qualifying_trip_id` | bigint | yes |  | FK → `trips.id` (SET NULL) | Referee's first completed trip (anti-fraud gate). |
+| `referrer_bonus` | numeric(12,2) | no | 0 |  | Taka credited to inviter's wallet. |
+| `referee_bonus` | numeric(12,2) | no | 0 |  | Taka credited to the new user. |
+| `rewarded_at` | timestamp with time zone | yes |  |  | When bonuses were paid. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `((referee_bonus >= (0)))` · `((referrer_bonus >= (0)))` · `((referrer_id <> referee_id))`
+
+
+### `emergency_contacts`
+
+SOS fan-out list per user — who gets alerted, in priority order.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE); UNIQUE(user_id, phone) | References `users`. |
+| `name` | character varying(120) | no |  |  | Contact person. |
+| `phone` | character varying(20) | no |  | UNIQUE(user_id, phone) | UNIQUE per user. |
+| `relationship` | character varying(40) | yes |  |  | e.g. Brother, Mother. |
+| `priority` | smallint | no | 1 |  | 1–5 alert order (CHECK). |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**CHECK rules:** `(((priority >= 1) AND (priority <= 5)))`
+
+**Indexes:** `ux_emergency_contact ON emergency_contacts (user_id, phone)`
+
+
+### `sos_alerts`
+
+Panic-button events with their own workflow and frozen trigger-time coordinates. trip_id is nullable: the button must also work outside a ride.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `trip_id` | bigint | yes |  | FK → `trips.id` (RESTRICT) | Trip context; NULL when triggered outside a ride. |
+| `triggered_by` | bigint | no |  | FK → `users.id` (RESTRICT) | Who pressed the button — never orphaned (RESTRICT). |
+| `lat` | numeric(9,6) | yes |  |  | Frozen latitude at trigger time. |
+| `lng` | numeric(9,6) | yes |  |  | Frozen longitude. |
+| `status` | sos_status *(enum)* | no | 'active' |  | active → acknowledged → resolved \| false_alarm. |
+| `acknowledged_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Safety-team responder. |
+| `triggered_at` | timestamp with time zone | no | now() |  | Alert instant. |
+| `resolved_at` | timestamp with time zone | yes |  |  | Closure instant. |
+| `resolution_note` | character varying(300) | yes |  |  | Outcome summary. |
+
+**CHECK rules:** `(((lat >= ('-90')) AND (lat <= (90))))` · `(((lng >= ('-180')) AND (lng <= (180))))`
+
+**Indexes:** `idx_sos_open ON sos_alerts (triggered_at DESC) WHERE (status = 'active'::sos_status)`
+
+
+### `notifications`
+
+Multi-channel outbox + in-app inbox. Unread = read_at IS NULL, served by a partial index.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `user_id` | bigint | no |  | FK → `users.id` (CASCADE) | References `users`. |
+| `category` | notif_category *(enum)* | no |  |  | ride / payment / promo / document / safety / system. |
+| `title` | character varying(150) | no |  |  | Short headline. |
+| `body` | text | yes |  |  | Full text. |
+| `payload` | jsonb | yes |  |  | JSONB deep-link data for the app. |
+| `channel` | notif_channel *(enum)* | no | 'in_app' |  | in_app / push / sms / email. |
+| `read_at` | timestamp with time zone | yes |  |  | NULL = unread (partial index serves the badge). |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**Indexes:** `idx_notifications_unread ON notifications (user_id, created_at DESC) WHERE (read_at IS NULL)`
+
+
+**Sample rows** *(genuine SELECT output from the validation database)*:
+
+| user_id | category | title | channel | read_at |
+|---|---|---|---|---|
+| 1 | ride | Trip completed | push | ∅ |
+| 2 | payment | Earning added | push | ∅ |
+
+
+### `user_reports`
+
+People-reporting-people moderation queue (distinct from money disputes), with repeat-offender visibility on the reported side.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `reporter_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Complainant (CHECK ≠ reported). |
+| `reported_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Subject — repeat offenders surface here. |
+| `trip_id` | bigint | yes |  | FK → `trips.id` (SET NULL) | Optional trip evidence link. |
+| `category` | report_category *(enum)* | no |  |  | safety / harassment / fraud / behavior / other. |
+| `description` | text | yes |  |  | Complaint text. |
+| `status` | report_status *(enum)* | no | 'open' |  | open → investigating → action_taken \| dismissed. |
+| `handled_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Moderating admin. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `resolved_at` | timestamp with time zone | yes |  |  | Closure. |
+
+**CHECK rules:** `((reporter_id <> reported_id))`
+
+**Indexes:** `idx_reports_reported ON user_reports (reported_id, created_at DESC)`
+
+
+
+## Domain 7 — Support & Governance
+
+### `support_tickets`
+
+Helpdesk cases with category, priority, assignment, and SLA timestamps.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `ticket_no` | character varying(20) | no | auto-number (sequence) | UNIQUE | Public number (TKT-2026-00001). |
+| `user_id` | bigint | no |  | FK → `users.id` (RESTRICT) | Case owner. |
+| `trip_id` | bigint | yes |  | FK → `trips.id` (SET NULL) | Optional trip link (SET NULL). |
+| `category` | ticket_category *(enum)* | no |  |  | payment / ride / account / driver_conduct / app_issue / other. |
+| `subject` | character varying(200) | no |  |  | One-line summary. |
+| `description` | text | yes |  |  | Opening description. |
+| `status` | ticket_status *(enum)* | no | 'open' |  | open → in_progress → waiting_user → resolved → closed. |
+| `priority` | ticket_priority *(enum)* | no | 'medium' |  | low / medium / high / urgent — drives SLA queues. |
+| `assigned_to` | bigint | yes |  | FK → `users.id` (SET NULL) | Support agent. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `resolved_at` | timestamp with time zone | yes |  |  | Resolution instant. |
+| `closed_at` | timestamp with time zone | yes |  |  | Final closure. |
+
+**Indexes:** `idx_tickets_queue ON support_tickets (status, priority) WHERE (status = ANY (ARRAY['open'::ticket_status, 'in_progress'::ticket_status]))`
+
+
+### `support_ticket_messages`
+
+Weak entity: the threaded conversation inside a ticket; is_internal_note hides staff annotations from the user.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `ticket_id` | bigint | no |  | FK → `support_tickets.id` (CASCADE) | Parent case (CASCADE — weak entity). |
+| `sender_id` | bigint | no |  | FK → `users.id` (RESTRICT) | User or staff author. |
+| `body` | text | no |  |  | Message text. |
+| `attachment_url` | text | yes |  |  | Optional file. |
+| `is_internal_note` | boolean | no | false |  | Staff-only annotation, hidden from the user. |
+| `sent_at` | timestamp with time zone | no | now() |  | Sent. |
+
+**Indexes:** `idx_ticket_messages ON support_ticket_messages (ticket_id, sent_at)`
+
+
+### `disputes`
+
+Formal money contests over a trip, with explicit terminal states and a link to the refund payment when one is made.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `dispute_no` | character varying(20) | no | auto-number (sequence) | UNIQUE | Public number (DSP-2026-00001). |
+| `trip_id` | bigint | no |  | FK → `trips.id` (RESTRICT) | Contested trip (RESTRICT). |
+| `raised_by` | bigint | no |  | FK → `users.id` (RESTRICT) | Passenger or driver. |
+| `dispute_type` | dispute_type *(enum)* | no |  |  | fare_overcharge / payment_failed / behavior / lost_item / service_quality. |
+| `description` | text | yes |  |  | Claim text. |
+| `disputed_amount` | numeric(12,2) | yes |  |  | Taka in question (CHECK > 0 when present). |
+| `status` | dispute_status *(enum)* | no | 'open' |  | open → under_review → resolved_refunded \| resolved_no_action \| rejected. |
+| `resolution_note` | text | yes |  |  | Decision rationale. |
+| `resolved_by` | bigint | yes |  | FK → `users.id` (SET NULL) | Deciding admin. |
+| `refund_payment_id` | bigint | yes |  | FK → `payments.id` (SET NULL) | The refund money-movement, when granted. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+| `resolved_at` | timestamp with time zone | yes |  |  | Decision instant. |
+
+**CHECK rules:** `(((disputed_amount IS NULL) OR (disputed_amount > (0))))`
+
+**Indexes:** `idx_disputes_open ON disputes (created_at DESC) WHERE (status = ANY (ARRAY['open'::dispute_status, 'under_review'::dispute_status]))`
+
+
+### `audit_logs`
+
+Append-only record of sensitive actions with before/after JSONB snapshots. actor_role is deliberately denormalized — the actor as they were at that moment.
+
+| Column | Type | Nullable | Default | Key / FK | Description |
+|---|---|---|---|---|---|
+| `id` | bigint | no |  | **PK** | Surrogate primary key (internal only; never in URLs). |
+| `actor_id` | bigint | yes |  | FK → `users.id` (SET NULL) | Acting user; NULL = automated job. |
+| `actor_role` | character varying(20) | yes |  |  | Role snapshot as-of-the-moment (deliberately denormalized). |
+| `action` | character varying(60) | no |  |  | Verb constant, e.g. DRIVER_APPROVED. |
+| `entity_type` | character varying(40) | no |  |  | Affected table. |
+| `entity_id` | bigint | yes |  |  | Affected row id. |
+| `old_value` | jsonb | yes |  |  | Before-state JSONB. |
+| `new_value` | jsonb | yes |  |  | After-state JSONB. |
+| `ip_address` | inet | yes |  |  | Actor's address. |
+| `created_at` | timestamp with time zone | no | now() |  | Row creation instant (UTC). |
+
+**Indexes:** `idx_audit_entity ON audit_logs (entity_type, entity_id, created_at DESC)` · `idx_audit_actor ON audit_logs (actor_id, created_at DESC)`
+
+
+
+## Appendix A — ENUM Types (closed vocabularies)
+
+| Enum | Labels |
+|---|---|
+| `actor_role` | passenger · driver · system · admin |
+| `admin_access_level` | super · ops · finance · support |
+| `availability_status` | offline · online · on_trip · break |
+| `cancel_reason` | changed_mind · driver_late · no_show · wrong_pickup · vehicle_issue · other |
+| `device_type` | android · ios · web |
+| `dispute_status` | open · under_review · resolved_refunded · resolved_no_action · rejected |
+| `dispute_type` | fare_overcharge · payment_failed · behavior · lost_item · service_quality |
+| `document_status` | pending · approved · rejected · expired |
+| `driver_doc_type` | license · nid · photo · police_clearance |
+| `invoice_status` | draft · finalized · paid |
+| `kyc_status` | pending · approved · rejected · suspended |
+| `message_type` | text · quick_reply · location |
+| `notif_category` | ride · payment · promo · document · safety · system |
+| `notif_channel` | in_app · push · sms · email |
+| `offer_response` | pending · accepted · rejected · timed_out · withdrawn |
+| `otp_purpose` | signup · login · password_reset · payout |
+| `pay_gateway` | none · bkash · nagad · sslcommerz |
+| `pay_method_type` | cash · wallet · bkash · nagad · card |
+| `pay_purpose` | trip · wallet_topup |
+| `pay_status` | initiated · pending · succeeded · failed · refunded |
+| `payout_account_type` | bkash · nagad · bank |
+| `promo_type` | percentage · fixed_amount |
+| `referral_status` | pending · qualified · rewarded |
+| `report_category` | safety · harassment · fraud · behavior · other |
+| `report_status` | open · investigating · action_taken · dismissed |
+| `request_status` | pending · searching · matched · expired · cancelled |
+| `settlement_status` | pending · settled · withheld |
+| `sos_status` | active · acknowledged · resolved · false_alarm |
+| `surge_reason` | demand · weather · event · peak_hour |
+| `ticket_category` | payment · ride · account · driver_conduct · app_issue · other |
+| `ticket_priority` | low · medium · high · urgent |
+| `ticket_status` | open · in_progress · waiting_user · resolved · closed |
+| `trip_status` | assigned · arrived · in_progress · completed · cancelled |
+| `txn_direction` | credit · debit |
+| `user_gender` | female · male · other |
+| `user_language` | bn · en |
+| `user_status` | active · suspended · deleted |
+| `vehicle_doc_type` | registration · fitness · insurance · tax_token |
+| `wallet_ref_type` | trip · payment · withdrawal · promo · referral · manual |
+| `wallet_status` | active · frozen |
+| `wallet_txn_type` | topup · trip_payment · trip_earning · commission · withdrawal · refund · promo_credit · referral_bonus · adjustment |
+| `withdrawal_status` | requested · approved · processing · paid · rejected · failed |
+| `zone_type` | regular · airport · station · restricted |
+
+**Next:** documents 05+ — learning roadmap, architecture, backend, REST API, auth, frontend, and the build-order plan.
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+const raw = document.getElementById("md-src").textContent;
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+const renderer = new marked.Renderer();
+let diagramNo = 0;
+renderer.code = (code, lang) => {
+  if (lang === "mermaid") {
+    diagramNo += 1;
+    return `<div class="diagram"><div class="diagram-bar"><span>Diagram ${String(diagramNo).padStart(2,"0")}</span><span>scroll / zoom to explore</span></div><div class="diagram-scroll"><pre class="mermaid">${esc(code)}</pre></div></div>`;
+  }
+  return `<pre class="codeblock"><code>${esc(code)}</code></pre>`;
+};
+const origTable = renderer.table.bind(renderer);
+renderer.table = (h, b) => `<div class="tbl-scroll">${origTable(h, b)}</div>`;
+
+marked.setOptions({ renderer, gfm: true, headerIds: true, mangle: false });
+document.getElementById("content").innerHTML = marked.parse(raw);
+
+/* TOC from h2 */
+const links = document.getElementById("toc-links");
+const heads = [...document.querySelectorAll("#content h2")];
+heads.forEach(h => {
+  const a = document.createElement("a");
+  a.href = `#${h.id}`;
+  a.textContent = h.textContent.replace(/&/g, "&");
+  links.appendChild(a);
+});
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.querySelectorAll("a").forEach(a => a.classList.toggle("active", a.getAttribute("href") === `#${e.target.id}`));
+    }
+  });
+}, { rootMargin: "0px 0px -75% 0px" });
+heads.forEach(h => obs.observe(h));
+
+/* Mermaid */
+mermaid.initialize({
+  startOnLoad: false,
+  theme: "neutral",
+  securityLevel: "loose",
+  er: { useMaxWidth: false },
+  flowchart: { useMaxWidth: false },
+  themeVariables: {
+    fontFamily: "IBM Plex Sans, sans-serif",
+    primaryColor: "#eaf1fb",
+    primaryBorderColor: "#175cd3",
+    primaryTextColor: "#0b1f3a",
+    lineColor: "#5b6b82",
+    tertiaryColor: "#f4f7fc"
+  }
+});
+try {
+  await mermaid.run({ querySelector: ".mermaid", suppressErrors: true });
+} catch (e) {
+  console.warn("mermaid", e);
+}
+</script>
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && window.parent !== window) {
+    window.parent.postMessage({ type: 'close-fullscreen' }, '*');
+  }
+});
+</script>
+<!-- broken-img-handler -->
+<script>
+(function(){
+  if(window.__brokenImgHandler)return;
+  window.__brokenImgHandler=true;
+  var MAX=5,DELAYS=[2000,4000,8000,16000,32000];
+  document.addEventListener('error',function(e){
+    var img=e.target;
+    if(!img||img.tagName!=='IMG')return;
+    var liveSrc=img.getAttribute('src');
+    var src=img.dataset.haOriginalSrc||liveSrc;
+    if(!src)return;
+    if(img.dataset.haOriginalSrc&&liveSrc&&liveSrc!==img.dataset.haOriginalSrc&&liveSrc.indexOf('_r=')<0){src=liveSrc;img.dataset.haOriginalSrc=src;img.dataset.haRetryCount='0'}
+    else if(!img.dataset.haOriginalSrc){img.dataset.haOriginalSrc=src}
+    var attempt=parseInt(img.dataset.haRetryCount||'0',10);
+    if(img.dataset.haPhId){var old=document.getElementById(img.dataset.haPhId);if(old)old.remove()}
+    var ph=document.createElement('div');
+    ph.className='ha-img-placeholder'+(attempt>=MAX?' ha-failed':'');
+    ph.id='ha-ph-'+Math.random().toString(36).slice(2,9);
+    var w=img.getAttribute('width');var h=img.getAttribute('height');
+    if(w)ph.style.width=w+(isNaN(Number(w))?'':'px');
+    else if(img.style.width)ph.style.width=img.style.width;
+    else if(img.width>1)ph.style.width=img.width+'px';
+    if(h)ph.style.height=h+(isNaN(Number(h))?'':'px');
+    else if(img.style.height)ph.style.height=img.style.height;
+    else if(img.height>1)ph.style.height=img.height+'px';
+    ph.textContent=attempt>=MAX?'Image unavailable':'Loading image\u2026';
+    img.dataset.haPhId=ph.id;
+    if(img.dataset.haOrigDisplay==null)img.dataset.haOrigDisplay=img.style.display||'';
+    img.style.display='none';
+    img.insertAdjacentElement('afterend',ph);
+    if(attempt<MAX){
+      img.dataset.haRetryCount=String(attempt+1);
+      setTimeout(function(){
+        if(!img.isConnected)return;
+        if(img.dataset.haOriginalSrc!==src)return;
+        if(img.complete&&img.naturalWidth>0)return;
+        var curSrc=img.getAttribute('src');
+        if(curSrc&&curSrc.indexOf(src)!==0)return;
+        var fresh=src+(src.indexOf('?')>=0?'&':'?')+'_r='+(attempt+1)+'_'+Date.now();
+        img.src=fresh;
+      },DELAYS[attempt]);
+    }
+  },true);
+  document.addEventListener('load',function(e){
+    var img=e.target;
+    if(!img||img.tagName!=='IMG')return;
+    if(img.dataset.haPhId){
+      var ph=document.getElementById(img.dataset.haPhId);
+      if(ph)ph.remove();
+      delete img.dataset.haPhId;
+      img.style.display=img.dataset.haOrigDisplay||'';
+      delete img.dataset.haOrigDisplay;
+      delete img.dataset.haOriginalSrc;
+      delete img.dataset.haRetryCount;
+    }
+  },true);
+})();
+</script>
+</body>
+</html>
