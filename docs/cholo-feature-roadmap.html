@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cholo — Feature-by-Feature Build Route</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1420;
+  --bg-deep:#0a0e17;
+  --surface:#171e2c;
+  --surface-2:#1d2536;
+  --line:#2a3348;
+  --ink:#eef1f6;
+  --ink-dim:#9aa4b8;
+  --ink-faint:#5f6a80;
+  --amber:#e8a33d;
+  --amber-dim:#7a5a2a;
+  --green:#34a870;
+  --green-dim:#1e5e42;
+  --red:#e3654f;
+  --mono:'JetBrains Mono',monospace;
+  --sora:'Sora',sans-serif;
+  --inter:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--inter);
+  line-height:1.6;
+  min-height:100vh;
+}
+::selection{background:var(--amber);color:#1a1305}
+
+/* ---------- Top hero ---------- */
+.hero{
+  padding:64px 8vw 48px;
+  background:
+    radial-gradient(ellipse 900px 400px at 15% 0%, rgba(232,163,61,0.13), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 90% 20%, rgba(52,168,112,0.10), transparent 60%),
+    var(--bg-deep);
+  border-bottom:1px solid var(--line);
+}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:12.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--amber);
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:18px;
+}
+.eyebrow::before{content:'';width:22px;height:2px;background:var(--amber);display:inline-block}
+h1{
+  font-family:var(--sora);
+  font-weight:800;
+  font-size:clamp(32px,4.6vw,56px);
+  letter-spacing:-.02em;
+  max-width:16ch;
+}
+h1 em{font-style:normal;color:var(--amber)}
+.hero p{
+  margin-top:18px;
+  max-width:62ch;
+  color:var(--ink-dim);
+  font-size:16.5px;
+}
+.hero-meta{
+  margin-top:30px;
+  display:flex;
+  gap:28px;
+  flex-wrap:wrap;
+}
+.hero-meta .stat{font-family:var(--mono)}
+.hero-meta .stat b{display:block;font-size:22px;color:var(--ink);font-weight:600}
+.hero-meta .stat span{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em}
+
+/* ---------- Partner box ---------- */
+.partner-box{
+  margin-top:34px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-left:3px solid var(--green);
+  border-radius:8px;
+  padding:22px 26px;
+  max-width:840px;
+}
+.partner-box h3{font-family:var(--sora);font-size:15px;color:var(--green);margin-bottom:10px;letter-spacing:.02em}
+.partner-box p{color:var(--ink-dim);font-size:14.5px;margin-bottom:8px}
+.partner-box p:last-child{margin-bottom:0}
+.partner-box code{font-family:var(--mono);background:var(--surface-2);padding:1px 6px;border-radius:4px;font-size:13px;color:var(--amber)}
+
+/* ---------- Layout ---------- */
+.layout{
+  display:flex;
+  align-items:flex-start;
+}
+.rail{
+  position:sticky;
+  top:0;
+  height:100vh;
+  width:230px;
+  flex:none;
+  padding:36px 0 36px 8vw;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.rail::-webkit-scrollbar{display:none}
+.route{
+  position:relative;
+  padding-left:26px;
+}
+.route::before{
+  content:'';
+  position:absolute;
+  left:7px;top:6px;bottom:6px;
+  width:2px;
+  background:linear-gradient(var(--line),var(--line));
+}
+.stop{
+  position:relative;
+  display:block;
+  padding:11px 0;
+  cursor:pointer;
+  text-decoration:none;
+}
+.stop::before{
+  content:'';
+  position:absolute;
+  left:-26px;top:14px;
+  width:14px;height:14px;
+  border-radius:50%;
+  background:var(--surface-2);
+  border:2px solid var(--line);
+  transition:.25s;
+}
+.stop.done::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 4px rgba(52,168,112,.15)}
+.stop.partial::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 4px rgba(232,163,61,.15)}
+.stop .code{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.06em}
+.stop .name{display:block;font-size:13.5px;color:var(--ink-dim);font-weight:500;margin-top:2px}
+.stop:hover .name, .stop.active .name{color:var(--ink)}
+.stop.active::before{background:var(--amber);border-color:var(--amber)}
+.rail-note{
+  margin-top:20px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--ink-faint);line-height:1.7;
+}
+
+.main{flex:1;min-width:0;padding:36px 8vw 120px 60px}
+
+/* ---------- Milestone block ---------- */
+.milestone{
+  scroll-margin-top:24px;
+  margin-bottom:76px;
+}
+.milestone-head{
+  display:flex;
+  gap:20px;
+  align-items:baseline;
+  margin-bottom:6px;
+}
+.m-badge{
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:600;
+  color:var(--amber);
+  border:1px solid var(--amber-dim);
+  background:rgba(232,163,61,.08);
+  padding:4px 10px;
+  border-radius:20px;
+  flex:none;
+}
+.milestone h2{
+  font-family:var(--sora);
+  font-size:26px;
+  font-weight:700;
+}
+.m-weeks{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);margin-left:auto;white-space:nowrap}
+.m-goal{color:var(--ink-dim);max-width:70ch;margin:10px 0 20px;font-size:15px}
+.m-info{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:18px 22px;
+  margin-bottom:28px;
+}
+.m-info .block{font-size:13.5px}
+.m-info .block b{
+  display:block;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-faint);margin-bottom:5px;
+}
+.m-info .block p, .m-info .block ul{color:var(--ink-dim)}
+.m-info ul{list-style:none}
+.m-info li{padding:2px 0;padding-left:16px;position:relative}
+.m-info li::before{content:'→';position:absolute;left:0;color:var(--ink-faint)}
+.m-parallel{
+  grid-column:1/-1;
+  border-top:1px solid var(--line);
+  padding-top:12px;margin-top:2px;
+  font-size:13px;color:var(--green);
+}
+.m-parallel b{color:var(--green)}
+
+/* ---------- Feature card ---------- */
+.feature{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.feature-top{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+  padding:20px 22px;
+  cursor:pointer;
+}
+.f-check{
+  flex:none;
+  width:22px;height:22px;
+  margin-top:2px;
+  border-radius:6px;
+  border:1.5px solid var(--ink-faint);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.f-check:hover{border-color:var(--amber)}
+.f-check.checked{background:var(--green);border-color:var(--green)}
+.f-check.checked::after{content:'✓';color:#08150f;font-size:14px;font-weight:700}
+.f-step{
+  font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+  flex:none;width:34px;padding-top:3px;
+}
+.f-titles{flex:1;min-width:0}
+.f-titles h3{font-family:var(--sora);font-size:16.5px;font-weight:600;color:var(--ink)}
+.f-why{font-size:13px;color:var(--ink-dim);margin-top:4px}
+.f-caret{flex:none;color:var(--ink-faint);font-size:13px;padding-top:5px;transition:transform .2s}
+.feature.open .f-caret{transform:rotate(90deg)}
+.f-body{display:none;padding:0 22px 22px 72px;border-top:1px solid var(--line)}
+.feature.open .f-body{display:block;padding-top:18px}
+.f-refs{
+  font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);
+  margin-bottom:16px;
+}
+.f-refs b{color:var(--ink-dim);font-weight:500}
+.prompt-block{margin-bottom:16px}
+.prompt-block:last-child{margin-bottom:0}
+.prompt-label{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:7px;
+}
+.prompt-label span{
+  font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  display:flex;align-items:center;gap:7px;
+}
+.tag-build span{color:var(--amber)}
+.tag-build .dot{background:var(--amber)}
+.tag-understand span{color:var(--green)}
+.tag-understand .dot{background:var(--green)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.copy-btn{
+  font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+  background:var(--surface-2);border:1px solid var(--line);
+  padding:4px 10px;border-radius:6px;cursor:pointer;transition:.15s;
+}
+.copy-btn:hover{color:var(--ink);border-color:var(--ink-faint)}
+.copy-btn.copied{color:var(--green);border-color:var(--green-dim)}
+pre{
+  font-family:var(--mono);
+  font-size:12.8px;
+  line-height:1.65;
+  color:#dbe2f0;
+  background:var(--bg-deep);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:15px 17px;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.prompt-block.understand pre{border-left:3px solid var(--green-dim)}
+.prompt-block.build pre{border-left:3px solid var(--amber-dim)}
+
+/* ---------- Footer ---------- */
+.footer{
+  padding:50px 8vw 70px 60px;
+  border-top:1px solid var(--line);
+  color:var(--ink-faint);
+  font-size:13px;
+}
+.footer b{color:var(--ink-dim)}
+
+@media(max-width:920px){
+  .rail{display:none}
+  .main{padding:28px 6vw 100px}
+  .m-info{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">Cholo · build companion</div>
+  <h1>Every feature, <em>in the order</em> you actually build it.</h1>
+  <p>24 build steps across 9 milestones, each with the exact prompt to hand your AI coding agent and a second prompt to make it explain what it just did to your code. Work top to bottom — nothing here should be started before the step above it.</p>
+  <div class="hero-meta">
+    <div class="stat"><b>9</b><span>Milestones</span></div>
+    <div class="stat"><b>24</b><span>Build steps</span></div>
+    <div class="stat"><b id="totalFeatureCount">—</b><span>Features total</span></div>
+    <div class="stat"><b id="doneCount">0</b><span>Checked off</span></div>
+  </div>
+
+  <div class="partner-box">
+    <h3>🤝 Working through this with a partner</h3>
+    <p><b>One drives, one navigates, swap every feature.</b> Whoever's "driving" pastes the <code>BUILD</code> prompt into their agent session. The navigator opens a second session in the same repo and pastes the <code>UNDERSTAND</code> prompt once the build is done — so both of you can explain every line before it's committed, not just the person who typed it.</p>
+    <p><b>Some steps can run in parallel</b> — they're marked <span style="color:var(--green)">green</span> below with who can start what. Everything else is strictly sequential: don't start step 12 before step 11 is merged.</p>
+    <p>Checkboxes save to this browser only (not shared between you two) — use them as your own personal progress tracker, and use GitHub Issues (doc 13 §1) as the shared source of truth for who's done what.</p>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="rail">
+    <div class="route" id="routeNav"></div>
+    <div class="rail-note">Click a stop to jump.<br>Dot fills as you check off<br>features inside it.</div>
+  </nav>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div class="footer">
+  Built from <b>docs/13-14-development-plan-build-order.md</b> and cross-referenced against docs 01, 02-03, 04, 05-06-07, 08-09-10, 11-12. If a prompt references a doc that doesn't match what your agent actually built, paste the mismatch back to it and ask it to reconcile against the blueprint — don't just proceed on a guess.
+</div>
+
+<script>
+const DATA = [
+{
+  id:'m0', code:'M0', name:'Foundation', weeks:'weeks 2–3',
+  goal:'A repo any examiner — or your partner on a cold laptop — can clone and run in five minutes.',
+  demo:'git clone && docker compose up → psql shows 54 tables; the doc 03 §11 verification queries pass.',
+  done:['Fresh clone boots on another machine','No secrets in git','README explains every command'],
+  parallel:null,
+  features:[
+    {
+      step:'1', name:'Repo, .gitignore, .env.example, README', why:'Version control before the first file worth losing.',
+      refs:'doc 07 §2 (folder structure)',
+      build:`Set up the Cholo monorepo skeleton per docs/05-06-07 §folder-structure: client/, server/, database/, docs/ at the root. Add a .gitignore covering node_modules, .env, dist, and OS junk files. Add a .env.example listing every variable the project will eventually need (Postgres credentials, port, JWT secrets — leave real values blank). Write a README.md with a "how to run this in 5 minutes" quickstart section.`,
+      understand:`Explain why .env is git-ignored but .env.example is committed, and walk me through exactly what happens — step by step — if I accidentally commit a real .env with real secrets in it. What would I need to do to clean that up?`
+    },
+    {
+      step:'2', name:'docker-compose.yml + schema.sql', why:'The database is the foundation — everything else exists to talk to it, and yours is already designed & validated (docs 01–04).',
+      refs:'docs/01, docs/02-03 §2 (Anatomy of a CREATE TABLE)',
+      build:`Read docs/01-er-diagram-database-architecture.md and docs/02-03-normalization-schema-transactions.md fully. Assemble database/schema.sql from exactly what's defined there — every CREATE TABLE, constraint, index, trigger, view, and seed row. Don't invent anything not in those docs; if something's genuinely ambiguous, ask me rather than guessing. Then write docker-compose.yml booting PostgreSQL 16, auto-loading schema.sql on first start, with credentials read from .env — not hardcoded.`,
+      understand:`Pick three tables I haven't looked at closely yet — not users or trips — and for each one, explain line by line: what each constraint does, why each datatype was chosen over the obvious alternative (e.g. NUMERIC over FLOAT), and what real-world mistake each constraint is preventing.`
+    },
+    {
+      step:'3', name:'Explore the schema by hand (practice, not a build step)', why:"You can't build an API over tables you can't query yourself.",
+      refs:'doc 05 Phase 1 checkpoint style', practiceOnly:true,
+      build:`Don't write the queries for me — list 20 SQL practice questions based on the actual Cholo schema, ordered from simple SELECT/WHERE up to JOINs and GROUP BY, matching the doc 05 Phase 1 checkpoint style.`,
+      understand:`I just wrote query #<N> myself and got <this error / this unexpected result>. Here's what I wrote: <paste it>. Don't just fix it — explain what I misunderstood about the schema or SQL that led me here.`
+    }
+  ]
+},
+{
+  id:'m1', code:'M1', name:'Server Skeleton & Infrastructure', weeks:'week 5',
+  goal:'A running Express app with the plumbing every later feature will reuse.',
+  demo:'/health → {db:true}; a deliberately bad request returns the doc 09 error envelope with a 422.',
+  done:['Boot fails loudly on missing env','Thrown async errors reach the handler','Envelope shape matches doc 09 §1 exactly'],
+  parallel:null,
+  features:[
+    {
+      step:'4', name:'app.js/server.js split + config/env.js + GET /health', why:'A running skeleton makes every later step observable.',
+      refs:'docs/08-09-10 §1–5, §8–10',
+      build:`Following docs/08-09-10-backend-api-auth.md, split the Express entry point into app.js (the Express app + middleware config, exported, no listen()) and server.js (imports app, calls listen()). Add server/config/env.js that reads and validates all required environment variables at boot — the process should crash immediately with a clear message if anything required is missing, not fail mysteriously later. Add GET /health that checks the app can actually reach the database, not just that the process is alive.`,
+      understand:`Explain why app.js and server.js are kept as two separate files instead of one — what does splitting them make possible later (hint: think about testing)? Then delete one required variable from my .env on purpose, restart the server, and explain exactly what "fail fast" looks like in the terminal output versus what a bad, silent failure would have looked like instead.`
+    },
+    {
+      step:'5', name:'pg Pool + first repository (cities)', why:"Prove the app↔DB pipe with the simplest table before betting features on it.",
+      refs:'docs/08-09-10 (repository layer pattern)',
+      build:`Set up the PostgreSQL connection Pool (using pg) in server/. Build the first repository — server/repositories/cities.repository.js — with a single findAll() method using a parameterized query. Wire up a GET /cities route through controller → service → repository to prove the whole pipe works end to end.`,
+      understand:`Explain what a "repository" is in this architecture and why SQL is only allowed to live there — not in controllers or services. What specifically would go wrong later if I let myself write a raw SQL query inside a controller just this once?`
+    },
+    {
+      step:'6', name:'AppError + errorHandler + asyncHandler + validate(zod)', why:'Infrastructure before features — retrofitting error handling into 30 endpoints later is a week of work; building it first is an hour.',
+      refs:'doc 08-09-10 §5, §8-10; doc 09 §1 (error envelope shape)',
+      build:`Implement the four scaffolds from docs/08-09-10-backend-api-auth.md: an AppError class for expected failures, one central errorHandler middleware that produces the exact error envelope shape from doc 09 §1, an asyncHandler wrapper so async route errors don't hang the request, and a validate(schema) middleware using zod for request validation. Wire errorHandler in as the last middleware in app.js. Deliberately create one broken test route (e.g. a route that throws) to prove it all connects.`,
+      understand:`Walk me through, step by step, exactly what happens from the moment my test route throws an error to the moment the client receives a response — which function catches it, what asyncHandler is actually doing under the hood, and what would happen instead if I forgot to wrap one route in asyncHandler.`
+    }
+  ]
+},
+{
+  id:'m2', code:'M2', name:'Auth & Accounts', weeks:'weeks 5–6',
+  goal:'The complete doc 10 identity system — the gate every later feature stands behind.',
+  demo:'Full Postman cycle, then the theft-detection party trick: refresh twice with the same old cookie — second call kills the whole session family.',
+  done:['Only hashes in DB (users, refresh_tokens, otp_verifications)','Wallet auto-created on register (trigger)','401 vs 403 used correctly'],
+  parallel:'Once this milestone is merged, one partner can start M5 (step 16, frontend scaffold) while the other continues into M3 — doc 13 explicitly allows M5 in parallel with M4.',
+  features:[
+    {
+      step:'7a', name:'Register → OTP → verify → login', why:"The entry point to the whole identity system.",
+      refs:'docs/08-09-10 (doc 10, full)',
+      build:`Build the registration flow from docs/08-09-10-backend-api-auth.md: POST /auth/register (hash the password with bcrypt, never store plaintext), an OTP flow where the SMS send is mocked to a console.log instead of a real gateway, POST /auth/verify-otp, and POST /auth/login with uniform error responses (login should never reveal whether it was the phone or the password that was wrong).`,
+      understand:`Show me the actual row that lands in the users table after I register, and explain why the password column doesn't contain what I typed. Then explain, specifically, why login returning "invalid credentials" for both a wrong phone AND a wrong password (instead of two different messages) is a deliberate security choice, not a shortcut.`
+    },
+    {
+      step:'7b', name:'Refresh rotation + reuse detection, logout / logout-all', why:'This is the theft-detection mechanism doc 10 is built around — the actual hard part of the milestone.',
+      refs:'doc 10 §7',
+      build:`Implement refresh token rotation per doc 10 §7: every refresh issues a brand-new refresh token and invalidates the old one. Implement reuse detection — if an already-rotated (dead) refresh token is presented again, kill the entire session family, not just that one token. Add POST /auth/logout (kills one session) and POST /auth/logout-all (kills every session for that user).`,
+      understand:`Explain, in plain terms, what "session family" means here and why killing the whole family on reuse — instead of just rejecting the one reused token — is the correct response to a stolen refresh token. Then walk me through the exact sequence of requests I'd need to make in Postman to trigger the reuse-detection path myself.`
+    },
+    {
+      step:'7c', name:'auth + requireRole middleware, rate limits on auth routes', why:'The gate every later route stands behind.',
+      refs:'doc 10 §9; doc 08 §12',
+      build:`Build the auth middleware that verifies the Bearer JWT and attaches req.user, and a requireRole(...) middleware for role-gated routes. Add rate limiting specifically on /auth/* and OTP routes to prevent brute-forcing.`,
+      understand:`Explain the difference between a request that should get a 401 versus one that should get a 403, using two concrete examples from this project. Then show me where req.user actually gets set, and explain why every later route trusts req.user instead of trusting an id sent in the request body.`
+    },
+    {
+      step:'8', name:'GET/PATCH /me + profiles module', why:'The smallest possible consumer of the auth gate — proves the whole thing cheaply before building anything bigger on top of it.',
+      refs:'docs/08-09-10',
+      build:`Build GET /me (returns the logged-in user's own profile) and PATCH /me (updates allowed fields only) and PATCH /me/password (change password, requiring the current password).`,
+      understand:`Explain how GET /me knows which user to return without an id in the URL — trace it back to where that identity actually comes from.`
+    }
+  ]
+},
+{
+  id:'m3', code:'M3', name:'Driver Onboarding & Fleet', weeks:'weeks 6–7',
+  goal:'A human can become an approved, on-duty driver end to end.',
+  demo:'Postman story: apply → upload → admin approves → driver goes online → v_active_drivers shows them.',
+  done:['Un-approved drivers get 409 on going online','Every admin decision lands in audit_logs','Availability row auto-created (trigger)'],
+  parallel:null,
+  features:[
+    {
+      step:'9a', name:'POST /driver/apply + document upload records', why:'The application step every driver starts at.',
+      refs:'docs/08-09-10 §6; docs/01 domain 2',
+      build:`Build POST /driver/apply and the document-upload endpoints per docs/08-09-10-backend-api-auth.md and the driver domain in docs/01-er-diagram-database-architecture.md. Store upload metadata (not the actual file binary, unless the docs say otherwise) as document records tied to the driver.`,
+      understand:`Show me the driver's row right after they apply but before any admin has approved them — what does their "state" look like in the data at this point, and which column tracks approval status?`
+    },
+    {
+      step:'9b', name:'Vehicle CRUD + activate', why:'A driver needs an active vehicle before they can be dispatched a ride.',
+      refs:'docs/01 domain 2',
+      build:`Build vehicle CRUD endpoints scoped to the logged-in driver, plus an "activate" action that sets a vehicle as the driver's current active vehicle.`,
+      understand:`Explain the circular reference between drivers and vehicles that doc 03 §1 mentions (driver_profiles.active_vehicle_id ↔ vehicles.driver_id) — why can't both foreign keys exist from the moment both tables are created?`
+    },
+    {
+      step:'9c', name:'Availability online/offline with the business gate', why:'This is the constraint that actually protects the platform: only approved drivers can go on duty.',
+      refs:'doc 03 (business gate logic)',
+      build:`Build the online/offline availability toggle. Enforce the business rule that only approved drivers with an active vehicle can go online — return a 409 with a clear error code otherwise, per the doc 09 error envelope.`,
+      understand:`Show me what happens, exactly, when I try to go online as a driver who hasn't been approved yet — the actual response body and status code — and explain why 409 is the right status here instead of 403.`
+    },
+    {
+      step:'9d', name:'Minimal admin endpoints — list pending, review document, approve driver', why:'Closes the loop: someone has to actually approve the application.',
+      refs:'docs/08-09-10 (admin/audit pattern)',
+      build:`Build the minimal admin surface: list pending driver applications, review a document, and approve/reject a driver. Every admin decision must write a row to audit_logs.`,
+      understand:`Show me the audit_logs row created when I approve a driver — what does it capture, and how would you use it to answer "who approved driver #42, and when" six months from now?`
+    }
+  ]
+},
+{
+  id:'m4', code:'M4', name:'Pricing, Dispatch & the Ride Core', weeks:'weeks 7–8 · ⚠ the hardest milestone',
+  goal:'The doc 01 ride lifecycle working over REST — the actual heart of the product.',
+  demo:'The full Postman ride: quote → book → offer appears → accept (a second accept gets 409 ALREADY_TAKEN) → arrive → start → complete → trip_status_history shows the whole journey.',
+  done:['Two-terminal race test passes','Fare breakdown satisfies the CHECK','Unfulfilled requests expire via the jobs/ cron'],
+  parallel:'The geo/pricing/quote piece (step 10) is a pure read with no state machine — a good one for whoever is less confident to drive first, while the other reviews closely, before tackling the harder dispatch race in step 12 together.',
+  features:[
+    {
+      step:'10', name:'Geo adapter (OSRM/Nominatim) + fn_current_pricing-backed quote endpoint', why:"The quote is a pure read — no state machine yet — so it validates fare math in isolation before anything gets complicated.",
+      refs:'docs/05-06-07 §8 (geo adapter); docs/02-03 fn_current_pricing',
+      build:`Build a geo service adapter wrapping OSRM (routing/distance) and Nominatim (geocoding) per docs/05-06-07-learning-roadmap-architecture-folders.md §8. Build GET /rides/quote that calls the fn_current_pricing database function to get the effective tariff, applies distance/time from the geo adapter, and returns a fare breakdown.`,
+      understand:`Call the quote endpoint twice for the exact same trip a few minutes apart during a period you'd expect surge pricing to differ, and explain why the two fare breakdowns might not match — walk me through exactly which parts of the calculation are time-sensitive.`
+    },
+    {
+      step:'11', name:'Create ride request (quote snapshot)', why:'The first write of the ride story — still no concurrency to worry about yet.',
+      refs:'doc 01 §13.7 (snapshot principle)',
+      build:`Build POST /ride-requests. It must snapshot the quote at request time into the row — not store a live reference to pricing rules that could change later.`,
+      understand:`Explain why the fare gets "snapshotted" into the ride_requests row instead of being recalculated fresh every time it's displayed. What real bug would happen to a passenger if we didn't snapshot it?`
+    },
+    {
+      step:'12', name:'Dispatch: offer fan-out + accept with FOR UPDATE race protection', why:'The hardest logic in the whole project, tackled last because everything below it is already solid.',
+      refs:'docs/08-09-10 §7; docs/02-03 T1 (the race transaction)',
+      build:`Build the dispatch service: fan out offers to nearby online drivers (REST-only for now — poll, not sockets yet). Build the accept endpoint using the exact FOR UPDATE row-locking pattern from docs/02-03-normalization-schema-transactions.md T1, so that when two drivers accept the same request within the same second, only one trip is created and the second gets a 409 ALREADY_TAKEN.`,
+      understand:`This is the most important thing to actually understand in the whole backend. Walk me through, in plain words, exactly what happens when two drivers hit accept on the same request within the same second — what does FOR UPDATE actually lock, why does the second driver's request have to wait instead of just failing immediately, and what's the "belt and suspenders" second layer of protection if the lock were somehow bypassed?`
+    },
+    {
+      step:'13', name:'Trip lifecycle: arrived/start/complete + fare finalization', why:'Finishes the state machine; the identity CHECK becomes a free test.',
+      refs:'docs/08-09-10 (BAD_TRANSITION guards); doc 03 chk_fare_identity',
+      build:`Build the trip status transitions (arrived → start → complete) with guards that reject invalid transitions (e.g. completing a trip that never started) with a clear BAD_TRANSITION error. On completion, compute the final fare breakdown — it must satisfy chk_fare_identity or the insert will be rejected by the database itself.`,
+      understand:`Try to complete a trip that's still in "assigned" status (skip arrived/start) and show me the actual error. Then explain: is that error coming from your Express code's guard, or from the database constraint? What's the difference in what each one is protecting against?`
+    },
+    {
+      step:'14', name:'Cancellation + request-expiry cron', why:"Closes the unhappy paths while the state machine is still fresh in your head.",
+      refs:'server/jobs/ (per docs/05-06-07 folder structure)',
+      build:`Build a cancellation endpoint with fee rules for different trip stages. Build a scheduled job (in server/jobs/) that expires ride requests nobody accepted within a time window.`,
+      understand:`Explain why request-expiry needs to be a cron job instead of just something checked the next time someone happens to query that row — what would a stuck "pending forever" request actually look like to a passenger if this job didn't exist?`
+    },
+    {
+      step:'15', name:'Socket.io backend layer — handshake auth, rooms, 3 events', why:"REST works first; sockets are a notification layer over already-proven actions, never the logic itself.",
+      refs:'docs/05-06-07 §7',
+      build:`Add the Socket.io server on the same Node process. Verify the JWT during the handshake (not per-event). Implement room joining with membership checks, and exactly three events to start: offer:new, location:update, trip:status. Resist adding more events than that for now.`,
+      understand:`Explain why the JWT gets checked once at handshake instead of on every single socket message, and what a "room" actually is here — how does it stop a stranger from listening in on someone else's trip?`
+    }
+  ]
+},
+{
+  id:'m5', code:'M5', name:'Frontend Foundation', weeks:'weeks 8–9',
+  goal:'The React shell every screen will snap into.',
+  demo:'Register → OTP → land on the placeholder Book tab; refresh the page — still logged in (silent refresh).',
+  done:['Design tokens in tailwind.config.js, zero raw hex in components','Guards redirect correctly per role','401→refresh→retry proven in the network tab'],
+  parallel:'Can start as soon as M2 (auth API) is merged — doesn\'t need to wait for M3/M4. Good split: one partner keeps going on backend (M3–M4) while the other starts here.',
+  features:[
+    {
+      step:'16a', name:'Vite + TS + Tailwind scaffold + design tokens + ui/ kit', why:'The shell every screen will snap into.',
+      refs:'docs/11-12-frontend-react-ui-ux §1-9; §2-4',
+      build:`Scaffold client/ with Vite + TypeScript + Tailwind, using the exact design tokens from docs/11-12-frontend-react-ui-ux.md in tailwind.config.js. Build the base ui/ kit: Button, Input, Card, StatusBadge, BottomSheet, Skeleton, Toast, EmptyState — per that doc's component spec, not generic defaults.`,
+      understand:`Show me one component you built (e.g. Button) and explain how its styling traces back to a token in tailwind.config.js rather than a hardcoded hex value — and why that matters if the design changes later.`
+    },
+    {
+      step:'16b', name:'Router + role layouts + ProtectedRoute + api/client.ts + AuthContext', why:'Interceptors first, so no individual page ever has to think about tokens.',
+      refs:'docs/11-12 (router/guards); docs/07 §4.1 (api client pattern)',
+      build:`Set up the router with role-based layouts and a ProtectedRoute component. Build api/client.ts with an Axios instance that attaches the access token and automatically refreshes + retries on a 401. Build AuthContext wrapping login state for the whole app.`,
+      understand:`Open the browser network tab, let my access token expire (or force a 401), and then walk me through exactly what you see happen — which request fails, which request fires to refresh it, and how the original request gets retried without me noticing.`
+    },
+    {
+      step:'17', name:'Auth screens wired to M2', why:'The first full-stack loop — the moment it "becomes an app."',
+      refs:'docs/11-12 auth screens',
+      build:`Build the register, OTP-verify, and login screens and wire them to the real M2 auth API — no mock data.`,
+      understand:`Walk through what happens end to end when I submit the login form — which component calls which function, which file actually makes the HTTP request, and where the returned token ends up being stored.`
+    }
+  ]
+},
+{
+  id:'m6', code:'M6', name:'The Two Apps', weeks:'weeks 9–11',
+  goal:'The visual product: booking sheet, offer sheet, live tracking.',
+  demo:'The two-browser show — passenger books in window A, offer pops in window B, accept, watch the marker move in A while B "drives." This is your presentation centerpiece.',
+  done:['Four-states rule on every list','Socket reconnect survives a server restart','Losing the accept race shows a toast, not an error page'],
+  parallel:null,
+  features:[
+    {
+      step:'18', name:'MapView (Leaflet + OSM) + booking flow stages A–D', why:'The flagship screen — consumes steps 10–12.',
+      refs:'docs/11-12 §5.1',
+      build:`Build MapView using Leaflet + OpenStreetMap tiles. Build the passenger booking flow through its four stages (A–D) exactly as specified in docs/11-12-frontend-react-ui-ux.md §5.1, wired to the real quote and ride-request endpoints from M4.`,
+      understand:`Walk me through what "four states" means for a list or a loading screen in this design system, and show me one place in the booking flow where you handled all four — what does each one actually look like to the user?`
+    },
+    {
+      step:'19', name:'Driver Home: online switch + OfferSheet with countdown', why:"The other half of the marketplace.",
+      refs:'docs/11-12 §6.1',
+      build:`Build the driver Home screen with the online/offline switch wired to M3, and the OfferSheet component with a countdown timer per docs/11-12-frontend-react-ui-ux.md §6.1, wired to the real offer/accept endpoints from M4.`,
+      understand:`Show me what happens in the UI, specifically, if the countdown hits zero before the driver taps accept — and trace that behavior back to which backend rule (from M4) is actually enforcing the timeout.`
+    },
+    {
+      step:'20', name:'Live trip: sockets on both screens', why:'This is where the two-browser demo is actually born.',
+      refs:'docs/11-12 §6 (live trip); docs/05-06-07 §7',
+      build:`Wire the Socket.io client into both the passenger and driver apps: a gliding marker on the passenger's live trip screen, a status stepper, and trip chat, all driven by the three events from step 15 (offer:new, location:update, trip:status).`,
+      understand:`Open two browser windows side by side, complete one full ride between them, and then explain to me — narrating it like you're presenting it — what socket event fired at each visible moment on screen. This is your dry run for the actual demo.`
+    }
+  ]
+},
+{
+  id:'m7', code:'M7', name:'Money', weeks:'weeks 11–12',
+  goal:'Every taka accounted for, doubly.',
+  demo:'Complete a cash trip → show payments, driver_earnings, wallet_transactions rows and that fn_wallet_balance_audit = cached balance; replay the webhook → prove the no-op.',
+  done:['One-success-per-trip index verified from the app','Ledger UPDATE rejected (trigger)','Withdrawal needs finance admin'],
+  parallel:null,
+  features:[
+    {
+      step:'21a', name:'Wallet screen + ledger list + cash-trip completion', why:'Cash trips are the simplest money path — the platform commission gets debited from the driver\'s wallet on completion.',
+      refs:'docs/02-03 §8 T2',
+      build:`Build the wallet screen and transaction ledger list. Implement cash-trip completion following the exact T2 transaction pattern from docs/02-03-normalization-schema-transactions.md — the fare gets recorded, a payment row is inserted, and the platform commission is debited from the driver's wallet, all inside one transaction.`,
+      understand:`Complete a cash trip, then show me the actual rows that landed in payments, driver_earnings, and wallet_transactions for that one trip, and explain how the numbers in each one connect to each other.`
+    },
+    {
+      step:'21b', name:'Wallet payment flow (T3)', why:'The passenger-pays-by-wallet path, with concurrent-spend protection.',
+      refs:'docs/02-03 §8 T3',
+      build:`Build the wallet payment flow per T3 in docs/02-03-normalization-schema-transactions.md — the fn_apply_wallet_txn function's FOR UPDATE lock should already prevent two simultaneous spends from both passing a balance check.`,
+      understand:`Explain, using T1's dispatch race as the comparison, why wallet payments need the same kind of row-locking protection — what's the actual bad outcome if two payments try to debit the same wallet balance at the same instant?`
+    },
+    {
+      step:'21c', name:'One gateway sandbox (bKash or SSLCommerz) + idempotent webhook', why:'Real payment gateway integration — the SHOULD-tier feature that lifts your grade.',
+      refs:'docs/08-09-10 §10.4',
+      build:`Integrate one gateway sandbox (bKash or SSLCommerz) behind the adapter interface described in docs/05-06-07-learning-roadmap-architecture-folders.md §8, for topup and trip payment. Build the webhook handler so it's idempotent — the same webhook delivered twice must not double-process the payment.`,
+      understand:`Manually replay the same webhook payload twice against my running server and show me what happens the second time — walk through which constraint or check is actually preventing the double-charge.`
+    },
+    {
+      step:'21d', name:'Earnings screen + payout accounts + withdrawal request + admin payout queue', why:"Closes the loop for drivers actually getting paid out.",
+      refs:'v_driver_daily_earnings view',
+      build:`Build the driver earnings screen using the v_driver_daily_earnings view. Build payout account management, a withdrawal request flow, and an admin payout queue — withdrawals should require a finance-role admin to approve.`,
+      understand:`Show me the query behind v_driver_daily_earnings and explain, in plain terms, what it's aggregating and why it exists as a view instead of the frontend just joining several tables itself every time.`
+    },
+    {
+      step:'21e', name:'Promo validate/redeem + receipt row on completion', why:'Rounds out the money milestone.',
+      refs:'docs/01 domain 5',
+      build:`Build promo code validation and redemption, and generate a receipt row automatically on trip completion.`,
+      understand:`Try redeeming the same single-use promo code twice as the same user and show me exactly what stops the second attempt.`
+    }
+  ]
+},
+{
+  id:'m8', code:'M8', name:'Admin, Hardening & Launch', weeks:'weeks 12–14',
+  goal:'Operable, tested, deployed, demo-ready.',
+  demo:'Live URL on your phone + the two-browser show + the test suite green in one command.',
+  done:['Money-path tests pass','.env story clean in prod','A stranger completes a ride using only your README'],
+  parallel:'Steps 22 and 23 can be split between you two — one builds the remaining screens/admin console, the other writes the test suite against what already exists.',
+  features:[
+    {
+      step:'22a', name:'History/detail/receipt/profile screens', why:'Breadth work — fast now because every UI pattern already exists from M5/M6.',
+      refs:'docs/11-12 (screen inventory)',
+      build:`Build the remaining passenger/driver-facing screens: trip history list, trip detail, receipt view, and the profile screen — reusing the ui/ kit and patterns already established, no new components unless genuinely necessary.`,
+      understand:`Pick the receipt screen and show me exactly which backend fields it's pulling from — trace it back to the actual database columns behind the numbers shown.`
+    },
+    {
+      step:'22b', name:'Admin console — dashboard, approvals, users, pricing publisher, payouts, disputes, SOS board, audit viewer', why:'The operational surface that makes the platform actually runnable by a human, not just usable by riders/drivers.',
+      refs:'docs/11-12 admin section',
+      build:`Build the admin console screens: dashboard KPIs, the driver approval queue, user management, a pricing publisher, the payout queue, disputes, an SOS board, and an audit log viewer.`,
+      understand:`Pick the audit viewer and show me a real audit_logs row it's displaying — explain which earlier feature (from M2 through M7) actually wrote that specific row.`
+    },
+    {
+      step:'23', name:'Tests: fare-math unit suite + auth/booking/payment API suites (supertest)', why:'Written while the behavior is still fresh — money paths are non-negotiable to test.',
+      refs:'docs/05-06-07 phase 5',
+      build:`Write a fare-math unit test suite covering the chk_fare_identity logic, plus supertest-based API suites for auth, booking, and payment flows — including a test that actually reproduces the two-driver accept race from M4 step 12.`,
+      understand:`Run the test suite, then intentionally break one thing (e.g. remove a CHECK-satisfying line from the fare calculation) and show me the test failure — explain how the failure message tells you exactly what broke, without needing to re-read the whole function.`
+    },
+    {
+      step:'24', name:'Deploy + seed demo world + rehearse', why:'Ship, then practice the show.',
+      refs:'docs/13-14 §12 (risk register — rehearse from the deployed app)',
+      build:`Set up deployment (Vercel for frontend, Render/Railway for backend, managed Postgres) with a full docker-compose story for local dev still working. Write a demo seed script populating a believable "world" of users, drivers, and a few completed trips. Deploy it.`,
+      understand:`Walk me through, from memory, what happens end to end if a stranger clones my repo and follows only the README — where, specifically, would it break for someone who isn't me?`
+    }
+  ]
+}
+];
+
+// ---------- render ----------
+const STORAGE_KEY = 'cholo_roadmap_progress_v1';
+function loadProgress(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
+function saveProgress(p){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }catch(e){} }
+let progress = loadProgress();
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function render(){
+  const main = document.getElementById('main');
+  const nav = document.getElementById('routeNav');
+  main.innerHTML = '';
+  nav.innerHTML = '';
+  let totalFeatures = 0, doneFeatures = 0;
+
+  DATA.forEach(ms => {
+    totalFeatures += ms.features.length;
+    const msDone = ms.features.filter(f => progress[ms.id+'-'+f.step]).length;
+    doneFeatures += msDone;
+    const full = msDone === ms.features.length;
+    const partial = msDone > 0 && !full;
+
+    // nav stop
+    const a = document.createElement('a');
+    a.className = 'stop' + (full?' done':'') + (partial?' partial':'');
+    a.href = '#' + ms.id;
+    a.innerHTML = `<span class="code">${ms.code}</span><span class="name">${ms.name}</span>`;
+    nav.appendChild(a);
+
+    // milestone section
+    const sec = document.createElement('section');
+    sec.className = 'milestone';
+    sec.id = ms.id;
+
+    const doneItems = ms.done.map(d=>`<li>${escapeHtml(d)}</li>`).join('');
+    sec.innerHTML = `
+      <div class="milestone-head">
+        <span class="m-badge">${ms.code}</span>
+        <h2>${ms.name}</h2>
+        <span class="m-weeks">${ms.weeks}</span>
+      </div>
+      <p class="m-goal">${escapeHtml(ms.goal)}</p>
+      <div class="m-info">
+        <div class="block"><b>Demo (definition of done)</b><p>${escapeHtml(ms.demo)}</p></div>
+        <div class="block"><b>Checklist</b><ul>${doneItems}</ul></div>
+        ${ms.parallel ? `<div class="m-parallel"><b>↔ Partner split —</b> ${escapeHtml(ms.parallel)}</div>` : ''}
+      </div>
+    `;
+
+    const list = document.createElement('div');
+    ms.features.forEach(f => {
+      const key = ms.id+'-'+f.step;
+      const checked = !!progress[key];
+      const card = document.createElement('div');
+      card.className = 'feature';
+      card.innerHTML = `
+        <div class="feature-top">
+          <div class="f-check ${checked?'checked':''}" data-key="${key}"></div>
+          <div class="f-step">#${f.step}</div>
+          <div class="f-titles">
+            <h3>${escapeHtml(f.name)}</h3>
+            <div class="f-why">${escapeHtml(f.why)}</div>
+          </div>
+          <div class="f-caret">▸</div>
+        </div>
+        <div class="f-body">
+          <div class="f-refs"><b>Reference:</b> ${escapeHtml(f.refs)}</div>
+          <div class="prompt-block build">
+            <div class="prompt-label">
+              <span class="tag-build"><span class="dot"></span>${f.practiceOnly ? 'PROMPT — GET PRACTICE QUESTIONS' : 'BUILD PROMPT'}</span>
+              <button class="copy-btn" data-copy="build-${key}">copy</button>
+            </div>
+            <pre id="build-${key}">${escapeHtml(f.build)}</pre>
+          </div>
+          <div class="prompt-block understand">
+            <div class="prompt-label">
+              <span class="tag-understand"><span class="dot"></span>${f.practiceOnly ? 'PROMPT — WHEN YOU GET STUCK' : 'UNDERSTAND PROMPT'}</span>
+              <button class="copy-btn" data-copy="understand-${key}">copy</button>
+            </div>
+            <pre id="understand-${key}">${escapeHtml(f.understand)}</pre>
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+    sec.appendChild(list);
+    main.appendChild(sec);
+  });
+
+  document.getElementById('totalFeatureCount').textContent = totalFeatures;
+  document.getElementById('doneCount').textContent = doneFeatures;
+}
+
+document.addEventListener('click', (e)=>{
+  const check = e.target.closest('.f-check');
+  if(check){
+    const key = check.dataset.key;
+    progress[key] = !progress[key];
+    saveProgress(progress);
+    render();
+    return;
+  }
+  const copyBtn = e.target.closest('.copy-btn');
+  if(copyBtn){
+    const id = copyBtn.dataset.copy;
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(()=>{
+      copyBtn.textContent = 'copied';
+      copyBtn.classList.add('copied');
+      setTimeout(()=>{ copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1400);
+    });
+    return;
+  }
+  const top = e.target.closest('.feature-top');
+  if(top){
+    top.closest('.feature').classList.toggle('open');
+  }
+});
+
+render();
+</script>
+</body>
+</html>
