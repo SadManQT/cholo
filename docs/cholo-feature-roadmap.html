@@ -79,6 +79,24 @@ h1 em{font-style:normal;color:var(--amber)}
 .hero-meta .stat b{display:block;font-size:22px;color:var(--ink);font-weight:600}
 .hero-meta .stat span{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em}
 
+/* ---------- Sync bar ---------- */
+.sync-bar{
+  margin-top:22px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:none;transition:background .2s}
+.sync-bar.synced .sync-dot{background:var(--green)}
+.sync-bar.saving .sync-dot{background:var(--amber);animation:sync-pulse 1s ease-in-out infinite}
+.sync-bar.error .sync-dot{background:var(--red)}
+@keyframes sync-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.sync-btn{
+  font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+  background:var(--surface-2);border:1px solid var(--line);
+  padding:3px 10px;border-radius:6px;cursor:pointer;transition:.15s;
+}
+.sync-btn:hover{color:var(--ink);border-color:var(--ink-faint)}
+
 /* ---------- Partner box ---------- */
 .partner-box{
   margin-top:34px;
@@ -317,11 +335,17 @@ pre{
     <div class="stat"><b id="doneCount">0</b><span>Checked off</span></div>
   </div>
 
+  <div class="sync-bar" id="syncBar">
+    <span class="sync-dot"></span>
+    <span id="syncStatusText">Connecting to GitHub…</span>
+    <button class="sync-btn" id="syncTokenBtn" type="button">Set up write access</button>
+  </div>
+
   <div class="partner-box">
     <h3>🤝 Working through this with a partner</h3>
     <p><b>One drives, one navigates, swap every feature.</b> Whoever's "driving" pastes the <code>BUILD</code> prompt into their agent session. The navigator opens a second session in the same repo and pastes the <code>UNDERSTAND</code> prompt once the build is done — so both of you can explain every line before it's committed, not just the person who typed it.</p>
     <p><b>Some steps can run in parallel</b> — they're marked <span style="color:var(--green)">green</span> below with who can start what. Everything else is strictly sequential: don't start step 12 before step 11 is merged.</p>
-    <p>Checkboxes save to this browser only (not shared between you two) — use them as your own personal progress tracker, and use GitHub Issues (doc 13 §1) as the shared source of truth for who's done what.</p>
+    <p>Checkboxes are shared: checking one off commits the change to <code>docs/roadmap-progress.json</code> in this repo via the GitHub API, so it shows up for both of you within seconds — no need for GitHub Issues just to track this. Anyone can view the shared progress; checking things off needs a one-time GitHub token, set up with the button above (stored only in your own browser, never shipped in this file).</p>
   </div>
 </div>
 
@@ -633,11 +657,84 @@ const DATA = [
 }
 ];
 
-// ---------- render ----------
-const STORAGE_KEY = 'cholo_roadmap_progress_v1';
-function loadProgress(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
-function saveProgress(p){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }catch(e){} }
-let progress = loadProgress();
+// ---------- GitHub-backed sync ----------
+// Checkboxes live in docs/roadmap-progress.json in this repo. Checking one
+// off writes a real commit via the GitHub Contents API — that's the "shared
+// state" mechanism, there's no separate server. Viewing needs no auth
+// (public repo); checking things off needs a personal access token, entered
+// once and kept only in this browser's localStorage — it is never embedded
+// in this file or sent anywhere except api.github.com.
+const GH_OWNER = 'SadManQT';
+const GH_REPO = 'cholo';
+const GH_PATH = 'docs/roadmap-progress.json';
+const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+const TOKEN_KEY = 'cholo_roadmap_gh_token';
+const CACHE_KEY = 'cholo_roadmap_progress_cache_v1'; // offline fallback only, not the source of truth
+
+function getToken(){ return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(t){ if(t){ localStorage.setItem(TOKEN_KEY, t); } else { localStorage.removeItem(TOKEN_KEY); } }
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str))); }
+
+function loadCache(){ try{ return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }catch(e){ return {}; } }
+function saveCache(p){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(p)); }catch(e){} }
+
+let progress = loadCache(); // instant first paint; reconciled against GitHub right after
+let remoteSha = null;
+
+function promptForToken(){
+  const msg = 'Paste a GitHub personal access token with write access to this repo.\n\n'
+    + 'Create one at https://github.com/settings/personal-access-tokens/new\n'
+    + '  → Repository access: Only select repositories → cholo\n'
+    + '  → Permissions → Contents: Read and write\n\n'
+    + 'Stored only in this browser — never shipped in this file, never sent anywhere but api.github.com.';
+  const token = window.prompt(msg);
+  if(token) setToken(token.trim());
+  return getToken();
+}
+
+async function fetchRemoteProgress(){
+  const headers = {Accept:'application/vnd.github+json'};
+  const token = getToken();
+  if(token) headers.Authorization = 'Bearer ' + token;
+  const res = await fetch(GH_API, {headers});
+  if(!res.ok) throw new Error('GitHub read failed (' + res.status + ')');
+  const data = await res.json();
+  remoteSha = data.sha;
+  const text = b64DecodeUnicode(data.content.replace(/\n/g, ''));
+  return text.trim() ? JSON.parse(text) : {};
+}
+
+async function pushRemoteProgress(newProgress, attempt){
+  attempt = attempt || 0;
+  const token = getToken();
+  if(!token) throw new Error('no GitHub token set up');
+  const res = await fetch(GH_API, {
+    method:'PUT',
+    headers:{
+      Accept:'application/vnd.github+json',
+      Authorization:'Bearer ' + token,
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify({
+      message:'progress: update roadmap checklist',
+      content: b64EncodeUnicode(JSON.stringify(newProgress, null, 2) + '\n'),
+      sha: remoteSha,
+      branch:'main'
+    })
+  });
+  if(res.status === 409 && attempt < 1){
+    // someone else committed first — refetch the latest sha and retry once
+    await fetchRemoteProgress();
+    return pushRemoteProgress(newProgress, attempt + 1);
+  }
+  if(!res.ok){
+    const body = await res.json().catch(()=>({}));
+    throw new Error((body && body.message) || ('GitHub write failed (' + res.status + ')'));
+  }
+  const data = await res.json();
+  remoteSha = data.content.sha;
+}
 
 function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -728,13 +825,29 @@ function render(){
   document.getElementById('doneCount').textContent = doneFeatures;
 }
 
-document.addEventListener('click', (e)=>{
+document.addEventListener('click', async (e)=>{
   const check = e.target.closest('.f-check');
   if(check){
+    if(!getToken()){
+      promptForToken();
+      if(!getToken()) return; // declined — stay read-only
+    }
     const key = check.dataset.key;
+    const prevValue = progress[key];
     progress[key] = !progress[key];
-    saveProgress(progress);
+    saveCache(progress);
     render();
+    setSyncBar('saving', 'Saving…');
+    try{
+      await pushRemoteProgress(progress);
+      saveCache(progress);
+      setSyncBar('synced', 'Synced with GitHub');
+    }catch(err){
+      progress[key] = prevValue;
+      saveCache(progress);
+      render();
+      setSyncBar('error', 'Sync failed — ' + err.message);
+    }
     return;
   }
   const copyBtn = e.target.closest('.copy-btn');
@@ -754,7 +867,41 @@ document.addEventListener('click', (e)=>{
   }
 });
 
-render();
+// ---------- sync bar + bootstrap ----------
+const syncBarEl = document.getElementById('syncBar');
+const syncStatusTextEl = document.getElementById('syncStatusText');
+const syncTokenBtn = document.getElementById('syncTokenBtn');
+
+function setSyncBar(state, text){
+  syncBarEl.className = 'sync-bar ' + state;
+  syncStatusTextEl.textContent = text;
+  syncTokenBtn.textContent = getToken() ? 'Change token' : 'Set up write access';
+}
+
+syncTokenBtn.addEventListener('click', ()=>{
+  promptForToken();
+  setSyncBar('idle', getToken() ? 'Connected — click a checkbox to sync' : 'Read-only (no token set)');
+});
+
+async function refreshFromRemote(){
+  try{
+    progress = await fetchRemoteProgress();
+    saveCache(progress);
+    render();
+    setSyncBar('synced', getToken() ? 'Synced with GitHub' : 'Read-only — viewing shared progress');
+  }catch(err){
+    setSyncBar('error', 'Could not reach GitHub — showing last-known state');
+  }
+}
+
+render(); // instant paint from local cache
+setSyncBar('idle', 'Connecting to GitHub…');
+refreshFromRemote();
+window.addEventListener('focus', refreshFromRemote);
+// poll only when authenticated (5,000 req/hr) — an unauthenticated viewer
+// relies on the focus listener instead, to stay well under GitHub's 60/hr
+// unauthenticated rate limit
+setInterval(()=>{ if(getToken()) refreshFromRemote(); }, 30000);
 </script>
 </body>
 </html>

@@ -4,7 +4,7 @@ A ride-sharing platform for Bangladesh, built as a learning project by two peopl
 
 **Working on this repo?** Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first — it explains the workflow and how the two of us (plus whichever AI coding agent either of us is using) stay in sync via [`AGENTS.md`](./AGENTS.md).
 
-**Deciding what to build next?** Open [`docs/cholo-feature-roadmap.html`](./docs/cholo-feature-roadmap.html) in a browser — it's the 24-step build order from `docs/13-14`, broken into per-feature prompts (one to build it, one to make your agent explain it back to you), with a personal checklist. Progress is saved per-browser only; GitHub Issues is still the shared source of truth for who's doing what.
+**Deciding what to build next?** Open **https://sadmanqt.github.io/cholo/docs/cholo-feature-roadmap.html** — it's the 24-step build order from `docs/13-14`, broken into per-feature prompts (one to build it, one to make your agent explain it back to you), with a shared checklist: checking a step off commits the change to `docs/roadmap-progress.json` via the GitHub API, so both of you see it update within seconds. Viewing needs nothing; checking things off needs a one-time GitHub token (the page's "Set up write access" button explains how — a fine-grained token scoped to just this repo, kept only in your own browser).
 
 ## Quickstart (5 minutes)
 
