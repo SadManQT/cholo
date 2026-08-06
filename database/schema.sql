@@ -133,7 +133,7 @@ CREATE TABLE users (
     gender              user_gender,
     date_of_birth       DATE,
     photo_url           TEXT,
-    preferred_language  preferred_language NOT NULL DEFAULT 'bn',
+    preferred_language  preferred_language NOT NULL DEFAULT 'en',
     status              user_status NOT NULL DEFAULT 'active',
     referral_code       VARCHAR(20) UNIQUE,
     phone_verified_at   TIMESTAMPTZ,
