@@ -4,12 +4,15 @@ import { after, before, mock, test } from 'node:test';
 
 import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
+import { logger } from '../../src/utils/logger.js';
 
 let server;
 let baseUrl;
 let databaseClient;
 let activeCityId;
 let inactiveCityId;
+let databaseShouldFail = false;
+let errorLog;
 
 before(async () => {
   databaseClient = await pool.connect();
@@ -32,7 +35,14 @@ before(async () => {
   activeCityId = rows.find((city) => city.isActive).id;
   inactiveCityId = rows.find((city) => !city.isActive).id;
 
-  mock.method(pool, 'query', (sql, values) => databaseClient.query(sql, values));
+  mock.method(pool, 'query', (sql, values) => {
+    if (databaseShouldFail) {
+      throw new Error('database unavailable');
+    }
+
+    return databaseClient.query(sql, values);
+  });
+  errorLog = mock.method(logger, 'error', () => {});
 
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -80,5 +90,27 @@ test('GET /api/v1/cities returns active cities in the standard success envelope'
       'currency',
       'launchedAt',
     ]);
+  }
+});
+
+test('GET /api/v1/cities sends async database failures through the central handler', async () => {
+  databaseShouldFail = true;
+
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/cities`);
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, {
+      success: false,
+      error: {
+        code: 'INTERNAL',
+        message: 'Something went wrong on our side.',
+      },
+    });
+    assert.doesNotMatch(JSON.stringify(body), /database unavailable/);
+    assert.equal(errorLog.mock.callCount(), 1);
+  } finally {
+    databaseShouldFail = false;
   }
 });
