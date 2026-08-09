@@ -35,6 +35,13 @@ curl http://localhost:3000/health
 
 It should return `{"db":true}`.
 
+The first versioned API endpoint lists active operating cities through the
+full route → controller → service → repository pipeline:
+
+```bash
+curl http://localhost:3000/api/v1/cities
+```
+
 ### Verify it worked
 
 Wait a few seconds for the healthcheck, then:
