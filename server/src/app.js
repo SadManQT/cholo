@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 
@@ -13,6 +14,7 @@ const app = express();
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestLogger);
 
 app.get('/health', async (_request, response) => {
