@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cholo — M0 ও M1 সম্পূর্ণ ব্যাখ্যা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1220;
+    --panel:#171b2e;
+    --panel2:#1e2338;
+    --border:#2b3153;
+    --text:#e7e9f5;
+    --muted:#a3a8c9;
+    --accent:#7dd3fc;
+    --accent2:#a78bfa;
+    --green:#4ade80;
+    --yellow:#fbbf24;
+    --red:#fb7185;
+    --code-bg:#0b0e1a;
+    --m0:#4ade80;
+    --m1:#7dd3fc;
+    --radius:14px;
+    --sidebar-w:270px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Hind Siliguri','Segoe UI',sans-serif;
+    background:linear-gradient(180deg,#0c0e18,#11142a 400px, #0c0e18);
+    color:var(--text);
+    line-height:1.75;
+  }
+  code, pre, .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* Layout */
+  .layout{display:flex; min-height:100vh;}
+  nav.sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    background:rgba(10,12,24,0.9);
+    border-right:1px solid var(--border);
+    padding:22px 16px 60px;
+  }
+  nav.sidebar h3{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--muted);
+    margin:22px 0 8px;
+  }
+  nav.sidebar h3:first-child{margin-top:0;}
+  nav.sidebar a{
+    display:block;
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:8px;
+    opacity:0.85;
+  }
+  nav.sidebar a:hover{background:var(--panel2); opacity:1;}
+  nav.sidebar .brand{
+    font-weight:700;
+    font-size:18px;
+    color:var(--accent);
+    margin-bottom:4px;
+  }
+  nav.sidebar .brand-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  main{flex:1; min-width:0; padding:40px clamp(16px,5vw,64px) 100px;}
+  .content{max-width:900px; margin:0 auto;}
+
+  /* Hero */
+  .hero{
+    padding:36px;
+    border-radius:var(--radius);
+    background:radial-gradient(circle at top left, rgba(125,211,252,0.15), transparent 60%),
+               radial-gradient(circle at bottom right, rgba(167,139,250,0.15), transparent 60%),
+               var(--panel);
+    border:1px solid var(--border);
+    margin-bottom:36px;
+  }
+  .hero h1{margin:0 0 10px; font-size:clamp(24px,4vw,34px);}
+  .hero p{color:var(--muted); margin:6px 0; font-size:16px;}
+  .badges{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .badge{
+    font-size:12px; font-weight:600; padding:5px 12px; border-radius:999px;
+    border:1px solid var(--border);
+  }
+  .badge.m0{color:var(--m0); border-color:var(--m0);}
+  .badge.m1{color:var(--m1); border-color:var(--m1);}
+  .badge.done{color:#0f1220; background:var(--green); border-color:var(--green);}
+
+  section{margin-bottom:52px; scroll-margin-top:20px;}
+  section > h2{
+    font-size:22px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:12px;
+    margin-bottom:18px;
+  }
+  section > h2 .tag{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px;
+  }
+  .tag.m0{background:rgba(74,222,128,0.15); color:var(--m0);}
+  .tag.m1{background:rgba(125,211,252,0.15); color:var(--m1);}
+
+  h3{font-size:17px; margin-top:30px; color:var(--accent2);}
+  p{margin:10px 0;}
+  .muted{color:var(--muted);}
+
+  /* File card */
+  .filecard{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    margin:18px 0;
+    overflow:hidden;
+  }
+  .filecard .filebar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px;
+    background:var(--panel2);
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+  .filecard .filepath{font-family:'JetBrains Mono',monospace; color:var(--accent);}
+  .filecard .filedesc{padding:12px 16px 0; color:var(--muted); font-size:14px;}
+
+  pre{
+    background:var(--code-bg);
+    padding:16px;
+    margin:0;
+    overflow-x:auto;
+    font-size:13.2px;
+    line-height:1.65;
+  }
+  pre code{white-space:pre;}
+  .ln{color:#4d5480; user-select:none; display:inline-block; width:26px; text-align:right; margin-right:14px;}
+
+  /* syntax coloring via classes */
+  .kw{color:#c792ea;}       /* keywords: import, export, const, function, async, await, class, extends, new, if, return */
+  .str{color:#c3e88d;}      /* strings */
+  .fn{color:#82aaff;}       /* function/method names */
+  .cm{color:#5c6382; font-style:italic;} /* comments */
+  .num{color:#f78c6c;}
+  .prop{color:#7dd3fc;}
+  .punc{color:#89ddff;}
+
+  .callout{
+    border-radius:12px;
+    padding:16px 18px;
+    margin:16px 0;
+    border:1px solid var(--border);
+    font-size:14.5px;
+  }
+  .callout.why{background:rgba(167,139,250,0.08); border-color:rgba(167,139,250,0.35);}
+  .callout.why .cl-title{color:var(--accent2);}
+  .callout.syntax{background:rgba(125,211,252,0.07); border-color:rgba(125,211,252,0.35);}
+  .callout.syntax .cl-title{color:var(--accent);}
+  .callout.warn{background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.35);}
+  .callout.warn .cl-title{color:var(--yellow);}
+  .cl-title{font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:720px){.grid2{grid-template-columns:1fr;}}
+
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top;}
+  th{background:var(--panel2); color:var(--accent);}
+  td code{background:var(--code-bg); padding:2px 6px; border-radius:5px; font-size:12.5px;}
+
+  .flow{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0;
+  }
+  .flow .step{
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; font-size:13.5px; font-family:'JetBrains Mono',monospace;
+  }
+  .flow .arrow{color:var(--muted);}
+
+  details{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    margin:14px 0; padding:0 16px;
+  }
+  details summary{
+    cursor:pointer; padding:14px 0; font-weight:600; color:var(--accent2); list-style:none;
+  }
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"▸ "; color:var(--accent);}
+  details[open] summary::before{content:"▾ ";}
+  details .inner{padding-bottom:16px;}
+
+  .toc-pill{
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+    background:var(--panel2); color:var(--muted); margin-left:6px;
+  }
+
+  footer{
+    text-align:center; color:var(--muted); font-size:13px; padding:40px 20px 10px;
+  }
+
+  .top-btn{
+    position:fixed; bottom:24px; right:24px; background:var(--accent); color:#0f1220;
+    border:none; border-radius:50%; width:44px; height:44px; font-weight:700; cursor:pointer;
+    box-shadow:0 6px 20px rgba(0,0,0,0.4); display:none; z-index:50;
+  }
+  #mobileToggle{display:none;}
+  @media (max-width:900px){
+    nav.sidebar{position:fixed; left:-100%; top:0; z-index:100; width:80%; max-width:320px; transition:left 0.25s; box-shadow:0 0 40px rgba(0,0,0,0.6);}
+    nav.sidebar.open{left:0;}
+    #mobileToggle{
+      display:block; position:fixed; top:14px; left:14px; z-index:110;
+      background:var(--accent); color:#0f1220; border:none; border-radius:8px;
+      padding:8px 12px; font-weight:700; cursor:pointer;
+    }
+    main{padding-top:70px;}
+  }
+</style>
+</head>
+<body>
+
+<button id="mobileToggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰ মেনু</button>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="brand">চলো (Cholo)</div>
+    <div class="brand-sub">M0 + M1 — সম্পূর্ণ ব্যাখ্যা</div>
+
+    <h3>শুরু করার আগে</h3>
+    <a href="#intro">ভূমিকা</a>
+    <a href="#big-picture">বড় ছবিটা</a>
+
+    <h3>M0 — Foundation</h3>
+    <a href="#m0-git">Git + repo ফাইল</a>
+    <a href="#m0-env">.env সিস্টেম</a>
+    <a href="#m0-docker">Docker Compose</a>
+    <a href="#m0-schema">Database schema (ঝলক)</a>
+
+    <h3>M1 — Server Skeleton</h3>
+    <a href="#m1-package">package.json</a>
+    <a href="#m1-esm">Import/Export (ESM)</a>
+    <a href="#m1-app">app.js</a>
+    <a href="#m1-server">server.js</a>
+    <a href="#m1-envjs">config/env.js</a>
+    <a href="#m1-db">config/db.js</a>
+    <a href="#m1-cors">config/cors.js</a>
+    <a href="#m1-middlewares">middlewares/</a>
+    <a href="#m1-utils">utils/</a>
+    <a href="#m1-routes">routes/</a>
+    <a href="#m1-cities">cities ফিচার (পুরো পাইপলাইন)</a>
+    <a href="#m1-tests">tests/</a>
+
+    <h3>রেফারেন্স</h3>
+    <a href="#glossary">JS Syntax গ্লোসারি</a>
+    <a href="#request-flow">একটা রিকোয়েস্টের যাত্রা</a>
+    <a href="#whats-next">এরপর কী — M2</a>
+  </nav>
+
+  <main>
+    <div class="content">
+
+      <div class="hero" id="intro">
+        <h1>তুমি এখন পর্যন্ত ঠিক কী বানিয়েছ?</h1>
+        <p>এই পেজটা তোমার নিজের <code>cholo</code> রিপোর ভেতরের আসল ফাইল থেকে বানানো — কোনো কাল্পনিক উদাহরণ না। প্রতিটা কোড ব্লক তোমার প্রজেক্টে সত্যিই আছে। লক্ষ্য একটাই: প্রতিটা লাইন কেন লেখা হয়েছে, আর তার সিনট্যাক্সটা আসলে কী বোঝায় — দুটোই একসাথে বোঝা।</p>
+        <p>ভাষা মিশ্রিত থাকবে ইচ্ছা করেই — ব্যাখ্যা বাংলায়, কোড আর টেকনিক্যাল টার্ম ইংরেজিতে (যেমন বেশিরভাগ বাংলাদেশি ডেভেলপার শেখে)। কোড কখনো অনুবাদ হয় না, কম্পিউটার শুধু ইংরেজি সিনট্যাক্সই বোঝে।</p>
+        <div class="badges">
+          <span class="badge m0 done">M0 — Foundation ✓ সম্পূর্ণ</span>
+          <span class="badge m1 done">M1 — Server Skeleton ✓ সম্পূর্ণ</span>
+          <span class="badge">পরেরটা: M2 — Auth & Accounts</span>
+        </div>
+      </div>
+
+      <section id="big-picture">
+        <h2>বড় ছবিটা — M0 আর M1 আসলে কী দিয়েছে</h2>
+        <p><strong>M0 (Foundation)</strong> মানে হলো: এমন একটা রিপো যেটা যে কেউ ক্লোন করে ৫ মিনিটে চালাতে পারবে। এতে আছে Git setup, <code>.env</code> সিস্টেম, আর Docker দিয়ে PostgreSQL ডেটাবেজ চালু করা।</p>
+        <p><strong>M1 (Server Skeleton & Infrastructure)</strong> মানে হলো: একটা চলমান Express অ্যাপ, যার মধ্যে এমন "প্লাম্বিং" (plumbing) বসানো আছে যা প্রজেক্টের প্রতিটা future feature পুনর্ব্যবহার করবে — error handling, validation, logging, CORS, database connection pool। এই কারণেই <code>AGENTS.md</code> বলছে "infrastructure before features" — এই ভিত্তিটা একবার বানালে প্রতিটা পরের feature সেটা ফ্রি তে পায়।</p>
+        <div class="flow">
+          <div class="step">git init</div><span class="arrow">→</span>
+          <div class="step">docker-compose (Postgres)</div><span class="arrow">→</span>
+          <div class="step">Express app.js/server.js</div><span class="arrow">→</span>
+          <div class="step">config (env, db, cors)</div><span class="arrow">→</span>
+          <div class="step">middlewares + utils</div><span class="arrow">→</span>
+          <div class="step">প্রথম feature: cities</div><span class="arrow">→</span>
+          <div class="step">tests</div>
+        </div>
+        <div class="callout why">
+          <span class="cl-title">কেন এই অর্ডারে?</span>
+          ডেটাবেজ আগে বানানো হয়েছে কারণ বাকি সবকিছু এর সাথে কথা বলার জন্যই আছে। তারপর একটা খালি চলমান server, তারপর error handling — কারণ সেটা পরে ৩০টা endpoint-এ বসানো এক সপ্তাহের কাজ, কিন্তু আগে বসালে এক ঘণ্টার। সবশেষে সবচেয়ে সহজ টেবিল (<code>cities</code>) দিয়ে প্রমাণ করা হয়েছে যে পুরো পাইপলাইনটা (route → controller → service → repository) আসলেই কাজ করে।
+        </div>
+      </section>
+
+      <!-- ============ M0 ============ -->
+
+      <section id="m0-git">
+        <h2><span class="tag m0">M0</span> Git + repo-র বেসিক ফাইলগুলো</h2>
+        <p>যেকোনো প্রজেক্টের প্রথম কাজ হলো version control (Git) চালু করা, আর কিছু নিয়ম-কানুন ফাইল রাখা যাতে secret কখনো ভুলে commit না হয়।</p>
+
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">.gitignore</span><span class="muted">কোন ফাইল Git ট্র্যাক করবে না</span></div>
+          <pre><code><span class="cm"># secrets — never commit</span>
+.env
+.env.local
+
+<span class="cm"># dependencies</span>
+node_modules/
+
+<span class="cm"># build output</span>
+dist/
+build/
+
+<span class="cm"># coverage</span>
+coverage/
+
+<span class="cm"># OS cruft</span>
+.DS_Store</code></pre>
+        </div>
+        <div class="callout syntax">
+          <span class="cl-title">সিনট্যাক্স নোট</span>
+          <code>.gitignore</code> একটা প্লেইন টেক্সট ফাইল, প্রতি লাইনে একটা প্যাটার্ন। <code>node_modules/</code> এর শেষে <code>/</code> মানে এটা একটা ফোল্ডার। <code># দিয়ে শুরু</code> মানে কমেন্ট — Git এটা উপেক্ষা করে। এই ফাইল ছাড়া <code>node_modules</code> (হাজার হাজার ফাইল!) আর তোমার <code>.env</code> (পাসওয়ার্ড সহ) দুটোই Git-এ চলে যেত।
+        </div>
+
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">.env.example</span><span class="muted">সব environment variable-এর টেমপ্লেট, ভুয়া মান দিয়ে</span></div>
+          <pre><code><span class="cm"># Copy this file to .env and fill in real values. .env is git-ignored —</span>
+<span class="cm"># never commit it (doc 07 §2).</span>
+
+<span class="cm"># --- Postgres (read by docker-compose.yml) ---</span>
+POSTGRES_USER=cholo
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=cholo
+POSTGRES_PORT=5433
+
+<span class="cm"># --- Backend (read later by server/config/env.js, doc 08 §5) ---</span>
+<span class="cm"># Built from the four values above; must match them.</span>
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://cholo:change-me@localhost:5433/cholo
+CLIENT_ORIGIN=http://localhost:5173</code></pre>
+        </div>
+        <div class="callout why">
+          <span class="cl-title">কেন দুটো ফাইল — .env আর .env.example?</span>
+          <code>.env</code> আসল secret রাখে আর Git থেকে লুকানো থাকে (<code>.gitignore</code>-এ আছে দেখেছ)। <code>.env.example</code> Git-এ থাকে, যাতে অন্য কেউ (বা তুমি নিজেই ৬ মাস পর) জানতে পারে ঠিক কোন কোন variable দরকার — শুধু আসল মানগুলো ছাড়া। <code>README.md</code>-তেই দেখবে প্রথম quickstart command হলো <code>cp .env.example .env</code>।
+        </div>
+      </section>
+
+      <section id="m0-env">
+        <h2><span class="tag m0">M0</span> Environment Variable আসলে কী?</h2>
+        <p>Environment variable হলো key=value জোড়া যা তোমার অ্যাপের বাইরে থেকে দেওয়া হয় — কোডে hardcode করা হয় না। এতে সুবিধা: একই কোড dev-এ এক config নিয়ে চলে, production-এ আরেক config নিয়ে — কোড পাল্টাতে হয় না, শুধু <code>.env</code> পাল্টালেই হয়।</p>
+        <table>
+          <tr><th>Variable</th><th>ব্যবহার</th></tr>
+          <tr><td><code>POSTGRES_USER/PASSWORD/DB/PORT</code></td><td>docker-compose.yml পড়ে Postgres container বানায়</td></tr>
+          <tr><td><code>DATABASE_URL</code></td><td>Express অ্যাপ এই একটা URL দিয়ে Postgres-এ কানেক্ট করে (উপরের ৪টার সমন্বয়ে বানানো)</td></tr>
+          <tr><td><code>NODE_ENV</code></td><td>অ্যাপ কি development/test/production মোডে চলছে বোঝায়</td></tr>
+          <tr><td><code>CLIENT_ORIGIN</code></td><td>CORS-এর জন্য — কোন frontend URL থেকে request নেওয়া নিরাপদ</td></tr>
+        </table>
+      </section>
+
+      <section id="m0-docker">
+        <h2><span class="tag m0">M0</span> docker-compose.yml — PostgreSQL চালু করা</h2>
+        <p>Docker তোমার কম্পিউটারে সরাসরি PostgreSQL ইনস্টল না করেই একটা "কন্টেইনার"-এ (isolated mini-machine) PostgreSQL চালায়। এতে সবার মেশিনে একই ভার্সন, একই ব্যবহার নিশ্চিত হয় — "works on my machine" সমস্যা এড়ানো যায়।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">docker-compose.yml</span><span class="muted">YAML ফরম্যাট</span></div>
+          <pre><code><span class="prop">services</span><span class="punc">:</span>
+  <span class="prop">postgres</span><span class="punc">:</span>
+    <span class="prop">image</span><span class="punc">:</span> postgres<span class="punc">:</span>16
+    <span class="prop">restart</span><span class="punc">:</span> unless-stopped
+    <span class="prop">environment</span><span class="punc">:</span>
+      <span class="prop">POSTGRES_USER</span><span class="punc">:</span> ${POSTGRES_USER}
+      <span class="prop">POSTGRES_PASSWORD</span><span class="punc">:</span> ${POSTGRES_PASSWORD}
+      <span class="prop">POSTGRES_DB</span><span class="punc">:</span> ${POSTGRES_DB}
+    <span class="prop">ports</span><span class="punc">:</span>
+      - <span class="str">"${POSTGRES_PORT:-5433}:5432"</span>
+    <span class="prop">volumes</span><span class="punc">:</span>
+      <span class="cm"># named volume: the actual data directory, survives `docker compose down`</span>
+      - cholo_pgdata<span class="punc">:</span>/var/lib/postgresql/data
+      <span class="cm"># bind mount: runs once against an EMPTY data dir (first boot only).</span>
+      - ./database/schema.sql<span class="punc">:</span>/docker-entrypoint-initdb.d/01-schema.sql<span class="punc">:</span>ro
+    <span class="prop">healthcheck</span><span class="punc">:</span>
+      <span class="prop">test</span><span class="punc">:</span> [<span class="str">"CMD-SHELL"</span>, <span class="str">"pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"</span>]
+      <span class="prop">interval</span><span class="punc">:</span> 5s
+      <span class="prop">timeout</span><span class="punc">:</span> 5s
+      <span class="prop">retries</span><span class="punc">:</span> 10
+
+<span class="prop">volumes</span><span class="punc">:</span>
+  <span class="prop">cholo_pgdata</span><span class="punc">:</span></code></pre>
+        </div>
+
+        <h3>লাইন ধরে ধরে — YAML সিনট্যাক্স</h3>
+        <table>
+          <tr><th>অংশ</th><th>মানে</th></tr>
+          <tr><td><code>services:</code></td><td>YAML-এ indentation (স্পেস) দিয়ে nesting বোঝানো হয় — <code>{}</code> ব্র্যাকেট লাগে না। <code>services</code> এর নিচে যা কিছু দুই স্পেস ইন্ডেন্ট করা, সব ঐ services-এর অংশ।</td></tr>
+          <tr><td><code>image: postgres:16</code></td><td>Docker Hub থেকে অফিসিয়াল <code>postgres</code> ইমেজ, ভার্সন <code>16</code> ব্যবহার করবে।</td></tr>
+          <tr><td><code>${POSTGRES_USER}</code></td><td>docker-compose <code>.env</code> ফাইল থেকে automatically এই ভ্যারিয়েবলটা বসিয়ে দেয়। এভাবে পাসওয়ার্ড ফাইলে hardcode করতে হয় না।</td></tr>
+          <tr><td><code>"${POSTGRES_PORT:-5433}:5432"</code></td><td>ফরম্যাট <code>host:container</code>। <code>:-5433</code> মানে "যদি POSTGRES_PORT সেট করা না থাকে, ডিফল্ট 5433 ব্যবহার করো"। container-এর ভেতরে Postgres সবসময় 5432-তেই চলে, কিন্তু বাইরে থেকে (তোমার মেশিন থেকে) 5433 দিয়ে অ্যাক্সেস করবে।</td></tr>
+          <tr><td>volumes (দুই ধরনের)</td><td><strong>Named volume</strong> (<code>cholo_pgdata:...</code>) — আসল ডেটা এখানে জমা থাকে, container বন্ধ করলেও হারায় না। <strong>Bind mount</strong> (<code>./database/schema.sql:...</code>) — তোমার লোকাল ফাইল container-এর ভেতরে একটা path-এ mount হয়; <code>:ro</code> মানে read-only।</td></tr>
+          <tr><td><code>healthcheck</code></td><td>Docker কে বলে দেয় কীভাবে বুঝবে Postgres আসলে রেডি কিনা — শুধু "chalu হয়েছে" না, "connection নেওয়ার মত প্রস্তুত" কিনা। <code>pg_isready</code> কমান্ড প্রতি ৫ সেকেন্ডে চেক করে, ১০ বার চেষ্টা করে।</td></tr>
+        </table>
+
+        <div class="callout why">
+          <span class="cl-title">schema.sql শুধু প্রথমবারই লোড হয় কেন?</span>
+          Postgres-এর অফিসিয়াল ইমেজ এই আচরণ নিয়েই বানানো: <code>/docker-entrypoint-initdb.d/</code> ফোল্ডারে থাকা <code>.sql</code> ফাইল শুধু তখনই চলে যখন ডেটা ডিরেক্টরি একদম <strong>খালি</strong> থাকে (একদম প্রথমবার)। এজন্যই <code>schema.sql</code> পাল্টালে <code>docker compose down -v</code> (volume সহ মুছে ফেলা) করে আবার <code>up</code> করতে হয়, নাহলে পরিবর্তন ধরবে না।
+        </div>
+      </section>
+
+      <section id="m0-schema">
+        <h2><span class="tag m0">M0</span> database/schema.sql — এক ঝলক</h2>
+        <p>পুরো স্কিমাতে ৫৪টা টেবিল আছে (docs 01-04 এ পুরো ডিজাইন)। M0/M1-এ আমরা শুধু এর সবচেয়ে সহজ টেবিলটা — <code>cities</code> — ব্যবহার করেছি প্রথম feature বানাতে।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">database/schema.sql (অংশ)</span></div>
+          <pre><code><span class="kw">CREATE TABLE</span> cities (
+    id          SMALLINT <span class="kw">GENERATED ALWAYS AS IDENTITY</span> <span class="kw">PRIMARY KEY</span>,
+    name        VARCHAR(60) <span class="kw">NOT NULL UNIQUE</span>,
+    country     VARCHAR(60) <span class="kw">NOT NULL DEFAULT</span> <span class="str">'Bangladesh'</span>,
+    timezone    VARCHAR(40) <span class="kw">NOT NULL DEFAULT</span> <span class="str">'Asia/Dhaka'</span>,
+    currency    CHAR(3) <span class="kw">NOT NULL DEFAULT</span> <span class="str">'BDT'</span>,
+    is_active   BOOLEAN <span class="kw">NOT NULL DEFAULT</span> true,
+    launched_at DATE
+);</code></pre>
+        </div>
+        <table>
+          <tr><th>SQL অংশ</th><th>মানে</th></tr>
+          <tr><td><code>GENERATED ALWAYS AS IDENTITY</code></td><td>PostgreSQL নিজে থেকে auto-increment id বানায় (1, 2, 3...)। ম্যানুয়ালি id দেওয়ার দরকার নেই।</td></tr>
+          <tr><td><code>PRIMARY KEY</code></td><td>এই কলাম দিয়ে প্রতিটা row uniquely চেনা যায়; ডাটাবেজ ইনডেক্স করে দ্রুত খোঁজার জন্য।</td></tr>
+          <tr><td><code>NOT NULL</code></td><td>এই কলাম খালি রাখা যাবে না — ডাটাবেজ লেভেলেই এটা জোর করে, শুধু কোড-লেভেলে না।</td></tr>
+          <tr><td><code>UNIQUE</code></td><td>একই মান দুইবার থাকতে পারবে না (দুইটা শহরের নাম একই হতে পারবে না)।</td></tr>
+          <tr><td><code>DEFAULT 'Bangladesh'</code></td><td>যদি ইনসার্টের সময় মান না দেওয়া হয়, এই ডিফল্ট মান বসে যাবে।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">কেন এত কড়া নিয়ম ডাটাবেজেই?</span>
+          <code>AGENTS.md</code>-এর কনভেনশন অনুযায়ী — business invariant গুলো constraint (CHECK/UNIQUE/FK) দিয়ে বসানো হয়, শুধু অ্যাপের কোডে না। কারণ অ্যাপের কোডে বাগ থাকতে পারে, কিন্তু ডাটাবেজ কনস্ট্রেইন্ট কখনো ভুল ডেটা ঢুকতে দেবে না — এটাই "defense in depth"।
+        </div>
+      </section>
+
+      <!-- ============ M1 ============ -->
+
+      <section id="m1-package">
+        <h2><span class="tag m1">M1</span> server/package.json</h2>
+        <p>এই ফাইল Node.js প্রজেক্টের "পরিচয়পত্র" — কোন প্যাকেজ লাগবে, কোন কমান্ড চালানো যাবে, সব এখানে লেখা।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/package.json</span></div>
+          <pre><code>{
+  <span class="prop">"name"</span>: <span class="str">"cholo-server"</span>,
+  <span class="prop">"version"</span>: <span class="str">"0.1.0"</span>,
+  <span class="prop">"private"</span>: true,
+  <span class="prop">"type"</span>: <span class="str">"module"</span>,
+  <span class="prop">"engines"</span>: { <span class="prop">"node"</span>: <span class="str">">=20"</span> },
+  <span class="prop">"scripts"</span>: {
+    <span class="prop">"dev"</span>: <span class="str">"nodemon src/server.js"</span>,
+    <span class="prop">"start"</span>: <span class="str">"node src/server.js"</span>,
+    <span class="prop">"test"</span>: <span class="str">"node --test"</span>
+  },
+  <span class="prop">"dependencies"</span>: {
+    <span class="prop">"cors"</span>: <span class="str">"2.8.6"</span>,
+    <span class="prop">"dotenv"</span>: <span class="str">"^17.4.2"</span>,
+    <span class="prop">"express"</span>: <span class="str">"4.22.2"</span>,
+    <span class="prop">"pg"</span>: <span class="str">"^8.23.0"</span>,
+    <span class="prop">"zod"</span>: <span class="str">"^4.4.3"</span>
+  },
+  <span class="prop">"devDependencies"</span>: { <span class="prop">"nodemon"</span>: <span class="str">"^3.1.14"</span> }
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>Key</th><th>মানে</th></tr>
+          <tr><td><code>"type": "module"</code></td><td>Node.js কে বলে দেয় এই প্রজেক্ট আধুনিক <code>import</code>/<code>export</code> সিনট্যাক্স (ES Modules) ব্যবহার করবে, পুরনো <code>require()</code> (CommonJS) না। এইজন্যই বাকি সব ফাইলে <code>import</code> দেখবে।</td></tr>
+          <tr><td><code>"scripts"</code></td><td><code>npm run dev</code> লিখলে <code>nodemon src/server.js</code> চলবে — এটা একটা shortcut। <code>nodemon</code> ফাইল পরিবর্তন হলেই সার্ভার নিজে থেকে রিস্টার্ট করে, dev-এর সময় সুবিধা।</td></tr>
+          <tr><td><code>dependencies</code> বনাম <code>devDependencies</code></td><td><code>dependencies</code> production-এও লাগে (express, pg...)। <code>devDependencies</code> শুধু development-এ লাগে (nodemon), production build-এ দরকার নেই।</td></tr>
+          <tr><td><code>^</code> ভার্সনের আগে</td><td>Caret (<code>^17.4.2</code>) মানে "minor/patch আপডেট অটো নিতে পারো, কিন্তু major ভার্সন (17 → 18) না"। <code>express: "4.22.2"</code>-তে caret নেই মানে ঠিক এই ভার্সনটাই লক করা।</td></tr>
+        </table>
+      </section>
+
+      <section id="m1-esm">
+        <h2><span class="tag m1">M1</span> Import / Export — জাভাস্ক্রিপ্ট মডিউল সিস্টেম</h2>
+        <p>প্রতিটা ফাইলে দেখবে <code>import</code> আর <code>export</code>। এটা বোঝা খুব জরুরি কারণ পুরো কোডবেজ এই প্যাটার্নেই চলে।</p>
+        <div class="callout syntax">
+          <span class="cl-title">সিনট্যাক্স</span>
+          <pre style="margin-top:8px;"><code><span class="kw">import</span> express <span class="kw">from</span> <span class="str">'express'</span>;        <span class="cm">// default export ইম্পোর্ট</span>
+<span class="kw">import</span> { Router } <span class="kw">from</span> <span class="str">'express'</span>;    <span class="cm">// named export ইম্পোর্ট ({ } দিয়ে)</span>
+<span class="kw">import</span> * <span class="kw">as</span> citiesService <span class="kw">from</span> <span class="str">'../services/cities.service.js'</span>; <span class="cm">// সব named export একসাথে</span>
+
+<span class="kw">export default</span> app;                <span class="cm">// এই ফাইলের প্রধান জিনিস</span>
+<span class="kw">export const</span> pool = ...;           <span class="cm">// named export, { } দিয়ে ইম্পোর্ট করতে হবে</span>
+<span class="kw">export function</span> listCities() {}    <span class="cm">// এটাও named export</span></code></pre>
+        </div>
+        <table>
+          <tr><th>প্যাটার্ন</th><th>কখন ব্যবহার</th></tr>
+          <tr><td><code>export default</code></td><td>একটা ফাইলে সর্বোচ্চ একটা default export থাকে — সাধারণত ফাইলের "প্রধান জিনিস" (যেমন <code>app.js</code> এর <code>app</code>)। ইম্পোর্ট করার সময় নাম যা খুশি দেওয়া যায়।</td></tr>
+          <tr><td><code>export const</code> / <code>export function</code></td><td>একটা ফাইলে অনেকগুলো named export থাকতে পারে। ইম্পোর্ট করার সময় ঠিক সেই নামটাই লিখতে হয়, <code>{ }</code> দিয়ে ঘিরে।</td></tr>
+          <tr><td>relative path + <code>.js</code></td><td><code>'./config/cors.js'</code> — নিজের ফোল্ডার থেকে path। ESM-এ (এই প্রজেক্টে) extension <code>.js</code> বাধ্যতামূলক লেখা লাগে, CommonJS-এর মতো বাদ দেওয়া যায় না।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">কেন এই লেয়ারড ইম্পোর্ট প্যাটার্ন?</span>
+          খেয়াল করবে <code>cities.controller.js</code> ইম্পোর্ট করে <code>cities.service.js</code>-কে, service ইম্পোর্ট করে <code>cities.repository.js</code>-কে, repository ইম্পোর্ট করে <code>config/db.js</code>-কে। কেউ একটা লেয়ার টপকে সরাসরি আরেকটা লেয়ার ইম্পোর্ট করে না (যেমন controller সরাসরি <code>pool</code> ইম্পোর্ট করে না)। এই শৃঙ্খলা <code>AGENTS.md</code>-এর "folders = layers" কনভেনশনের ভিত্তি — <a href="#m1-cities">cities ফিচার</a> সেকশনে বিস্তারিত।
+        </div>
+      </section>
+
+      <section id="m1-app">
+        <h2><span class="tag m1">M1</span> src/app.js — Express অ্যাপের কেন্দ্র</h2>
+        <p>এই ফাইলে Express অ্যাপ বানানো হয় আর তার মধ্যে middleware (মাঝে বসে থাকা ফাংশনগুলো) একটার পর একটা যুক্ত করা হয়। এটাকে বলা যায় request-এর "প্রসেসিং লাইন"।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/app.js</span></div>
+          <pre><code><span class="kw">import</span> cors <span class="kw">from</span> <span class="str">'cors'</span>;
+<span class="kw">import</span> express <span class="kw">from</span> <span class="str">'express'</span>;
+
+<span class="kw">import</span> { corsOptions } <span class="kw">from</span> <span class="str">'./config/cors.js'</span>;
+<span class="kw">import</span> { checkDatabaseConnection } <span class="kw">from</span> <span class="str">'./config/db.js'</span>;
+<span class="kw">import</span> { errorHandler } <span class="kw">from</span> <span class="str">'./middlewares/errorHandler.js'</span>;
+<span class="kw">import</span> { notFound } <span class="kw">from</span> <span class="str">'./middlewares/notFound.js'</span>;
+<span class="kw">import</span> { requestLogger } <span class="kw">from</span> <span class="str">'./middlewares/requestLogger.js'</span>;
+<span class="kw">import</span> apiRouter <span class="kw">from</span> <span class="str">'./routes/index.js'</span>;
+<span class="kw">import</span> { logger } <span class="kw">from</span> <span class="str">'./utils/logger.js'</span>;
+
+<span class="kw">const</span> app = <span class="fn">express</span>();
+
+app.<span class="fn">use</span>(<span class="fn">cors</span>(corsOptions));
+app.<span class="fn">use</span>(express.<span class="fn">json</span>());
+app.<span class="fn">use</span>(requestLogger);
+
+app.<span class="fn">get</span>(<span class="str">'/health'</span>, <span class="kw">async</span> (_request, response) => {
+  <span class="kw">try</span> {
+    <span class="kw">await</span> <span class="fn">checkDatabaseConnection</span>();
+    response.<span class="fn">json</span>({ db: true });
+  } <span class="kw">catch</span> (error) {
+    logger.<span class="fn">error</span>(<span class="str">'Database health check failed'</span>, error);
+    response.<span class="fn">status</span>(503).<span class="fn">json</span>({ db: false });
+  }
+});
+
+app.<span class="fn">use</span>(<span class="str">'/api/v1'</span>, apiRouter);
+app.<span class="fn">use</span>(notFound);
+app.<span class="fn">use</span>(errorHandler);
+
+<span class="kw">export default</span> app;</code></pre>
+        </div>
+
+        <h3>app.use() — মিডলওয়্যার চেইন কীভাবে কাজ করে</h3>
+        <p><code>app.use()</code> দিয়ে যা যোগ করা হয়, একটা request আসলে <strong>উপর থেকে নিচে, ঠিক এই ক্রমেই</strong> চলে। এই ক্রম বদলালে পুরো আচরণ বদলে যায় — এটা এলোমেলো লিস্ট না, একটা pipeline।</p>
+        <div class="flow">
+          <div class="step">cors()</div><span class="arrow">→</span>
+          <div class="step">express.json()</div><span class="arrow">→</span>
+          <div class="step">requestLogger</div><span class="arrow">→</span>
+          <div class="step">/health বা /api/v1/...</div><span class="arrow">→</span>
+          <div class="step">notFound (যদি কিছু না মেলে)</div><span class="arrow">→</span>
+          <div class="step">errorHandler (কোনো error হলে)</div>
+        </div>
+        <table>
+          <tr><th>লাইন</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>app.use(cors(corsOptions))</code></td><td>সবচেয়ে আগে বসে — কোন origin থেকে request নেওয়া যাবে তা চেক করে, তারপরই আর কিছু চলে।</td></tr>
+          <tr><td><code>app.use(express.json())</code></td><td>request body যদি JSON হয় (যেমন POST-এর ডেটা), সেটা পার্স করে <code>request.body</code>-তে বসিয়ে দেয়। এটা না থাকলে <code>request.body</code> হতো <code>undefined</code>।</td></tr>
+          <tr><td><code>app.use(requestLogger)</code></td><td>প্রতিটা request-এর লগ রাখে (method, path, status, সময়)।</td></tr>
+          <tr><td><code>app.get('/health', async (...) => {...})</code></td><td>একটা নির্দিষ্ট route handler — শুধু GET method আর <code>/health</code> path-এর জন্য। এখানে <code>async</code> কীওয়ার্ড আছে কারণ ভেতরে <code>await</code> ব্যবহার হয়েছে।</td></tr>
+          <tr><td><code>_request</code> (underscore দিয়ে শুরু)</td><td>কনভেনশন — এই প্যারামিটারটা ব্যবহার হচ্ছে না, কিন্তু Express-এর সিগনেচার অনুযায়ী জায়গায় থাকতেই হবে (এরপর <code>response</code> আসবে)। underscore দিয়ে বোঝানো হয় "ইচ্ছাকৃতভাবে ব্যবহার করা হয়নি"।</td></tr>
+          <tr><td><code>app.use('/api/v1', apiRouter)</code></td><td>এই path prefix দিয়ে শুরু হওয়া সব request <code>apiRouter</code>-এ পাঠিয়ে দেয় — এটা "mounting" একটা sub-router।</td></tr>
+          <tr><td><code>app.use(notFound)</code></td><td>উপরের কোনো route যদি না মেলে, এই পর্যন্ত request পৌঁছে যায় — মানে ৪০৪।</td></tr>
+          <tr><td><code>app.use(errorHandler)</code></td><td>সবার শেষে — এটা একটা special "error-handling middleware" (৪টা প্যারামিটার নেয়: <code>error, request, response, next</code>)। বিস্তারিত <a href="#m1-middlewares">middlewares সেকশনে</a>।</td></tr>
+        </table>
+
+        <div class="callout syntax">
+          <span class="cl-title">async/await + try/catch — কেন একসাথে?</span>
+          <code>checkDatabaseConnection()</code> একটা <strong>Promise</strong> রিটার্ন করে (কারণ ডাটাবেজে কানেক্ট করতে সময় লাগে, এটা instant না)। <code>await</code> মানে "এই Promise শেষ না হওয়া পর্যন্ত এখানে থামো, তারপর result নিয়ে এগোও" — এটা ছাড়া তুমি একটা "pending" promise পেতে, আসল ডেটা না। <code>await</code> শুধু <code>async</code> ফাংশনের ভেতরেই ব্যবহার করা যায়। আর Promise reject (fail) হলে সেটা ধরার জন্য <code>try/catch</code> — এখানে ডাটাবেজ কানেকশন ফেইল করলে ক্যাচ ব্লকে গিয়ে ৫০৩ status পাঠানো হচ্ছে, অ্যাপ ক্র্যাশ করছে না।
+        </div>
+      </section>
+
+      <section id="m1-server">
+        <h2><span class="tag m1">M1</span> src/server.js — সার্ভার চালু আর গ্রেসফুল শাটডাউন</h2>
+        <p><code>app.js</code> শুধু অ্যাপটা <em>বানায়</em় (define করে); <code>server.js</code> সেটাকে আসলে চালু করে (listen করে) আর বন্ধ হওয়ার সময়টাও পরিষ্কারভাবে সামলায়।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/server.js</span></div>
+          <pre><code><span class="kw">import</span> app <span class="kw">from</span> <span class="str">'./app.js'</span>;
+<span class="kw">import</span> { pool } <span class="kw">from</span> <span class="str">'./config/db.js'</span>;
+<span class="kw">import</span> { env } <span class="kw">from</span> <span class="str">'./config/env.js'</span>;
+
+<span class="kw">const</span> server = app.<span class="fn">listen</span>(env.PORT, () => {
+  console.<span class="fn">log</span>(<span class="str">`Cholo API listening on port ${env.PORT}`</span>);
+});
+
+<span class="kw">let</span> isShuttingDown = false;
+
+<span class="kw">function</span> <span class="fn">shutdown</span>(signal) {
+  <span class="kw">if</span> (isShuttingDown) <span class="kw">return</span>;
+  isShuttingDown = true;
+
+  console.<span class="fn">log</span>(<span class="str">`${signal} received; shutting down HTTP server`</span>);
+  server.<span class="fn">close</span>(<span class="kw">async</span> (error) => {
+    <span class="kw">if</span> (error) {
+      console.<span class="fn">error</span>(<span class="str">'HTTP server shutdown failed:'</span>, error);
+      process.exitCode = 1;
+    }
+
+    <span class="kw">await</span> pool.<span class="fn">end</span>();
+  });
+}
+
+process.<span class="fn">on</span>(<span class="str">'SIGINT'</span>, () => <span class="fn">shutdown</span>(<span class="str">'SIGINT'</span>));
+process.<span class="fn">on</span>(<span class="str">'SIGTERM'</span>, () => <span class="fn">shutdown</span>(<span class="str">'SIGTERM'</span>));</code></pre>
+        </div>
+        <table>
+          <tr><th>অংশ</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>app.listen(env.PORT, callback)</code></td><td>এখন থেকে OS-এর নির্দিষ্ট port-এ (যেমন 3000) আসা HTTP request গুলো এই অ্যাপ শুনবে (listen করবে)। callback একবারই চলে, যখন সার্ভার আসলে চালু হয়ে যায়।</td></tr>
+          <tr><td>Template literal <code>`Cholo API listening on port ${env.PORT}`</code></td><td>ব্যাকটিক (`) দিয়ে স্ট্রিং লিখলে ভেতরে <code>${...}</code> দিয়ে সরাসরি ভ্যারিয়েবল বসানো যায় — পুরনো <code>'text ' + variable + ' text'</code> এর চেয়ে পরিষ্কার।</td></tr>
+          <tr><td><code>let isShuttingDown = false;</code></td><td><code>let</code> এমন ভ্যারিয়েবলের জন্য যেটার মান পরে বদলাবে (এখানে <code>true</code> হয়ে যাবে)। এর বিপরীতে <code>const</code> — একবার সেট হলে আর বদলানো যায় না।</td></tr>
+          <tr><td><code>process.on('SIGINT', ...)</code></td><td><code>SIGINT</code> আর <code>SIGTERM</code> হলো OS-এর পাঠানো সিগন্যাল যখন কেউ Ctrl+C চাপে বা Docker/hosting platform অ্যাপ বন্ধ করতে চায়। এগুলো না ধরলে অ্যাপ হঠাৎ মাঝপথে বন্ধ হয়ে যেত, ডাটাবেজ কানেকশনও অগোছালোভাবে বন্ধ হতো।</td></tr>
+          <tr><td><code>server.close(callback)</code></td><td>নতুন কোনো request আর নেওয়া হবে না, কিন্তু চলমান request গুলো শেষ হতে দেওয়া হয় — তারপর callback চলে।</td></tr>
+          <tr><td><code>await pool.end()</code></td><td>ডাটাবেজ connection pool-এর সব কানেকশন ঠিকভাবে বন্ধ করে — আকস্মিকভাবে কেটে দেওয়া না।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">isShuttingDown ফ্ল্যাগ কেন?</span>
+          SIGINT আর SIGTERM দুটোই একসাথে বা বারবার আসতে পারে। এই ফ্ল্যাগ ছাড়া <code>shutdown()</code> দুইবার চলতে পারত, আর <code>server.close()</code> দুইবার ডাকলে সমস্যা হতে পারে। এটা একটা সাধারণ "idempotency guard" প্যাটার্ন — একই কাজ দুইবার নিরাপদে না চালানোর কৌশল।
+        </div>
+      </section>
+
+      <section id="m1-envjs">
+        <h2><span class="tag m1">M1</span> config/env.js — fail-fast validation</h2>
+        <p>এই ফাইলটার কাজ: <code>.env</code> ফাইল পড়া, আর যাচাই করা যে দরকারি সব ভ্যারিয়েবল ঠিকভাবে দেওয়া আছে কিনা। কিছু ভুল/অনুপস্থিত থাকলে অ্যাপ <strong>চালুই হবে না</strong> — চুপচাপ ভুল মান নিয়ে চলবে না।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/config/env.js</span></div>
+          <pre><code><span class="kw">import</span> { dirname, resolve } <span class="kw">from</span> <span class="str">'node:path'</span>;
+<span class="kw">import</span> { fileURLToPath } <span class="kw">from</span> <span class="str">'node:url'</span>;
+
+<span class="kw">import</span> dotenv <span class="kw">from</span> <span class="str">'dotenv'</span>;
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="kw">const</span> currentDirectory = <span class="fn">dirname</span>(<span class="fn">fileURLToPath</span>(import.meta.url));
+<span class="kw">const</span> rootEnvPath = <span class="fn">resolve</span>(currentDirectory, <span class="str">'../../../.env'</span>);
+
+dotenv.<span class="fn">config</span>({ path: rootEnvPath, quiet: true });
+
+<span class="kw">const</span> envSchema = z.<span class="fn">object</span>({
+  NODE_ENV: z.<span class="fn">enum</span>([<span class="str">'development'</span>, <span class="str">'test'</span>, <span class="str">'production'</span>]).<span class="fn">default</span>(<span class="str">'development'</span>),
+  PORT: z.<span class="fn">coerce</span>.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">positive</span>().<span class="fn">max</span>(65_535).<span class="fn">default</span>(3000),
+  DATABASE_URL: z.<span class="fn">string</span>().<span class="fn">min</span>(1, <span class="str">'DATABASE_URL is required'</span>).<span class="fn">url</span>(<span class="str">'DATABASE_URL must be a valid URL'</span>),
+  CLIENT_ORIGIN: z.<span class="fn">string</span>().<span class="fn">url</span>(<span class="str">'CLIENT_ORIGIN must be a valid URL'</span>).<span class="fn">default</span>(<span class="str">'http://localhost:5173'</span>),
+});
+
+<span class="kw">function</span> <span class="fn">formatIssues</span>(issues) {
+  <span class="kw">return</span> issues
+    .<span class="fn">map</span>((issue) => <span class="str">`  - ${issue.path.join('.') || 'environment'}: ${issue.message}`</span>)
+    .<span class="fn">join</span>(<span class="str">'\n'</span>);
+}
+
+<span class="kw">function</span> <span class="fn">loadEnvironment</span>(source) {
+  <span class="kw">const</span> result = envSchema.<span class="fn">safeParse</span>(source);
+
+  <span class="kw">if</span> (!result.success) {
+    <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`Invalid environment configuration:\n${formatIssues(result.error.issues)}`</span>);
+  }
+
+  <span class="kw">return</span> Object.<span class="fn">freeze</span>(result.data);
+}
+
+<span class="kw">export const</span> env = <span class="fn">loadEnvironment</span>(process.env);</code></pre>
+        </div>
+
+        <h3>এখানে যা যা নতুন সিনট্যাক্স আছে</h3>
+        <table>
+          <tr><th>সিনট্যাক্স</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>import.meta.url</code></td><td>ESM মডিউলে বর্তমান ফাইলের নিজের URL/path পাওয়ার উপায় (পুরনো CommonJS-এর <code>__dirname</code>-এর বদলি)।</td></tr>
+          <tr><td><code>fileURLToPath()</code> + <code>dirname()</code></td><td>URL কে সাধারণ ফাইল path-এ বদলে, তারপর সেটার ফোল্ডার বের করে — যাতে <code>.env</code> ফাইলের সঠিক লোকেশন বের করা যায়, তুমি কোথা থেকে script চালাচ্ছ তার উপর নির্ভর না করে।</td></tr>
+          <tr><td><code>resolve(currentDirectory, '../../../.env')</code></td><td>relative path থেকে absolute path বানায়। তিনটা <code>../</code> মানে তিন ধাপ উপরে উঠে root ফোল্ডারের <code>.env</code> খোঁজা (<code>config/</code> → <code>src/</code> → <code>server/</code> → root)।</td></tr>
+          <tr><td><code>z.object({...})</code></td><td>Zod লাইব্রেরি দিয়ে একটা "শেপ" (schema) সংজ্ঞায়িত করা হচ্ছে — এই অবজেক্টের কোন key-তে কী ধরনের মান থাকা বাধ্যতামূলক। এটাকে "runtime validation" বলে — TypeScript-এর টাইপের মতো, কিন্তু আসল রানটাইমেও চেক করে।</td></tr>
+          <tr><td><code>z.enum([...])</code></td><td>মান অবশ্যই এই তালিকার একটা হতে হবে, নাহলে ভুল।</td></tr>
+          <tr><td><code>z.coerce.number()</code></td><td><code>.env</code> ফাইলে সব মান স্ট্রিং হিসেবে আসে (যেমন <code>"3000"</code>) — <code>coerce</code> সেটাকে জোর করে নাম্বারে রূপান্তর করে যাচাই করার আগে।</td></tr>
+          <tr><td>মেথড চেইনিং <code>.int().positive().max(65_535)</code></td><td>প্রতিটা মেথড আরেকটা নতুন validator রিটার্ন করে, তাই একের পর এক জোড়া লাগানো যায় — পড়তে প্রায় ইংরেজি বাক্যের মতো লাগে: "নাম্বার, ইন্টিজার, পজিটিভ, সর্বোচ্চ ৬৫৫৩৫"।</td></tr>
+          <tr><td><code>65_535</code></td><td>আন্ডারস্কোর সংখ্যার মাঝে শুধু পড়তে সুবিধার জন্য (numeric separator) — <code>65535</code>-এর মতোই কাজ করে, শুধু চোখে সহজে বড় সংখ্যা বোঝা যায়।</td></tr>
+          <tr><td><code>safeParse()</code></td><td>Zod-এর দুই ধরনের parse আছে: <code>parse()</code> ভুল হলে সরাসরি throw করে, <code>safeParse()</code> একটা <code>{ success, data বা error }</code> অবজেক্ট রিটার্ন করে — তুমি নিজে ঠিক করো কী করবে।</td></tr>
+          <tr><td><code>result.error.issues.map(...)</code></td><td><code>.map()</code> একটা অ্যারের প্রতিটা আইটেমকে আরেকটা ফর্মে রূপান্তর করে নতুন অ্যারে বানায় — এখানে প্রতিটা ভ্যালিডেশন-এরর অবজেক্টকে একটা readable স্ট্রিং লাইনে বদলানো হচ্ছে।</td></tr>
+          <tr><td><code>throw new Error(...)</code></td><td>ইচ্ছাকৃতভাবে একটা এরর তৈরি করে "ছুড়ে" দেওয়া হচ্ছে — এটা এই ফাংশনের normal flow থামিয়ে দেয়, আর কেউ না ধরলে পুরো প্রোগ্রাম ক্র্যাশ করে। এখানেই ইচ্ছাকৃত: ভুল env নিয়ে চালানোর চেয়ে অ্যাপ বুট হওয়ার আগেই ক্র্যাশ করা ভালো।</td></tr>
+          <tr><td><code>Object.freeze(result.data)</code></td><td>এই অবজেক্টের কোনো property যেন পরে ভুলবশত পাল্টানো না যায় সেটা নিশ্চিত করে — env একবার লোড হলে, immutable (অপরিবর্তনীয়) থাকা উচিত।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">কেন module লোড হওয়ার সাথে সাথেই validate করা হয় (top-level এ, ফাংশনের ভেতরে না)?</span>
+          লক্ষ্য করবে <code>export const env = loadEnvironment(process.env);</code> — এটা ফাইলের একদম নিচে, কোনো ফাংশনের ভেতরে না। মানে এই ফাইল প্রথমবার ইম্পোর্ট হওয়ার সময়ই এটা চলে। এইজন্য <code>server.js</code>-এ <code>import { env } from './config/env.js'</code> লেখা মাত্রই — অ্যাপ চালুর একদম শুরুতেই — env ভুল থাকলে ক্র্যাশ করবে, কোনো request আসার আগেই। এটাই "fail-fast" — <code>docs/08 §10</code>-তে বলা "৩টার সময় missing-env crash" এড়ানোর কৌশল।
+        </div>
+      </section>
+
+      <section id="m1-db">
+        <h2><span class="tag m1">M1</span> config/db.js — PostgreSQL Connection Pool</h2>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/config/db.js</span></div>
+          <pre><code><span class="kw">import</span> pg <span class="kw">from</span> <span class="str">'pg'</span>;
+
+<span class="kw">import</span> { env } <span class="kw">from</span> <span class="str">'./env.js'</span>;
+
+<span class="kw">const</span> { Pool } = pg;
+
+<span class="kw">export const</span> pool = <span class="kw">new</span> <span class="fn">Pool</span>({
+  connectionString: env.DATABASE_URL,
+});
+
+pool.<span class="fn">on</span>(<span class="str">'error'</span>, (error) => {
+  console.<span class="fn">error</span>(<span class="str">'Unexpected PostgreSQL pool error:'</span>, error);
+});
+
+<span class="kw">export async function</span> <span class="fn">checkDatabaseConnection</span>() {
+  <span class="kw">const</span> client = <span class="kw">await</span> pool.<span class="fn">connect</span>();
+  client.<span class="fn">release</span>();
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>অংশ</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>const { Pool } = pg;</code></td><td><strong>Destructuring</strong> — <code>pg</code> অবজেক্ট থেকে শুধু <code>Pool</code> নামের property বের করে নতুন ভ্যারিয়েবল বানানো হচ্ছে। এটা <code>const Pool = pg.Pool;</code> লেখারই সংক্ষিপ্ত রূপ।</td></tr>
+          <tr><td>Connection Pool কী?</td><td>প্রতিটা request-এ নতুন ডাটাবেজ কানেকশন খোলা ধীর ও ব্যয়বহুল। Pool একগুচ্ছ কানেকশন আগে থেকে খুলে রাখে আর প্রয়োজনমতো ধার দেয়, তারপর ফেরত নেয় — reuse করে।</td></tr>
+          <tr><td><code>pool.on('error', ...)</code></td><td>Pool-এর কোনো idle (অলস বসে থাকা) কানেকশনে অপ্রত্যাশিত সমস্যা হলে পুরো অ্যাপ ক্র্যাশ না করে শুধু লগ করে রাখা।</td></tr>
+          <tr><td><code>await pool.connect()</code> ... <code>client.release()</code></td><td>Pool থেকে একটা কানেকশন ধার নেওয়া হলো, কাজ শেষে <strong>অবশ্যই</strong> <code>release()</code> করে ফেরত দিতে হয় — নাহলে Pool খালি হয়ে যাবে (pool exhaustion) আর অ্যাপ আটকে যাবে। <code>cities.repository.js</code>-এ দেখবে সরাসরি <code>pool.query()</code> ব্যবহার হয়েছে যেটা নিজে থেকেই connect+release সামলায়।</td></tr>
+        </table>
+      </section>
+
+      <section id="m1-cors">
+        <h2><span class="tag m1">M1</span> config/cors.js</h2>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/config/cors.js</span></div>
+          <pre><code><span class="kw">import</span> { env } <span class="kw">from</span> <span class="str">'./env.js'</span>;
+
+<span class="kw">export const</span> corsOptions = Object.<span class="fn">freeze</span>({
+  origin: env.CLIENT_ORIGIN,
+  credentials: true,
+});</code></pre>
+        </div>
+        <div class="callout why">
+          <span class="cl-title">CORS আসলে কী সমস্যা সমাধান করে?</span>
+          ব্রাউজার by default নিরাপত্তার জন্য একটা ওয়েবসাইট (যেমন <code>localhost:5173</code>-এ চলা React অ্যাপ) থেকে অন্য একটা ডোমেইনে (যেমন <code>localhost:3000</code>-এ চলা API) request পাঠানো ব্লক করে দেয়, যদি না সার্ভার স্পষ্টভাবে অনুমতি দেয়। <code>origin: env.CLIENT_ORIGIN</code> বলছে "শুধু এই একটা URL থেকে আসা request-ই গ্রহণযোগ্য"। <code>credentials: true</code> মানে cookie (যেমন login সেশন) সহ request পাঠানো/নেওয়া যাবে।
+        </div>
+      </section>
+
+      <section id="m1-middlewares">
+        <h2><span class="tag m1">M1</span> middlewares/ — মিডলওয়্যার ফোল্ডার</h2>
+        <p>Middleware হলো এমন একটা ফাংশন যেটা request আর response-এর মাঝে বসে, আর <code>next()</code> ডেকে পরবর্তী ধাপে যায় (অথবা আটকে দেয়)। Express-এ প্রতিটা middleware-এর সিগনেচার হয় <code>(request, response, next)</code> — আর error-handling middleware-এর হয় বিশেষভাবে ৪টা প্যারামিটার: <code>(error, request, response, next)</code>।</p>
+
+        <h3>errorHandler.js — সবকিছুর কেন্দ্রীয় এরর হ্যান্ডলার</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/middlewares/errorHandler.js</span></div>
+          <pre><code><span class="kw">import</span> { AppError } <span class="kw">from</span> <span class="str">'../utils/AppError.js'</span>;
+<span class="kw">import</span> { ERROR_MESSAGES } <span class="kw">from</span> <span class="str">'../utils/errorMessages.js'</span>;
+<span class="kw">import</span> { logger } <span class="kw">from</span> <span class="str">'../utils/logger.js'</span>;
+
+<span class="kw">const</span> postgresErrors = Object.<span class="fn">freeze</span>({
+  23505: { status: 409, code: <span class="str">'DUPLICATE'</span> },
+  23503: { status: 422, code: <span class="str">'VALIDATION_FAILED'</span> },
+  23514: { status: 422, code: <span class="str">'VALIDATION_FAILED'</span> },
+});
+
+<span class="kw">function</span> <span class="fn">sendError</span>(response, status, code, details) {
+  <span class="kw">const</span> error = {
+    code,
+    message: ERROR_MESSAGES[code] ?? code,
+  };
+
+  <span class="kw">if</span> (details !== <span class="kw">undefined</span>) {
+    error.details = details;
+  }
+
+  <span class="kw">return</span> response.<span class="fn">status</span>(status).<span class="fn">json</span>({ success: false, error });
+}
+
+<span class="kw">export function</span> <span class="fn">errorHandler</span>(error, request, response, next) {
+  <span class="kw">if</span> (response.headersSent) {
+    <span class="kw">return</span> <span class="fn">next</span>(error);
+  }
+
+  <span class="kw">if</span> (error <span class="kw">instanceof</span> AppError) {
+    <span class="kw">return</span> <span class="fn">sendError</span>(response, error.status, error.code, error.details);
+  }
+
+  <span class="kw">if</span> (error.type === <span class="str">'entity.parse.failed'</span>) {
+    <span class="kw">return</span> <span class="fn">sendError</span>(response, 422, <span class="str">'VALIDATION_FAILED'</span>, [
+      { field: <span class="str">'body'</span>, issue: <span class="str">'Request body must contain valid JSON.'</span> },
+    ]);
+  }
+
+  <span class="kw">const</span> postgresError = postgresErrors[error.code];
+
+  <span class="kw">if</span> (postgresError) {
+    <span class="kw">return</span> <span class="fn">sendError</span>(response, postgresError.status, postgresError.code);
+  }
+
+  logger.<span class="fn">error</span>(<span class="str">'Unhandled request error'</span>, error, {
+    method: request.method,
+    path: request.originalUrl,
+  });
+
+  <span class="kw">return</span> <span class="fn">sendError</span>(response, 500, <span class="str">'INTERNAL'</span>);
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>অংশ</th><th>ব্যাখ্যা</th></tr>
+          <tr><td>৪-প্যারামিটার ফাংশন <code>(error, request, response, next)</code></td><td>Express বিশেষভাবে চিনে নেয় — ঠিক ৪টা প্যারামিটার থাকলেই এটাকে error-handling middleware ধরে নেয় (৩টা হলে সাধারণ middleware ধরত)। কোনো জায়গায় <code>next(someError)</code> ডাকা হলে Express সরাসরি এখানে চলে আসে, মাঝের সব সাধারণ middleware বাদ দিয়ে।</td></tr>
+          <tr><td>Object as lookup table — <code>postgresErrors</code></td><td>PostgreSQL প্রতিটা এরর টাইপের জন্য একটা কোড দেয় (যেমন <code>23505</code> = unique constraint ভাঙা)। এখানে <code>if/else if</code> চেইনের বদলে একটা অবজেক্টকে lookup table হিসেবে ব্যবহার করা হয়েছে — <code>postgresErrors[error.code]</code> লিখলেই সরাসরি মিলে যাওয়া এন্ট্রি পাওয়া যায়।</td></tr>
+          <tr><td><code>error instanceof AppError</code></td><td>চেক করছে এই error অবজেক্টটা আমাদের নিজেদের বানানো <code>AppError</code> ক্লাসের (নিচে দেখো) instance কিনা — মানে এটা কি একটা "আমরা প্রত্যাশা করা" এরর, নাকি অপ্রত্যাশিত bug।</td></tr>
+          <tr><td><code>ERROR_MESSAGES[code] ?? code</code></td><td><strong>Nullish coalescing (<code>??</code>)</strong> — বাম দিকের মান যদি <code>null</code> বা <code>undefined</code> হয়, তাহলে ডান দিকেরটা ব্যবহার হবে। এখানে: যদি কোডের জন্য কোনো readable মেসেজ না থাকে, তাহলে কোডটাই মেসেজ হিসেবে দেখানো হবে।</td></tr>
+          <tr><td>response.headersSent চেক</td><td>যদি ইতিমধ্যে response পাঠানো হয়ে গিয়ে থাকে (headers চলে গেছে), তাহলে আবার নতুন response পাঠানো যাবে না — তাই এটা <code>next(error)</code> দিয়ে Express-এর নিজস্ব built-in ডিফল্ট হ্যান্ডলারের কাছে ছেড়ে দেয়।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">কেন raw ডাটাবেজ এরর ইউজারকে দেখানো হয় না?</span>
+          <code>cities.test.js</code> টেস্টে দেখবে <code>assert.doesNotMatch(JSON.stringify(body), /database unavailable/)</code> — মানে internal এরর মেসেজ (যেমন "database unavailable") কখনো response-এ leak করে না, শুধু জেনেরিক <code>"Something went wrong on our side."</code> যায়। আসল এরর <code>logger.error</code>-এ থাকে সার্ভার সাইডে, ইউজারের কাছে না। এটা নিরাপত্তার জন্য — internal system-এর তথ্য বাইরের কাউকে দেখানো ঠিক না।
+        </div>
+
+        <h3>notFound.js</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/middlewares/notFound.js</span></div>
+          <pre><code><span class="kw">import</span> { AppError } <span class="kw">from</span> <span class="str">'../utils/AppError.js'</span>;
+
+<span class="kw">export function</span> <span class="fn">notFound</span>(_request, _response, next) {
+  <span class="fn">next</span>(<span class="kw">new</span> <span class="fn">AppError</span>(404, <span class="str">'NOT_FOUND'</span>));
+}</code></pre>
+        </div>
+        <p><code>app.js</code>-এ এটা সব route-এর পরে বসানো (মনে আছে <code>app.use(notFound)</code>?) — মানে যদি কোনো route ম্যাচ না করে, request এই পর্যন্ত এসে পড়বে। এটা একটা নতুন <code>AppError</code> বানিয়ে <code>next()</code>-এ পাঠায়, যা সরাসরি উপরের <code>errorHandler</code>-এ পৌঁছায়।</p>
+
+        <h3>requestLogger.js</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/middlewares/requestLogger.js</span></div>
+          <pre><code><span class="kw">import</span> { logger } <span class="kw">from</span> <span class="str">'../utils/logger.js'</span>;
+
+<span class="kw">export function</span> <span class="fn">requestLogger</span>(request, response, next) {
+  <span class="kw">const</span> startedAt = process.hrtime.<span class="fn">bigint</span>();
+
+  response.<span class="fn">once</span>(<span class="str">'finish'</span>, () => {
+    <span class="kw">const</span> durationNanoseconds = process.hrtime.<span class="fn">bigint</span>() - startedAt;
+    <span class="kw">const</span> durationMs = Number(durationNanoseconds) / 1_000_000;
+
+    logger.<span class="fn">info</span>(<span class="str">'Request completed'</span>, {
+      method: request.method,
+      path: request.originalUrl,
+      status: response.statusCode,
+      durationMs: Number(durationMs.<span class="fn">toFixed</span>(2)),
+    });
+  });
+
+  <span class="fn">next</span>();
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>অংশ</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>process.hrtime.bigint()</code></td><td>খুব নিখুঁত (ন্যানোসেকেন্ড-লেভেল) সময় মাপার জন্য Node.js-এর বিল্ট-ইন হাই-রেজোলিউশন টাইমার।</td></tr>
+          <tr><td><code>response.once('finish', callback)</code></td><td>response সম্পূর্ণভাবে ক্লায়েন্টকে পাঠানো শেষ হলে ঠিক একবার এই callback চলে। <code>once</code> ব্যবহার করা হয়েছে (<code>on</code> না) যাতে একই request-এ দুইবার লগ না হয়।</td></tr>
+          <tr><td>function-এর ভেতরে <code>next()</code> সাথে সাথে ডাকা</td><td>খেয়াল করো <code>next()</code> সাথে সাথেই চলে যাচ্ছে (লগিং শেষ হওয়ার অপেক্ষা না করে) — কারণ লগিং request প্রসেসিং আটকে রাখা উচিত না। <code>'finish'</code> ইভেন্ট পরে, response আসলেই পাঠানো শেষ হলে ঘটে।</td></tr>
+        </table>
+
+        <h3>validate.js — Zod দিয়ে দরজায় যাচাই</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/middlewares/validate.js</span></div>
+          <pre><code><span class="kw">import</span> { AppError } <span class="kw">from</span> <span class="str">'../utils/AppError.js'</span>;
+
+<span class="kw">function</span> <span class="fn">formatIssues</span>(issues, source) {
+  <span class="kw">return</span> issues.<span class="fn">map</span>((issue) => ({
+    field: issue.path.<span class="fn">join</span>(<span class="str">'.'</span>) || source,
+    issue: issue.message,
+  }));
+}
+
+<span class="kw">export const</span> validate = (schema, source = <span class="str">'body'</span>) => (request, _response, next) => {
+  <span class="kw">const</span> result = schema.<span class="fn">safeParse</span>(request[source]);
+
+  <span class="kw">if</span> (!result.success) {
+    <span class="kw">return</span> <span class="fn">next</span>(
+      <span class="kw">new</span> <span class="fn">AppError</span>(
+        422,
+        <span class="str">'VALIDATION_FAILED'</span>,
+        <span class="fn">formatIssues</span>(result.error.issues, source),
+      ),
+    );
+  }
+
+  request[source] = result.data;
+  <span class="kw">return</span> <span class="fn">next</span>();
+};</code></pre>
+        </div>
+        <div class="callout syntax">
+          <span class="cl-title">Higher-Order Function — এটা এখনো তৈরি হয়নি, ব্যবহারের জন্য প্রস্তুত!</span>
+          এখানে সিনট্যাক্সটা বিশেষভাবে লক্ষ্য করার মতো: <code>validate</code> নিজেই একটা ফাংশন না যা সরাসরি middleware — এটা একটা ফাংশন যা <strong>আরেকটা ফাংশন রিটার্ন করে</strong> (arrow function এর ভেতরে আরেকটা arrow function)। ব্যবহার হবে এভাবে: <code>router.post('/', validate(createCitySchema), controller)</code> — <code>validate(createCitySchema)</code> কল হয়ে ভেতরের <code>(request, _response, next) => {...}</code> ফাংশনটা রিটার্ন করে, যেটা তখন আসল middleware হিসেবে কাজ করে। এই প্যাটার্নকে বলে "higher-order function" — এভাবে একই <code>validate</code> ফাংশন যেকোনো schema আর যেকোনো source (<code>body</code>, <code>query</code>, <code>params</code>) দিয়ে reuse করা যায়। এটা এখনো ব্যবহার হয়নি M1-এ (কোনো POST endpoint নেই এখনো), কিন্তু M2-তে auth ফিচারে এটাই দিয়ে register/login-এর ইনপুট চেক হবে।
+        </div>
+        <table>
+          <tr><th>অংশ</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>source = 'body'</code></td><td>Default parameter — যদি কল করার সময় দ্বিতীয় আর্গুমেন্ট না দেওয়া হয়, ডিফল্ট মান <code>'body'</code> ব্যবহার হবে।</td></tr>
+          <tr><td><code>request[source]</code></td><td>Bracket notation — <code>source</code> ভ্যারিয়েবলের মান (যেমন <code>"body"</code>) দিয়ে <code>request.body</code> অ্যাক্সেস করা হচ্ছে। ডট নোটেশনে এটা সম্ভব না কারণ property নামটা একটা ভ্যারিয়েবল, লিটারেল না।</td></tr>
+          <tr><td><code>issue.path.join('.') || source</code></td><td><code>||</code> (OR) — বাম দিকের মান falsy (খালি স্ট্রিং, <code>0</code>, <code>null</code> ইত্যাদি) হলে ডান দিকেরটা ব্যবহার হবে। খালি path হলে source নামটাই field হিসেবে দেখানো হয়।</td></tr>
+        </table>
+      </section>
+
+      <section id="m1-utils">
+        <h2><span class="tag m1">M1</span> utils/ — ছোট, পুনর্ব্যবহারযোগ্য বিল্ডিং ব্লক</h2>
+
+        <h3>AppError.js — কাস্টম Error ক্লাস</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/utils/AppError.js</span></div>
+          <pre><code><span class="kw">export class</span> AppError <span class="kw">extends</span> Error {
+  <span class="fn">constructor</span>(status, code, details) {
+    <span class="kw">super</span>(code);
+    <span class="kw">this</span>.name = <span class="str">'AppError'</span>;
+    <span class="kw">this</span>.status = status;
+    <span class="kw">this</span>.code = code;
+    <span class="kw">this</span>.details = details;
+
+    Error.<span class="fn">captureStackTrace</span>(<span class="kw">this</span>, AppError);
+  }
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>সিনট্যাক্স</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>class AppError extends Error</code></td><td>জাভাস্ক্রিপ্টের বিল্ট-ইন <code>Error</code> ক্লাসকে "extend" (বিস্তৃত) করে নিজের কাস্টম এরর টাইপ বানানো হচ্ছে। এখন <code>AppError</code>-এর instance <code>Error</code>-এর সব ক্ষমতা (যেমন <code>.stack</code>, <code>.message</code>) পায়, প্লাস নিজের এক্সট্রা property (<code>status</code>, <code>code</code>, <code>details</code>)।</td></tr>
+          <tr><td><code>constructor(status, code, details)</code></td><td>যখন <code>new AppError(404, 'NOT_FOUND')</code> লেখা হয়, এই constructor চলে — status=404, code='NOT_FOUND' প্যারামিটারে আসে।</td></tr>
+          <tr><td><code>super(code)</code></td><td>parent ক্লাসের (<code>Error</code>) constructor কল করা বাধ্যতামূলক, extend করা ক্লাসে <code>this</code> ব্যবহারের আগে। এখানে <code>code</code>-কে <code>Error</code>-এর <code>message</code> হিসেবে পাঠানো হচ্ছে।</td></tr>
+          <tr><td><code>this.status = status</code></td><td>এই instance-এর উপর নতুন property বসানো হচ্ছে — পরে <code>errorHandler.js</code>-এ <code>error.status</code>, <code>error.code</code> এভাবে অ্যাক্সেস হবে।</td></tr>
+          <tr><td><code>Error.captureStackTrace(this, AppError)</code></td><td>V8 (Node.js-এর ইঞ্জিন)-কে বলে দেয় stack trace থেকে <code>AppError</code> কনস্ট্রাক্টরের নিজের লাইনটা বাদ দিতে, যাতে debugging-এর সময় stack trace আসল কারণের জায়গা থেকে শুরু হয়, এই ইউটিলিটি ফাইল থেকে না।</td></tr>
+        </table>
+
+        <h3>asyncHandler.js — এক লাইনের কিন্তু গুরুত্বপূর্ণ</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/utils/asyncHandler.js</span></div>
+          <pre><code><span class="kw">export const</span> asyncHandler = (handler) => (request, response, next) =>
+  Promise.<span class="fn">resolve</span>(<span class="fn">handler</span>(request, response, next)).<span class="fn">catch</span>(next);</code></pre>
+        </div>
+        <div class="callout why">
+          <span class="cl-title">এটা এত গুরুত্বপূর্ণ কেন? (docs 08 §5 — "Express-এর #১ বাগ")</span>
+          Express স্বয়ংক্রিয়ভাবে <code>async</code> route handler-এর ভেতরে ছোড়া (thrown) এরর ধরতে পারে না — যদি একটা <code>async</code> ফাংশনের ভেতরে <code>await</code> করা কিছু reject হয় আর সেটা <code>try/catch</code> দিয়ে না ধরা হয়, তাহলে request চিরকালের জন্য "hang" (ঝুলে থাকা) হয়ে যায়, কোনো response ছাড়াই। <code>asyncHandler</code> প্রতিটা async controller-কে মুড়িয়ে (wrap করে) দেয় যাতে যেকোনো reject হওয়া Promise স্বয়ংক্রিয়ভাবে <code>.catch(next)</code>-এ গিয়ে <code>errorHandler</code>-এ পৌঁছায়। <code>cities.controller.js</code>-তে দেখবে এটাই ব্যবহার হয়েছে।
+        </div>
+        <table>
+          <tr><th>সিনট্যাক্স</th><th>ব্যাখ্যা</th></tr>
+          <tr><td>Arrow function রিটার্ন করা আরেকটা arrow function</td><td><code>validate.js</code>-এর মতোই এখানেও higher-order function প্যাটার্ন — <code>asyncHandler(controllerFn)</code> কল করলে একটা নতুন ফাংশন রিটার্ন হয় যেটা Express route-এ বসানো যায়।</td></tr>
+          <tr><td><code>Promise.resolve(handler(...))</code></td><td><code>handler</code> যদি একটা Promise রিটার্ন করে (async ফাংশন সবসময়ই করে), <code>Promise.resolve()</code> সেটাকে wrap করে নিশ্চিত করে এটা একটা Promise হিসেবেই ট্রিট হবে, তারপর <code>.catch()</code> চেইন করা যায়।</td></tr>
+          <tr><td><code>.catch(next)</code></td><td>এটার মানে <code>.catch((error) => next(error))</code>-এরই সংক্ষিপ্ত রূপ — যদি Promise reject হয়, সেই error সরাসরি <code>next</code> ফাংশনে পাস হয়ে যায়, যা Express-কে errorHandler-এ পাঠিয়ে দেয়।</td></tr>
+        </table>
+
+        <h3>errorMessages.js</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/utils/errorMessages.js</span></div>
+          <pre><code><span class="kw">export const</span> ERROR_MESSAGES = Object.<span class="fn">freeze</span>({
+  VALIDATION_FAILED: <span class="str">'The request contains invalid data.'</span>,
+  NOT_FOUND: <span class="str">'The requested resource was not found.'</span>,
+  DUPLICATE: <span class="str">'That value already exists.'</span>,
+  INTERNAL: <span class="str">'Something went wrong on our side.'</span>,
+});</code></pre>
+        </div>
+        <p>একটা সাধারণ key-value ম্যাপ — error code থেকে মানুষের পড়ার মতো মেসেজে। <code>Object.freeze</code> ব্যবহার হয়েছে যাতে কোথাও ভুলবশত এই কনস্ট্যান্ট অবজেক্টটা পরিবর্তন না হয়ে যায়।</p>
+
+        <h3>logger.js — Structured (JSON) Logging</h3>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/utils/logger.js</span></div>
+          <pre><code><span class="kw">function</span> <span class="fn">write</span>(method, level, message, context) {
+  <span class="fn">method</span>(
+    JSON.<span class="fn">stringify</span>({
+      timestamp: <span class="kw">new</span> Date().<span class="fn">toISOString</span>(),
+      level,
+      message,
+      ...context,
+    }),
+  );
+}
+
+<span class="kw">export const</span> logger = {
+  <span class="fn">info</span>(message, context = {}) {
+    <span class="fn">write</span>(console.info, <span class="str">'info'</span>, message, context);
+  },
+
+  <span class="fn">error</span>(message, error, context = {}) {
+    <span class="fn">write</span>(console.error, <span class="str">'error'</span>, message, {
+      ...context,
+      error: error?.message,
+      stack: error?.stack,
+    });
+  },
+};</code></pre>
+        </div>
+        <table>
+          <tr><th>সিনট্যাক্স</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>logger</code> একটা অবজেক্ট, ক্লাস না</td><td><code>{ info() {...}, error() {...} }</code> — দুইটা মেথড সহ একটা প্লেইন অবজেক্ট। যেকোনো ফাইল <code>logger.info(...)</code> বা <code>logger.error(...)</code> ডেকে ব্যবহার করতে পারে, <code>new</code> লাগে না।</td></tr>
+          <tr><td>Spread operator <code>...context</code></td><td>একটা অবজেক্টের সব key-value জোড়া নতুন অবজেক্টে "ছড়িয়ে" দেয়। এখানে caller যে extra context (যেমন <code>{ method, path }</code>) দেয়, সেটা মূল লগ অবজেক্টের সাথে মিশে যায়।</td></tr>
+          <tr><td><code>error?.message</code></td><td><strong>Optional chaining (<code>?.</code>)</strong> — যদি <code>error</code> নিজেই <code>null</code>/<code>undefined</code> হয়, পুরো এক্সপ্রেশন ক্র্যাশ না করে <code>undefined</code> রিটার্ন করে, সরাসরি <code>error.message</code> করলে যা ক্র্যাশ করত।</td></tr>
+          <tr><td>Shorthand property <code>{ level, message }</code></td><td>যখন ভ্যারিয়েবলের নাম আর key-এর নাম একই হয় (<code>level: level</code>), শুধু <code>level</code> লিখলেই চলে — এটা ES6-এর "property shorthand"।</td></tr>
+          <tr><td>কেন JSON.stringify করে?</td><td>প্রতিটা লগ লাইন এক লাইনের valid JSON — production-এ log aggregator টুল (Datadog, CloudWatch ইত্যাদি) এগুলো সহজে পার্স করে সার্চ/ফিল্টার করতে পারে। মানুষ পড়ার জন্য সুন্দর না, কিন্তু মেশিনের জন্য কার্যকর — একে বলে "structured logging"।</td></tr>
+        </table>
+      </section>
+
+      <section id="m1-routes">
+        <h2><span class="tag m1">M1</span> routes/ — Express Router প্যাটার্ন</h2>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/routes/index.js</span></div>
+          <pre><code><span class="kw">import</span> { Router } <span class="kw">from</span> <span class="str">'express'</span>;
+
+<span class="kw">import</span> citiesRouter <span class="kw">from</span> <span class="str">'./cities.routes.js'</span>;
+
+<span class="kw">const</span> apiRouter = <span class="fn">Router</span>();
+
+apiRouter.<span class="fn">use</span>(<span class="str">'/cities'</span>, citiesRouter);
+
+<span class="kw">export default</span> apiRouter;</code></pre>
+        </div>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">server/src/routes/cities.routes.js</span></div>
+          <pre><code><span class="kw">import</span> { Router } <span class="kw">from</span> <span class="str">'express'</span>;
+
+<span class="kw">import</span> * <span class="kw">as</span> citiesController <span class="kw">from</span> <span class="str">'../controllers/cities.controller.js'</span>;
+
+<span class="kw">const</span> router = <span class="fn">Router</span>();
+
+router.<span class="fn">get</span>(<span class="str">'/'</span>, citiesController.listCities);
+
+<span class="kw">export default</span> router;</code></pre>
+        </div>
+        <div class="callout why">
+          <span class="cl-title">কেন প্রতিটা ফিচারের নিজস্ব Router, একটা বড় ফাইলে না?</span>
+          <code>Router()</code> একটা "mini Express app" — নিজের route গুলো নিজে ধরে রাখে। <code>routes/index.js</code> শুধু সব ফিচারের router একত্র করে mount করে দেয় (<code>/cities</code> prefix দিয়ে)। এভাবে নতুন ফিচার (drivers, rides...) যোগ করতে হলে একটা নতুন <code>*.routes.js</code> ফাইল বানিয়ে এখানে এক লাইনে mount করলেই হয় — পুরনো কোড স্পর্শ করতে হয় না। প্রকৃত path হয়ে দাঁড়ায়: <code>app.js</code>-এ <code>/api/v1</code> + <code>index.js</code>-এ <code>/cities</code> + <code>cities.routes.js</code>-এ <code>/</code> = চূড়ান্ত <code>GET /api/v1/cities</code>।
+        </div>
+      </section>
+
+      <section id="m1-cities">
+        <h2><span class="tag m1">M1</span> Cities ফিচার — সম্পূর্ণ 4-লেয়ার পাইপলাইন</h2>
+        <p>এটাই M1-এর প্রমাণ যে পুরো আর্কিটেকচার আসলে কাজ করে। <code>AGENTS.md</code>-এর কনভেনশন অনুযায়ী: "Folders = layers, files = features"। প্রতিটা লেয়ারের একটামাত্র কাজ, আর প্রতিটা লেয়ার শুধু তার ঠিক নিচের লেয়ারকেই চেনে।</p>
+
+        <div class="flow">
+          <div class="step">Router</div><span class="arrow">→</span>
+          <div class="step">Controller</div><span class="arrow">→</span>
+          <div class="step">Service</div><span class="arrow">→</span>
+          <div class="step">Repository</div><span class="arrow">→</span>
+          <div class="step">PostgreSQL</div>
+        </div>
+
+        <table>
+          <tr><th>লেয়ার</th><th>দায়িত্ব</th><th>কী জানে না</th></tr>
+          <tr><td>Router</td><td>URL path আর HTTP method-কে একটা controller ফাংশনের সাথে মেলানো</td><td>ভেতরে কী হচ্ছে তার কিছুই না</td></tr>
+          <tr><td>Controller</td><td>HTTP request/response নিয়ে কাজ — ইনপুট নেওয়া, response পাঠানো</td><td>SQL বা business logic জানে না</td></tr>
+          <tr><td>Service</td><td>Business logic (এখানে খুবই সহজ — সরাসরি repository ডাকছে)</td><td>SQL বা HTTP জানে না</td></tr>
+          <tr><td>Repository</td><td>শুধু ডাটাবেজের সাথে কথা বলা (SQL)</td><td>HTTP request/response সম্পর্কে কিছুই জানে না</td></tr>
+        </table>
+
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">controllers/cities.controller.js</span></div>
+          <pre><code><span class="kw">import</span> * <span class="kw">as</span> citiesService <span class="kw">from</span> <span class="str">'../services/cities.service.js'</span>;
+<span class="kw">import</span> { asyncHandler } <span class="kw">from</span> <span class="str">'../utils/asyncHandler.js'</span>;
+
+<span class="kw">export const</span> listCities = <span class="fn">asyncHandler</span>(<span class="kw">async</span> (_request, response) => {
+  <span class="kw">const</span> cities = <span class="kw">await</span> citiesService.<span class="fn">listCities</span>();
+  response.<span class="fn">json</span>({ success: true, data: cities });
+});</code></pre>
+        </div>
+        <p>খেয়াল করো: controller <code>asyncHandler</code>-এর ভেতরে মোড়ানো (wrapped) — service কল করে ডেটা আনে, তারপর একটা কনসিস্টেন্ট শেপে (<code>{ success, data }</code>) রেসপন্স পাঠায়। কোনো SQL নেই এখানে।</p>
+
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">services/cities.service.js</span></div>
+          <pre><code><span class="kw">import</span> * <span class="kw">as</span> citiesRepository <span class="kw">from</span> <span class="str">'../repositories/cities.repository.js'</span>;
+
+<span class="kw">export async function</span> <span class="fn">listCities</span>() {
+  <span class="kw">return</span> citiesRepository.<span class="fn">findAll</span>();
+}</code></pre>
+        </div>
+        <p>এই মুহূর্তে service একদম পাতলা — শুধু repository-কে ডাকছে। এটা ইচ্ছাকৃতভাবে খালি রাখা, কারণ <code>cities</code>-এ কোনো complex business rule নেই। পরে যখন কোনো ফিচারে বিজনেস লজিক লাগবে (যেমন M3-এ driver approval logic, M4-এ pricing), সেটা এই লেয়ারে বসবে — controller বা repository-তে না।</p>
+
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">repositories/cities.repository.js</span></div>
+          <pre><code><span class="kw">import</span> { pool } <span class="kw">from</span> <span class="str">'../config/db.js'</span>;
+
+<span class="kw">export async function</span> <span class="fn">findAll</span>() {
+  <span class="kw">const</span> { rows } = <span class="kw">await</span> pool.<span class="fn">query</span>(
+    <span class="str">`SELECT
+       id,
+       name,
+       country,
+       timezone,
+       currency,
+       launched_at::text AS "launchedAt"
+     FROM cities
+     WHERE is_active = $1
+     ORDER BY name ASC`</span>,
+    [true],
+  );
+
+  <span class="kw">return</span> rows;
+}</code></pre>
+        </div>
+        <table>
+          <tr><th>সিনট্যাক্স</th><th>ব্যাখ্যা</th></tr>
+          <tr><td>Template literal দিয়ে multi-line SQL</td><td>ব্যাকটিক (`) স্ট্রিং একাধিক লাইনে লেখা যায়, যেটা সাধারণ <code>'...'</code> বা <code>"..."</code> দিয়ে সরাসরি সম্ভব না — SQL পড়তে সুবিধা হয়।</td></tr>
+          <tr><td><code>$1</code> আর দ্বিতীয় আর্গুমেন্ট <code>[true]</code></td><td><strong>Parameterized query</strong> — <code>$1</code> একটা placeholder, আসল মান (<code>true</code>) আলাদা অ্যারেতে পাঠানো হচ্ছে। <code>pg</code> লাইব্রেরি নিরাপদভাবে এই মান বসায়। এটা কখনো স্ট্রিং concatenation দিয়ে করা হয় না — <code>AGENTS.md</code>-এ স্পষ্ট নিয়ম "parameterized queries only" — কারণ সরাসরি concatenation SQL injection আক্রমণের দরজা খুলে দেয়।</td></tr>
+          <tr><td><code>launched_at::text AS "launchedAt"</code></td><td><code>::text</code> হলো PostgreSQL-এর টাইপ cast সিনট্যাক্স (DATE কে TEXT বানানো)। <code>AS "launchedAt"</code> কলামের নাম বদলে দেয় camelCase-এ (SQL কনভেনশনে snake_case, কিন্তু JavaScript/JSON কনভেনশনে camelCase — তাই এখানেই রূপান্তর করা হচ্ছে, ফ্রন্টএন্ডে না)।</td></tr>
+          <tr><td>Destructuring <code>const { rows } = await pool.query(...)</code></td><td><code>pool.query()</code> একটা অবজেক্ট রিটার্ন করে যাতে অনেক property থাকে (<code>rowCount</code>, <code>fields</code>, ইত্যাদি) — এখানে শুধু <code>rows</code> property-টাই বের করে নেওয়া হচ্ছে।</td></tr>
+          <tr><td>কোনো <code>SELECT *</code> নেই</td><td>ইচ্ছাকৃতভাবে নির্দিষ্ট কলাম লিস্ট করা হয়েছে — টেবিলে নতুন সেনসিটিভ কলাম যোগ হলেও সেটা accidentally leak হবে না। <code>cities.repository.test.js</code>-এ এটাই টেস্ট করা হয়েছে (<code>assert.doesNotMatch(sql, /SELECT\s+\*/i)</code>)।</td></tr>
+        </table>
+      </section>
+
+      <section id="m1-tests">
+        <h2><span class="tag m1">M1</span> tests/ — Node.js এর বিল্ট-ইন টেস্ট রানার</h2>
+        <p>বাইরের কোনো টেস্টিং লাইব্রেরি (Jest, Mocha) ইনস্টল করা হয়নি — Node.js-এ নিজেই একটা টেস্ট রানার আছে (<code>node --test</code>), <code>package.json</code>-এর <code>"test"</code> script-এ যেটা ব্যবহার হচ্ছে।</p>
+        <div class="filecard">
+          <div class="filebar"><span class="filepath">tests/unit/cities.repository.test.js (সংক্ষিপ্ত)</span></div>
+          <pre><code><span class="kw">import</span> assert <span class="kw">from</span> <span class="str">'node:assert/strict'</span>;
+<span class="kw">import</span> { after, mock, test } <span class="kw">from</span> <span class="str">'node:test'</span>;
+
+<span class="kw">import</span> { pool } <span class="kw">from</span> <span class="str">'../../src/config/db.js'</span>;
+<span class="kw">import</span> { findAll } <span class="kw">from</span> <span class="str">'../../src/repositories/cities.repository.js'</span>;
+
+<span class="fn">test</span>(<span class="str">'findAll uses a parameterized query and returns the selected city rows'</span>, <span class="kw">async</span> () => {
+  <span class="kw">const</span> query = mock.<span class="fn">method</span>(pool, <span class="str">'query'</span>, <span class="kw">async</span> (sql, values) => {
+    assert.<span class="fn">match</span>(sql, /WHERE is_active = \$1/);
+    assert.<span class="fn">deepEqual</span>(values, [true]);
+    <span class="kw">return</span> { rows: expectedCities };
+  });
+
+  <span class="kw">const</span> cities = <span class="kw">await</span> <span class="fn">findAll</span>();
+  assert.<span class="fn">deepEqual</span>(cities, expectedCities);
+});</code></pre>
+        </div>
+        <table>
+          <tr><th>সিনট্যাক্স / কনসেপ্ট</th><th>ব্যাখ্যা</th></tr>
+          <tr><td><code>node:test</code>, <code>node:assert/strict</code></td><td><code>node:</code> prefix মানে এটা Node.js-এর নিজস্ব বিল্ট-ইন মডিউল, npm থেকে ইনস্টল করা কিছু না।</td></tr>
+          <tr><td><code>test('description', async () => {...})</code></td><td>একটা টেস্ট কেস — নাম আর একটা ফাংশন যেটাতে আসল টেস্ট লজিক থাকে।</td></tr>
+          <tr><td><code>assert.equal / assert.deepEqual</code></td><td><code>equal</code> সাধারণ মান (নাম্বার, স্ট্রিং) তুলনা করে। <code>deepEqual</code> অবজেক্ট/অ্যারের ভেতরের সব property মিলিয়ে দেখে (রেফারেন্স না, ভ্যালু তুলনা করে)।</td></tr>
+          <tr><td><code>assert.match(sql, /WHERE is_active = \$1/)</code></td><td>Regular expression (regex) দিয়ে স্ট্রিং-এর ভেতর একটা প্যাটার্ন খোঁজা — এখানে প্রমাণ করা হচ্ছে SQL কোয়েরিতে সত্যিই <code>$1</code> placeholder ব্যবহার হয়েছে।</td></tr>
+          <tr><td><code>mock.method(pool, 'query', fakeImplementation)</code></td><td><strong>Mocking</strong> — আসল ডাটাবেজ কল না করে, <code>pool.query</code>-এর আচরণ সাময়িকভাবে বদলে দেওয়া হচ্ছে যাতে টেস্ট দ্রুত ও predictable হয়, আসল ডাটাবেজের উপর নির্ভর না করে।</td></tr>
+          <tr><td><code>before(...)</code> / <code>after(...)</code></td><td>টেস্ট শুরুর আগে/পরে চালানো সেটআপ/ক্লিনআপ কোড — যেমন টেস্ট সার্ভার চালু করা, ডাটাবেজ ট্রানজ্যাকশন <code>ROLLBACK</code> করে সব টেস্ট ডেটা মুছে ফেলা (<code>cities.test.js</code>-এ দেখবে)।</td></tr>
+        </table>
+        <div class="callout why">
+          <span class="cl-title">কেন প্রতিটা লেয়ারের আলাদা টেস্ট (repository, controller, API)?</span>
+          <code>tests/unit/</code> ফোল্ডারে একটামাত্র ফাংশন বিচ্ছিন্নভাবে টেস্ট হয় (fast, mocked)। <code>tests/api/</code> ফোল্ডারে পুরো HTTP পাইপলাইন real server আর real (test) ডাটাবেজ দিয়ে টেস্ট হয় (slower, কিন্তু বাস্তব)। দুই ধরনের টেস্ট একসাথে থাকলে বাগ ধরার সম্ভাবনা বাড়ে — একটা ফাংশনের লজিক ভুল হলে unit test ধরবে, আর লেয়ারগুলো ঠিকভাবে একসাথে কাজ না করলে API test ধরবে।
+        </div>
+      </section>
+
+      <!-- ============ GLOSSARY ============ -->
+      <section id="glossary">
+        <h2>📘 জাভাস্ক্রিপ্ট সিনট্যাক্স গ্লোসারি — এক জায়গায়</h2>
+        <p>উপরে যা যা সিনট্যাক্স এসেছে, সব একসাথে রেফারেন্সের জন্য।</p>
+
+        <details open>
+          <summary>ভ্যারিয়েবল ঘোষণা: const, let</summary>
+          <div class="inner">
+            <pre><code><span class="kw">const</span> name = <span class="str">'Cholo'</span>;  <span class="cm">// পরে আর reassign করা যাবে না</span>
+<span class="kw">let</span> count = 0;       <span class="cm">// পরে পাল্টানো যাবে: count = 1;</span></code></pre>
+            <p>এই কোডবেজে <code>var</code> কোথাও নেই — এটা পুরনো, আধুনিক জাভাস্ক্রিপ্টে <code>const</code>/<code>let</code>ই ব্যবহার হয়। ডিফল্ট চয়েস সবসময় <code>const</code>, শুধু যখন মান বদলাবে তখনই <code>let</code>।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Arrow function</summary>
+          <div class="inner">
+            <pre><code><span class="kw">function</span> <span class="fn">add</span>(a, b) { <span class="kw">return</span> a + b; }   <span class="cm">// পুরনো ধরন</span>
+<span class="kw">const</span> add = (a, b) => a + b;             <span class="cm">// arrow function, একই কাজ</span>
+<span class="kw">const</span> square = (x) => { <span class="kw">return</span> x * x; }; <span class="cm">// { } দিলে return লিখতেই হয়</span></code></pre>
+            <p>Arrow function <code>function</code> কীওয়ার্ডের ছোট রূপ। একটা এক্সপ্রেশন হলে <code>{ }</code> আর <code>return</code> ছাড়াই লেখা যায় — ফলাফল স্বয়ংক্রিয়ভাবে রিটার্ন হয়। এই কোডবেজে বেশিরভাগ জায়গায় arrow function, কিন্তু <code>function listCities()</code>-এর মতো named function-ও আছে (সাধারণত export করা ইউটিলিটি ফাংশনে)।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>async/await আর Promise</summary>
+          <div class="inner">
+            <pre><code><span class="kw">async function</span> <span class="fn">getData</span>() {
+  <span class="kw">const</span> result = <span class="kw">await</span> someAsyncCall(); <span class="cm">// Promise শেষ হওয়া পর্যন্ত থামে</span>
+  <span class="kw">return</span> result;
+}</code></pre>
+            <p>যে কাজ instant না (ডাটাবেজ কল, ফাইল পড়া, নেটওয়ার্ক রিকোয়েস্ট) — সেগুলো একটা <strong>Promise</strong> রিটার্ন করে, যা ভবিষ্যতে কোনো একসময় "resolve" (সফল) বা "reject" (ব্যর্থ) হবে। <code>await</code> সেই Promise শেষ হওয়া পর্যন্ত অপেক্ষা করে আসল মান বের করে আনে — কোড দেখতে সাধারণ synchronous কোডের মতোই লাগে।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Destructuring</summary>
+          <div class="inner">
+            <pre><code><span class="kw">const</span> { rows } = <span class="kw">await</span> pool.<span class="fn">query</span>(...);      <span class="cm">// অবজেক্ট destructuring</span>
+<span class="kw">const</span> { Pool } = pg;                          <span class="cm">// অবজেক্ট destructuring</span>
+<span class="kw">const</span> [first, second] = [<span class="str">'a'</span>, <span class="str">'b'</span>];       <span class="cm">// অ্যারে destructuring</span></code></pre>
+            <p>একটা অবজেক্ট বা অ্যারে থেকে সরাসরি নির্দিষ্ট অংশ বের করে ভ্যারিয়েবলে বসানো — পুরো অবজেক্ট ধরে রেখে পরে <code>.property</code> লেখার দরকার হয় না।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Spread (...) আর Rest (...)</summary>
+          <div class="inner">
+            <pre><code><span class="kw">const</span> merged = { ...context, error: <span class="str">'x'</span> };  <span class="cm">// spread: অবজেক্ট মার্জ করা</span>
+<span class="kw">function</span> <span class="fn">write</span>(method, level, message, context) {}  <span class="cm">// সাধারণ প্যারামিটার</span></code></pre>
+            <p>একই <code>...</code> সিনট্যাক্স দুই কাজে — অবজেক্ট/অ্যারে "ছড়িয়ে দিতে" (spread), অথবা একাধিক আর্গুমেন্ট একটা অ্যারেতে "জড়ো করতে" (rest, যেমন <code>...args</code>)। কনটেক্সট দেখেই বোঝা যায় কোনটা।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Optional chaining (?.) আর Nullish coalescing (??)</summary>
+          <div class="inner">
+            <pre><code>error?.message              <span class="cm">// error যদি null/undefined হয়, ক্র্যাশ না করে undefined দেয়</span>
+ERROR_MESSAGES[code] ?? code <span class="cm">// বাম পাশ null/undefined হলে ডান পাশ ব্যবহার হয়</span></code></pre>
+            <p><code>??</code> কে <code>||</code>-এর সাথে গুলিয়ে ফেলা সহজ। পার্থক্য: <code>||</code> যেকোনো falsy মান (<code>0</code>, <code>''</code>, <code>false</code>) বদলে দেয়, কিন্তু <code>??</code> শুধু <code>null</code>/<code>undefined</code> হলেই বদলায় — তাই <code>0</code>-এর মতো বৈধ মান রক্ষা পায়।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Template literals (ব্যাকটিক স্ট্রিং)</summary>
+          <div class="inner">
+            <pre><code><span class="str">`Cholo API listening on port ${env.PORT}`</span></code></pre>
+            <p>ব্যাকটিক (`) দিয়ে স্ট্রিং লিখলে <code>${expression}</code> দিয়ে ভেতরে সরাসরি ভ্যারিয়েবল/এক্সপ্রেশন বসানো যায়, এবং একাধিক লাইনেও লেখা যায়।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>class, extends, super, this</summary>
+          <div class="inner">
+            <pre><code><span class="kw">class</span> AppError <span class="kw">extends</span> Error {
+  <span class="fn">constructor</span>(status, code) {
+    <span class="kw">super</span>(code);         <span class="cm">// parent class-এর constructor কল</span>
+    <span class="kw">this</span>.status = status; <span class="cm">// এই instance-এর property সেট করা</span>
+  }
+}</code></pre>
+            <p><code>class</code> একটা ব্লুপ্রিন্ট। <code>extends</code> একটা ক্লাসকে আরেকটার উপর ভিত্তি করে বানায় (inheritance)। <code>this</code> মানে "যে instance-এ এখন কাজ হচ্ছে সেটা"। <code>super()</code> parent-এর constructor চালায় — <code>this</code> ব্যবহারের আগে extends করা ক্লাসে এটা বাধ্যতামূলক।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>try/catch/throw</summary>
+          <div class="inner">
+            <pre><code><span class="kw">try</span> {
+  <span class="kw">await</span> riskyOperation();
+} <span class="kw">catch</span> (error) {
+  <span class="cm">// error না ধরলে যা হতো তা এখানে সামলানো হয়</span>
+}
+
+<span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'কিছু ভুল হয়েছে'</span>); <span class="cm">// ইচ্ছাকৃতভাবে এরর তৈরি করে "ছোড়া"</span></code></pre>
+          </div>
+        </details>
+
+        <details>
+          <summary>Higher-order function (ফাংশন যা ফাংশন রিটার্ন করে)</summary>
+          <div class="inner">
+            <pre><code><span class="kw">const</span> asyncHandler = (handler) => (request, response, next) => {...};
+
+<span class="cm">// ব্যবহার:</span>
+router.<span class="fn">get</span>(<span class="str">'/'</span>, <span class="fn">asyncHandler</span>(myController)); <span class="cm">// asyncHandler(myController) একটা নতুন ফাংশন রিটার্ন করে</span></code></pre>
+            <p>জাভাস্ক্রিপ্টে ফাংশনও একটা সাধারণ মান — ভ্যারিয়েবলে রাখা যায়, আর্গুমেন্ট হিসেবে পাস করা যায়, রিটার্নও করা যায়। <code>asyncHandler</code> আর <code>validate</code> দুটোই এই প্যাটার্নে বানানো — একটা ফাংশন যেটা কনফিগারেশন নিয়ে আরেকটা কাস্টমাইজড ফাংশন বানিয়ে দেয়।</p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Object.freeze()</summary>
+          <div class="inner">
+            <pre><code><span class="kw">export const</span> corsOptions = Object.<span class="fn">freeze</span>({ origin: env.CLIENT_ORIGIN });</code></pre>
+            <p>একটা অবজেক্টকে immutable (অপরিবর্তনীয়) করে দেয় — পরে কেউ <code>corsOptions.origin = 'other'</code> লিখলেও তা চুপচাপ উপেক্ষা হবে (strict mode-এ error দেবে)। কনফিগারেশন অবজেক্টে এটা কমন — যাতে ভুলবশত পরিবর্তন না হয়।</p>
+          </div>
+        </details>
+      </section>
+
+      <!-- ============ REQUEST FLOW ============ -->
+      <section id="request-flow">
+        <h2>🔄 একটা রিকোয়েস্টের সম্পূর্ণ যাত্রা</h2>
+        <p><code>curl http://localhost:3000/api/v1/cities</code> চালালে ঠিক কী কী ঘটে, ধাপে ধাপে:</p>
+        <table>
+          <tr><th>#</th><th>ধাপ</th><th>ফাইল</th></tr>
+          <tr><td>1</td><td>Request আসে, Express-এর মিডলওয়্যার চেইন শুরু হয়</td><td><code>app.js</code></td></tr>
+          <tr><td>2</td><td>CORS চেক (origin ঠিক আছে কিনা)</td><td><code>config/cors.js</code></td></tr>
+          <tr><td>3</td><td>JSON body পার্স (এই GET-এ body নেই, তবু চলে)</td><td><code>express.json()</code></td></tr>
+          <tr><td>4</td><td>Request logger শুরু হয় (টাইমার সেট)</td><td><code>middlewares/requestLogger.js</code></td></tr>
+          <tr><td>5</td><td><code>/api/v1</code> prefix মিলে যায়, apiRouter-এ চলে যায়</td><td><code>routes/index.js</code></td></tr>
+          <tr><td>6</td><td><code>/cities</code> prefix মিলে যায়, citiesRouter-এ চলে যায়</td><td><code>routes/cities.routes.js</code></td></tr>
+          <tr><td>7</td><td><code>GET /</code> matches → controller ডাকা হয় (asyncHandler-এ মোড়ানো)</td><td><code>controllers/cities.controller.js</code></td></tr>
+          <tr><td>8</td><td>Controller service-কে ডাকে</td><td><code>services/cities.service.js</code></td></tr>
+          <tr><td>9</td><td>Service repository-কে ডাকে</td><td><code>repositories/cities.repository.js</code></td></tr>
+          <tr><td>10</td><td>Repository পুল থেকে কানেকশন নেয়, parameterized SQL চালায়</td><td><code>config/db.js</code> + PostgreSQL</td></tr>
+          <tr><td>11</td><td>Rows ফিরে আসে repository → service → controller পর্যন্ত</td><td>—</td></tr>
+          <tr><td>12</td><td>Controller <code>{ success: true, data: [...] }</code> JSON রেসপন্স পাঠায়</td><td><code>controllers/cities.controller.js</code></td></tr>
+          <tr><td>13</td><td>Response পাঠানো শেষ হলে <code>'finish'</code> ইভেন্টে লগ লেখা হয়</td><td><code>middlewares/requestLogger.js</code></td></tr>
+        </table>
+        <div class="callout warn">
+          <span class="cl-title">যদি কোথাও এরর হয়?</span>
+          ধাপ ৮-১০ এর যেকোনো জায়গায় যদি ডাটাবেজ কল ব্যর্থ হয়, <code>asyncHandler</code> (ধাপ ৭-এ) সেই error ধরে <code>next(error)</code> ডাকে — Express তখন মাঝের সব ধাপ টপকে সরাসরি <code>errorHandler</code> মিডলওয়্যারে চলে যায় (<code>app.js</code>-এর একদম শেষে বসানো), যেটা একটা কনসিস্টেন্ট error envelope পাঠায়।
+        </div>
+      </section>
+
+      <!-- ============ WHAT'S NEXT ============ -->
+      <section id="whats-next">
+        <h2>➡️ এরপর কী — M2: Auth & Accounts</h2>
+        <p><code>docs/13-14</code> অনুযায়ী পরের মাইলস্টোন হলো authentication — register → OTP verify → login → refresh token rotation → logout। এটাই সেই "গেট" যার পেছনে বাকি সব ফিচার দাঁড়িয়ে থাকবে (driver approval, ride booking...) — এই কারণেই এটা M1-এর ঠিক পরেই।</p>
+        <p>এখানে যা যা শিখেছ তার প্রায় সবকিছুই M2-তে আবার লাগবে: <code>validate()</code> মিডলওয়্যার (এতক্ষণ অব্যবহৃত ছিল) দিয়ে register/login-এর input চেক হবে, <code>AppError</code> দিয়ে ভুল পাসওয়ার্ড/OTP-র এরর পাঠানো হবে, একই route → controller → service → repository প্যাটার্ন অনুসরণ হবে, শুধু নতুন concept যোগ হবে: bcrypt password hashing, JWT tokens, cookie handling।</p>
+        <div class="callout why">
+          <span class="cl-title">তোমার AGENTS.md যা বলছে</span>
+          M2 নিয়ে কোড লেখার আগে <code>docs/10</code> (auth design) পড়ে নেওয়া ভালো, আর যেখানে "checkpoint" হিসেবে চিহ্নিত করা আছে, সেখানে নিজে চেষ্টা করার সুযোগ চাওয়া — এটাই এই প্রজেক্টের নিয়ম হিসেবে ঠিক করা আছে।
+        </div>
+      </section>
+
+      <footer>
+        তৈরি হয়েছে তোমার নিজের <code>cholo</code> রিপোর আসল কোড থেকে — ৯ আগস্ট ২০২৬।<br>
+        প্রতিটা কোড ব্লক সত্যিকারের ফাইল থেকে নেওয়া, কাল্পনিক উদাহরণ না।
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<button class="top-btn" id="topBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+  const topBtn = document.getElementById('topBtn');
+  window.addEventListener('scroll', () => {
+    topBtn.style.display = window.scrollY > 500 ? 'block' : 'none';
+  });
+
+  // close mobile sidebar when a link is clicked
+  document.querySelectorAll('nav.sidebar a').forEach((a) => {
+    a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    });
+  });
+</script>
+
+</body>
+</html>

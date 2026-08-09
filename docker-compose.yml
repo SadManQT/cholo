@@ -15,6 +15,7 @@ services:
       # `docker compose down -v` wipes the volume to force a clean re-init
       # after editing database/schema.sql.
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seeds/seed.reference.sql:/docker-entrypoint-initdb.d/02-seed-reference.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
