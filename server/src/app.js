@@ -1,6 +1,7 @@
 import express from 'express';
 
 import { checkDatabaseConnection } from './config/db.js';
+import apiRouter from './routes/index.js';
 
 const app = express();
 
@@ -15,5 +16,7 @@ app.get('/health', async (_request, response) => {
     response.status(503).json({ db: false });
   }
 });
+
+app.use('/api/v1', apiRouter);
 
 export default app;
