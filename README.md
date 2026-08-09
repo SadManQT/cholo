@@ -19,6 +19,29 @@ docker compose up -d
 
 That starts PostgreSQL 16 in a container and loads `database/schema.sql` into it automatically (only on first boot — see [Resetting the database](#resetting-the-database) below).
 
+Install and start the API in a second terminal:
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+Verify that the API can reach PostgreSQL:
+
+```bash
+curl http://localhost:3000/health
+```
+
+It should return `{"db":true}`.
+
+The first versioned API endpoint lists active operating cities through the
+full route → controller → service → repository pipeline:
+
+```bash
+curl http://localhost:3000/api/v1/cities
+```
+
 ### Verify it worked
 
 Wait a few seconds for the healthcheck, then:
@@ -74,7 +97,7 @@ and re-run `docker compose up -d`. The container's internal port doesn't change 
 ```
 cholo/
 ├── client/                # React SPA (not built yet — see docs/13-14)
-├── server/                # Express API (not built yet — see docs/13-14)
+├── server/                # Express API (M1 infrastructure in progress)
 ├── database/
 │   └── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
 ├── docs/                  # the design blueprint (read before changing schema/API/architecture)
@@ -98,4 +121,4 @@ cholo/
 
 ## Status
 
-Following the milestone plan in `docs/13-14`. Currently: **M0 — Foundation** (this quickstart + `schema.sql`). Server and client scaffolding come next.
+Following the milestone plan in `docs/13-14`. **M0 — Foundation** is complete. Currently: **M1 — Server Skeleton & Infrastructure**, step 4 (`app.js`/`server.js`, validated environment config, and database-aware `/health`).
