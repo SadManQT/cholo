@@ -42,6 +42,17 @@ full route → controller → service → repository pipeline:
 curl http://localhost:3000/api/v1/cities
 ```
 
+Run the backend regression suite:
+
+```bash
+cd server
+npm test
+```
+
+The M1 infrastructure also provides validated CORS, structured request logs,
+Zod request validation, async error forwarding, PostgreSQL error translation,
+standard 404 responses, and one centralized error handler.
+
 ### Verify it worked
 
 Wait a few seconds for the healthcheck, then:
@@ -121,4 +132,4 @@ cholo/
 
 ## Status
 
-Following the milestone plan in `docs/13-14`. **M0 — Foundation** is complete. Currently: **M1 — Server Skeleton & Infrastructure**, step 4 (`app.js`/`server.js`, validated environment config, and database-aware `/health`).
+Following the milestone plan in `docs/13-14`. **M0 — Foundation** and **M1 — Server Skeleton & Infrastructure** are complete. The next milestone is **M2 — Auth & Accounts**.
