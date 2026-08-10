@@ -412,6 +412,9 @@ And remember the **three entrances** (doc 07): HTTP routes, socket handlers, and
 | POST | `/driver/vehicles` | DRIVER | `categoryId, registrationNo, brand?, model?, modelYear?, color?, seat…` | 201 `pending` | 409 `DUPLICATE` reg no |
 | GET | `/driver/vehicles` | DRIVER | My vehicles | 200 | — |
 | PATCH | `/driver/vehicles/:id` | DRIVER (owner) | Editable fields | 200 | 404 |
+| DELETE | `/driver/vehicles/:id` | DRIVER (owner) | Shelf vehicle, clear it if on duty | 204 | 404 · 409 `ON_TRIP` |
+| POST | `/driver/vehicles/:id/documents` | DRIVER (owner) | Upload vehicle KYC metadata | 201 `pending` | 404 · 422 |
+| GET | `/driver/vehicles/:id/documents` | DRIVER (owner) | Vehicle document review history | 200 | 404 |
 | PUT | `/driver/vehicles/:id/activate` | DRIVER (owner) | Set as the on-duty vehicle | 200 | 409 vehicle not approved |
 | PUT | `/driver/availability` | DRIVER | `status: online\|offline\|break` (+ first GPS fix) | 200 | 409 `DOCS_NOT_APPROVED` · 409 `ON_TRIP` |
 | GET | `/driver/offers` | DRIVER | Pending offers (push arrives via socket; this is the pull) | 200 | — |
@@ -466,7 +469,9 @@ And remember the **three entrances** (doc 07): HTTP routes, socket handlers, and
 | GET | `/admin/stats` | Dashboard KPIs: trips today, active drivers, revenue (v_city_monthly_revenue) | 200 | — |
 | GET | `/admin/drivers?status=pending` | Verification queue | 200 | — |
 | POST | `/admin/drivers/:id/approve` · `/reject` | KYC decision · `reason` on reject → audit-logged | 200 | 409 docs incomplete |
-| POST | `/admin/documents/:id/review` | `status: approved\|rejected, reason?` | 200 | 409 already reviewed |
+| POST | `/admin/documents/:id/review` | Review driver document · `status: approved\|rejected, reason?` | 200 | 409 already reviewed |
+| POST | `/admin/vehicle-documents/:id/review` | Review vehicle document · `status: approved\|rejected, reason?` | 200 | 409 already reviewed |
+| POST | `/admin/vehicles/:id/approve` · `/reject` | Vehicle KYC decision after document review → audit-logged | 200 | 409 docs incomplete |
 | GET | `/admin/users?search=&status=` | User management list | 200 | — |
 | POST | `/admin/users/:id/suspend` · `/reinstate` | `reason` → revokes sessions, audit-logged | 200 | 403 (needs `ops`+) |
 | GET · POST | `/admin/pricing-rules` | View / publish new effective-dated tariff (never edits old) | 200 · 201 | 409 overlapping window |
