@@ -55,7 +55,7 @@
 | | |
 |---|---|
 | **Goal** | A human can become an approved, on-duty driver end to end |
-| **Features** | `POST /driver/apply` · document upload records · vehicle CRUD + activate · availability online/offline with the doc 03 business gate (approved only) · minimal admin endpoints: list pending, review document, approve driver |
+| **Features** | `POST /driver/apply` · driver + vehicle document upload records · vehicle CRUD + activate · availability online/offline with the doc 03 business gate (approved only) · minimal admin endpoints: list pending, review documents, approve driver + vehicle |
 | **Knowledge** | docs 09 §6, 01 domain 2 |
 | **Depends on** | M2 (roles) |
 | **Demo** | Postman story: apply → upload → admin approves → driver goes online → `v_active_drivers` shows them |
