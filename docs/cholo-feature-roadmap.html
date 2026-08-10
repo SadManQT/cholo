@@ -461,13 +461,13 @@ const DATA = [
     {
       step:'9a', name:'POST /driver/apply + document upload records', why:'The application step every driver starts at.',
       refs:'docs/08-09-10 §6; docs/01 domain 2',
-      build:`Build POST /driver/apply and the document-upload endpoints per docs/08-09-10-backend-api-auth.md and the driver domain in docs/01-er-diagram-database-architecture.md. Store upload metadata (not the actual file binary, unless the docs say otherwise) as document records tied to the driver.`,
+      build:`Build POST /driver/apply and the driver-document upload endpoints per docs/08-09-10-backend-api-auth.md and the driver domain in docs/01-er-diagram-database-architecture.md. Store upload metadata (not the actual file binary) as document records tied to the driver.`,
       understand:`Show me the driver's row right after they apply but before any admin has approved them — what does their "state" look like in the data at this point, and which column tracks approval status?`
     },
     {
       step:'9b', name:'Vehicle CRUD + activate', why:'A driver needs an active vehicle before they can be dispatched a ride.',
       refs:'docs/01 domain 2',
-      build:`Build vehicle CRUD endpoints scoped to the logged-in driver, plus an "activate" action that sets a vehicle as the driver's current active vehicle.`,
+      build:`Build vehicle CRUD endpoints scoped to the logged-in driver, vehicle-document upload/history endpoints, plus an "activate" action that sets an approved vehicle as the driver's current active vehicle.`,
       understand:`Explain the circular reference between drivers and vehicles that doc 03 §1 mentions (driver_profiles.active_vehicle_id ↔ vehicles.driver_id) — why can't both foreign keys exist from the moment both tables are created?`
     },
     {
@@ -477,9 +477,9 @@ const DATA = [
       understand:`Show me what happens, exactly, when I try to go online as a driver who hasn't been approved yet — the actual response body and status code — and explain why 409 is the right status here instead of 403.`
     },
     {
-      step:'9d', name:'Minimal admin endpoints — list pending, review document, approve driver', why:'Closes the loop: someone has to actually approve the application.',
+      step:'9d', name:'Minimal admin endpoints — review and approve driver + vehicle', why:'Closes the loop: someone has to actually approve the application and its vehicle.',
       refs:'docs/08-09-10 (admin/audit pattern)',
-      build:`Build the minimal admin surface: list pending driver applications, review a document, and approve/reject a driver. Every admin decision must write a row to audit_logs.`,
+      build:`Build the minimal admin surface: list pending driver applications, review driver and vehicle documents, and approve/reject a driver and vehicle. Every admin decision must write a row to audit_logs.`,
       understand:`Show me the audit_logs row created when I approve a driver — what does it capture, and how would you use it to answer "who approved driver #42, and when" six months from now?`
     }
   ]

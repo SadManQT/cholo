@@ -17,7 +17,10 @@ cp .env.example .env
 docker compose up -d
 ```
 
-That starts PostgreSQL 16 in a container and loads `database/schema.sql` into it automatically (only on first boot — see [Resetting the database](#resetting-the-database) below).
+That starts PostgreSQL 16 in a container and loads `database/schema.sql` plus
+the required roles and vehicle categories from `database/seeds/` automatically
+(only on first boot — see [Resetting the database](#resetting-the-database)
+below).
 
 Install and start the API in a second terminal:
 
@@ -52,6 +55,18 @@ npm test
 The M1 infrastructure also provides validated CORS, structured request logs,
 Zod request validation, async error forwarding, PostgreSQL error translation,
 standard 404 responses, and one centralized error handler.
+
+### Updating required reference data
+
+Docker initialization scripts run only when the database volume is first
+created. After pulling a milestone that adds roles, categories, or other
+required reference rows, apply the idempotent seed without deleting your data:
+
+```bash
+docker compose up -d
+docker compose exec postgres psql -U cholo -d cholo \
+  -f /docker-entrypoint-initdb.d/02-seed-reference.sql
+```
 
 ### Verify it worked
 
@@ -108,9 +123,10 @@ and re-run `docker compose up -d`. The container's internal port doesn't change 
 ```
 cholo/
 ├── client/                # React SPA (not built yet — see docs/13-14)
-├── server/                # Express API (M1 infrastructure in progress)
+├── server/                # Express API (auth, accounts, driver onboarding, fleet)
 ├── database/
-│   └── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
+│   ├── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
+│   └── seeds/             # idempotent reference rows required by the API
 ├── docs/                  # the design blueprint (read before changing schema/API/architecture)
 ├── docker-compose.yml     # PostgreSQL 16, auto-loads schema.sql
 ├── .env.example           # every env var this project needs, with fake values
@@ -132,4 +148,7 @@ cholo/
 
 ## Status
 
-Following the milestone plan in `docs/13-14`. **M0 — Foundation** and **M1 — Server Skeleton & Infrastructure** are complete. The next milestone is **M2 — Auth & Accounts**.
+Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
+**M3 — Driver Onboarding & Fleet** are complete. The next backend milestone is
+**M4 — Pricing, Dispatch & the Ride Core**; M5 frontend foundation may proceed
+in parallel as documented.
