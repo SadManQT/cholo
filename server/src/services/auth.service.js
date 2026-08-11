@@ -1,5 +1,6 @@
 import { pool } from '../config/db.js';
 import * as otpRepo from '../repositories/otp.repository.js';
+import * as passengersRepo from '../repositories/passengers.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
@@ -62,6 +63,10 @@ export async function register({ fullName, phone, password, gender }) {
     throw new Error('PASSENGER role is not seeded — run database/seeds/seed.reference.sql');
   }
   await rolesRepo.assignRole(user.id, passengerRoleId);
+  // Every registrant is granted PASSENGER above, so every registrant needs
+  // the matching profile row — ride_requests.passenger_id (and trips,
+  // favorite_drivers) FK to passenger_profiles(user_id), not users(id).
+  await passengersRepo.insertProfile(user.id);
 
   const otp = generateOtp();
   await otpRepo.insert({

@@ -17,6 +17,12 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_ACCESS_TTL: z.string().default('15m'),
   REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
+
+  // Geo abstraction (doc 05-06-07 §8): one interface, swappable provider.
+  // Only 'osm' is implemented — 'google' is the documented future adapter.
+  GEO_PROVIDER: z.enum(['osm', 'google']).default('osm'),
+  OSRM_BASE_URL: z.string().url().default('https://router.project-osrm.org'),
+  NOMINATIM_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
 });
 
 function formatIssues(issues) {
