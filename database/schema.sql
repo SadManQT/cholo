@@ -558,6 +558,17 @@ CREATE INDEX idx_ride_requests_promo_code ON ride_requests(promo_code_id);
 CREATE INDEX idx_requests_open ON ride_requests (city_id, requested_at)
     WHERE status IN ('pending', 'searching');
 
+-- belt and suspenders (doc 03 §8 T1 pattern): a passenger can have at most
+-- one open IMMEDIATE request at a time. The service checks this too, but a
+-- double submit racing two inserts is only actually impossible because of
+-- this constraint — same idiom as ux_payment_one_success.
+-- scheduled_for IS NULL scopes this to "ride now" requests only: a
+-- scheduled request has no dispatch/expiry semantics yet (see
+-- rides.service.js's createRequest) and must not block booking an
+-- immediate ride today just because a future one is already on the books.
+CREATE UNIQUE INDEX ux_one_active_request_per_passenger ON ride_requests (passenger_id)
+    WHERE status IN ('pending', 'searching', 'matched') AND scheduled_for IS NULL;
+
 -- ride_offers — associative entity resolving drivers<->requests M:N; the data
 -- behind acceptance rates (doc 01 §13.4)
 CREATE TABLE ride_offers (
@@ -1236,8 +1247,12 @@ CREATE TRIGGER trg_apply_rating AFTER INSERT ON ratings
 
 -- 8. fn_current_pricing — one canonical implementation of "which tariff
 -- applies?" (effective-dated lookup, doc 01 §13.7)
+-- RETURNS SETOF, not a bare pricing_rules: a plain composite return always
+-- yields exactly one row from a FROM-clause call — an all-NULL row when
+-- nothing matches, never zero rows. SETOF makes "no tariff for this
+-- market" come back as zero rows, like every other lookup in this schema.
 CREATE FUNCTION fn_current_pricing(p_city_id SMALLINT, p_category_id SMALLINT, p_at TIMESTAMPTZ DEFAULT now())
-RETURNS pricing_rules AS $$
+RETURNS SETOF pricing_rules AS $$
     SELECT *
     FROM pricing_rules
     WHERE city_id = p_city_id
