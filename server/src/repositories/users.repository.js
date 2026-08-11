@@ -17,7 +17,7 @@ export async function insert({ fullName, phone, passwordHash, gender }) {
 export async function findAuthByPhone(phone) {
   const { rows } = await pool.query(
     `SELECT id, public_id AS "publicId", full_name AS "fullName", phone,
-            password_hash AS "passwordHash", status
+            password_hash AS "passwordHash", status, phone_verified_at AS "phoneVerifiedAt"
      FROM users
      WHERE phone = $1`,
     [phone],
