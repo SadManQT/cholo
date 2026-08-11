@@ -19,6 +19,11 @@ export const verifyOtpSchema = z.object({
   purpose: z.literal('signup'),
 });
 
+export const resendOtpSchema = z.object({
+  phone: phoneSchema,
+  purpose: z.literal('signup'),
+});
+
 export const loginSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(1).max(72),
