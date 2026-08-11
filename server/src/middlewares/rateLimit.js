@@ -66,3 +66,12 @@ export const verifyOtpLimiter = createRateLimiter({
   keyGenerator: phoneAndIpKey,
   skipSuccessfulRequests: true,
 });
+
+// Resending sends another real SMS (doc 09 §4: "429 RATE_LIMITED — SMS
+// costs money") — tighter than verify's own limiter since every successful
+// call here has a direct cost, not just a guess attempt.
+export const resendOtpLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: isTest ? 1000 : 3,
+  keyGenerator: phoneAndIpKey,
+});

@@ -49,6 +49,11 @@ export const verifyOtp = asyncHandler(async (request, response) => {
   response.json({ success: true, data: { accessToken, user } });
 });
 
+export const resendOtp = asyncHandler(async (request, response) => {
+  await authService.resendOtp(request.body);
+  response.status(204).end();
+});
+
 export const login = asyncHandler(async (request, response) => {
   const { accessToken, refreshToken, user } = await authService.login(
     request.body,
