@@ -1077,9 +1077,18 @@ CREATE INDEX idx_disputes_refund_payment ON disputes(refund_payment_id);
 
 -- audit_logs — append-only, before/after JSON snapshots; actor_role is
 -- deliberately denormalized (describes the actor AS THEY WERE, doc 02 §9)
+--
+-- actor_id is RESTRICT, not SET NULL: this table is unconditionally
+-- immutable (fn_block_mutation below blocks every UPDATE, no exceptions) —
+-- including the UPDATE that ON DELETE SET NULL would need to run to null
+-- this column out when a user row is deleted. SET NULL here would make
+-- "delete a user who has ever performed an audited action" fail with a
+-- confusing "audit_logs is append-only" error instead of a clear one.
+-- RESTRICT says the true thing directly: you cannot delete that user,
+-- full stop — an audit trail should never let its actor silently vanish.
 CREATE TABLE audit_logs (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    actor_id    BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    actor_id    BIGINT REFERENCES users(id) ON DELETE RESTRICT,
     actor_role  VARCHAR(20),
     action      VARCHAR(80) NOT NULL,
     entity_type VARCHAR(60) NOT NULL,
