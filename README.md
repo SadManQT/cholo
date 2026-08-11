@@ -56,6 +56,25 @@ The M1 infrastructure also provides validated CORS, structured request logs,
 Zod request validation, async error forwarding, PostgreSQL error translation,
 standard 404 responses, and one centralized error handler.
 
+Install and start the frontend in a third terminal:
+
+```bash
+cd client
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (`http://localhost:5173` by default). `VITE_API_URL`
+in `client/.env` already points at the API from the steps above — no further
+setup needed. Run the frontend's own checks from `client/`:
+
+```bash
+npx tsc -b      # type-check
+npx oxlint      # lint
+npm run build   # production build
+```
+
 ### Updating required reference data
 
 Docker initialization scripts run only when the database volume is first
@@ -122,8 +141,8 @@ and re-run `docker compose up -d`. The container's internal port doesn't change 
 
 ```
 cholo/
-├── client/                # React SPA (not built yet — see docs/13-14)
-├── server/                # Express API (auth, accounts, driver onboarding, fleet)
+├── client/                # React + TypeScript + Vite SPA (auth screens, ui/ kit, role-based routing)
+├── server/                # Express API (auth, accounts, driver onboarding/fleet, pricing/dispatch/rides, sockets)
 ├── database/
 │   ├── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
 │   └── seeds/             # idempotent reference rows required by the API
@@ -149,6 +168,8 @@ cholo/
 ## Status
 
 Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
-**M3 — Driver Onboarding & Fleet** are complete. The next backend milestone is
-**M4 — Pricing, Dispatch & the Ride Core**; M5 frontend foundation may proceed
-in parallel as documented.
+**M5 — Frontend Foundation** are complete: auth, driver onboarding/fleet,
+pricing/dispatch/ride lifecycle with a Socket.io realtime layer, and the
+React shell (routing, auth screens, `ui/` kit) wired to the real API. The
+next milestone is **M6 — The Two Apps** (the full booking + driver + live-trip
+UI, sockets on both ends).
