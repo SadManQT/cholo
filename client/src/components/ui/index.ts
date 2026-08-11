@@ -6,6 +6,7 @@ export type { StatusBadgeStatus } from './StatusBadge';
 export { BottomSheet } from './BottomSheet';
 export type { SnapPoint } from './BottomSheet';
 export { Skeleton } from './Skeleton';
-export { toast, Toaster } from './Toast';
+export { Toaster } from './Toast';
+export { toast } from './toastStore';
 export { EmptyState } from './EmptyState';
 export { OtpInput } from './OtpInput';

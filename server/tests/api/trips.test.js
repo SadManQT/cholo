@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { randomInt } from 'node:crypto';
 import { once } from 'node:events';
-import { after, before, test } from 'node:test';
+import { after, before, mock, test } from 'node:test';
 
 import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
+import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
 // Same reasoning as tests/api/dispatch.test.js: real pool, no savepoint
@@ -15,9 +17,16 @@ import { signAccessToken } from '../../src/utils/tokens.js';
 // dispatch race test's.
 let server;
 let baseUrl;
-let seed = Date.now() % 90_000_000;
+let seed = randomInt(10_000_000, 100_000_000);
+const realFetch = globalThis.fetch;
 
 before(async () => {
+  mock.method(globalThis, 'fetch', async (url, options) => {
+    if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
+      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 10340, duration: 660 }] }) };
+    }
+    return realFetch(url, options);
+  });
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -26,6 +35,7 @@ before(async () => {
 after(async () => {
   server.close();
   await once(server, 'close');
+  mock.restoreAll();
   await pool.end();
 });
 
@@ -108,9 +118,10 @@ async function createAssignedTrip(t) {
   const passenger = await createPassenger();
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
 
+  const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
   const booked = await request('POST', '/ride-requests', {
     accessToken: passenger.accessToken,
-    body: { cityId: 1, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
+    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
   });
   assert.equal(booked.status, 201);
 
@@ -398,4 +409,74 @@ test('BAD_TRANSITION: cancelling an already-cancelled trip', async (t) => {
   });
   assert.equal(second.status, 409);
   assert.equal((await second.json()).error.code, 'BAD_TRANSITION');
+});
+
+test('M6 read APIs return participant-scoped history, detail, and tracking fallback', async (t) => {
+  const { tripCode, passenger, driver } = await createAssignedTrip(t);
+
+  const list = await request('GET', '/trips?status=active&page=1&limit=5', {
+    accessToken: passenger.accessToken,
+  });
+  assert.equal(list.status, 200);
+  const listBody = await list.json();
+  assert.equal(listBody.data.some((trip) => trip.publicCode === tripCode), true);
+  assert.equal(listBody.meta.page, 1);
+
+  const wrongRole = await request('GET', '/trips?status=active&role=driver', {
+    accessToken: passenger.accessToken,
+  });
+  assert.equal(wrongRole.status, 200);
+  assert.equal((await wrongRole.json()).data.length, 0);
+
+  const detail = await request('GET', `/trips/${tripCode}`, { accessToken: passenger.accessToken });
+  assert.equal(detail.status, 200);
+  const detailData = (await detail.json()).data;
+  assert.equal(detailData.publicCode, tripCode);
+  assert.equal(detailData.participantRole, 'passenger');
+  assert.equal(detailData.driver.name, 'Trip Lifecycle Driver');
+  assert.equal(detailData.history[0].toStatus, 'assigned');
+
+  const track = await request('GET', `/trips/${tripCode}/track`, { accessToken: passenger.accessToken });
+  assert.equal(track.status, 200);
+  const tracked = (await track.json()).data;
+  assert.equal(tracked.lat, PICKUP.lat);
+  assert.equal(tracked.lng, PICKUP.lng);
+
+  const stranger = await createPassenger();
+  const hidden = await request('GET', `/trips/${tripCode}`, { accessToken: stranger.accessToken });
+  assert.equal(hidden.status, 404);
+
+  const driverDetail = await request('GET', `/trips/${tripCode}`, { accessToken: driver.accessToken });
+  assert.equal((await driverDetail.json()).data.participantRole, 'driver');
+});
+
+test('M6 trip chat and SOS writes are participant-scoped and stored', async (t) => {
+  const { tripCode, passenger, driver } = await createAssignedTrip(t);
+
+  const sent = await request('POST', `/trips/${tripCode}/messages`, {
+    accessToken: passenger.accessToken,
+    body: { body: 'I am at the pickup', messageType: 'quick_reply' },
+  });
+  assert.equal(sent.status, 201);
+  assert.equal((await sent.json()).data.body, 'I am at the pickup');
+
+  const messages = await request('GET', `/trips/${tripCode}/messages`, { accessToken: driver.accessToken });
+  assert.equal(messages.status, 200);
+  const messageRows = (await messages.json()).data;
+  assert.equal(messageRows.length, 1);
+  assert.equal(messageRows[0].senderName, 'Trip Lifecycle Passenger');
+
+  const sos = await request('POST', `/trips/${tripCode}/sos`, {
+    accessToken: passenger.accessToken,
+    body: { lat: PICKUP.lat, lng: PICKUP.lng },
+  });
+  assert.equal(sos.status, 201);
+  assert.equal((await sos.json()).data.status, 'active');
+
+  const { rows } = await pool.query(
+    `SELECT count(*)::int AS count FROM sos_alerts sa
+     JOIN trips t ON t.id = sa.trip_id WHERE t.trip_code = $1`,
+    [tripCode],
+  );
+  assert.equal(rows[0].count, 1);
 });

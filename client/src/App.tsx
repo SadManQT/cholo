@@ -1,5 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from './components/ui';
+import { FullScreenSpinner } from './components/layout/FullScreenSpinner';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { AdminLayout } from './layouts/AdminLayout';
 import { AuthLayout } from './layouts/AuthLayout';
@@ -11,13 +13,21 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { NotFoundPage } from './pages/shared/NotFoundPage';
 import { PlaceholderPage } from './pages/shared/PlaceholderPage';
 
+const BookRidePage = lazy(() => import('./pages/passenger/BookRidePage').then((module) => ({ default: module.BookRidePage })));
+const LiveTripPage = lazy(() => import('./pages/passenger/LiveTripPage').then((module) => ({ default: module.LiveTripPage })));
+const TripHistoryPage = lazy(() => import('./pages/passenger/TripHistoryPage').then((module) => ({ default: module.TripHistoryPage })));
+const TripDetailPage = lazy(() => import('./pages/passenger/TripDetailPage').then((module) => ({ default: module.TripDetailPage })));
+const DriverHomePage = lazy(() => import('./pages/driver/DriverHomePage').then((module) => ({ default: module.DriverHomePage })));
+const DriverActiveTripPage = lazy(() => import('./pages/driver/DriverActiveTripPage').then((module) => ({ default: module.DriverActiveTripPage })));
+
 // doc 12 §3-7's full page catalog, as code (doc 11 §8: "the sitemap as
-// code"). Register/Verify/Login are real (roadmap step 17) — everything
-// else is the shell (doc 13-14 M5's goal) that later steps fill in.
+// code"). Auth and the M6 passenger/driver marketplace routes are real;
+// money/admin routes stay as milestone-scoped placeholders for M7/M8.
 function App() {
   return (
     <>
-      <Routes>
+      <Suspense fallback={<FullScreenSpinner />}>
+        <Routes>
         <Route element={<AuthLayout />}>
           <Route path="/welcome" element={<PlaceholderPage title="Welcome" />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -46,10 +56,10 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<PlaceholderPage title="Book a ride" />} />
-          <Route path="/trips/:code/live" element={<PlaceholderPage title="Live trip" />} />
-          <Route path="/trips" element={<PlaceholderPage title="Trip history" />} />
-          <Route path="/trips/:code" element={<PlaceholderPage title="Trip detail" />} />
+          <Route path="/" element={<BookRidePage />} />
+          <Route path="/trips/:code/live" element={<LiveTripPage />} />
+          <Route path="/trips" element={<TripHistoryPage />} />
+          <Route path="/trips/:code" element={<TripDetailPage />} />
           <Route path="/wallet" element={<PlaceholderPage title="Wallet" />} />
           <Route path="/wallet/methods" element={<PlaceholderPage title="Payment methods" />} />
           <Route path="/promos" element={<PlaceholderPage title="Promos" />} />
@@ -66,13 +76,14 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<PlaceholderPage title="Driver home" />} />
+          <Route index element={<DriverHomePage />} />
           <Route path="documents" element={<PlaceholderPage title="Documents" />} />
           <Route path="vehicles" element={<PlaceholderPage title="Vehicles" />} />
-          <Route path="trip" element={<PlaceholderPage title="Active trip" />} />
+          <Route path="trip" element={<DriverActiveTripPage />} />
           <Route path="earnings" element={<PlaceholderPage title="Earnings" />} />
           <Route path="withdrawals" element={<PlaceholderPage title="Withdrawals" />} />
-          <Route path="trips" element={<PlaceholderPage title="Trip history" />} />
+          <Route path="trips" element={<TripHistoryPage driverMode />} />
+          <Route path="trips/:code" element={<TripDetailPage driverMode />} />
           <Route path="account" element={<PlaceholderPage title="Account" />} />
         </Route>
 
@@ -98,7 +109,8 @@ function App() {
 
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
       <Toaster />
     </>
   );

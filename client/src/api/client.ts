@@ -15,6 +15,12 @@ export function setAccessToken(token: string | null) {
   accessToken = token;
 }
 
+// The socket transport is the only other infrastructure layer allowed to
+// read the in-memory access token. Pages still never receive or store it.
+export function getAccessToken() {
+  return accessToken;
+}
+
 // Fired when a session is conclusively over (refresh itself failed) so
 // AuthContext can clear its user state — kept as a plain callback rather
 // than a third React Context (doc 11 §11: "Cholo needs exactly these two").

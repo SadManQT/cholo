@@ -10,4 +10,5 @@ if (!apiUrl) {
 
 export const env = Object.freeze({
   apiUrl,
+  socketUrl: import.meta.env.VITE_SOCKET_URL || new URL(apiUrl).origin,
 });

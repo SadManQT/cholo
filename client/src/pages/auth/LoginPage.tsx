@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Input, toast } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { roleHomePath } from '../../utils/roleHomePath';
 

@@ -146,6 +146,56 @@ export async function createRequest(passengerId, dto) {
   };
 }
 
+function toRequestStatus(request) {
+  return {
+    publicId: request.publicId,
+    status: request.status,
+    pickup: {
+      lat: request.pickupLat,
+      lng: request.pickupLng,
+      address: request.pickupAddress,
+    },
+    dropoff: {
+      lat: request.dropoffLat,
+      lng: request.dropoffLng,
+      address: request.dropoffAddress,
+    },
+    quote: {
+      estFare: request.estFare,
+      currency: 'BDT',
+      estDistanceKm: request.estDistanceKm,
+      estDurationMin: request.estDurationMin,
+      surgeMultiplier: request.surgeMultiplier,
+    },
+    paymentIntent: request.paymentIntent,
+    requestedAt: request.requestedAt,
+    expiresAt: request.expiresAt,
+    cancelledAt: request.cancelledAt,
+    tripCode: request.tripCode ?? null,
+  };
+}
+
+export async function getRequest(passengerId, publicId) {
+  const request = await ridesRepo.findByPublicIdForPassenger(publicId, passengerId);
+  if (!request) throw new AppError(404, 'RIDE_REQUEST_NOT_FOUND');
+  return toRequestStatus(request);
+}
+
+export async function cancelRequest(passengerId, publicId) {
+  return withTransaction(async (client) => {
+    const request = await ridesRepo.findByPublicIdForUpdate(publicId, passengerId, client);
+    if (!request) throw new AppError(404, 'RIDE_REQUEST_NOT_FOUND');
+    if (request.status === 'matched') throw new AppError(409, 'ALREADY_MATCHED');
+    if (!['pending', 'searching'].includes(request.status)) {
+      throw new AppError(409, 'BAD_TRANSITION');
+    }
+
+    const cancelled = await ridesRepo.cancelSearching(request.id, client);
+    await offersRepo.withdrawPendingOffersForRequests([request.id], client);
+    return cancelled;
+  });
+}
+
 // jobs/expireRequests.job.js's cron entry point. Scheduled requests are
 // never touched — ridesRepo.expireStaleRequests only matches rows with a
 // non-NULL expires_at, and createRequest never sets one for scheduled_for

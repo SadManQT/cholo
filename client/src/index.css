@@ -6,7 +6,49 @@
    one declaration serves both scripts, no per-language stylesheet.
    Dark mode is explicitly out of scope for v1 (doc 12 §2.3). */
 @layer base {
+  :root {
+    --color-cholo-700: theme('colors.cholo.700');
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
   body {
     @apply bg-surface-alt font-sans text-ink-900 antialiased;
+  }
+}
+
+@layer components {
+  .cholo-map-marker {
+    @apply flex items-center justify-center rounded-full border-2 border-surface bg-ink-900 text-xs font-bold text-white shadow-lg;
+  }
+
+  .cholo-map-marker--pickup {
+    @apply bg-cholo-700;
+  }
+
+  .cholo-map-marker--dropoff {
+    @apply bg-danger-600;
+  }
+
+  .cholo-map-marker--driver {
+    @apply bg-info-600;
+    transition: transform 3.5s linear;
+  }
+
+  .cholo-map-marker--user {
+    @apply bg-cholo-700;
+  }
+
+  .leaflet-container {
+    @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cholo-map-marker--driver {
+    transition: none;
   }
 }

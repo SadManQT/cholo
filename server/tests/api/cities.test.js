@@ -93,6 +93,25 @@ test('GET /api/v1/cities returns active cities in the standard success envelope'
   }
 });
 
+test('GET /api/v1/vehicle-categories returns the active booking catalog', async () => {
+  const response = await fetch(`${baseUrl}/api/v1/vehicle-categories`);
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.success, true);
+  assert.ok(Array.isArray(body.data));
+  assert.ok(body.data.length >= 4);
+  assert.deepEqual(Object.keys(body.data[0]), [
+    'id',
+    'name',
+    'description',
+    'seatCapacity',
+    'iconUrl',
+    'sortOrder',
+  ]);
+  assert.ok(body.data.some((category) => category.name === 'Car'));
+});
+
 test('GET /api/v1/cities sends async database failures through the central handler', async () => {
   databaseShouldFail = true;
 

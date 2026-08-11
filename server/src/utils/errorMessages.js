@@ -35,10 +35,13 @@ export const ERROR_MESSAGES = Object.freeze({
   ADDRESS_NOT_FOUND: 'That address could not be found.',
   GEO_PROVIDER_UNAVAILABLE: 'The mapping service is temporarily unavailable. Please try again.',
   ACTIVE_REQUEST_EXISTS: 'You already have an active ride request.',
+  RIDE_REQUEST_NOT_FOUND: 'The ride request was not found.',
+  ALREADY_MATCHED: 'A driver has already accepted this request.',
   PROMO_INVALID: 'That promo code is not valid for this ride.',
   OFFER_NOT_FOUND: 'That offer was not found.',
   ALREADY_TAKEN: 'This request was accepted by another driver.',
   OFFER_EXPIRED: 'This offer has expired.',
   TRIP_NOT_FOUND: 'The trip was not found.',
+  TRIP_CLOSED: 'This trip is closed and can no longer be updated.',
   BAD_TRANSITION: 'That action is not valid for the trip\'s current status.',
 });

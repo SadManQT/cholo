@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from 'react';
+import { dismissToast, getToastSnapshot, subscribeToToasts } from './toastStore';
+import type { ToastItem, ToastVariant } from './toastStore';
 
 // doc 11-12 §2.4: "Toast | success / error / info, auto-dismiss | after
 // every mutation." doc 11 §11 is explicit that Cholo needs "exactly these
@@ -7,51 +9,6 @@ import { useSyncExternalStore } from 'react';
 // `toast()` libraries like Sonner use internally): a module-level queue any
 // file can push to via plain function calls, subscribed to by one
 // `<Toaster />` mounted once near the app root.
-type ToastVariant = 'success' | 'error' | 'info';
-
-interface ToastItem {
-  id: number;
-  variant: ToastVariant;
-  message: string;
-}
-
-const AUTO_DISMISS_MS = 4000;
-
-let toasts: ToastItem[] = [];
-let nextId = 1;
-const listeners = new Set<() => void>();
-
-function emitChange() {
-  for (const listener of listeners) listener();
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getSnapshot() {
-  return toasts;
-}
-
-function dismiss(id: number) {
-  toasts = toasts.filter((item) => item.id !== id);
-  emitChange();
-}
-
-function push(variant: ToastVariant, message: string) {
-  const id = nextId++;
-  toasts = [...toasts, { id, variant, message }];
-  emitChange();
-  setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
-}
-
-export const toast = {
-  success: (message: string) => push('success', message),
-  error: (message: string) => push('error', message),
-  info: (message: string) => push('info', message),
-};
-
 const VARIANT_CONFIG: Record<ToastVariant, { classes: string; icon: string }> = {
   success: { classes: 'border-cholo-700/30 text-cholo-700', icon: '✓' },
   error: { classes: 'border-danger-600/30 text-danger-600', icon: '!' },
@@ -71,7 +28,7 @@ function ToastRow({ item }: { item: ToastItem }) {
       <p className="flex-1 text-sm text-ink-900">{item.message}</p>
       <button
         type="button"
-        onClick={() => dismiss(item.id)}
+        onClick={() => dismissToast(item.id)}
         aria-label="Dismiss"
         className="text-ink-500 hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 rounded"
       >
@@ -84,7 +41,7 @@ function ToastRow({ item }: { item: ToastItem }) {
 // Mount once near the app root (App.tsx) — every `toast.success(...)` call
 // anywhere in the app renders through this single queue.
 export function Toaster() {
-  const items = useSyncExternalStore(subscribe, getSnapshot);
+  const items = useSyncExternalStore(subscribeToToasts, getToastSnapshot);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:left-auto sm:right-4 sm:items-end">

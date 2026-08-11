@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { randomInt } from 'node:crypto';
 import { once } from 'node:events';
-import { after, before, test } from 'node:test';
+import { after, before, mock, test } from 'node:test';
 
 import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
+import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
 // Deliberately NOT the savepoint-mocked-single-connection pattern the other
@@ -19,12 +21,19 @@ const createdUserIds = [];
 let phoneCounter = 0;
 // The RACE test's fixtures are intentionally never cleaned up (a trip
 // anchors them permanently — see skipCleanup below), so their phone numbers
-// must stay unique ACROSS runs too, not just within one process. Seeding
-// from wall-clock time instead of starting phoneCounter at 1 every run
-// avoids colliding with a previous run's still-present rows.
-const RUN_SEED = Date.now() % 90_000_000;
+// must stay unique ACROSS runs too, not just within one process. A random
+// eight-digit seed plus file-specific operator prefixes avoids collisions
+// between parallel files and previously-persisted disposable fixtures.
+const RUN_SEED = randomInt(10_000_000, 100_000_000);
+const realFetch = globalThis.fetch;
 
 before(async () => {
+  mock.method(globalThis, 'fetch', async (url, options) => {
+    if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
+      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 9210, duration: 540 }] }) };
+    }
+    return realFetch(url, options);
+  });
   server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -43,6 +52,7 @@ after(async () => {
     await pool.query(`DELETE FROM vehicles WHERE driver_id = ANY($1)`, [createdUserIds]);
     await pool.query(`DELETE FROM users WHERE id = ANY($1)`, [createdUserIds]); // cascades the rest
   }
+  mock.restoreAll();
   await pool.end();
 });
 
@@ -66,7 +76,7 @@ function request(method, path, { body, accessToken } = {}) {
 // fighting that guarantee; every other test cleans up normally.
 async function createPassenger({ skipCleanup = false } = {}) {
   phoneCounter += 1;
-  const phone = `017${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
+  const phone = `013${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
   const { rows } = await pool.query(
     `INSERT INTO users (full_name, phone, password_hash, phone_verified_at)
      VALUES ('Dispatch Test Passenger', $1, 'test-hash', now())
@@ -100,7 +110,7 @@ async function createPassenger({ skipCleanup = false } = {}) {
 // is always safe.
 async function createOnlineDriver(t, { lat, lng, categoryName = 'Car', gender, skipCleanup = false } = {}) {
   phoneCounter += 1;
-  const phone = `018${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
+  const phone = `014${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
   const { rows } = await pool.query(
     `INSERT INTO users (full_name, phone, password_hash, phone_verified_at, gender)
      VALUES ('Dispatch Test Driver', $1, 'test-hash', now(), $2)
@@ -147,9 +157,10 @@ const PICKUP = { lat: 23.7925, lng: 90.4078 };
 const DROPOFF = { lat: 23.7461, lng: 90.3742 };
 
 async function bookRide(passenger, overrides = {}) {
+  const { rows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
   return request('POST', '/ride-requests', {
     accessToken: passenger.accessToken,
-    body: { cityId: 1, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash', ...overrides },
+    body: { cityId: rows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash', ...overrides },
   });
 }
 

@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# Cholo frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite client for Cholo's passenger, driver, and admin
+surfaces. M6 includes the real passenger booking/live-trip experience and the
+driver availability/offer/active-trip experience; M7/M8 routes remain visible
+as explicit placeholders so milestone scope stays clear.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Start PostgreSQL and the API from the repository root first, then:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cp .env.example .env
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The client expects the REST API at `VITE_API_URL` and derives the Socket.io
+origin from it unless `VITE_SOCKET_URL` is set. Browser geolocation permission
+is required for current-location pickup and driver tracking. OpenStreetMap
+tiles and the backend's Nominatim/OSRM adapters require internet access.
+
+Local OTP SMS is mocked by design. The verification screen points to the
+API terminal, where each code appears in a `Mock SMS sent` log entry.
+
+## Checks
+
+```bash
+npm run lint
+npm run build
+```
+
+The production build uses route-level lazy loading, keeping Leaflet and each
+M6 screen out of the initial bundle until that route is opened.

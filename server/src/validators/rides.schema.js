@@ -39,3 +39,7 @@ export const createRideRequestSchema = z.object({
     `scheduledFor must be at least ${MIN_SCHEDULE_LEAD_MINUTES} minutes from now`,
   ).optional(),
 });
+
+export const rideRequestParamsSchema = z.object({
+  publicId: z.string().uuid(),
+});
