@@ -1,3 +1,4 @@
+import * as dispatchService from '../services/dispatch.service.js';
 import * as driverService from '../services/driver.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -62,5 +63,19 @@ export const listVehicleDocuments = asyncHandler(async (request, response) => {
 
 export const setAvailability = asyncHandler(async (request, response) => {
   const data = await driverService.setAvailability(request.user.id, request.body);
+  response.json({ success: true, data });
+});
+
+export const listOffers = asyncHandler(async (request, response) => {
+  const data = await dispatchService.listOffersForDriver(request.user.id);
+  response.json({ success: true, data });
+});
+
+export const respondToOffer = asyncHandler(async (request, response) => {
+  const data = await dispatchService.respondToOffer(
+    request.user.id,
+    request.params.id,
+    request.body.response,
+  );
   response.json({ success: true, data });
 });

@@ -66,3 +66,7 @@ export const availabilitySchema = z
 export const idParamsSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
+
+export const respondToOfferSchema = z.object({
+  response: z.enum(['accepted', 'rejected']),
+});
