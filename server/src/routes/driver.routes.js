@@ -10,6 +10,7 @@ import {
   createVehicleDocumentSchema,
   createVehicleSchema,
   idParamsSchema,
+  respondToOfferSchema,
   updateVehicleSchema,
 } from '../validators/driver.schema.js';
 
@@ -52,5 +53,12 @@ router.get(
   driverController.listVehicleDocuments,
 );
 router.put('/availability', validate(availabilitySchema), driverController.setAvailability);
+router.get('/offers', driverController.listOffers);
+router.post(
+  '/offers/:id/respond',
+  validate(idParamsSchema, 'params'),
+  validate(respondToOfferSchema),
+  driverController.respondToOffer,
+);
 
 export default router;

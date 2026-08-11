@@ -121,6 +121,21 @@ export async function findAvailabilityForUpdate(userId, client) {
   return rows[0];
 }
 
+// location.handler.js's per-ping "where is this driver right now" cache —
+// deliberately separate from updateAvailability: a GPS ping never changes
+// status (a driver stays 'on_trip' through every ping), and forcing every
+// caller through updateAvailability's CASE-guarded status param for a
+// column it isn't touching would be the wrong shape for a ~4s-interval hot
+// path.
+export async function updateLocation(driverId, { lat, lng, heading }, client = pool) {
+  await client.query(
+    `UPDATE driver_availability
+     SET current_lat = $2, current_lng = $3, heading = $4, last_ping_at = now()
+     WHERE driver_id = $1`,
+    [driverId, lat, lng, heading ?? null],
+  );
+}
+
 export async function updateAvailability(
   userId,
   { status, currentLat, currentLng, heading },
