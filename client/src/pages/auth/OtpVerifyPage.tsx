@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import * as authApi from '../../api/auth.api';
 import { Button, OtpInput, toast } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/auth';
 import { useCountdown } from '../../hooks/useCountdown';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { roleHomePath } from '../../utils/roleHomePath';
@@ -71,6 +71,11 @@ export function OtpVerifyPage() {
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Verify your phone</h1>
         <p className="mt-1 text-sm text-ink-500">Enter the 6-digit code we sent to {phone}.</p>
+        {import.meta.env.DEV && (
+          <p className="mt-2 rounded-lg bg-info-600/10 px-3 py-2 text-xs text-info-600">
+            Development mode: SMS is mocked. Copy the code from the API terminal&apos;s “Mock SMS sent” log.
+          </p>
+        )}
       </div>
 
       <OtpInput

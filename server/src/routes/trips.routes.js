@@ -3,7 +3,14 @@ import { Router } from 'express';
 import * as tripsController from '../controllers/trips.controller.js';
 import { auth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
-import { cancelTripSchema, completeTripSchema, tripCodeParamsSchema } from '../validators/trips.schema.js';
+import {
+  cancelTripSchema,
+  completeTripSchema,
+  sosSchema,
+  tripCodeParamsSchema,
+  tripListQuerySchema,
+  tripMessageSchema,
+} from '../validators/trips.schema.js';
 
 const router = Router();
 
@@ -13,6 +20,35 @@ const router = Router();
 // each route individually; ownership gate (404 TRIP_NOT_FOUND on mismatch)
 // stays inside trips.service.js either way.
 router.use(auth);
+
+router.get('/', validate(tripListQuerySchema, 'query'), tripsController.list);
+router.get(
+  '/:tripCode/track',
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.track,
+);
+router.get(
+  '/:tripCode/messages',
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.listMessages,
+);
+router.post(
+  '/:tripCode/messages',
+  validate(tripCodeParamsSchema, 'params'),
+  validate(tripMessageSchema),
+  tripsController.sendMessage,
+);
+router.post(
+  '/:tripCode/sos',
+  validate(tripCodeParamsSchema, 'params'),
+  validate(sosSchema),
+  tripsController.triggerSos,
+);
+router.get(
+  '/:tripCode',
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.get,
+);
 
 router.post(
   '/:tripCode/arrived',

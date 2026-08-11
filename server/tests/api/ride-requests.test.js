@@ -320,3 +320,44 @@ test('POST /ride-requests returns 422 PROMO_INVALID when the ride does not meet 
   assert.equal(response.status, 422);
   assert.equal((await response.json()).error.code, 'PROMO_INVALID');
 });
+
+test('GET /ride-requests/:publicId lets the passenger recover searching state after a page reload', async () => {
+  const passenger = await createUser();
+  const booked = await bookRide(passenger);
+  const created = (await booked.json()).data;
+
+  const response = await request('GET', `/ride-requests/${created.publicId}`, {
+    accessToken: passenger.accessToken,
+  });
+
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  assert.equal(data.publicId, created.publicId);
+  assert.equal(data.status, 'searching');
+  assert.equal(data.pickup.address, PICKUP.address);
+  assert.equal(data.dropoff.address, DROPOFF.address);
+  assert.equal(data.tripCode, null);
+});
+
+test('DELETE /ride-requests/:publicId cancels only the owner\'s searching request', async () => {
+  const passenger = await createUser();
+  const stranger = await createUser();
+  const booked = await bookRide(passenger);
+  const created = (await booked.json()).data;
+
+  const hidden = await request('DELETE', `/ride-requests/${created.publicId}`, {
+    accessToken: stranger.accessToken,
+  });
+  assert.equal(hidden.status, 404);
+
+  const cancelled = await request('DELETE', `/ride-requests/${created.publicId}`, {
+    accessToken: passenger.accessToken,
+  });
+  assert.equal(cancelled.status, 200);
+  assert.equal((await cancelled.json()).data.status, 'cancelled');
+
+  const status = await request('GET', `/ride-requests/${created.publicId}`, {
+    accessToken: passenger.accessToken,
+  });
+  assert.equal((await status.json()).data.status, 'cancelled');
+});

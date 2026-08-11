@@ -9,6 +9,7 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
   variant?: InputVariant;
   label?: string;
   error?: string;
+  containerClassName?: string;
 }
 
 function EyeIcon({ crossedOut }: { crossedOut: boolean }) {
@@ -29,7 +30,7 @@ function maskPhoneDigits(raw: string) {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { variant = 'text', label, error, id, className = '', onChange, ...props },
+  { variant = 'text', label, error, id, className = '', containerClassName = '', onChange, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -48,7 +49,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
         <label htmlFor={inputId} className="text-sm font-medium text-ink-900">
           {label}

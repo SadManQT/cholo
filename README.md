@@ -67,13 +67,26 @@ npm run dev
 
 Open the URL Vite prints (`http://localhost:5173` by default). `VITE_API_URL`
 in `client/.env` already points at the API from the steps above — no further
-setup needed. Run the frontend's own checks from `client/`:
+setup needed. During local development SMS delivery is intentionally mocked:
+after registration, copy the six-digit code from the API terminal's
+`Mock SMS sent` log into the OTP screen.
+
+Run the frontend's own checks from `client/`:
 
 ```bash
 npx tsc -b      # type-check
 npx oxlint      # lint
 npm run build   # production build
 ```
+
+### M6 two-browser demo
+
+Open one normal window as a passenger and one incognito window as an approved
+driver. On the driver Home screen, go online and allow location access. Book a
+ride from the passenger window; the 15-second offer appears for the driver.
+Accept it, then use the driver trip screen to mark arrival, start, send GPS
+updates, chat, and complete. The passenger window follows status/location in
+real time and falls back to REST polling during a socket reconnect.
 
 ### Updating required reference data
 
@@ -85,6 +98,16 @@ required reference rows, apply the idempotent seed without deleting your data:
 docker compose up -d
 docker compose exec postgres psql -U cholo -d cholo \
   -f /docker-entrypoint-initdb.d/02-seed-reference.sql
+```
+
+After pulling changes that add files under `database/migrations/`, apply them
+in order to upgrade an existing persistent volume without deleting its data:
+
+```bash
+for migration in database/migrations/*.sql; do
+  docker compose exec -T postgres sh -c \
+    'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$migration"
+done
 ```
 
 ### Verify it worked
@@ -145,6 +168,7 @@ cholo/
 ├── server/                # Express API (auth, accounts, driver onboarding/fleet, pricing/dispatch/rides, sockets)
 ├── database/
 │   ├── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
+│   ├── migrations/        # numbered, append-only upgrades for persistent databases
 │   └── seeds/             # idempotent reference rows required by the API
 ├── docs/                  # the design blueprint (read before changing schema/API/architecture)
 ├── docker-compose.yml     # PostgreSQL 16, auto-loads schema.sql
@@ -168,8 +192,8 @@ cholo/
 ## Status
 
 Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
-**M5 — Frontend Foundation** are complete: auth, driver onboarding/fleet,
-pricing/dispatch/ride lifecycle with a Socket.io realtime layer, and the
-React shell (routing, auth screens, `ui/` kit) wired to the real API. The
-next milestone is **M6 — The Two Apps** (the full booking + driver + live-trip
-UI, sockets on both ends).
+**M6 — The Two Apps** are complete: auth, driver onboarding/fleet,
+pricing/dispatch/ride lifecycle, and the real passenger and driver apps with
+Leaflet maps, Socket.io offers/tracking/status, reconnect fallback, chat,
+SOS, and trip history/detail/receipt views. The next milestone is
+**M7 — Money**.

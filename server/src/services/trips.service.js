@@ -238,3 +238,123 @@ export async function cancelTrip(userId, tripCode, { reasonCode, reasonText }) {
   await notifyTripStatus(result.trip, result.response);
   return result.response;
 }
+
+export async function listTrips(userId, query) {
+  const rows = await tripsRepo.listForUser(userId, query);
+  const total = rows[0]?.totalCount ?? 0;
+  const data = rows.map(({ totalCount: _totalCount, ...trip }) => trip);
+
+  return {
+    data,
+    meta: { page: query.page, limit: query.limit, total },
+  };
+}
+
+function toTripDetail(trip, history) {
+  return {
+    publicCode: trip.publicCode,
+    requestPublicId: trip.requestPublicId,
+    status: trip.status,
+    participantRole: trip.participantRole,
+    cityName: trip.cityName,
+    categoryName: trip.categoryName,
+    pickup: { lat: trip.pickupLat, lng: trip.pickupLng, address: trip.pickupAddress },
+    dropoff: { lat: trip.dropoffLat, lng: trip.dropoffLng, address: trip.dropoffAddress },
+    estimate: {
+      distanceKm: trip.estDistanceKm,
+      durationMin: trip.estDurationMin,
+      fare: trip.estFare,
+      surgeMultiplier: trip.surgeMultiplier,
+      paymentIntent: trip.paymentIntent,
+    },
+    passenger: {
+      id: trip.passengerPublicId,
+      name: trip.passengerName,
+      phone: trip.passengerPhone,
+      photoUrl: trip.passengerPhotoUrl,
+      rating: trip.passengerRating,
+    },
+    driver: {
+      id: trip.driverPublicId,
+      name: trip.driverName,
+      phone: trip.driverPhone,
+      photoUrl: trip.driverPhotoUrl,
+      rating: trip.driverRating,
+    },
+    vehicle: {
+      registrationNo: trip.vehicleRegistrationNo,
+      brand: trip.vehicleBrand,
+      model: trip.vehicleModel,
+      color: trip.vehicleColor,
+    },
+    timeline: {
+      assignedAt: trip.assignedAt,
+      arrivedAt: trip.arrivedAt,
+      startedAt: trip.startedAt,
+      completedAt: trip.completedAt,
+    },
+    actual: {
+      distanceKm: trip.actualDistanceKm,
+      durationMin: trip.actualDurationMin,
+    },
+    fare: {
+      base: trip.baseFare,
+      distance: trip.distanceFare,
+      time: trip.timeFare,
+      waiting: trip.waitingFare,
+      surge: trip.surgeAmount,
+      bookingFee: trip.bookingFee,
+      discount: trip.discountAmount,
+      total: trip.totalFare,
+      currency: trip.currency,
+      paymentStatus: trip.paymentStatus,
+    },
+    cancellation: trip.cancelledAt ? {
+      byRole: trip.cancelledByRole,
+      reasonCode: trip.cancellationReasonCode,
+      reasonText: trip.cancellationReasonText,
+      fee: trip.cancellationFee,
+      cancelledAt: trip.cancelledAt,
+    } : null,
+    history,
+  };
+}
+
+export async function getTrip(userId, tripCode) {
+  const trip = await tripsRepo.findDetailForUser(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  const history = await tripsRepo.listStatusHistory(trip.id);
+  return toTripDetail(trip, history);
+}
+
+export async function trackTrip(userId, tripCode) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  const location = await tripsRepo.findLatestLocationForUser(tripCode, userId);
+  if (location?.lat == null || location?.lng == null) return null;
+  return location;
+}
+
+export async function listMessages(userId, tripCode) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  return tripsRepo.listMessages(trip.id);
+}
+
+export async function sendMessage(userId, tripCode, input) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) {
+    throw new AppError(409, 'TRIP_CLOSED');
+  }
+  return tripsRepo.insertMessage(trip.id, userId, input);
+}
+
+export async function triggerSos(userId, tripCode, location) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) {
+    throw new AppError(409, 'TRIP_CLOSED');
+  }
+  return tripsRepo.insertSosAlert(trip.id, userId, location);
+}

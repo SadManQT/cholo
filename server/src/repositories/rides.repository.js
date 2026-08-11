@@ -54,6 +54,51 @@ export async function findForUpdate(requestId, client) {
   return rows[0];
 }
 
+export async function findByPublicIdForPassenger(publicId, passengerId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT rr.id, rr.public_id AS "publicId", rr.passenger_id AS "passengerId",
+            rr.status, rr.pickup_lat::float8 AS "pickupLat",
+            rr.pickup_lng::float8 AS "pickupLng", rr.pickup_address AS "pickupAddress",
+            rr.dropoff_lat::float8 AS "dropoffLat",
+            rr.dropoff_lng::float8 AS "dropoffLng", rr.dropoff_address AS "dropoffAddress",
+            rr.est_distance_km::float8 AS "estDistanceKm",
+            rr.est_duration_min AS "estDurationMin", rr.est_fare AS "estFare",
+            rr.surge_multiplier AS "surgeMultiplier", rr.payment_intent AS "paymentIntent",
+            rr.requested_at AS "requestedAt", rr.expires_at AS "expiresAt",
+            rr.cancelled_at AS "cancelledAt", t.trip_code AS "tripCode"
+     FROM ride_requests rr
+     LEFT JOIN trips t ON t.request_id = rr.id
+     WHERE rr.public_id = $1 AND rr.passenger_id = $2`,
+    [publicId, passengerId],
+  );
+
+  return rows[0];
+}
+
+export async function findByPublicIdForUpdate(publicId, passengerId, client) {
+  const { rows } = await client.query(
+    `SELECT id, public_id AS "publicId", passenger_id AS "passengerId", status
+     FROM ride_requests
+     WHERE public_id = $1 AND passenger_id = $2
+     FOR UPDATE`,
+    [publicId, passengerId],
+  );
+
+  return rows[0];
+}
+
+export async function cancelSearching(requestId, client) {
+  const { rows } = await client.query(
+    `UPDATE ride_requests
+     SET status = 'cancelled', cancelled_at = now()
+     WHERE id = $1
+     RETURNING public_id AS "publicId", status, cancelled_at AS "cancelledAt"`,
+    [requestId],
+  );
+
+  return rows[0];
+}
+
 export async function markMatched(requestId, client) {
   await client.query(`UPDATE ride_requests SET status = 'matched' WHERE id = $1`, [requestId]);
 }

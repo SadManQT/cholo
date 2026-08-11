@@ -52,6 +52,18 @@ before(async () => {
         }),
       };
     }
+    if (typeof url === 'string' && url.startsWith(env.NOMINATIM_BASE_URL)) {
+      if (url.includes('/search?')) {
+        return {
+          ok: true,
+          json: async () => [{ lat: '23.8103', lon: '90.4125', display_name: 'Gulshan, Dhaka, Bangladesh' }],
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({ display_name: 'Dhanmondi, Dhaka, Bangladesh' }),
+      };
+    }
     return realFetch(url, options);
   });
 
@@ -123,6 +135,32 @@ async function carCategoryId() {
 
 const PICKUP = { lat: 23.7925, lng: 90.4078 };
 const DROPOFF = { lat: 23.7461, lng: 90.3742 };
+
+test('GET /geo/geocode and /geo/reverse expose authenticated address lookup', async () => {
+  const passenger = await createUser();
+
+  const geocoded = await request('GET', '/geo/geocode?query=Gulshan', { accessToken: passenger.accessToken });
+  assert.equal(geocoded.status, 200);
+  assert.deepEqual((await geocoded.json()).data, {
+    lat: 23.8103,
+    lng: 90.4125,
+    address: 'Gulshan, Dhaka, Bangladesh',
+  });
+
+  const reversed = await request('GET', '/geo/reverse?lat=23.7461&lng=90.3742', { accessToken: passenger.accessToken });
+  assert.equal(reversed.status, 200);
+  assert.deepEqual((await reversed.json()).data, { address: 'Dhanmondi, Dhaka, Bangladesh' });
+});
+
+test('GET /geo/geocode protects the provider and validates the search query', async () => {
+  const unauthenticated = await request('GET', '/geo/geocode?query=Gulshan');
+  assert.equal(unauthenticated.status, 401);
+
+  const passenger = await createUser();
+  const malformed = await request('GET', '/geo/geocode?query=x', { accessToken: passenger.accessToken });
+  assert.equal(malformed.status, 422);
+  assert.equal((await malformed.json()).error.code, 'VALIDATION_FAILED');
+});
 
 test('POST /rides/quote requires a bearer token', async () => {
   const response = await request('POST', '/rides/quote', {

@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
+import { randomInt } from 'node:crypto';
 import { once } from 'node:events';
 import http from 'node:http';
-import { after, before, test } from 'node:test';
+import { after, before, mock, test } from 'node:test';
 
 import { io as ioClient } from 'socket.io-client';
 
 import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
+import { env } from '../../src/config/env.js';
 import { attachSocketServer } from '../../src/sockets/index.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
@@ -18,9 +20,16 @@ import { signAccessToken } from '../../src/utils/tokens.js';
 let server;
 let baseUrl;
 let wsUrl;
-let seed = Date.now() % 90_000_000;
+let seed = randomInt(10_000_000, 100_000_000);
+const realFetch = globalThis.fetch;
 
 before(async () => {
+  mock.method(globalThis, 'fetch', async (url, options) => {
+    if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
+      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 1500, duration: 300 }] }) };
+    }
+    return realFetch(url, options);
+  });
   server = http.createServer(app);
   attachSocketServer(server); // same wiring as server.js, minus the cron job and process signal handlers
   server.listen(0, '127.0.0.1');
@@ -32,6 +41,7 @@ before(async () => {
 after(async () => {
   server.close();
   await once(server, 'close');
+  mock.restoreAll();
   await pool.end();
 });
 
@@ -87,7 +97,7 @@ function assertNoEvent(socket, event, withinMs = 1500) {
 
 async function createPassenger() {
   seed += 1;
-  const phone = `017${String(seed).padStart(8, '0').slice(-8)}`;
+  const phone = `015${String(seed).padStart(8, '0').slice(-8)}`;
   const { rows } = await pool.query(
     `INSERT INTO users (full_name, phone, password_hash, phone_verified_at)
      VALUES ('Socket Test Passenger', $1, 'test-hash', now()) RETURNING id`,
@@ -102,7 +112,7 @@ async function createPassenger() {
 
 async function createOnlineDriver(t, { lat, lng }) {
   seed += 1;
-  const phone = `018${String(seed).padStart(8, '0').slice(-8)}`;
+  const phone = `016${String(seed).padStart(8, '0').slice(-8)}`;
   const { rows } = await pool.query(
     `INSERT INTO users (full_name, phone, password_hash, phone_verified_at)
      VALUES ('Socket Test Driver', $1, 'test-hash', now()) RETURNING id`,
@@ -144,9 +154,10 @@ const PICKUP = { lat: 23.7104, lng: 90.4335 }; // Jatrabari
 const DROPOFF = { lat: 23.7180, lng: 90.4270 }; // Sayedabad
 
 async function bookRide(passenger) {
+  const { rows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
   return request('POST', '/ride-requests', {
     accessToken: passenger.accessToken,
-    body: { cityId: 1, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
+    body: { cityId: rows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
   });
 }
 

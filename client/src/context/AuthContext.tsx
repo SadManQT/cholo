@@ -1,28 +1,10 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import * as authApi from '../api/auth.api';
 import { setUnauthorizedHandler } from '../api/client';
 import * as meApi from '../api/me.api';
 import type { User } from '../types/user.types';
-
-interface AuthContextValue {
-  user: User | null;
-  loading: boolean;
-  // Returns the freshly-loaded user (not just void) — LoginPage/
-  // OtpVerifyPage need their roles immediately, for the post-login
-  // redirect, without racing setUser's own async state update (doc 11 §4
-  // rule 1: setting state schedules a re-render, it doesn't change the
-  // value in this closure).
-  login: (phone: string, password: string) => Promise<User>;
-  // doc 12 §4's flow: "Register → OTP → (role PASSENGER granted, wallet
-  // auto-created) → Book screen" — verify-otp mints a session exactly like
-  // login does (server/src/services/auth.service.js's mintSession is
-  // literally shared by both), so it belongs on AuthContext the same way.
-  verifyOtp: (phone: string, otp: string) => Promise<User>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from './auth';
 
 // doc 11 §11: Cholo needs "exactly these two" app-wide contexts — this is
 // one of them.
@@ -77,12 +59,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return <AuthContext.Provider value={{ user, loading, login, verifyOtp, logout }}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const value = useContext(AuthContext);
-  if (!value) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return value;
 }
