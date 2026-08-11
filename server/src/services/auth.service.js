@@ -81,6 +81,28 @@ export async function register({ fullName, phone, password, gender }) {
   return { userId: user.publicId };
 }
 
+// doc 08-09-10 §4's route table: "POST /auth/resend-otp | public | New OTP
+// · phone, purpose | 204 | 429 RATE_LIMITED (SMS costs money)." Always 204,
+// even for a phone with no pending signup — same no-enumeration shape as
+// /auth/forgot-password (doc 08 §8): the response can't be used to probe
+// which phone numbers exist or are already verified.
+export async function resendOtp({ phone, purpose }) {
+  const user = await usersRepo.findAuthByPhone(phone);
+  if (!user || user.phoneVerifiedAt) {
+    return;
+  }
+
+  const otp = generateOtp();
+  await otpRepo.insert({
+    userId: user.id,
+    phone,
+    otpHash: hashOtp(otp),
+    purpose,
+    expiresAt: otpExpiresAt(),
+  });
+  sendOtpSms(phone, otp);
+}
+
 export async function verifyOtp({ phone, otp, purpose }, device) {
   const record = await otpRepo.findLatestActive(phone, purpose);
   if (!record) {

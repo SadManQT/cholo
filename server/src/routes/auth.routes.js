@@ -2,9 +2,15 @@ import { Router } from 'express';
 
 import * as authController from '../controllers/auth.controller.js';
 import { auth } from '../middlewares/auth.js';
-import { authLimiter, loginLimiter, registerLimiter, verifyOtpLimiter } from '../middlewares/rateLimit.js';
+import {
+  authLimiter,
+  loginLimiter,
+  registerLimiter,
+  resendOtpLimiter,
+  verifyOtpLimiter,
+} from '../middlewares/rateLimit.js';
 import { validate } from '../middlewares/validate.js';
-import { loginSchema, registerSchema, verifyOtpSchema } from '../validators/auth.schema.js';
+import { loginSchema, registerSchema, resendOtpSchema, verifyOtpSchema } from '../validators/auth.schema.js';
 
 const router = Router();
 
@@ -14,6 +20,7 @@ router.use(authLimiter);
 
 router.post('/register', registerLimiter, validate(registerSchema), authController.register);
 router.post('/verify-otp', verifyOtpLimiter, validate(verifyOtpSchema), authController.verifyOtp);
+router.post('/resend-otp', resendOtpLimiter, validate(resendOtpSchema), authController.resendOtp);
 router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', auth, authController.logout);

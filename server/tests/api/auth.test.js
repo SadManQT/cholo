@@ -269,6 +269,38 @@ test('POST /auth/verify-otp with the right code verifies the phone and mints tok
   assert.equal(replay.status, 401);
 });
 
+test('POST /auth/resend-otp sends a new code that verifies, and supersedes the old one', async () => {
+  const phone = '01711000020';
+  const { otp: firstOtp } = await registerUser(phone);
+
+  const resend = await postJson('/auth/resend-otp', { phone, purpose: 'signup' });
+  assert.equal(resend.status, 204);
+
+  const secondOtp = otpSentTo(phone);
+  assert.notEqual(secondOtp, firstOtp);
+
+  // findLatestActive (otp.repository.js) orders by created_at DESC — the
+  // new code is what verify-otp now checks against.
+  const verifyWithNew = await postJson('/auth/verify-otp', { phone, otp: secondOtp, purpose: 'signup' });
+  assert.equal(verifyWithNew.status, 200);
+});
+
+test('POST /auth/resend-otp returns 204 for a phone with no pending signup — no enumeration', async () => {
+  const response = await postJson('/auth/resend-otp', { phone: '01799999999', purpose: 'signup' });
+  assert.equal(response.status, 204);
+});
+
+test('POST /auth/resend-otp returns 204 for an already-verified phone without sending anything', async () => {
+  const phone = '01711000021';
+  const { otp } = await registerUser(phone);
+  await postJson('/auth/verify-otp', { phone, otp, purpose: 'signup' });
+  infoLog.mock.resetCalls();
+
+  const response = await postJson('/auth/resend-otp', { phone, purpose: 'signup' });
+  assert.equal(response.status, 204);
+  assert.equal(otpSentTo(phone), undefined);
+});
+
 test('POST /auth/login rejects a wrong password and an unknown phone the same way', async () => {
   const phone = '01711000007';
   const { otp } = await registerUser(phone);
