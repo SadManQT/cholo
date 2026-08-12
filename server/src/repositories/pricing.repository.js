@@ -17,3 +17,17 @@ export async function getCurrentTariff(cityId, categoryId, client = pool) {
 
   return rows[0];
 }
+
+// fn_current_commission (doc 02-03 §8 T2) — same effective-dated lookup
+// shape as getCurrentTariff, with commission_rules' own countrywide (NULL
+// city_id) fallback baked into the function.
+export async function getCurrentCommission(categoryId, cityId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT id, category_id AS "categoryId", city_id AS "cityId",
+            commission_pct::float8 AS "commissionPct"
+     FROM fn_current_commission($1, $2)`,
+    [categoryId, cityId],
+  );
+
+  return rows[0];
+}

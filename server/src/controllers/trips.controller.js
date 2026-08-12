@@ -50,3 +50,11 @@ export const cancel = asyncHandler(async (request, response) => {
   const data = await tripsService.cancelTrip(request.user.id, request.params.tripCode, request.body);
   response.json({ success: true, data });
 });
+
+export const pay = asyncHandler(async (request, response) => {
+  // 201: this creates a payment, same as doc 08-09-10 §7's own table entry
+  // for this route ("201 payment") — unlike arrived/start/complete/cancel,
+  // which all update the one trip resource that already exists.
+  const data = await tripsService.payTrip(request.user.id, request.params.tripCode, request.body);
+  response.status(201).json({ success: true, data });
+});

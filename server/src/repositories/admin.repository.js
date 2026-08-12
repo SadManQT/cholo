@@ -1,5 +1,17 @@
 import { pool } from '../config/db.js';
 
+// admin_profiles.access_level (doc 08-09-10 §9: "a second dimension...
+// checked in services") — never in the JWT (roles are; access_level
+// isn't), so every access-level-gated action needs this DB read.
+export async function getAccessLevel(userId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT access_level AS "accessLevel" FROM admin_profiles WHERE user_id = $1`,
+    [userId],
+  );
+
+  return rows[0]?.accessLevel;
+}
+
 export async function listDriverApplications({ status, limit, offset }, client = pool) {
   const { rows } = await client.query(
     `WITH latest_documents AS (

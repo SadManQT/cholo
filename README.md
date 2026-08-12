@@ -192,8 +192,11 @@ cholo/
 ## Status
 
 Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
-**M6 — The Two Apps** are complete: auth, driver onboarding/fleet,
-pricing/dispatch/ride lifecycle, and the real passenger and driver apps with
+**M7 — Money** are complete: auth, driver onboarding/fleet,
+pricing/dispatch/ride lifecycle, the real passenger and driver apps with
 Leaflet maps, Socket.io offers/tracking/status, reconnect fallback, chat,
-SOS, and trip history/detail/receipt views. The next milestone is
-**M7 — Money**.
+SOS, and trip history/detail/receipt views, and the full money path — wallet
++ ledger, cash and wallet-paid trips, an SSLCommerz sandbox gateway with an
+idempotent webhook, driver earnings, payout accounts + withdrawals (finance-
+admin approval), and promo validation/redemption + auto-generated receipts.
+The next milestone is **M8 — Admin, Hardening & Launch**.

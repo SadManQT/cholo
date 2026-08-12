@@ -1,10 +1,73 @@
-import { divIcon, latLngBounds } from 'leaflet';
+import L, { divIcon, latLngBounds } from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
+import '@maplibre/maplibre-gl-leaflet';
+import type { Map as MaplibreMap } from 'maplibre-gl';
 import { useEffect } from 'react';
-import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLng } from '../../types/geo.types';
 
 const DHAKA_CENTER: LatLng = { lat: 23.8103, lng: 90.4125 };
+
+// OpenFreeMap (openfreemap.org): free vector tiles on OSM data, no API key,
+// no registration, no rate limit. Vector tiles render live via MapLibre
+// GL/WebGL, so they stay crisp at any zoom and restyle cleanly — the same
+// rendering approach Uber (Mapbox GL) and Pathao (their own OSM-based
+// vector maps) use, unlike fixed-style raster PNG tiles. 'bright' has a
+// more saturated palette than 'liberty', closer to Google Maps' look.
+//
+// No 3D building extrusion: Leaflet hosts this map as a strictly top-down
+// 2D layer (that's what keeps every Marker/Polyline/click-handler below
+// working unchanged) — a MapLibre fill-extrusion layer needs camera pitch
+// to read as "3D," and tilting the camera here would desync Leaflet's own
+// marker positions from the tilted tiles underneath. Real tilted 3D would
+// mean dropping Leaflet for native MapLibre GL (its own Marker API is
+// pitch-aware) — a much bigger rewrite than a style swap.
+const VECTOR_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
+
+// OpenFreeMap's OpenMapTiles-schema labels default to
+// ["case", ["has", "name:nonlatin"], concat(latin, "\n", nonlatin), ...] —
+// every place/road/POI label stacks the Bangla script under the Latin one.
+// Overriding every such layer to Latin-only keeps one name line instead.
+const LATIN_ONLY_NAME = ['coalesce', ['get', 'name:latin'], ['get', 'name_en'], ['get', 'name']];
+
+// The four POI label layers (shops, landmarks, transit stops — "nearby
+// popular locations") ship in a light italic by default; bolding them
+// makes them stand out from street/area labels, closer to how Google Maps
+// weights points of interest.
+const POI_LABEL_LAYERS = ['poi_r1', 'poi_r7', 'poi_r20', 'poi_transit'];
+
+function restyleLabels(glMap: MaplibreMap) {
+  for (const layer of glMap.getStyle().layers) {
+    if (layer.type !== 'symbol') continue;
+    const textField = glMap.getLayoutProperty(layer.id, 'text-field');
+    if (Array.isArray(textField) && textField[0] === 'case') {
+      glMap.setLayoutProperty(layer.id, 'text-field', LATIN_ONLY_NAME);
+    }
+  }
+  for (const id of POI_LABEL_LAYERS) {
+    if (!glMap.getLayer(id)) continue;
+    glMap.setLayoutProperty(id, 'text-font', ['Noto Sans Bold']);
+    glMap.setLayoutProperty(id, 'text-size', 13);
+  }
+}
+
+function VectorTileLayer() {
+  const map = useMap();
+
+  useEffect(() => {
+    const layer = L.maplibreGL({ style: VECTOR_STYLE_URL }).addTo(map);
+    const glMap = layer.getMaplibreMap();
+
+    if (glMap.isStyleLoaded()) restyleLabels(glMap);
+    else glMap.once('load', () => restyleLabels(glMap));
+
+    return () => {
+      layer.remove();
+    };
+  }, [map]);
+
+  return null;
+}
 
 const markerIcon = (kind: 'pickup' | 'dropoff' | 'driver' | 'user') => divIcon({
   className: `cholo-map-marker cholo-map-marker--${kind}`,
@@ -62,10 +125,7 @@ export function MapView({ pickup, dropoff, driver, user, onMapClick, className =
   return (
     <div className={`relative isolate overflow-hidden bg-surface-alt ${className}`} aria-label="Ride map">
       <MapContainer center={center} zoom={13} className="h-full w-full" zoomControl={false}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <VectorTileLayer />
         <ClickHandler onMapClick={onMapClick} />
         <ViewportController points={points} />
         {route.length === 2 && (

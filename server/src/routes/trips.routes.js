@@ -6,6 +6,7 @@ import { validate } from '../middlewares/validate.js';
 import {
   cancelTripSchema,
   completeTripSchema,
+  payTripSchema,
   sosSchema,
   tripCodeParamsSchema,
   tripListQuerySchema,
@@ -16,9 +17,9 @@ const router = Router();
 
 // Only `auth` at the router level — cancel is doc 08-09-10 §5's
 // "participant" (either the passenger or the driver on the trip), unlike
-// the other three which are DRIVER-only. Role gate on those three moves to
-// each route individually; ownership gate (404 TRIP_NOT_FOUND on mismatch)
-// stays inside trips.service.js either way.
+// arrived/start/complete (DRIVER-only) and pay (§7, PASSENGER-only). Role
+// gates on those five move to each route individually; ownership gate
+// (404 TRIP_NOT_FOUND on mismatch) stays inside trips.service.js either way.
 router.use(auth);
 
 router.get('/', validate(tripListQuerySchema, 'query'), tripsController.list);
@@ -74,6 +75,13 @@ router.post(
   validate(tripCodeParamsSchema, 'params'),
   validate(cancelTripSchema),
   tripsController.cancel,
+);
+router.post(
+  '/:tripCode/pay',
+  requireRole('PASSENGER'),
+  validate(tripCodeParamsSchema, 'params'),
+  validate(payTripSchema),
+  tripsController.pay,
 );
 
 export default router;

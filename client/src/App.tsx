@@ -19,6 +19,10 @@ const TripHistoryPage = lazy(() => import('./pages/passenger/TripHistoryPage').t
 const TripDetailPage = lazy(() => import('./pages/passenger/TripDetailPage').then((module) => ({ default: module.TripDetailPage })));
 const DriverHomePage = lazy(() => import('./pages/driver/DriverHomePage').then((module) => ({ default: module.DriverHomePage })));
 const DriverActiveTripPage = lazy(() => import('./pages/driver/DriverActiveTripPage').then((module) => ({ default: module.DriverActiveTripPage })));
+const WalletPage = lazy(() => import('./pages/passenger/WalletPage').then((module) => ({ default: module.WalletPage })));
+const EarningsPage = lazy(() => import('./pages/driver/EarningsPage').then((module) => ({ default: module.EarningsPage })));
+const WithdrawalsPage = lazy(() => import('./pages/driver/WithdrawalsPage').then((module) => ({ default: module.WithdrawalsPage })));
+const PayoutsPage = lazy(() => import('./pages/admin/PayoutsPage').then((module) => ({ default: module.PayoutsPage })));
 
 // doc 12 §3-7's full page catalog, as code (doc 11 §8: "the sitemap as
 // code"). Auth and the M6 passenger/driver marketplace routes are real;
@@ -60,7 +64,7 @@ function App() {
           <Route path="/trips/:code/live" element={<LiveTripPage />} />
           <Route path="/trips" element={<TripHistoryPage />} />
           <Route path="/trips/:code" element={<TripDetailPage />} />
-          <Route path="/wallet" element={<PlaceholderPage title="Wallet" />} />
+          <Route path="/wallet" element={<WalletPage />} />
           <Route path="/wallet/methods" element={<PlaceholderPage title="Payment methods" />} />
           <Route path="/promos" element={<PlaceholderPage title="Promos" />} />
           <Route path="/account/places" element={<PlaceholderPage title="Saved places" />} />
@@ -80,8 +84,8 @@ function App() {
           <Route path="documents" element={<PlaceholderPage title="Documents" />} />
           <Route path="vehicles" element={<PlaceholderPage title="Vehicles" />} />
           <Route path="trip" element={<DriverActiveTripPage />} />
-          <Route path="earnings" element={<PlaceholderPage title="Earnings" />} />
-          <Route path="withdrawals" element={<PlaceholderPage title="Withdrawals" />} />
+          <Route path="earnings" element={<EarningsPage />} />
+          <Route path="withdrawals" element={<WithdrawalsPage />} />
           <Route path="trips" element={<TripHistoryPage driverMode />} />
           <Route path="trips/:code" element={<TripDetailPage driverMode />} />
           <Route path="account" element={<PlaceholderPage title="Account" />} />
@@ -101,7 +105,7 @@ function App() {
           <Route path="users" element={<PlaceholderPage title="Users" />} />
           <Route path="pricing" element={<PlaceholderPage title="Pricing & surge" />} />
           <Route path="zones" element={<PlaceholderPage title="Zones" />} />
-          <Route path="payouts" element={<PlaceholderPage title="Withdrawals" />} />
+          <Route path="payouts" element={<PayoutsPage />} />
           <Route path="disputes" element={<PlaceholderPage title="Disputes & reports" />} />
           <Route path="sos" element={<PlaceholderPage title="SOS board" />} />
           <Route path="audit" element={<PlaceholderPage title="Audit log" />} />

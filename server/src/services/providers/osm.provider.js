@@ -44,7 +44,7 @@ export async function route(from, to) {
 // endpoint (which already receives lat/lng), but part of the doc 05-06-07
 // §8 interface for address search and pin-drop-to-address screens later.
 export async function geocode(text) {
-  const url = `${env.NOMINATIM_BASE_URL}/search?q=${encodeURIComponent(text)}&format=json&limit=1`;
+  const url = `${env.NOMINATIM_BASE_URL}/search?q=${encodeURIComponent(text)}&format=json&limit=1&accept-language=en`;
   const results = await fetchJson(url, { headers: { 'User-Agent': USER_AGENT } });
 
   const match = results[0];
@@ -56,7 +56,7 @@ export async function geocode(text) {
 }
 
 export async function reverseGeocode(lat, lng) {
-  const url = `${env.NOMINATIM_BASE_URL}/reverse?lat=${lat}&lon=${lng}&format=json`;
+  const url = `${env.NOMINATIM_BASE_URL}/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`;
   const result = await fetchJson(url, { headers: { 'User-Agent': USER_AGENT } });
 
   if (!result || result.error) {

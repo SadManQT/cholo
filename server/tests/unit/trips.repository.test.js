@@ -6,6 +6,7 @@ import {
   completeTrip,
   findActiveTripIdForUser,
   findByCodeForUpdate,
+  hasCompletedTrip,
   insertCancellation,
   insertLocationPing,
   insertTrip,
@@ -97,9 +98,38 @@ test('completeTrip writes actual distance/duration and the full fare breakdown',
     },
   }, pool);
 
-  assert.deepEqual(capturedValues, [1, 9.21, 9, 60, 202.62, 22.5, 0, 0, 10, 0, 295.12]);
+  assert.deepEqual(capturedValues, [1, 9.21, 9, 60, 202.62, 22.5, 0, 0, 10, 0, 295.12, 'unpaid']);
   assert.equal(result.status, 'completed');
   assert.equal(result.totalFare, '295.12');
+});
+
+test('completeTrip passes paymentStatus through when provided (cash settlement)', async () => {
+  let capturedValues;
+  mock.method(pool, 'query', async (sql, values) => {
+    capturedValues = values;
+    assert.match(sql, /payment_status = \$12/);
+    return {
+      rows: [{
+        tripCode: 'JT-2026-000006', status: 'completed', completedAt: new Date(),
+        baseFare: '60.00', distanceFare: '0.00', timeFare: '0.00', waitingFare: '0.00',
+        surgeAmount: '0.00', bookingFee: '10.00', discountAmount: '0.00', totalFare: '70.00',
+        currency: 'BDT', paymentStatus: 'paid',
+      }],
+    };
+  });
+
+  const result = await completeTrip(1, {
+    actualDistanceKm: 0,
+    actualDurationMin: 0,
+    fare: {
+      baseFare: 60, distanceFare: 0, timeFare: 0, waitingFare: 0,
+      surgeAmount: 0, bookingFee: 10, discountAmount: 0, totalFare: 70,
+    },
+    paymentStatus: 'paid',
+  }, pool);
+
+  assert.equal(capturedValues.at(-1), 'paid');
+  assert.equal(result.paymentStatus, 'paid');
 });
 
 test('markCancelled sets status=cancelled', async () => {
@@ -159,5 +189,18 @@ test('insertLocationPing writes a breadcrumb row, defaulting heading/speed to nu
   });
 
   await insertLocationPing(7, { lat: 23.79, lng: 90.40 }, pool);
+  assert.equal(query.mock.callCount(), 1);
+});
+
+test('hasCompletedTrip checks for any completed trip by this passenger', async () => {
+  const query = mock.method(pool, 'query', async (sql, values) => {
+    assert.match(sql, /WHERE passenger_id = \$1 AND status = 'completed'/);
+    assert.deepEqual(values, [42]);
+    return { rows: [{ exists: true }] };
+  });
+
+  const result = await hasCompletedTrip(42, pool);
+
+  assert.equal(result, true);
   assert.equal(query.mock.callCount(), 1);
 });

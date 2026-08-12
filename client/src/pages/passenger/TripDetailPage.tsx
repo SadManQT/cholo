@@ -43,7 +43,8 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
 
   async function shareReceipt() {
     if (!trip) return;
-    const text = `Cholo trip ${trip.publicCode}: ${trip.pickup.address} → ${trip.dropoff.address}, ${formatBDT(trip.fare.total)}.`;
+    const receiptSuffix = trip.receipt ? ` (Receipt ${trip.receipt.receiptNo})` : '';
+    const text = `Cholo trip ${trip.publicCode}: ${trip.pickup.address} → ${trip.dropoff.address}, ${formatBDT(trip.fare.total)}${receiptSuffix}.`;
     const share = (navigator as unknown as { share?: (data: ShareData) => Promise<void> }).share;
     try {
       if (share) await share.call(navigator, { title: `Cholo receipt ${trip.publicCode}`, text });
@@ -118,6 +119,9 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
           </div>
         ) : (
           <p className="text-sm text-ink-500">The final fare is calculated by the server when the trip completes.</p>
+        )}
+        {trip.receipt && (
+          <p className="mt-3 border-t border-border pt-3 text-xs text-ink-500">Receipt {trip.receipt.receiptNo}</p>
         )}
       </Card>
 
