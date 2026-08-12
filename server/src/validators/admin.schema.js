@@ -19,3 +19,12 @@ export const reviewDocumentSchema = z
 export const rejectApplicationSchema = z.object({
   reason: z.string().trim().min(1).max(255),
 });
+
+// doc 08-09-10 §9: GET /admin/withdrawals?status=requested — the finance
+// queue. status optional (omitted = every status, newest-requested-first
+// via the repository's own ORDER BY), same shape as driverQueueQuerySchema.
+export const withdrawalQueueQuerySchema = z.object({
+  status: z.enum(['requested', 'approved', 'processing', 'paid', 'rejected', 'failed']).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});

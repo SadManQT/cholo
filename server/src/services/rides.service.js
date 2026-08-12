@@ -5,6 +5,7 @@ import * as promosRepo from '../repositories/promos.repository.js';
 import * as ridesRepo from '../repositories/rides.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { quote as computeFare } from '../utils/fareMath.js';
+import { computeDiscount } from '../utils/promoMath.js';
 import * as dispatchService from './dispatch.service.js';
 import * as geoService from './geo.service.js';
 
@@ -44,22 +45,6 @@ export async function quote({ cityId, categoryId, pickup, dropoff }) {
   return { cityId, categoryId, currency: 'BDT', ...built };
 }
 
-// A percentage/fixed-amount ESTIMATE only, shown to the passenger before
-// booking. This does NOT create a promo_redemptions row and does NOT count
-// against usage_limit_total/usage_limit_per_user/first_ride_only — that
-// enforcement is redemption, which happens at trip completion (doc 01
-// relationship #37 "reserved on" vs #58 "redeemed as"; roadmap M7 step 21e).
-function estimateDiscount(promo, estFare) {
-  let discount = promo.promoType === 'percentage'
-    ? estFare * (promo.value / 100)
-    : promo.value;
-
-  if (promo.maxDiscount != null) discount = Math.min(discount, promo.maxDiscount);
-  discount = Math.min(discount, estFare);
-
-  return round2(discount);
-}
-
 export async function createRequest(passengerId, dto) {
   const {
     cityId, categoryId, pickup, dropoff,
@@ -77,7 +62,12 @@ export async function createRequest(passengerId, dto) {
     }
   }
 
-  const estDiscount = promo ? estimateDiscount(promo, estFare) : 0;
+  // A percentage/fixed-amount ESTIMATE only, shown to the passenger before
+  // booking. This does NOT create a promo_redemptions row and does NOT count
+  // against usage_limit_total/usage_limit_per_user/first_ride_only — that
+  // enforcement is redemption, which happens at trip completion (doc 01
+  // relationship #37 "reserved on" vs #58 "redeemed as").
+  const estDiscount = promo ? computeDiscount(promo, estFare) : 0;
   const estPayable = round2(estFare - estDiscount);
 
   let request;

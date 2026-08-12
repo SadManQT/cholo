@@ -4,15 +4,16 @@
 //
 //   total = base + distance + time + waiting + surge + booking - discount
 //
-// A pre-trip quote has no waiting time (the trip hasn't started) and no
-// discount (promos are redeemed at booking/completion, doc 01 relationship
-// #60), so both default to 0 — the shape stays identical to what `trips`
-// will later store, on purpose (doc 01 §13.7: rules explain "what would
-// this cost now?", snapshots explain "why did it cost that?"). Completion
-// passes a real waitingMinutes; discount stays 0 here regardless (promo
-// redemption is roadmap M7 step 21e, not built yet).
+// A pre-trip quote has no waiting time (the trip hasn't started) and this
+// function never computes a discount itself — both default to 0, the shape
+// stays identical to what `trips` will later store, on purpose (doc 01
+// §13.7: rules explain "what would this cost now?", snapshots explain "why
+// did it cost that?"). Completion passes a real waitingMinutes; discount is
+// applied separately by the caller (trips.service.js's completeTrip, via
+// promoMath.js's computeDiscount) once the redemption check has run, so
+// this stays pure fare arithmetic with no promo/redemption knowledge.
 
-function round2(amount) {
+export function round2(amount) {
   return Math.round(amount * 100) / 100;
 }
 

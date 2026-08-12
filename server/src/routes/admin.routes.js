@@ -7,6 +7,7 @@ import {
   driverQueueQuerySchema,
   rejectApplicationSchema,
   reviewDocumentSchema,
+  withdrawalQueueQuerySchema,
 } from '../validators/admin.schema.js';
 import { idParamsSchema } from '../validators/driver.schema.js';
 
@@ -47,6 +48,27 @@ router.post(
   validate(idParamsSchema, 'params'),
   validate(rejectApplicationSchema),
   adminController.rejectVehicle,
+);
+
+// doc 08-09-10 §9: role ADMIN gets in the door (requireRole above);
+// access_level ('finance') is re-checked inside withdrawals.service.js —
+// it lives in admin_profiles, not the JWT, so it can't be a route-level
+// middleware the way requireRole is (doc 10 §9 layer 1 vs layer 2).
+router.get(
+  '/withdrawals',
+  validate(withdrawalQueueQuerySchema, 'query'),
+  adminController.listWithdrawalQueue,
+);
+router.post(
+  '/withdrawals/:id/approve',
+  validate(idParamsSchema, 'params'),
+  adminController.approveWithdrawal,
+);
+router.post(
+  '/withdrawals/:id/reject',
+  validate(idParamsSchema, 'params'),
+  validate(rejectApplicationSchema),
+  adminController.rejectWithdrawal,
 );
 
 export default router;

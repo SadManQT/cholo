@@ -70,3 +70,33 @@ export const idParamsSchema = z.object({
 export const respondToOfferSchema = z.object({
   response: z.enum(['accepted', 'rejected']),
 });
+
+// doc 08-09-10 §6: GET /driver/earnings "?from&to". Defaults to the
+// trailing 30 days so the screen has something to show with no params —
+// matches doc 12 §7's "date-range chips" (a UI default, not a required one).
+export const earningsQuerySchema = z.object({
+  from: isoDate.default(() => new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)),
+  to: isoDate.default(today),
+});
+
+// doc 08-09-10 §8: POST /driver/payout-accounts. accountNo is the RAW
+// number — read once here to compute the mask (utils/mask.js), never
+// stored or logged past that (schema.sql: "numbers stored masked").
+export const createPayoutAccountSchema = z.object({
+  accountType: z.enum(['bkash', 'nagad', 'bank']),
+  accountName: z.string().trim().min(1).max(120),
+  accountNo: z.string().trim().min(4).max(34),
+  bankName: z.string().trim().min(1).max(80).optional(),
+}).refine(
+  ({ accountType, bankName }) => accountType !== 'bank' || !!bankName,
+  { path: ['bankName'], message: 'bankName is required for a bank account' },
+);
+
+export const createWithdrawalSchema = z.object({
+  amount: z.number().min(50),
+  // driver_payout_accounts.id is BIGINT — node-postgres returns BIGINT
+  // columns as strings (can't safely fit the full range in a JS number),
+  // so a client passing an id straight through from an earlier response
+  // sends a numeric STRING, not a JSON number. coerce accepts both.
+  payoutAccountId: z.coerce.number().int().positive(),
+});

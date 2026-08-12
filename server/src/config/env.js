@@ -23,6 +23,22 @@ const envSchema = z.object({
   GEO_PROVIDER: z.enum(['osm', 'google']).default('osm'),
   OSRM_BASE_URL: z.string().url().default('https://router.project-osrm.org'),
   NOMINATIM_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
+
+  // Payment gateway abstraction (doc 05-06-07 §8's adapter pattern, applied
+  // to doc 09 §7/§10.4's gateway sandbox): one interface, swappable
+  // provider. Only 'sslcommerz' is implemented. store_id/store_passwd
+  // default to SSLCommerz's own PUBLISHED universal sandbox credentials
+  // (developer.sslcommerz.com) — not a secret, safe to default, works
+  // with zero signup. Override with your own sandbox store if you want
+  // transactions isolated from everyone else using the shared testbox.
+  PAYMENT_GATEWAY: z.enum(['sslcommerz']).default('sslcommerz'),
+  SSLCOMMERZ_BASE_URL: z.string().url().default('https://sandbox.sslcommerz.com'),
+  SSLCOMMERZ_STORE_ID: z.string().default('testbox'),
+  SSLCOMMERZ_STORE_PASSWORD: z.string().default('qwerty'),
+  // Where SSLCommerz's server sends the IPN webhook — must be a publicly
+  // reachable URL (a tunnel like ngrok in dev; the real API origin in
+  // prod), never localhost, or their servers can't reach it at all.
+  PUBLIC_API_ORIGIN: z.string().url().default('http://localhost:3000'),
 });
 
 function formatIssues(issues) {

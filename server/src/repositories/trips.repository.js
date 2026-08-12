@@ -11,19 +11,30 @@ export async function insertTrip({ requestId, passengerId, driverId, vehicleId }
   return rows[0];
 }
 
-// One query serves all three lifecycle transitions — arrived/start only
-// need id+driverId+status, complete additionally needs the original
-// request's pickup/dropoff/city/category for fare recomputation. FOR
-// UPDATE OF t: lock only the trips row, not the joined ride_requests row.
+// One SELECT list serves all four lifecycle/payment transitions —
+// arrived/start only need id+driverId+status, complete additionally needs
+// the original request's pickup/dropoff/city/category for fare
+// recomputation, pay (T3) and the gateway webhook (both doc 02-03 §8)
+// need total_fare + payment_status. FOR UPDATE OF t: lock only the trips
+// row, not the joined ride_requests row — this same lock is what
+// serializes two concurrent /pay calls on the SAME trip (a second
+// ALREADY_PAID belt-and-suspenders alongside payments' own
+// ux_payment_one_success UNIQUE INDEX).
+const TRIP_FOR_UPDATE_COLUMNS = `
+  t.id, t.trip_code AS "tripCode", t.driver_id AS "driverId",
+  t.passenger_id AS "passengerId", t.request_id AS "requestId", t.status,
+  t.assigned_at AS "assignedAt", t.arrived_at AS "arrivedAt",
+  t.started_at AS "startedAt", t.completed_at AS "completedAt",
+  t.total_fare AS "totalFare", t.payment_status AS "paymentStatus",
+  rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
+  rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
+  rr.city_id AS "cityId", rr.category_id AS "categoryId",
+  rr.payment_intent AS "paymentIntent", rr.promo_code_id AS "promoCodeId"
+`;
+
 export async function findByCodeForUpdate(tripCode, client) {
   const { rows } = await client.query(
-    `SELECT t.id, t.trip_code AS "tripCode", t.driver_id AS "driverId",
-            t.passenger_id AS "passengerId", t.request_id AS "requestId", t.status,
-            t.assigned_at AS "assignedAt", t.arrived_at AS "arrivedAt",
-            t.started_at AS "startedAt", t.completed_at AS "completedAt",
-            rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
-            rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
-            rr.city_id AS "cityId", rr.category_id AS "categoryId"
+    `SELECT ${TRIP_FOR_UPDATE_COLUMNS}
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      WHERE t.trip_code = $1
@@ -32,6 +43,38 @@ export async function findByCodeForUpdate(tripCode, client) {
   );
 
   return rows[0];
+}
+
+// Same shape, keyed by internal id — the gateway webhook only has a
+// payments.trip_id to work from, never the human-facing trip_code.
+export async function findByIdForUpdate(tripId, client) {
+  const { rows } = await client.query(
+    `SELECT ${TRIP_FOR_UPDATE_COLUMNS}
+     FROM trips t
+     JOIN ride_requests rr ON rr.id = t.request_id
+     WHERE t.id = $1
+     FOR UPDATE OF t`,
+    [tripId],
+  );
+
+  return rows[0];
+}
+
+// promo_codes.first_ride_only (promos.service.js's validate preview AND
+// trips.service.js's actual redemption check): "has this passenger EVER
+// completed a trip?" EXISTS short-circuits on the first match rather than
+// counting every row. Both call sites run this BEFORE the trip being
+// completed/quoted has status = 'completed' — completeTrip checks this
+// ahead of its own UPDATE — so no self-exclusion is needed.
+export async function hasCompletedTrip(passengerId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT EXISTS(
+       SELECT 1 FROM trips WHERE passenger_id = $1 AND status = 'completed'
+     ) AS "exists"`,
+    [passengerId],
+  );
+
+  return rows[0].exists;
 }
 
 export async function markArrived(tripId, client) {
@@ -139,7 +182,8 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
             t.currency, t.payment_status AS "paymentStatus",
             tc.cancelled_by_role AS "cancelledByRole", tc.reason_code AS "cancellationReasonCode",
             tc.reason_text AS "cancellationReasonText", tc.fee_charged AS "cancellationFee",
-            tc.cancelled_at AS "cancelledAt"
+            tc.cancelled_at AS "cancelledAt",
+            r.receipt_no AS "receiptNo", r.issued_at AS "receiptIssuedAt"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id
@@ -150,6 +194,7 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
      JOIN driver_profiles dp ON dp.user_id = t.driver_id
      JOIN vehicles v ON v.id = t.vehicle_id
      LEFT JOIN trip_cancellations tc ON tc.trip_id = t.id
+     LEFT JOIN receipts r ON r.trip_id = t.id
      WHERE t.trip_code = $1 AND (t.passenger_id = $2 OR t.driver_id = $2)`,
     [tripCode, userId],
   );
@@ -293,13 +338,22 @@ export async function insertCancellation(
 // Fare fields deliberately NOT cast to float8 — doc 08-09-10 §10.3's worked
 // example shows the completion response as fixed 2-decimal strings
 // ("272.80"), which is NUMERIC(12,2)'s default pg-driver representation.
-export async function completeTrip(tripId, { actualDistanceKm, actualDurationMin, fare }, client) {
+// paymentStatus defaults to the column's own 'unpaid' default (doc 02-03
+// §8 T2 only reaches 'paid' for cash, settled atomically in this same
+// UPDATE — every other method leaves the trip unpaid until its own
+// payment flow, gateway webhook or wallet debit, settles it later).
+export async function completeTrip(
+  tripId,
+  { actualDistanceKm, actualDurationMin, fare, paymentStatus = 'unpaid' },
+  client,
+) {
   const { rows } = await client.query(
     `UPDATE trips SET
        status = 'completed', completed_at = now(),
        actual_distance_km = $2, actual_duration_min = $3,
        base_fare = $4, distance_fare = $5, time_fare = $6, waiting_fare = $7,
-       surge_amount = $8, booking_fee = $9, discount_amount = $10, total_fare = $11
+       surge_amount = $8, booking_fee = $9, discount_amount = $10, total_fare = $11,
+       payment_status = $12
      WHERE id = $1
      RETURNING trip_code AS "tripCode", status, completed_at AS "completedAt",
                base_fare AS "baseFare", distance_fare AS "distanceFare", time_fare AS "timeFare",
@@ -310,7 +364,22 @@ export async function completeTrip(tripId, { actualDistanceKm, actualDurationMin
       tripId, actualDistanceKm, actualDurationMin,
       fare.baseFare, fare.distanceFare, fare.timeFare, fare.waitingFare,
       fare.surgeAmount, fare.bookingFee, fare.discountAmount, fare.totalFare,
+      paymentStatus,
     ],
+  );
+
+  return rows[0];
+}
+
+// T3 (doc 02-03 §8) settles a trip's payment AFTER completion, via its own
+// /pay call — unlike cash's paymentStatus at completeTrip() time above,
+// this is a separate UPDATE because a separate request, potentially much
+// later, is what triggers it.
+export async function markPaid(tripId, client) {
+  const { rows } = await client.query(
+    `UPDATE trips SET payment_status = 'paid' WHERE id = $1
+     RETURNING trip_code AS "tripCode", payment_status AS "paymentStatus"`,
+    [tripId],
   );
 
   return rows[0];

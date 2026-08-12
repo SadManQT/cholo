@@ -1281,6 +1281,25 @@ CREATE FUNCTION fn_wallet_balance_audit(p_wallet_id BIGINT) RETURNS NUMERIC AS $
     WHERE wallet_id = p_wallet_id;
 $$ LANGUAGE sql STABLE;
 
+-- 10. fn_current_commission — same "which rule applies?" shape as
+-- fn_current_pricing, plus the one thing commission_rules adds: city_id
+-- NULL means countrywide (uq_commission_rules_identity's NULLS NOT
+-- DISTINCT comment above). A city-specific rule must win over a
+-- countrywide one when both exist, so city_id NULLS LAST ranks the
+-- specific match first; effective_from DESC then picks the latest within
+-- whichever tier matched.
+CREATE FUNCTION fn_current_commission(p_category_id SMALLINT, p_city_id SMALLINT, p_at TIMESTAMPTZ DEFAULT now())
+RETURNS SETOF commission_rules AS $$
+    SELECT *
+    FROM commission_rules
+    WHERE category_id = p_category_id
+      AND (city_id = p_city_id OR city_id IS NULL)
+      AND effective_from <= p_at
+      AND (effective_to IS NULL OR effective_to > p_at)
+    ORDER BY city_id NULLS LAST, effective_from DESC
+    LIMIT 1;
+$$ LANGUAGE sql STABLE;
+
 
 -- =============================================================================
 -- 10. VIEWS (doc 03 §6)

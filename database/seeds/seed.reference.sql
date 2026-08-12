@@ -56,3 +56,13 @@ ON CONFLICT (city_id, category_id, effective_from) DO UPDATE SET
     per_min_rate = EXCLUDED.per_min_rate,
     minimum_fare = EXCLUDED.minimum_fare,
     booking_fee = EXCLUDED.booking_fee;
+
+-- Countrywide commission (city_id NULL — doc 02-03 §8 T2's own worked
+-- example uses 15.00%), one row per category. fn_current_commission's
+-- city_id NULLS LAST ordering lets a city-specific override be added later
+-- without touching this row.
+INSERT INTO commission_rules (category_id, city_id, commission_pct, effective_from)
+SELECT vc.id, NULL, 15.00, TIMESTAMPTZ '2026-01-01 00:00:00+06'
+FROM vehicle_categories vc
+ON CONFLICT (category_id, city_id, effective_from) DO UPDATE SET
+    commission_pct = EXCLUDED.commission_pct;

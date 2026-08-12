@@ -1,5 +1,8 @@
 import * as dispatchService from '../services/dispatch.service.js';
 import * as driverService from '../services/driver.service.js';
+import * as earningsService from '../services/earnings.service.js';
+import * as payoutAccountsService from '../services/payoutAccounts.service.js';
+import * as withdrawalsService from '../services/withdrawals.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const apply = asyncHandler(async (request, response) => {
@@ -78,4 +81,34 @@ export const respondToOffer = asyncHandler(async (request, response) => {
     request.body.response,
   );
   response.json({ success: true, data });
+});
+
+export const getEarnings = asyncHandler(async (request, response) => {
+  const data = await earningsService.getEarnings(request.user.id, request.query);
+  response.json({ success: true, data });
+});
+
+export const listPayoutAccounts = asyncHandler(async (request, response) => {
+  const data = await payoutAccountsService.listPayoutAccounts(request.user.id);
+  response.json({ success: true, data });
+});
+
+export const addPayoutAccount = asyncHandler(async (request, response) => {
+  const data = await payoutAccountsService.createPayoutAccount(request.user.id, request.body);
+  response.status(201).json({ success: true, data });
+});
+
+export const removePayoutAccount = asyncHandler(async (request, response) => {
+  await payoutAccountsService.removePayoutAccount(request.user.id, request.params.id);
+  response.status(204).end();
+});
+
+export const requestWithdrawal = asyncHandler(async (request, response) => {
+  const data = await withdrawalsService.requestWithdrawal(request.user.id, request.body);
+  response.status(201).json({ success: true, data });
+});
+
+export const listWithdrawals = asyncHandler(async (request, response) => {
+  const result = await withdrawalsService.listWithdrawals(request.user.id, request.query);
+  response.json({ success: true, data: result.data, meta: result.meta });
 });

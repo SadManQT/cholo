@@ -31,3 +31,11 @@ export const sosSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
 });
+
+// doc 08-09-10 §7's exact set for /trips/:publicId/pay: wallet settles
+// instantly (T3), bkash/nagad/card all route through whichever gateway
+// paymentGateway.service.js has active (currently SSLCommerz, which
+// itself supports all three as checkout options) and return a redirect.
+export const payTripSchema = z.object({
+  method: z.enum(['wallet', 'bkash', 'nagad', 'card']),
+});

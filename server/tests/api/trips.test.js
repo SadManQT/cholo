@@ -113,15 +113,19 @@ const PICKUP = { lat: 23.8759, lng: 90.3795 }; // Uttara Sector 4
 const DROPOFF = { lat: 23.8593, lng: 90.3936 }; // Uttara Sector 10
 
 // Books a ride, dispatches it, and has the driver accept — returns the
-// assigned trip's code, ready for arrived/start/complete.
-async function createAssignedTrip(t) {
-  const passenger = await createPassenger();
+// assigned trip's code, ready for arrived/start/complete. paymentIntent
+// defaults to 'cash' (T2 auto-settles at completion); pass 'wallet' for
+// tests that need a trip still 'unpaid' after completion, for T3's /pay.
+// Pass an existing `passenger` to book a SECOND trip for the same person
+// (the double-spend race test needs one passenger, two trips, two drivers).
+async function createAssignedTrip(t, { paymentIntent = 'cash', passenger: existingPassenger } = {}) {
+  const passenger = existingPassenger ?? await createPassenger();
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
 
   const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
   const booked = await request('POST', '/ride-requests', {
     accessToken: passenger.accessToken,
-    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
+    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent },
   });
   assert.equal(booked.status, 201);
 
@@ -208,7 +212,11 @@ test('the full happy path: arrived -> start -> complete, with a fare breakdown s
   assert.equal(data.fare.base, '60.00'); // seeded Dhaka/Car tariff
   assert.equal(data.fare.distance, '227.48'); // 10.34km real OSRM route * 22/km
   assert.equal(data.fare.currency, 'BDT');
-  assert.equal(data.payment.status, 'unpaid'); // nothing processes payment yet (M7)
+  // createAssignedTrip books with paymentIntent: 'cash' — settled inline,
+  // atomically, at completion (doc 02-03 §8 T2), not left pending like a
+  // gateway/wallet payment would be.
+  assert.equal(data.payment.method, 'cash');
+  assert.equal(data.payment.status, 'paid');
 
   const identitySum = Number(data.fare.base) + Number(data.fare.distance) + Number(data.fare.time)
     + Number(data.fare.waiting) + Number(data.fare.surge) + Number(data.fare.bookingFee)
@@ -225,6 +233,339 @@ test('the full happy path: arrived -> start -> complete, with a fare breakdown s
   assert.equal(Number(rows[0].total_fare), Number(data.fare.total));
   assert.ok(rows[0].actual_distance_km > 0);
 });
+
+test('T2: cash-trip completion inserts a succeeded payment, a driver_earnings split, and debits the driver wallet — atomically', async (t) => {
+  const { tripCode, driver } = await createAssignedTrip(t);
+  const { rows: beforeRows } = await pool.query(
+    `SELECT balance FROM wallets WHERE user_id = $1`,
+    [driver.userId],
+  );
+  const balanceBefore = Number(beforeRows[0].balance);
+
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  const completed = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
+  assert.equal(completed.status, 200);
+  const { data } = await completed.json();
+  const totalFare = Number(data.fare.total);
+
+  const { rows: tripRows } = await pool.query(`SELECT id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const tripId = tripRows[0].id;
+
+  const { rows: paymentRows } = await pool.query(
+    `SELECT purpose, method_type, gateway, amount, status, completed_at FROM payments WHERE trip_id = $1`,
+    [tripId],
+  );
+  assert.equal(paymentRows.length, 1);
+  assert.equal(paymentRows[0].purpose, 'trip');
+  assert.equal(paymentRows[0].method_type, 'cash');
+  assert.equal(paymentRows[0].gateway, 'none');
+  assert.equal(paymentRows[0].status, 'succeeded');
+  assert.equal(Number(paymentRows[0].amount), totalFare);
+  assert.ok(paymentRows[0].completed_at);
+
+  const { rows: earningRows } = await pool.query(
+    `SELECT driver_id, gross_fare, commission_pct, commission_amount, net_earning FROM driver_earnings WHERE trip_id = $1`,
+    [tripId],
+  );
+  assert.equal(earningRows.length, 1);
+  assert.equal(Number(earningRows[0].driver_id), Number(driver.userId));
+  assert.equal(Number(earningRows[0].gross_fare), totalFare);
+  assert.equal(Number(earningRows[0].commission_pct), 15);
+  const expectedCommission = Math.round(totalFare * 0.15 * 100) / 100;
+  assert.equal(Number(earningRows[0].commission_amount), expectedCommission);
+  // chk_driver_earnings_identity is a DATABASE constraint — this row
+  // existing at all is proof net_earning = gross_fare - commission_amount.
+  assert.equal(Number(earningRows[0].net_earning), Math.round((totalFare - expectedCommission) * 100) / 100);
+
+  const { rows: ledgerRows } = await pool.query(
+    `SELECT wt.txn_type, wt.direction, wt.amount, wt.reference_type, wt.reference_id, wt.idempotency_key
+     FROM wallet_transactions wt JOIN wallets w ON w.id = wt.wallet_id
+     WHERE w.user_id = $1 AND wt.reference_type = 'trip' AND wt.reference_id = $2`,
+    [driver.userId, tripId],
+  );
+  assert.equal(ledgerRows.length, 1);
+  assert.equal(ledgerRows[0].txn_type, 'commission');
+  assert.equal(ledgerRows[0].direction, 'debit');
+  assert.equal(Number(ledgerRows[0].amount), expectedCommission);
+  assert.equal(ledgerRows[0].idempotency_key, `commission-trip-${tripId}`);
+
+  // fn_apply_wallet_txn actually moved the cached balance, not just logged
+  // a row that nothing acted on.
+  const { rows: afterRows } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [driver.userId]);
+  assert.equal(Number(afterRows[0].balance), Math.round((balanceBefore - expectedCommission) * 100) / 100);
+});
+
+// T3 — wallet payment (doc 02-03 §8): completeAssignedTrip drives a
+// 'wallet'-intent trip to 'completed' (payment_status stays 'unpaid' —
+// only cash auto-settles at completion), creditWallet funds the payer's
+// wallet directly via the ledger (same trigger-computed balance_after
+// path every other credit uses), so /pay is exercised against real state
+// exactly like a passenger would produce it, not a hand-set balance.
+async function completeAssignedTrip(tripCode, driverAccessToken) {
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driverAccessToken });
+  await request('POST', `/trips/${tripCode}/start`, { accessToken: driverAccessToken });
+  const response = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driverAccessToken, body: {} });
+  return (await response.json()).data;
+}
+
+async function creditWallet(userId, amount) {
+  seed += 1;
+  await pool.query(
+    `INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, reference_type, idempotency_key)
+     SELECT id, 'topup', 'credit', $2, 'manual', $3 FROM wallets WHERE user_id = $1`,
+    [userId, amount, `test-topup-${userId}-${seed}`],
+  );
+}
+
+test('T3: POST /trips/:tripCode/pay settles a wallet-intent trip — payment succeeded, ledger debited, trip marked paid', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  assert.equal(completed.status, 'completed');
+  assert.equal(completed.payment.method, 'wallet');
+  assert.equal(completed.payment.status, 'unpaid'); // wallet doesn't auto-settle at completion, unlike cash
+  const totalFare = Number(completed.fare.total);
+
+  await creditWallet(setup.passenger.userId, totalFare + 100); // more than enough
+
+  const paid = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: setup.passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(paid.status, 201);
+  const paidBody = (await paid.json()).data;
+  assert.equal(paidBody.status, 'paid');
+  assert.equal(paidBody.method, 'wallet');
+
+  const { rows: tripRows } = await pool.query(
+    `SELECT payment_status FROM trips WHERE trip_code = $1`,
+    [setup.tripCode],
+  );
+  assert.equal(tripRows[0].payment_status, 'paid');
+
+  const { rows: paymentRows } = await pool.query(
+    `SELECT p.purpose, p.method_type, p.status, p.amount FROM payments p
+     JOIN trips t ON t.id = p.trip_id WHERE t.trip_code = $1`,
+    [setup.tripCode],
+  );
+  assert.equal(paymentRows.length, 1);
+  assert.equal(paymentRows[0].method_type, 'wallet');
+  assert.equal(paymentRows[0].status, 'succeeded');
+  assert.equal(Number(paymentRows[0].amount), totalFare);
+
+  const { rows: ledgerRows } = await pool.query(
+    `SELECT wt.txn_type, wt.direction, wt.amount FROM wallet_transactions wt
+     JOIN wallets w ON w.id = wt.wallet_id
+     JOIN trips t ON t.id = wt.reference_id AND wt.reference_type = 'trip'
+     WHERE w.user_id = $1 AND t.trip_code = $2 AND wt.txn_type = 'trip_payment'`,
+    [setup.passenger.userId, setup.tripCode],
+  );
+  assert.equal(ledgerRows.length, 1);
+  assert.equal(ledgerRows[0].direction, 'debit');
+  assert.equal(Number(ledgerRows[0].amount), totalFare);
+});
+
+test('T3: POST /trips/:tripCode/pay rejects with 422 INSUFFICIENT_FUNDS and touches nothing when the wallet is short', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  // No creditWallet call — the wallet is still at its fresh 0.00 balance.
+
+  const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: setup.passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, 'INSUFFICIENT_FUNDS');
+
+  const { rows: tripRows } = await pool.query(
+    `SELECT payment_status FROM trips WHERE trip_code = $1`,
+    [setup.tripCode],
+  );
+  assert.equal(tripRows[0].payment_status, 'unpaid'); // the failed attempt changed nothing
+
+  const { rows: paymentRows } = await pool.query(
+    `SELECT count(*)::int AS n FROM payments p JOIN trips t ON t.id = p.trip_id WHERE t.trip_code = $1`,
+    [setup.tripCode],
+  );
+  assert.equal(paymentRows[0].n, 0);
+});
+
+test('T3: POST /trips/:tripCode/pay is 409 ALREADY_PAID on a second attempt', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  await creditWallet(setup.passenger.userId, Number(completed.fare.total) + 100);
+
+  const first = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: setup.passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(first.status, 201);
+
+  const second = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: setup.passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(second.status, 409);
+  assert.equal((await second.json()).error.code, 'ALREADY_PAID');
+});
+
+test('T3: POST /trips/:tripCode/pay on an ALREADY cash-settled trip is also 409 ALREADY_PAID', async (t) => {
+  const { tripCode, passenger, driver } = await createAssignedTrip(t); // default paymentIntent: 'cash'
+  await completeAssignedTrip(tripCode, driver.accessToken); // T2 auto-settles this
+
+  const response = await request('POST', `/trips/${tripCode}/pay`, {
+    accessToken: passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error.code, 'ALREADY_PAID');
+});
+
+test('T3: POST /trips/:tripCode/pay before completion is 409 BAD_TRANSITION', async (t) => {
+  const { tripCode, passenger } = await createAssignedTrip(t, { paymentIntent: 'wallet' }); // still 'assigned'
+
+  const response = await request('POST', `/trips/${tripCode}/pay`, {
+    accessToken: passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error.code, 'BAD_TRANSITION');
+});
+
+test('T3: POST /trips/:tripCode/pay rejects a non-PASSENGER caller', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+
+  const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: setup.driver.accessToken, // DRIVER role, not PASSENGER
+    body: { method: 'wallet' },
+  });
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).error.code, 'FORBIDDEN_ROLE');
+});
+
+test('T3: POST /trips/:tripCode/pay by a passenger who is not on the trip gets 404 (no existence leak)', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  const stranger = await createPassenger();
+
+  const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
+    accessToken: stranger.accessToken,
+    body: { method: 'wallet' },
+  });
+  assert.equal(response.status, 404);
+  assert.equal((await response.json()).error.code, 'TRIP_NOT_FOUND');
+});
+
+// Gateway methods (bkash/nagad/card) are covered in tests/api/payments.
+// test.js, which mocks the SSLCommerz HTTP calls — kept out of this file
+// so trips.test.js's fetch mock (OSRM pass-through only) doesn't also
+// have to know about gateway URLs.
+
+// This fires two real concurrent HTTP requests, same shape as dispatch.
+// test.js's THE RACE — but verified (by temporarily pulling the FOR
+// UPDATE out of getByUserIdForUpdate and running this 20x) that it passes
+// regardless of whether the lock exists: against a fast local Postgres,
+// one request's whole transaction routinely finishes before the second's
+// balance check even starts, so there's often no real overlap to
+// serialize. The deterministic proof of the lock itself — two raw clients
+// with controlled interleaving — lives in tests/integration/walletLock.
+// test.js. This test still earns its keep as an end-to-end functional
+// check: real concurrent requests hit real business-logic error codes and
+// leave the DB in a consistent state, which is worth knowing even when
+// the timing doesn't happen to force the lock to do any work.
+test('two of the SAME passenger\'s trips paid the same instant, wallet funded for exactly one — ends with exactly one 201 and one 422, DB left consistent', async (t) => {
+  // skipCleanup semantics don't apply here (trips.test.js never cleans up
+  // trips anyway — see file-level note near createPassenger), but the
+  // driver fixtures DO reset back offline via t.after in createOnlineDriver.
+  //
+  // ux_one_active_request_per_passenger (schema.sql) blocks a second
+  // ride_request while the first is 'pending'/'searching'/'matched' — and
+  // nothing in rides.repository.js ever moves a request OUT of 'matched'
+  // except cancelTrip's explicit markCancelled. Completing a trip doesn't
+  // touch its ride_request at all, so as the system exists today a
+  // passenger's FIRST ride_request stays 'matched' forever and genuinely
+  // blocks booking a second one — not something this task is fixing, but
+  // real enough that a live passenger would hit it too. Worked around
+  // here (not fixed) by freeing trip A's slot directly, the same way a
+  // cancellation would, so this test can get to two real completed trips
+  // for one passenger and race their /pay calls.
+  const passenger = await createPassenger();
+  const setupA = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
+  await pool.query(
+    `UPDATE ride_requests SET status = 'expired' WHERE id = (SELECT request_id FROM trips WHERE trip_code = $1)`,
+    [setupA.tripCode],
+  );
+
+  const setupB = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  const completedB = await completeAssignedTrip(setupB.tripCode, setupB.driver.accessToken);
+
+  const fareA = Number(completedA.fare.total);
+  const fareB = Number(completedB.fare.total);
+
+  // Fund the ONE shared wallet with enough for exactly the cheaper of the
+  // two trips — not both — so whichever request lands second (whether
+  // that's because it was truly blocked on the lock, or simply because
+  // the first had already finished) must find the wallet already spent.
+  const fundedAmount = Math.min(fareA, fareB);
+  await creditWallet(passenger.userId, fundedAmount);
+
+  const pay = (tripCode) => request('POST', `/trips/${tripCode}/pay`, {
+    accessToken: passenger.accessToken,
+    body: { method: 'wallet' },
+  });
+
+  // Real concurrent HTTP requests against the real pool — Promise.all, not
+  // sequential awaits, so both payment attempts genuinely overlap (same
+  // reasoning as dispatch.test.js's THE RACE test for T1's accept race).
+  const [responseA, responseB] = await Promise.all([pay(setupA.tripCode), pay(setupB.tripCode)]);
+  const [bodyA, bodyB] = await Promise.all([responseA.json(), responseB.json()]);
+
+  const statuses = [responseA.status, responseB.status].sort();
+  assert.deepEqual(statuses, [201, 422]);
+
+  const loserBody = responseA.status === 422 ? bodyA : bodyB;
+  assert.equal(loserBody.error.code, 'INSUFFICIENT_FUNDS');
+
+  // The real proof: query actual DB state, not just trust the HTTP
+  // responses. Exactly one payment exists, exactly one trip is paid, and
+  // the wallet landed at exactly 0 — never negative (double-spent) and
+  // never left at fundedAmount (nothing debited at all).
+  const { rows: paymentRows } = await pool.query(
+    `SELECT t.trip_code AS "tripCode" FROM payments p
+     JOIN trips t ON t.id = p.trip_id
+     WHERE t.trip_code IN ($1, $2) AND p.status = 'succeeded'`,
+    [setupA.tripCode, setupB.tripCode],
+  );
+  assert.equal(paymentRows.length, 1, 'exactly one of the two trips must have a succeeded payment');
+
+  const winnerTripCode = paymentRows[0].tripCode;
+  const loserTripCode = winnerTripCode === setupA.tripCode ? setupB.tripCode : setupA.tripCode;
+
+  const { rows: statusRows } = await pool.query(
+    `SELECT trip_code AS "tripCode", payment_status AS "paymentStatus" FROM trips WHERE trip_code IN ($1, $2)`,
+    [setupA.tripCode, setupB.tripCode],
+  );
+  const winnerRow = statusRows.find((row) => row.tripCode === winnerTripCode);
+  const loserRow = statusRows.find((row) => row.tripCode === loserTripCode);
+  assert.equal(winnerRow.paymentStatus, 'paid');
+  assert.equal(loserRow.paymentStatus, 'unpaid');
+
+  const { rows: walletRows } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [passenger.userId]);
+  const expectedBalance = fundedAmount - (winnerTripCode === setupA.tripCode ? fareA : fareB);
+  assert.equal(Number(walletRows[0].balance), Math.round(expectedBalance * 100) / 100);
+
+  assert.equal(await walletBalanceMatchesAudit(passenger.userId), true);
+});
+
+async function walletBalanceMatchesAudit(userId) {
+  const { rows } = await pool.query(
+    `SELECT w.balance = fn_wallet_balance_audit(w.id) AS matches FROM wallets w WHERE w.user_id = $1`,
+    [userId],
+  );
+  return rows[0].matches;
+}
 
 test('BAD_TRANSITION: completing an already-completed trip', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);

@@ -187,6 +187,9 @@ export interface TripDetail {
     fee: string;
     cancelledAt: string;
   } | null;
+  // null until completeTrip has run (receipts.trip_id only exists for
+  // completed trips) — server/src/services/trips.service.js's toTripDetail.
+  receipt: { receiptNo: string; issuedAt: string } | null;
   history: Array<{
     fromStatus: TripStatus | null;
     toStatus: TripStatus;

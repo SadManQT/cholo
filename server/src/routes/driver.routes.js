@@ -7,12 +7,16 @@ import {
   applyDriverSchema,
   availabilitySchema,
   createDriverDocumentSchema,
+  createPayoutAccountSchema,
   createVehicleDocumentSchema,
   createVehicleSchema,
+  createWithdrawalSchema,
+  earningsQuerySchema,
   idParamsSchema,
   respondToOfferSchema,
   updateVehicleSchema,
 } from '../validators/driver.schema.js';
+import { walletTransactionsQuerySchema } from '../validators/wallet.schema.js';
 
 const router = Router();
 
@@ -59,6 +63,23 @@ router.post(
   validate(idParamsSchema, 'params'),
   validate(respondToOfferSchema),
   driverController.respondToOffer,
+);
+
+router.get('/earnings', validate(earningsQuerySchema, 'query'), driverController.getEarnings);
+
+router.get('/payout-accounts', driverController.listPayoutAccounts);
+router.post('/payout-accounts', validate(createPayoutAccountSchema), driverController.addPayoutAccount);
+router.delete(
+  '/payout-accounts/:id',
+  validate(idParamsSchema, 'params'),
+  driverController.removePayoutAccount,
+);
+
+router.post('/withdrawals', validate(createWithdrawalSchema), driverController.requestWithdrawal);
+router.get(
+  '/withdrawals',
+  validate(walletTransactionsQuerySchema, 'query'),
+  driverController.listWithdrawals,
 );
 
 export default router;

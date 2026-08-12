@@ -1,13 +1,23 @@
 import { withTransaction } from '../config/db.js';
+import { env } from '../config/env.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
+import * as earningsRepo from '../repositories/earnings.repository.js';
+import * as paymentsRepo from '../repositories/payments.repository.js';
 import * as pricingRepo from '../repositories/pricing.repository.js';
+import * as promosRepo from '../repositories/promos.repository.js';
+import * as receiptsRepo from '../repositories/receipts.repository.js';
 import * as ridesRepo from '../repositories/rides.repository.js';
 import * as tripsRepo from '../repositories/trips.repository.js';
+import * as usersRepo from '../repositories/users.repository.js';
+import * as walletRepo from '../repositories/wallet.repository.js';
 import { getIO } from '../sockets/index.js';
 import { broadcastTripStatus } from '../sockets/rooms.js';
 import { AppError } from '../utils/AppError.js';
-import { quote as computeFare } from '../utils/fareMath.js';
+import { computeCommission } from '../utils/commissionMath.js';
+import { quote as computeFare, round2 } from '../utils/fareMath.js';
+import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
 import * as geoService from './geo.service.js';
+import * as paymentGateway from './paymentGateway.service.js';
 
 // null in every test (tests import app.js, never server.js — see
 // sockets/index.js) and in any process that hasn't attached a socket
@@ -78,6 +88,110 @@ export async function markStarted(driverId, tripCode) {
   return updated.updated;
 }
 
+// doc 02-03 §8 T2's earning-row step, generalized: every completed AND
+// PAID trip gets a driver_earnings split, regardless of which payment
+// method actually settled it (cash here, wallet/gateway in payTrip below
+// and payments.service.js's webhook handler). The wallet side of it
+// depends on WHO is physically holding the fare right now, which is not
+// the same for every method — collecting that wrong would either short
+// the driver or double-pay them:
+//
+//   - cash: the driver already has the full fare in hand. The platform's
+//     only claim is its commission cut, so this DEBITS the driver's
+//     wallet by commissionAmount — a running "you owe the platform"
+//     balance, which is what T2's own worked example describes.
+//   - wallet/gateway ('platformCollected'): the PLATFORM holds the full
+//     fare (the passenger paid it directly, not the driver). The
+//     platform owes the driver their share, so this CREDITS the driver's
+//     wallet by netEarning instead — debiting the commission on top of
+//     that would be double-counting (net_earning is already gross minus
+//     commission), and crediting net_earning AND leaving commission
+//     untouched already correctly reflects the platform keeping its cut.
+//
+// Exported so trip completion, T3's wallet payment, and the gateway
+// webhook all share this ONE implementation rather than three
+// independent (and easy to accidentally mismatch) copies of this math.
+export async function settleDriverEarnings(trip, grossFare, client, { platformCollected = false } = {}) {
+  const commission = await pricingRepo.getCurrentCommission(trip.categoryId, trip.cityId, client);
+  if (!commission) throw new AppError(422, 'NO_COMMISSION_RULE_FOR_MARKET');
+
+  const { commissionAmount, netEarning } = computeCommission({
+    grossFare,
+    commissionPct: commission.commissionPct,
+  });
+
+  await earningsRepo.insertEarning({
+    tripId: trip.id,
+    driverId: trip.driverId,
+    grossFare,
+    commissionRuleId: commission.id,
+    commissionPct: commission.commissionPct,
+    commissionAmount,
+    netEarning,
+  }, client);
+
+  const driverWallet = await walletRepo.getByUserId(trip.driverId, client);
+  // Same identity every retry of THIS trip's settlement would produce —
+  // the caller's own guard (a status transition check, or the payment
+  // idempotency check in payments.service.js) already stops this from
+  // running twice, but the UNIQUE idempotency_key is the unbypassable
+  // last line, same belt-and-suspenders pattern as T1's request_id UNIQUE
+  // (doc 02-03 §8). driver_earnings.trip_id UNIQUE backs it up a second way.
+  await walletRepo.insertTransaction(platformCollected ? {
+    walletId: driverWallet.id,
+    txnType: 'trip_earning',
+    direction: 'credit',
+    amount: netEarning,
+    referenceType: 'trip',
+    referenceId: trip.id,
+    idempotencyKey: `earning-trip-${trip.id}`,
+  } : {
+    walletId: driverWallet.id,
+    txnType: 'commission',
+    direction: 'debit',
+    amount: commissionAmount,
+    referenceType: 'trip',
+    referenceId: trip.id,
+    idempotencyKey: `commission-trip-${trip.id}`,
+  }, client);
+}
+
+// promo_codes.usage_limit_total/usage_limit_per_user/first_ride_only are
+// enforced HERE, not at booking (rides.service.js's createRequest comment
+// comment) — this is the "redeemed as" moment (doc 01 relationship #58),
+// as opposed to booking's looser "reserved on" (#37). A promo that stopped
+// qualifying between booking and completion (expired, used up by someone
+// else in the meantime, or no longer this passenger's first ride) is NOT
+// an error here: completeTrip is a DRIVER-facing endpoint, the driver has
+// no way to fix a passenger's promo eligibility, and the ride already
+// happened — falling back to no discount is the only reasonable outcome,
+// not a 422 that blocks a real trip over a promo edge case. FOR UPDATE
+// locks the promo row so two trips completing at the same instant against
+// a usage_limit_total-capped promo can't both read a stale count and both
+// squeeze past the limit.
+async function redeemPromoIfApplicable(trip, preDiscountTotal, client) {
+  if (!trip.promoCodeId) return null;
+
+  const promo = await promosRepo.findByIdForUpdate(trip.promoCodeId, client);
+  if (!promo) return null;
+
+  const counts = await promosRepo.countRedemptions(promo.id, trip.passengerId, client);
+  if (!isPromoUsageAvailable(promo, counts)) return null;
+
+  const isFirstRide = promo.firstRideOnly
+    ? !(await tripsRepo.hasCompletedTrip(trip.passengerId, client))
+    : true;
+  const applicable = isPromoApplicable(promo, {
+    cityId: trip.cityId,
+    categoryId: trip.categoryId,
+    fareAmount: preDiscountTotal,
+    isFirstRide,
+  });
+  if (!applicable) return null;
+
+  return { promoId: promo.id, discountAmount: computeDiscount(promo, preDiscountTotal) };
+}
+
 // doc 08-09-10 §6: "server computes distance from pings and the full fare."
 // sockets/location.handler.js now records real GPS pings into
 // trip_location_pings during the trip (roadmap step 15) — but aggregating
@@ -112,16 +226,73 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) 
       surgeMultiplier: NO_SURGE,
     });
 
+    // computeFare always returns discountAmount 0 (fareMath.js has no
+    // promo knowledge) — preDiscountTotal is captured before redemption
+    // mutates fare, so the receipt below can record the true pre-discount
+    // subtotal without re-deriving it from a total+discount addition.
+    const preDiscountTotal = fare.totalFare;
+    const redemption = await redeemPromoIfApplicable(trip, preDiscountTotal, client);
+    if (redemption) {
+      fare.discountAmount = redemption.discountAmount;
+      fare.totalFare = round2(preDiscountTotal - redemption.discountAmount);
+    }
+
+    // Cash settles instantly, in this same transaction. Every other
+    // method needs its own separate payment flow: wallet settles via its
+    // own later /pay call (payTrip below, T3), gateways via a redirect +
+    // webhook (not built) — so those trips complete honestly 'unpaid'
+    // rather than faking a gateway state (doc 08-09-10 §10.3's
+    // "pending_redirect" is what that flow will report once it exists).
+    const isCash = trip.paymentIntent === 'cash';
+
     const updated = await tripsRepo.completeTrip(trip.id, {
       actualDistanceKm: distanceKm,
       actualDurationMin: durationMin,
       fare,
+      paymentStatus: isCash ? 'paid' : 'unpaid',
     }, client);
 
-    return { trip, updated };
+    // Redeem AFTER the trip row itself is written — promo_redemptions.
+    // trip_id is NOT NULL (schema.sql), so the row it references must
+    // already exist.
+    if (redemption) {
+      await promosRepo.insertRedemption({
+        promoCodeId: redemption.promoId,
+        userId: trip.passengerId,
+        tripId: trip.id,
+        discountAmount: redemption.discountAmount,
+      }, client);
+    }
+
+    if (isCash) {
+      await paymentsRepo.insertPayment({
+        purpose: 'trip',
+        tripId: trip.id,
+        payerId: trip.passengerId,
+        methodType: 'cash',
+        gateway: 'none',
+        amount: fare.totalFare,
+        status: 'succeeded',
+      }, client);
+      await settleDriverEarnings(trip, fare.totalFare, client);
+    }
+
+    // receipts — doc 01: "passenger-facing numbered financial document,"
+    // one per completed trip regardless of payment method or status (it
+    // documents what the passenger owes, not whether they've paid it yet
+    // — wallet/gateway trips complete 'unpaid' and still get a receipt).
+    const receipt = await receiptsRepo.insert({
+      tripId: trip.id,
+      issuedTo: trip.passengerId,
+      subtotal: preDiscountTotal,
+      discount: fare.discountAmount,
+      total: fare.totalFare,
+    }, client);
+
+    return { trip, updated, receipt };
   });
 
-  const { trip, updated } = result;
+  const { trip, updated, receipt } = result;
   const response = {
     status: updated.status,
     fare: {
@@ -135,17 +306,155 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) 
       total: updated.totalFare,
       currency: updated.currency,
     },
-    // doc 08-09-10 §10.3 shows a gateway-specific "pending_redirect" here
-    // — that implies payment processing (M7, not built). Reporting the
-    // trip's REAL payment_status ('unpaid' — nothing has processed
-    // payment yet) is more honest than fabricating a gateway state.
     payment: {
+      method: trip.paymentIntent,
       status: updated.paymentStatus,
     },
+    receiptNo: receipt.receiptNo,
   };
 
   await notifyTripStatus(trip, { status: updated.status, completedAt: updated.completedAt, fare: response.fare });
   return response;
+}
+
+// T3 (doc 02-03 §8): "debit the passenger wallet + mark the payment
+// succeeded, atomically; the FOR UPDATE inside fn_apply_wallet_txn
+// prevents two simultaneous spends from both passing a balance check."
+// That protection only holds if the balance CHECK participates in the
+// same lock the debit's INSERT takes — walletRepo.getByUserIdForUpdate's
+// SELECT ... FOR UPDATE is what makes that true here: a second concurrent
+// /pay (on a DIFFERENT trip, same wallet) genuinely blocks on this SELECT
+// until the first transaction commits, then reads the POST-debit balance,
+// never a stale one both could pass.
+// Shared by payTrip's wallet branch and gateway branch: both need the
+// SAME trip lookup + ownership + status guards before doing their very
+// different settlement work.
+async function loadPayableTrip(passengerId, tripCode, client) {
+  const trip = await tripsRepo.findByCodeForUpdate(tripCode, client);
+  // 404, not 403 — same IDOR-prevention pattern as every other trip
+  // transition: a caller who isn't the passenger on this trip can't
+  // tell it exists, not even to learn it needs paying.
+  if (!trip || Number(trip.passengerId) !== passengerId) {
+    throw new AppError(404, 'TRIP_NOT_FOUND');
+  }
+  // Only a completed trip has a final total_fare to pay — the fare
+  // columns are all still 0 (their DEFAULT) before completeTrip runs.
+  if (trip.status !== 'completed') throw new AppError(409, 'BAD_TRANSITION');
+  if (trip.paymentStatus === 'paid') throw new AppError(409, 'ALREADY_PAID');
+  return trip;
+}
+
+const GATEWAY_METHODS = ['bkash', 'nagad', 'card'];
+
+export async function payTrip(passengerId, tripCode, { method }) {
+  if (GATEWAY_METHODS.includes(method)) {
+    return payTripByGateway(passengerId, tripCode, method);
+  }
+
+  // wallet (T3, doc 02-03 §8): "debit the passenger wallet + mark the
+  // payment succeeded, atomically; the FOR UPDATE inside
+  // fn_apply_wallet_txn prevents two simultaneous spends from both
+  // passing a balance check." That protection only holds if the balance
+  // CHECK participates in the same lock the debit's INSERT takes —
+  // walletRepo.getByUserIdForUpdate's SELECT ... FOR UPDATE is what makes
+  // that true here: a second concurrent /pay (on a DIFFERENT trip, same
+  // wallet) genuinely blocks on this SELECT until the first transaction
+  // commits, then reads the POST-debit balance, never a stale one both
+  // could pass.
+  const result = await withTransaction(async (client) => {
+    await attributeTo(passengerId, client);
+    const trip = await loadPayableTrip(passengerId, tripCode, client);
+
+    const wallet = await walletRepo.getByUserIdForUpdate(passengerId, client);
+    if (Number(wallet.balance) < Number(trip.totalFare)) {
+      throw new AppError(422, 'INSUFFICIENT_FUNDS');
+    }
+
+    await paymentsRepo.insertPayment({
+      purpose: 'trip',
+      tripId: trip.id,
+      payerId: passengerId,
+      methodType: method,
+      gateway: 'none',
+      amount: trip.totalFare,
+      status: 'succeeded',
+    }, client);
+
+    await walletRepo.insertTransaction({
+      walletId: wallet.id,
+      txnType: 'trip_payment',
+      direction: 'debit',
+      amount: trip.totalFare,
+      referenceType: 'trip',
+      referenceId: trip.id,
+      // Same belt-and-suspenders shape as T2's commission idempotency key
+      // and payments' own ux_payment_one_success UNIQUE INDEX — a second
+      // debit for the SAME trip is structurally impossible, not just
+      // lock-prevented.
+      idempotencyKey: `trip-payment-${trip.id}`,
+    }, client);
+
+    const updated = await tripsRepo.markPaid(trip.id, client);
+    // The platform now holds this fare (unlike cash, where the driver
+    // already does) — every paid trip gets a driver_earnings row, but
+    // platformCollected: true credits the driver their net share instead
+    // of debiting a commission that was never physically theirs to owe.
+    await settleDriverEarnings(trip, Number(trip.totalFare), client, { platformCollected: true });
+
+    return { trip, updated };
+  });
+
+  const { trip, updated } = result;
+  await notifyTripStatus(trip, { status: trip.status, paymentStatus: updated.paymentStatus });
+  return { status: updated.paymentStatus, method };
+}
+
+// Gateway methods (bkash/nagad/card, routed through whichever provider
+// paymentGateway.service.js currently has active) can't settle inline —
+// doc 08-09-10 §10.3's "pending_redirect" is the honest state between
+// starting a gateway session and its webhook confirming money actually
+// moved. This only ever creates an 'initiated' payment row; success
+// happens later in payments.service.js's webhook handler.
+async function payTripByGateway(passengerId, tripCode, method) {
+  const result = await withTransaction(async (client) => {
+    await attributeTo(passengerId, client);
+    const trip = await loadPayableTrip(passengerId, tripCode, client);
+
+    const payment = await paymentsRepo.insertPayment({
+      purpose: 'trip',
+      tripId: trip.id,
+      payerId: passengerId,
+      methodType: method,
+      gateway: paymentGateway.activeGateway(),
+      amount: trip.totalFare,
+      status: 'initiated',
+    }, client);
+
+    return { trip, payment };
+  });
+
+  const { trip, payment } = result;
+  const payer = await usersRepo.findById(passengerId);
+  const session = await paymentGateway.createSession({
+    tranId: payment.publicId,
+    amount: Number(trip.totalFare),
+    customerName: payer.fullName,
+    customerEmail: payer.email ?? 'no-email@cholo.app',
+    successUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=success`,
+    failUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=fail`,
+    cancelUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=cancel`,
+    ipnUrl: `${env.PUBLIC_API_ORIGIN}/api/v1/webhooks/payments/${paymentGateway.activeGateway()}`,
+  });
+
+  return {
+    status: 'pending_redirect',
+    method,
+    redirectUrl: session.redirectUrl,
+    // Same shape as wallet.service.js's initiateTopup response — the
+    // frontend needs this publicId to poll GET /payments/:publicId after
+    // the gateway redirect lands back on success/fail/cancel_url.
+    payment: { publicId: payment.publicId, amount: payment.amount, status: payment.status },
+  };
 }
 
 // doc 08-09-10 §5: cancellation is only meaningful before the ride is
@@ -316,6 +625,10 @@ function toTripDetail(trip, history) {
       fee: trip.cancellationFee,
       cancelledAt: trip.cancelledAt,
     } : null,
+    // doc 08-09-10 §6: GET /trips/:publicId's documented shape is "parties,
+    // vehicle, fare breakdown, receipt link" — null until completeTrip has
+    // run (receipts.trip_id only exists for completed trips).
+    receipt: trip.receiptNo ? { receiptNo: trip.receiptNo, issuedAt: trip.receiptIssuedAt } : null,
     history,
   };
 }
