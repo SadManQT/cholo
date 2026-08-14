@@ -389,6 +389,7 @@ And remember the **three entrances** (doc 07): HTTP routes, socket handlers, and
 
 | Method | Path | Auth | Purpose · body | Success | Key errors |
 |---|---|---|---|---|---|
+| POST | `/geo/route` | bearer | Road directions · `pickup{lat,lng}, dropoff{lat,lng}`; returns the shortest distance option plus any OSRM alternatives and GeoJSON-derived path points | 200 `{distanceKm,durationMin,path,alternatives}` | 422 `ROUTE_NOT_FOUND` · `OUTSIDE_SERVICE_AREA` |
 | POST | `/rides/quote` | PASSENGER | Fare estimate before booking · `cityId, categoryId, pickup{lat,lng}, dropoff{lat,lng}` | 200 quote per category | 422 `NO_TARIFF_FOR_MARKET` |
 | POST | `/ride-requests` | PASSENGER | Book (worked example §10.1) | 201 request `searching` | 409 `ACTIVE_REQUEST_EXISTS` · 422 |
 | GET | `/ride-requests/:publicId` | owner | Poll status (`searching/matched/expired`) + trip id when matched | 200 | 404 |

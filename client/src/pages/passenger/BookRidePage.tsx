@@ -20,8 +20,9 @@ import type {
   SocketTripStatus,
   VehicleCategory,
 } from '../../types/ride.types';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
+import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
 
 const ACTIVE_REQUEST_KEY = 'cholo.activeRideRequest';
 type LocationField = 'pickup' | 'dropoff';
@@ -109,11 +110,19 @@ export function BookRidePage() {
 
     requestCurrentLocation()
       .then(async (position) => {
+        if (!isWithinBangladeshBounds(position)) {
+          toast.error(SERVICE_AREA_NOTICE);
+          return;
+        }
         try {
           const place = await geoApi.reverseGeocode(position.lat, position.lng);
           setPickup(place);
           setPickupQuery(place.address);
-        } catch {
+        } catch (error) {
+          if (getApiErrorCode(error) === 'OUTSIDE_SERVICE_AREA') {
+            toast.error(getApiErrorMessage(error, SERVICE_AREA_NOTICE));
+            return;
+          }
           const place = { lat: position.lat, lng: position.lng, address: 'Current location' };
           setPickup(place);
           setPickupQuery(place.address);
@@ -232,6 +241,10 @@ export function BookRidePage() {
   }
 
   async function handleMapClick(point: LatLng) {
+    if (!isWithinBangladeshBounds(point)) {
+      toast.error(SERVICE_AREA_NOTICE);
+      return;
+    }
     setResolvingField(mapField);
     try {
       const place = await geoApi.reverseGeocode(point.lat, point.lng);

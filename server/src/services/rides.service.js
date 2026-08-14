@@ -31,6 +31,7 @@ function round2(amount) {
 // same computation a passenger was shown, not a second independent one
 // (doc 01 §13.7: rules explain "what would this cost now?").
 async function buildQuote({ cityId, categoryId, pickup, dropoff }) {
+  geoService.assertWithinServiceArea(pickup, dropoff);
   const tariff = await pricingRepo.getCurrentTariff(cityId, categoryId);
   if (!tariff) throw new AppError(422, 'NO_TARIFF_FOR_MARKET');
 

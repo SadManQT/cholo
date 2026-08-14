@@ -2,9 +2,10 @@ import L, { divIcon, latLngBounds } from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import '@maplibre/maplibre-gl-leaflet';
 import type { Map as MaplibreMap } from 'maplibre-gl';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet';
-import type { LatLng } from '../../types/geo.types';
+import * as geoApi from '../../api/geo.api';
+import type { LatLng, RouteResult } from '../../types/geo.types';
 
 const DHAKA_CENTER: LatLng = { lat: 23.8103, lng: 90.4125 };
 
@@ -118,9 +119,43 @@ interface MapViewProps {
 }
 
 export function MapView({ pickup, dropoff, driver, user, onMapClick, className = '' }: MapViewProps) {
-  const points = [pickup, dropoff, driver, user].filter((point): point is LatLng => Boolean(point));
+  const [roadRoute, setRoadRoute] = useState<RouteResult | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeUnavailable, setRouteUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (!pickup || !dropoff) {
+      setRoadRoute(null);
+      setRouteLoading(false);
+      setRouteUnavailable(false);
+      return;
+    }
+
+    let cancelled = false;
+    setRoadRoute(null);
+    setRouteLoading(true);
+    setRouteUnavailable(false);
+
+    geoApi.getRoute(pickup, dropoff)
+      .then((result) => {
+        if (!cancelled) setRoadRoute(result);
+      })
+      .catch(() => {
+        if (!cancelled) setRouteUnavailable(true);
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dropoff, pickup]);
+
+  const routePoints = roadRoute?.path.length ? roadRoute.path : [];
+  const points = [...routePoints, pickup, dropoff, driver, user]
+    .filter((point): point is LatLng => Boolean(point));
   const center = points[0] ?? DHAKA_CENTER;
-  const route = [pickup, dropoff].filter((point): point is LatLng => Boolean(point));
 
   return (
     <div className={`relative isolate overflow-hidden bg-surface-alt ${className}`} aria-label="Ride map">
@@ -128,10 +163,17 @@ export function MapView({ pickup, dropoff, driver, user, onMapClick, className =
         <VectorTileLayer />
         <ClickHandler onMapClick={onMapClick} />
         <ViewportController points={points} />
-        {route.length === 2 && (
+        {roadRoute?.alternatives.map((alternative, index) => alternative.path.length > 1 && (
           <Polyline
-            positions={route.map((point) => [point.lat, point.lng])}
-            pathOptions={{ color: 'var(--color-cholo-700)', weight: 5, opacity: 0.8, dashArray: '8 8' }}
+            key={`${alternative.distanceKm}-${alternative.durationMin}-${index}`}
+            positions={alternative.path.map((point) => [point.lat, point.lng])}
+            pathOptions={{ color: '#64748b', weight: 5, opacity: 0.5 }}
+          />
+        ))}
+        {roadRoute && roadRoute.path.length > 1 && (
+          <Polyline
+            positions={roadRoute.path.map((point) => [point.lat, point.lng])}
+            pathOptions={{ color: 'var(--color-cholo-700)', weight: 6, opacity: 0.9 }}
           />
         )}
         {pickup && <Marker position={pickup} icon={markerIcon('pickup')} />}
@@ -139,6 +181,13 @@ export function MapView({ pickup, dropoff, driver, user, onMapClick, className =
         {driver && <Marker position={driver} icon={markerIcon('driver')} />}
         {user && !pickup && <Marker position={user} icon={markerIcon('user')} />}
       </MapContainer>
+      {(routeLoading || roadRoute || routeUnavailable) && (
+        <div className="pointer-events-none absolute right-3 top-3 z-[450] rounded-xl bg-surface/95 px-3 py-2 text-xs font-semibold text-ink-900 shadow-lg">
+          {routeLoading && 'Finding shortest road route…'}
+          {roadRoute && `Shortest route · ${roadRoute.distanceKm} km · ${roadRoute.durationMin} min${roadRoute.alternatives.length ? ` · ${roadRoute.alternatives.length} alternative${roadRoute.alternatives.length > 1 ? 's' : ''}` : ''}`}
+          {routeUnavailable && 'Road route is temporarily unavailable'}
+        </div>
+      )}
     </div>
   );
 }

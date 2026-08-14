@@ -20,6 +20,7 @@ let phoneCounter = 0;
 const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 }; // -> 9.21 km, 9 min
 let routeResponse = DEFAULT_ROUTE;
 let routeShouldFail = false;
+let reverseCountryCode = 'bd';
 const realFetch = globalThis.fetch;
 
 before(async () => {
@@ -48,7 +49,11 @@ before(async () => {
         ok: true,
         json: async () => ({
           code: 'Ok',
-          routes: [{ distance: routeResponse.distanceMeters, duration: routeResponse.durationSeconds }],
+          routes: [{
+            distance: routeResponse.distanceMeters,
+            duration: routeResponse.durationSeconds,
+            geometry: { coordinates: [[90.4078, 23.7925], [90.3742, 23.7461]] },
+          }],
         }),
       };
     }
@@ -56,12 +61,20 @@ before(async () => {
       if (url.includes('/search?')) {
         return {
           ok: true,
-          json: async () => [{ lat: '23.8103', lon: '90.4125', display_name: 'Gulshan, Dhaka, Bangladesh' }],
+          json: async () => [{
+            lat: '23.8103',
+            lon: '90.4125',
+            display_name: 'Gulshan, Dhaka, Bangladesh',
+            address: { country_code: 'bd' },
+          }],
         };
       }
       return {
         ok: true,
-        json: async () => ({ display_name: 'Dhanmondi, Dhaka, Bangladesh' }),
+        json: async () => ({
+          display_name: 'Dhanmondi, Dhaka, Bangladesh',
+          address: { country_code: reverseCountryCode },
+        }),
       };
     }
     return realFetch(url, options);
@@ -80,6 +93,7 @@ afterEach(async () => {
   await databaseClient.query('ROLLBACK TO SAVEPOINT test_savepoint');
   routeResponse = DEFAULT_ROUTE;
   routeShouldFail = false;
+  reverseCountryCode = 'bd';
 });
 
 after(async () => {
@@ -152,6 +166,33 @@ test('GET /geo/geocode and /geo/reverse expose authenticated address lookup', as
   assert.deepEqual((await reversed.json()).data, { address: 'Dhanmondi, Dhaka, Bangladesh' });
 });
 
+test('POST /geo/route returns the shortest road geometry to authenticated users', async () => {
+  const passenger = await createUser();
+  const response = await request('POST', '/geo/route', {
+    accessToken: passenger.accessToken,
+    body: { pickup: PICKUP, dropoff: DROPOFF },
+  });
+
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  assert.equal(data.distanceKm, 9.21);
+  assert.equal(data.durationMin, 9);
+  assert.deepEqual(data.path, [PICKUP, DROPOFF]);
+  assert.deepEqual(data.alternatives, []);
+});
+
+test('reverse geocoding rejects a point Nominatim identifies outside Bangladesh', async () => {
+  const passenger = await createUser();
+  reverseCountryCode = 'in';
+
+  const response = await request('GET', '/geo/reverse?lat=23.7461&lng=90.3742', {
+    accessToken: passenger.accessToken,
+  });
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, 'OUTSIDE_SERVICE_AREA');
+});
+
 test('GET /geo/geocode protects the provider and validates the search query', async () => {
   const unauthenticated = await request('GET', '/geo/geocode?query=Gulshan');
   assert.equal(unauthenticated.status, 401);
@@ -191,6 +232,25 @@ test('POST /rides/quote returns 422 VALIDATION_FAILED for an out-of-range coordi
 
   assert.equal(response.status, 422);
   assert.equal((await response.json()).error.code, 'VALIDATION_FAILED');
+});
+
+test('POST /rides/quote rejects pickup or dropoff outside Bangladesh', async () => {
+  const passenger = await createUser();
+  const cityId = await dhakaCityId();
+  const categoryId = await carCategoryId();
+
+  const response = await request('POST', '/rides/quote', {
+    accessToken: passenger.accessToken,
+    body: {
+      cityId,
+      categoryId,
+      pickup: PICKUP,
+      dropoff: { lat: 28.6139, lng: 77.209 },
+    },
+  });
+
+  assert.equal(response.status, 422);
+  assert.equal((await response.json()).error.code, 'OUTSIDE_SERVICE_AREA');
 });
 
 test('POST /rides/quote returns 422 NO_TARIFF_FOR_MARKET when no pricing_rules row matches', async () => {
