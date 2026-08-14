@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
+import { isRouteInsideBangladesh } from '../utils/bangladeshBoundary.js';
 import * as osmProvider from './providers/osm.provider.js';
 
 // The Geo Abstraction (doc 05-06-07 §8): one interface, providers behind it.
@@ -46,6 +47,31 @@ export function assertWithinServiceArea(...points) {
   }
 }
 
+// These are routing waypoints, not service cities. They sit well inside the
+// national boundary and give a global OSRM graph domestic alternatives when
+// its direct recommendation takes a shorter-looking shortcut through India.
+const DOMESTIC_ROUTING_HUBS = Object.freeze([
+  { lat: 23.8103, lng: 90.4125 }, // Dhaka
+  { lat: 24.8465, lng: 89.3773 }, // Bogura
+  { lat: 24.7471, lng: 90.4203 }, // Mymensingh
+  { lat: 23.4607, lng: 91.1809 }, // Cumilla
+]);
+
+function routeOptions(result) {
+  return [
+    { distanceKm: result.distanceKm, durationMin: result.durationMin, path: result.path },
+    ...(result.alternatives ?? []),
+  ];
+}
+
+function selectShortestDomestic(options) {
+  const domestic = options
+    .filter((option) => isRouteInsideBangladesh(option.path))
+    .sort((left, right) => left.distanceKm - right.distanceKm || left.durationMin - right.durationMin);
+  const [shortest, ...alternatives] = domestic;
+  return shortest ? { ...shortest, alternatives } : null;
+}
+
 function assertBangladeshCountry(countryCode) {
   if (countryCode?.toLowerCase() !== 'bd') {
     throw new AppError(422, 'OUTSIDE_SERVICE_AREA');
@@ -66,7 +92,27 @@ export async function reverseGeocode(lat, lng) {
   return { address: place.address };
 }
 
-export function route(from, to) {
+export async function route(from, to) {
   assertWithinServiceArea(from, to);
-  return currentProvider().route(from, to);
+  const provider = currentProvider();
+  const direct = await provider.route(from, to);
+  const directOptions = routeOptions(direct);
+  const directShortestIsDomestic = isRouteInsideBangladesh(directOptions[0].path);
+
+  // If the provider's own shortest route is domestic, no constrained route
+  // can be shorter. Keep its valid alternatives and avoid extra network work.
+  if (directShortestIsDomestic) return selectShortestDomestic(directOptions);
+
+  // Otherwise ask for inland-via candidates. A global OSRM graph has no
+  // country exclusion flag, so the geometry validator—not provider ranking—
+  // is the final authority. Failed hubs do not hide a valid candidate.
+  const fallbackResults = await Promise.allSettled(
+    DOMESTIC_ROUTING_HUBS.map((hub) => provider.route(from, to, { via: [hub] })),
+  );
+  const fallbackOptions = fallbackResults.flatMap((result) => (
+    result.status === 'fulfilled' ? routeOptions(result.value) : []
+  ));
+  const selected = selectShortestDomestic([...directOptions, ...fallbackOptions]);
+  if (!selected) throw new AppError(422, 'DOMESTIC_ROUTE_NOT_FOUND');
+  return selected;
 }

@@ -33,6 +33,7 @@ export const ERROR_MESSAGES = Object.freeze({
   NO_TARIFF_FOR_MARKET: 'This category is not yet priced in that city.',
   NO_COMMISSION_RULE_FOR_MARKET: 'This category has no commission rule set in that city.',
   ROUTE_NOT_FOUND: 'No route could be found between those two points.',
+  DOMESTIC_ROUTE_NOT_FOUND: 'No driving route that stays entirely inside Bangladesh could be found for those locations.',
   ADDRESS_NOT_FOUND: 'That address could not be found inside Bangladesh.',
   OUTSIDE_SERVICE_AREA: 'Cholo rides are currently available only within Bangladesh. Choose a location inside Bangladesh.',
   GEO_PROVIDER_UNAVAILABLE: 'The mapping service is temporarily unavailable. Please try again.',

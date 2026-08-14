@@ -20,6 +20,8 @@ let phoneCounter = 0;
 const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 }; // -> 9.21 km, 9 min
 let routeResponse = DEFAULT_ROUTE;
 let routeShouldFail = false;
+let directRouteCrossesIndia = false;
+let osrmFetchCount = 0;
 let reverseCountryCode = 'bd';
 const realFetch = globalThis.fetch;
 
@@ -45,6 +47,12 @@ before(async () => {
   mock.method(globalThis, 'fetch', async (url, options) => {
     if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
       if (routeShouldFail) throw new Error('simulated OSRM outage');
+      osrmFetchCount += 1;
+      const encodedCoordinates = url.split('/route/v1/driving/')[1].split('?')[0];
+      const coordinates = encodedCoordinates.split(';').map((pair) => pair.split(',').map(Number));
+      const geometryCoordinates = directRouteCrossesIndia && coordinates.length === 2
+        ? [coordinates[0], [91.2868, 23.8315], coordinates[1]] // Agartala, India
+        : coordinates;
       return {
         ok: true,
         json: async () => ({
@@ -52,7 +60,7 @@ before(async () => {
           routes: [{
             distance: routeResponse.distanceMeters,
             duration: routeResponse.durationSeconds,
-            geometry: { coordinates: [[90.4078, 23.7925], [90.3742, 23.7461]] },
+            geometry: { coordinates: geometryCoordinates },
           }],
         }),
       };
@@ -93,6 +101,8 @@ afterEach(async () => {
   await databaseClient.query('ROLLBACK TO SAVEPOINT test_savepoint');
   routeResponse = DEFAULT_ROUTE;
   routeShouldFail = false;
+  directRouteCrossesIndia = false;
+  osrmFetchCount = 0;
   reverseCountryCode = 'bd';
 });
 
@@ -179,6 +189,22 @@ test('POST /geo/route returns the shortest road geometry to authenticated users'
   assert.equal(data.durationMin, 9);
   assert.deepEqual(data.path, [PICKUP, DROPOFF]);
   assert.deepEqual(data.alternatives, []);
+});
+
+test('POST /geo/route discards a direct India shortcut and returns a Bangladesh-only fallback', async () => {
+  const passenger = await createUser();
+  directRouteCrossesIndia = true;
+
+  const response = await request('POST', '/geo/route', {
+    accessToken: passenger.accessToken,
+    body: { pickup: PICKUP, dropoff: DROPOFF },
+  });
+
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  assert.ok(osrmFetchCount > 1, 'cross-border direct route should trigger inland rerouting');
+  assert.equal(data.path.some((point) => point.lat === 23.8315 && point.lng === 91.2868), false);
+  assert.ok(data.path.length >= 3);
 });
 
 test('reverse geocoding rejects a point Nominatim identifies outside Bangladesh', async () => {

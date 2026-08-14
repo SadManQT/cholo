@@ -29,7 +29,7 @@ const mockValidations = new Map();
 before(async () => {
   mock.method(globalThis, 'fetch', async (url, options) => {
     if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
-      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 10340, duration: 660 }] }) };
+      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 10340, duration: 660, geometry: { coordinates: [[90.3742, 23.7461], [90.4078, 23.7925]] } }] }) };
     }
     if (typeof url === 'string' && url.includes('/gwprocess/v4/api.php')) {
       const body = new URLSearchParams(options.body);

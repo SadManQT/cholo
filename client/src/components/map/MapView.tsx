@@ -181,9 +181,21 @@ export function MapView({ pickup, dropoff, driver, user, onMapClick, className =
         {driver && <Marker position={driver} icon={markerIcon('driver')} />}
         {user && !pickup && <Marker position={user} icon={markerIcon('user')} />}
       </MapContainer>
-      {(routeLoading || roadRoute || routeUnavailable) && (
+      {routeLoading && (
+        <div
+          className="absolute inset-0 z-[650] flex items-center justify-center bg-ink-900/35 p-4 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="w-full max-w-xs rounded-2xl bg-surface p-5 text-center shadow-2xl">
+            <span className="mx-auto block h-10 w-10 animate-spin rounded-full border-4 border-cholo-700/20 border-t-cholo-700" aria-hidden="true" />
+            <p className="mt-4 font-bold text-ink-900">Finding the best route for you…</p>
+            <p className="mt-1 text-sm text-ink-500">Checking the shortest road path that stays inside Bangladesh.</p>
+          </div>
+        </div>
+      )}
+      {(roadRoute || routeUnavailable) && (
         <div className="pointer-events-none absolute right-3 top-3 z-[450] rounded-xl bg-surface/95 px-3 py-2 text-xs font-semibold text-ink-900 shadow-lg">
-          {routeLoading && 'Finding shortest road route…'}
           {roadRoute && `Shortest route · ${roadRoute.distanceKm} km · ${roadRoute.durationMin} min${roadRoute.alternatives.length ? ` · ${roadRoute.alternatives.length} alternative${roadRoute.alternatives.length > 1 ? 's' : ''}` : ''}`}
           {routeUnavailable && 'Road route is temporarily unavailable'}
         </div>

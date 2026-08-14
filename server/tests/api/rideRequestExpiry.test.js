@@ -46,7 +46,7 @@ before(async () => {
         ok: true,
         json: async () => ({
           code: 'Ok',
-          routes: [{ distance: routeResponse.distanceMeters, duration: routeResponse.durationSeconds }],
+          routes: [{ distance: routeResponse.distanceMeters, duration: routeResponse.durationSeconds, geometry: { coordinates: [[90.3742, 23.7461], [90.4078, 23.7925]] } }],
         }),
       };
     }

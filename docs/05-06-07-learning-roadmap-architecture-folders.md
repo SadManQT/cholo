@@ -374,7 +374,7 @@ The maps decision (OSM now, Google when funded) becomes architecture: every geog
 |---|---|---|---|
 | Address → coordinates | `geocode(text)` | Nominatim | Geocoding API |
 | Coordinates → address | `reverseGeocode(lat,lng)` | Nominatim | Geocoding API |
-| Route + distance + ETA + road geometry | `route(from, to)` | OSRM (shortest returned option + available alternatives) | Directions API |
+| Route + distance + ETA + road geometry | `route(from, to)` | OSRM (shortest Bangladesh-only option + available domestic alternatives) | Directions API |
 | Map tiles (frontend) | `<MapView>` component prop | OSM tile server + Leaflet | Google Maps JS |
 
 Switching provider = changing `GEO_PROVIDER=osm|google` in env — no business code changes. This works **because the database stores plain WGS-84 lat/lng** (doc 01 §13.14): the schema never married a vendor. The fare service consumes `route().distanceKm` and neither knows nor cares who measured it.
@@ -382,7 +382,12 @@ Switching provider = changing `GEO_PROVIDER=osm|google` in env — no business c
 Cholo's current service area is Bangladesh. Address search uses the provider's
 hard Bangladesh country filter, reverse-geocoding verifies the returned ISO
 country code, and quote/request/route services reject coordinates outside the
-Bangladesh operational bounds with `OUTSIDE_SERVICE_AREA`.
+Bangladesh operational bounds with `OUTSIDE_SERVICE_AREA`. Route selection also
+validates the full road polyline against a checked-in snapshot of Bangladesh's
+OSM administrative boundary. If OSRM's direct shortest result crosses another
+country, the service tries inland waypoints, selects the shortest valid domestic
+candidate, and otherwise returns `DOMESTIC_ROUTE_NOT_FOUND`; foreign shortcuts
+must never be displayed or used for fare calculation.
 
 ## 9. Development vs Production — The Same App, Two Worlds
 
