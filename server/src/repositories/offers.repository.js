@@ -74,10 +74,11 @@ export async function findPendingForDriver(driverId, offerTimeoutSeconds, client
 
 export async function findByIdForDriver(offerId, driverId, client = pool) {
   const { rows } = await client.query(
-    `SELECT id, request_id AS "requestId", driver_id AS "driverId",
-            response, offered_at AS "offeredAt"
-     FROM ride_offers
-     WHERE id = $1 AND driver_id = $2`,
+    `SELECT ro.id, ro.request_id AS "requestId", ro.driver_id AS "driverId",
+            rr.passenger_id AS "passengerId", ro.response, ro.offered_at AS "offeredAt"
+     FROM ride_offers ro
+     JOIN ride_requests rr ON rr.id = ro.request_id
+     WHERE ro.id = $1 AND ro.driver_id = $2`,
     [offerId, driverId],
   );
 

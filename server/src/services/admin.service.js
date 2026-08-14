@@ -4,6 +4,7 @@ import * as auditRepo from '../repositories/audit.repository.js';
 import * as documentsRepo from '../repositories/documents.repository.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
 import * as vehiclesRepo from '../repositories/vehicles.repository.js';
+import * as sessionsRepo from '../repositories/sessions.repository.js';
 import { AppError } from '../utils/AppError.js';
 
 const REQUIRED_DRIVER_DOCUMENTS = Object.freeze(['license', 'nid', 'photo', 'police_clearance']);
@@ -23,6 +24,127 @@ function hasApprovedRequiredDocuments(documents, requiredTypes) {
 
 function auditContext(adminId, ipAddress) {
   return { actorId: adminId, actorRole: 'ADMIN', ipAddress };
+}
+
+async function requireAccessLevel(adminId, allowed, client) {
+  const level = await adminRepo.getAccessLevel(adminId, client);
+  if (!allowed.includes(level)) throw new AppError(403, 'FORBIDDEN_ACCESS_LEVEL');
+  return level;
+}
+
+export async function getStats(query) {
+  const [stats, trend] = await Promise.all([
+    adminRepo.getDashboardStats(query.cityId),
+    adminRepo.getRevenueTrend(query.cityId),
+  ]);
+  return { ...stats, trend };
+}
+
+export async function listUsers(query) {
+  const rows = await adminRepo.listUsers({
+    ...query,
+    offset: (query.page - 1) * query.limit,
+  });
+  const total = rows[0]?.totalCount ?? 0;
+  return {
+    data: rows.map(({ totalCount: _totalCount, ...row }) => row),
+    meta: { page: query.page, limit: query.limit, total },
+  };
+}
+
+export async function decideUser(adminId, userId, targetStatus, reason, ipAddress) {
+  return withTransaction(async (client) => {
+    const level = await requireAccessLevel(adminId, ['super', 'ops'], client);
+    const user = await adminRepo.findUserForUpdate(userId, client);
+    if (!user) throw new AppError(404, 'USER_NOT_FOUND');
+    if (Number(user.id) === adminId) throw new AppError(409, 'SELF_ADMIN_ACTION');
+    if (user.status === 'deleted') throw new AppError(409, 'USER_DELETED');
+    if (user.status === targetStatus) throw new AppError(409, 'USER_STATUS_UNCHANGED');
+    if (user.roles.includes('ADMIN') && level !== 'super') {
+      throw new AppError(403, 'FORBIDDEN_ACCESS_LEVEL');
+    }
+
+    const updated = await adminRepo.setUserStatus(userId, targetStatus, client);
+    if (targetStatus === 'suspended') {
+      await sessionsRepo.revokeActiveForUser(userId, client);
+      await sessionsRepo.endAllSessionsForUser(userId, client);
+    }
+    await auditRepo.insert({
+      ...auditContext(adminId, ipAddress),
+      action: targetStatus === 'suspended' ? 'USER_SUSPENDED' : 'USER_REINSTATED',
+      entityType: 'users',
+      entityId: userId,
+      oldValue: { status: user.status },
+      newValue: { status: targetStatus, reason },
+    }, client);
+    return updated;
+  });
+}
+
+export async function listPricingRules(query) {
+  const rows = await adminRepo.listPricingRules({
+    ...query,
+    offset: (query.page - 1) * query.limit,
+  });
+  const total = rows[0]?.totalCount ?? 0;
+  return {
+    data: rows.map(({ totalCount: _totalCount, ...row }) => row),
+    meta: { page: query.page, limit: query.limit, total },
+  };
+}
+
+export async function publishPricingRule(adminId, input, ipAddress) {
+  return withTransaction(async (client) => {
+    await requireAccessLevel(adminId, ['super', 'ops'], client);
+    await adminRepo.lockPricingMarket(input.cityId, input.categoryId, client);
+    const overlaps = await adminRepo.findPricingOverlaps(input, client);
+    const newStart = new Date(input.effectiveFrom).getTime();
+    const predecessors = overlaps.filter((rule) => new Date(rule.effectiveFrom).getTime() < newStart);
+    const otherOverlaps = overlaps.filter((rule) => new Date(rule.effectiveFrom).getTime() >= newStart);
+
+    if (predecessors.length > 1 || otherOverlaps.length > 0) {
+      throw new AppError(409, 'PRICING_WINDOW_OVERLAP');
+    }
+
+    // Amounts on an old card are immutable. Ending its validity at the
+    // new card's start is the only metadata change needed to keep the
+    // effective-dated timeline gap-free and non-overlapping.
+    if (predecessors[0]) {
+      await adminRepo.closePricingRule(predecessors[0].id, input.effectiveFrom, client);
+    }
+
+    const created = await adminRepo.insertPricingRule(input, adminId, client);
+    await auditRepo.insert({
+      ...auditContext(adminId, ipAddress),
+      action: 'PRICING_RULE_PUBLISHED',
+      entityType: 'pricing_rules',
+      entityId: created.id,
+      oldValue: predecessors[0] ? { closedRuleId: predecessors[0].id } : null,
+      newValue: created,
+    }, client);
+    return created;
+  });
+}
+
+export async function listVehicles(query) {
+  const rows = await adminRepo.listVehicleApplications({
+    ...query,
+    offset: (query.page - 1) * query.limit,
+  });
+  const total = rows[0]?.totalCount ?? 0;
+  return {
+    data: rows.map(({ totalCount: _totalCount, ...row }) => row),
+    meta: { page: query.page, limit: query.limit, total },
+  };
+}
+
+export async function listAuditLogs(query) {
+  const rows = await auditRepo.list(query);
+  const total = rows[0]?.totalCount ?? 0;
+  return {
+    data: rows.map(({ totalCount: _totalCount, ...row }) => row),
+    meta: { page: query.page, limit: query.limit, total },
+  };
 }
 
 export async function listDrivers(query) {

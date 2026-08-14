@@ -73,6 +73,14 @@ export async function createRequest(passengerId, dto) {
   let request;
   try {
     request = await withTransaction(async (client) => {
+      // This lock is also taken by offer acceptance before it moves the
+      // passenger from a searching request into an active trip. The
+      // cross-table handoff is therefore atomic from a new booking's view.
+      await ridesRepo.lockPassengerBooking(passengerId, client);
+      if (await ridesRepo.hasActiveTrip(passengerId, client)) {
+        throw new AppError(409, 'ACTIVE_REQUEST_EXISTS');
+      }
+
       const inserted = await ridesRepo.insertRequest({
         passengerId,
         cityId,

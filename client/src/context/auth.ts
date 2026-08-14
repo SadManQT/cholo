@@ -6,6 +6,7 @@ export interface AuthContextValue {
   loading: boolean;
   login: (phone: string, password: string) => Promise<User>;
   verifyOtp: (phone: string, otp: string) => Promise<User>;
+  refreshUser: () => Promise<User>;
   logout: () => Promise<void>;
 }
 

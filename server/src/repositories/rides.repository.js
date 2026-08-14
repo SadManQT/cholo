@@ -37,6 +37,14 @@ export async function insertRequest(
   return rows[0];
 }
 
+// Serializes the two transactions that can hand ownership of a passenger's
+// active lifecycle from ride_requests to trips: booking and offer accept.
+// Both callers take this lock before inspecting either table, closing the
+// small cross-table race that a partial UNIQUE index alone cannot cover.
+export async function lockPassengerBooking(passengerId, client) {
+  await client.query(`SELECT pg_advisory_xact_lock($1::bigint)`, [passengerId]);
+}
+
 // The T1 row lock (doc 02-03 §8): whoever gets here first holds this row
 // until COMMIT/ROLLBACK; the second concurrent caller blocks right here,
 // not at the INSERT — that's what makes the race impossible, not just handled.
@@ -115,6 +123,16 @@ export async function markCancelled(requestId, client) {
     `UPDATE ride_requests SET status = 'cancelled', cancelled_at = now() WHERE id = $1`,
     [requestId],
   );
+}
+
+export async function hasActiveTrip(passengerId, client = pool) {
+  const { rowCount } = await client.query(
+    `SELECT 1 FROM trips
+     WHERE passenger_id = $1 AND status IN ('assigned', 'arrived', 'in_progress')
+     LIMIT 1`,
+    [passengerId],
+  );
+  return rowCount > 0;
 }
 
 // jobs/expireRequests.job.js's sweep. No FOR UPDATE needed: a plain UPDATE

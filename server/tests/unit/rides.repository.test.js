@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { after, mock, test } from 'node:test';
 
 import { pool } from '../../src/config/db.js';
-import { expireStaleRequests, insertRequest, markCancelled } from '../../src/repositories/rides.repository.js';
+import {
+  expireStaleRequests,
+  insertRequest,
+  lockPassengerBooking,
+  markCancelled,
+} from '../../src/repositories/rides.repository.js';
 
 after(async () => {
   await pool.end();
@@ -66,6 +71,17 @@ test('markCancelled sets status=cancelled and stamps cancelled_at', async () => 
   });
 
   await markCancelled(38, pool);
+  assert.equal(query.mock.callCount(), 1);
+});
+
+test('lockPassengerBooking takes a transaction-scoped advisory lock for the passenger', async () => {
+  const query = mock.method(pool, 'query', async (sql, values) => {
+    assert.match(sql, /pg_advisory_xact_lock\(\$1::bigint\)/);
+    assert.deepEqual(values, [42]);
+    return { rows: [] };
+  });
+
+  await lockPassengerBooking(42, pool);
   assert.equal(query.mock.callCount(), 1);
 });
 
