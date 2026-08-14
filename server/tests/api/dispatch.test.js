@@ -30,7 +30,7 @@ const realFetch = globalThis.fetch;
 before(async () => {
   mock.method(globalThis, 'fetch', async (url, options) => {
     if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
-      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 9210, duration: 540 }] }) };
+      return { ok: true, json: async () => ({ code: 'Ok', routes: [{ distance: 9210, duration: 540, geometry: { coordinates: [[90.3742, 23.7461], [90.4078, 23.7925]] } }] }) };
     }
     return realFetch(url, options);
   });

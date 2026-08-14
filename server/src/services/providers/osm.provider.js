@@ -24,8 +24,10 @@ async function fetchJson(url, { headers } = {}) {
 
 // route() — OSRM Directions API. distance/duration are what the fare quote
 // is built from (doc 08-09-10 §6 educational skeleton).
-export async function route(from, to) {
-  const coordinates = `${from.lng},${from.lat};${to.lng},${to.lat}`;
+export async function route(from, to, { via = [] } = {}) {
+  const coordinates = [from, ...via, to]
+    .map((point) => `${point.lng},${point.lat}`)
+    .join(';');
   // OSRM ranks routes for its driving profile, but the product requirement
   // here is specifically shortest-by-distance. Ask for alternatives, keep
   // their real road geometry, then sort by distance ourselves. OSRM may

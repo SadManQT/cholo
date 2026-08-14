@@ -64,6 +64,29 @@ test('route() selects the shortest returned road path and keeps other alternativ
   assert.equal(result.alternatives[0].distanceKm, 10.2);
 });
 
+test('route() inserts domestic waypoints between pickup and dropoff when requested', async () => {
+  const fetchMock = mock.method(globalThis, 'fetch', async (url) => {
+    assert.match(url, /90\.1,23\.1;90\.2,23\.2;90\.3,23\.3/);
+    return jsonResponse({
+      code: 'Ok',
+      routes: [{
+        distance: 25_000,
+        duration: 1_800,
+        geometry: { coordinates: [[90.1, 23.1], [90.2, 23.2], [90.3, 23.3]] },
+      }],
+    });
+  });
+
+  const result = await route(
+    { lat: 23.1, lng: 90.1 },
+    { lat: 23.3, lng: 90.3 },
+    { via: [{ lat: 23.2, lng: 90.2 }] },
+  );
+
+  assert.equal(result.path.length, 3);
+  assert.equal(fetchMock.mock.callCount(), 1);
+});
+
 test('route() throws ROUTE_NOT_FOUND when OSRM reports no route', async () => {
   mock.method(globalThis, 'fetch', async () => jsonResponse({ code: 'NoRoute', routes: [] }));
 
