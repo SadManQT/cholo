@@ -25,3 +25,17 @@ test('error logger keeps the stack trace in server logs', () => {
   assert.equal(entry.error, 'diagnostic detail');
   assert.match(entry.stack, /Error: diagnostic detail/);
 });
+
+test('warning logger emits structured safety context', () => {
+  let loggedLine;
+  mock.method(console, 'warn', (line) => {
+    loggedLine = line;
+  });
+
+  logger.warn('Safety alert', { alertId: 42 });
+
+  const entry = JSON.parse(loggedLine);
+  assert.equal(entry.level, 'warn');
+  assert.equal(entry.message, 'Safety alert');
+  assert.equal(entry.alertId, 42);
+});

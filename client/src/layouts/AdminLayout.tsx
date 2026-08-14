@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { to: '/admin/disputes', label: 'Disputes & reports' },
   { to: '/admin/sos', label: 'SOS board' },
   { to: '/admin/audit', label: 'Audit log' },
+  { to: '/admin/support', label: 'Support' },
 ];
 
 // doc 12 §9: admin is desktop-first (sidebar + content), "usable but

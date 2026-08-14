@@ -91,7 +91,7 @@ export async function respondToOffer(driverId, offerId, response) {
     return { id: offerId, response: 'rejected' };
   }
 
-  return acceptOffer(driverId, offer.requestId, offerId);
+  return acceptOffer(driverId, offer.requestId, offerId, offer.passengerId);
 }
 
 // The accept race, doc 02-03 §8 T1 — the exact pattern from doc 08-09-10
@@ -99,7 +99,7 @@ export async function respondToOffer(driverId, offerId, response) {
 // helper (config/db.js) instead of hand-rolled BEGIN/COMMIT/ROLLBACK, since
 // that helper already exists and is what every other multi-step write here
 // uses (driver.service.js, etc).
-async function acceptOffer(driverId, requestId, offerId) {
+async function acceptOffer(driverId, requestId, offerId, requestPassengerId) {
   let trip;
   let passengerId;
   let result;
@@ -112,6 +112,10 @@ async function acceptOffer(driverId, requestId, offerId) {
       // near $1"). set_config(..., true) is the parameterizable equivalent
       // — same LOCAL-to-this-transaction scoping, third arg true = LOCAL.
       await client.query(`SELECT set_config('app.user_id', $1, true)`, [String(driverId)]);
+
+      // Same lock/order as rides.service.js booking: this makes the
+      // request -> trip handoff indivisible to a concurrent new booking.
+      await ridesRepo.lockPassengerBooking(requestPassengerId, client);
 
       // 🔒 row lock: a second driver's accept blocks HERE, not at the INSERT.
       const request = await ridesRepo.findForUpdate(requestId, client);

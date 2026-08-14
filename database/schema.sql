@@ -567,7 +567,7 @@ CREATE INDEX idx_requests_open ON ride_requests (city_id, requested_at)
 -- rides.service.js's createRequest) and must not block booking an
 -- immediate ride today just because a future one is already on the books.
 CREATE UNIQUE INDEX ux_one_active_request_per_passenger ON ride_requests (passenger_id)
-    WHERE status IN ('pending', 'searching', 'matched') AND scheduled_for IS NULL;
+    WHERE status IN ('pending', 'searching') AND scheduled_for IS NULL;
 
 -- ride_offers — associative entity resolving drivers<->requests M:N; the data
 -- behind acceptance rates (doc 01 §13.4)

@@ -23,10 +23,20 @@ const WalletPage = lazy(() => import('./pages/passenger/WalletPage').then((modul
 const EarningsPage = lazy(() => import('./pages/driver/EarningsPage').then((module) => ({ default: module.EarningsPage })));
 const WithdrawalsPage = lazy(() => import('./pages/driver/WithdrawalsPage').then((module) => ({ default: module.WithdrawalsPage })));
 const PayoutsPage = lazy(() => import('./pages/admin/PayoutsPage').then((module) => ({ default: module.PayoutsPage })));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const DriverApprovalsPage = lazy(() => import('./pages/admin/DriverApprovalsPage').then((module) => ({ default: module.DriverApprovalsPage })));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage').then((module) => ({ default: module.UsersPage })));
+const PricingPage = lazy(() => import('./pages/admin/PricingPage').then((module) => ({ default: module.PricingPage })));
+const DisputesPage = lazy(() => import('./pages/admin/DisputesPage').then((module) => ({ default: module.DisputesPage })));
+const SosBoardPage = lazy(() => import('./pages/admin/SosBoardPage').then((module) => ({ default: module.SosBoardPage })));
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage').then((module) => ({ default: module.AuditLogPage })));
+const SupportQueuePage = lazy(() => import('./pages/admin/SupportQueuePage').then((module) => ({ default: module.SupportQueuePage })));
+const SupportPage = lazy(() => import('./pages/shared/SupportPage').then((module) => ({ default: module.SupportPage })));
+const ProfilePage = lazy(() => import('./pages/shared/ProfilePage').then((module) => ({ default: module.ProfilePage })));
 
 // doc 12 §3-7's full page catalog, as code (doc 11 §8: "the sitemap as
-// code"). Auth and the M6 passenger/driver marketplace routes are real;
-// money/admin routes stay as milestone-scoped placeholders for M7/M8.
+// code"). Auth, marketplace, money, and M8 operations routes are real;
+// only explicitly later/out-of-scope catalog items remain placeholders.
 function App() {
   return (
     <>
@@ -68,8 +78,8 @@ function App() {
           <Route path="/wallet/methods" element={<PlaceholderPage title="Payment methods" />} />
           <Route path="/promos" element={<PlaceholderPage title="Promos" />} />
           <Route path="/account/places" element={<PlaceholderPage title="Saved places" />} />
-          <Route path="/account" element={<PlaceholderPage title="Account" />} />
-          <Route path="/support" element={<PlaceholderPage title="Support" />} />
+          <Route path="/account" element={<ProfilePage />} />
+          <Route path="/support" element={<SupportPage />} />
         </Route>
 
         <Route
@@ -88,7 +98,8 @@ function App() {
           <Route path="withdrawals" element={<WithdrawalsPage />} />
           <Route path="trips" element={<TripHistoryPage driverMode />} />
           <Route path="trips/:code" element={<TripDetailPage driverMode />} />
-          <Route path="account" element={<PlaceholderPage title="Account" />} />
+          <Route path="account" element={<ProfilePage driverMode />} />
+          <Route path="support" element={<SupportPage />} />
         </Route>
 
         <Route
@@ -99,16 +110,17 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<PlaceholderPage title="Dashboard" />} />
-          <Route path="drivers" element={<PlaceholderPage title="Driver approvals" />} />
-          <Route path="documents" element={<PlaceholderPage title="Document review" />} />
-          <Route path="users" element={<PlaceholderPage title="Users" />} />
-          <Route path="pricing" element={<PlaceholderPage title="Pricing & surge" />} />
+          <Route index element={<DashboardPage />} />
+          <Route path="drivers" element={<DriverApprovalsPage />} />
+          <Route path="documents" element={<DriverApprovalsPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="pricing" element={<PricingPage />} />
           <Route path="zones" element={<PlaceholderPage title="Zones" />} />
           <Route path="payouts" element={<PayoutsPage />} />
-          <Route path="disputes" element={<PlaceholderPage title="Disputes & reports" />} />
-          <Route path="sos" element={<PlaceholderPage title="SOS board" />} />
-          <Route path="audit" element={<PlaceholderPage title="Audit log" />} />
+          <Route path="disputes" element={<DisputesPage />} />
+          <Route path="sos" element={<SosBoardPage />} />
+          <Route path="audit" element={<AuditLogPage />} />
+          <Route path="support" element={<SupportQueuePage />} />
         </Route>
 
         <Route path="/404" element={<NotFoundPage />} />

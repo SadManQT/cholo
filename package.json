@@ -1,0 +1,9 @@
+{
+  "name": "cholo-monorepo",
+  "private": true,
+  "scripts": {
+    "setup": "npm --prefix server ci && npm --prefix client ci",
+    "test": "npm --prefix server test && npm --prefix client run lint && npm --prefix client run build",
+    "db:init": "npm --prefix server run db:init"
+  }
+}

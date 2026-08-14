@@ -72,7 +72,7 @@ export async function handleWebhook(gatewayName, body) {
     const payment = await paymentsRepo.findByPublicIdForUpdate(verification.tranId, client);
     if (!payment) throw new AppError(401, 'BAD_SIGNATURE'); // tran_id we never issued
 
-    if (payment.status === 'succeeded') {
+    if (payment.status === 'succeeded' || payment.status === 'refunded') {
       return { received: true, settled: false }; // idempotent no-op
     }
 

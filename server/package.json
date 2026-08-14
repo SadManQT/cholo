@@ -8,9 +8,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "db:init": "node scripts/db-init.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "node --import ./tests/setup.js --test"
+    "test": "node --import ./tests/setup.js --test --test-concurrency=1"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "supertest": "^7.2.2"
   }
 }

@@ -22,5 +22,50 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CLIENT_ORIGIN: ${DOCKER_CLIENT_ORIGIN:-http://localhost:4173}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      REFRESH_TTL_DAYS: ${REFRESH_TTL_DAYS:-30}
+      GEO_PROVIDER: ${GEO_PROVIDER:-osm}
+      OSRM_BASE_URL: ${OSRM_BASE_URL:-https://router.project-osrm.org}
+      NOMINATIM_BASE_URL: ${NOMINATIM_BASE_URL:-https://nominatim.openstreetmap.org}
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-sslcommerz}
+      SSLCOMMERZ_BASE_URL: ${SSLCOMMERZ_BASE_URL:-https://sandbox.sslcommerz.com}
+      SSLCOMMERZ_STORE_ID: ${SSLCOMMERZ_STORE_ID:-testbox}
+      SSLCOMMERZ_STORE_PASSWORD: ${SSLCOMMERZ_STORE_PASSWORD:-qwerty}
+      PUBLIC_API_ORIGIN: ${PUBLIC_API_ORIGIN:-http://localhost:3000}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api/v1}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:3000}
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-4173}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   cholo_pgdata:

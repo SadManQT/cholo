@@ -180,6 +180,25 @@ test('BAD_TRANSITION: complete before arrived or started — the exact scenario 
   assert.equal((await response.json()).error.code, 'BAD_TRANSITION');
 });
 
+test('an assigned trip owns the passenger booking slot until the trip becomes terminal', async (t) => {
+  const { passenger } = await createAssignedTrip(t);
+  const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
+
+  const secondBooking = await request('POST', '/ride-requests', {
+    accessToken: passenger.accessToken,
+    body: {
+      cityId: cityRows[0].id,
+      categoryId: 3,
+      pickup: PICKUP,
+      dropoff: DROPOFF,
+      paymentIntent: 'cash',
+    },
+  });
+
+  assert.equal(secondBooking.status, 409);
+  assert.equal((await secondBooking.json()).error.code, 'ACTIVE_REQUEST_EXISTS');
+});
+
 test('BAD_TRANSITION: arrived twice', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
   const first = await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
@@ -479,25 +498,14 @@ test('two of the SAME passenger\'s trips paid the same instant, wallet funded fo
   // trips anyway — see file-level note near createPassenger), but the
   // driver fixtures DO reset back offline via t.after in createOnlineDriver.
   //
-  // ux_one_active_request_per_passenger (schema.sql) blocks a second
-  // ride_request while the first is 'pending'/'searching'/'matched' — and
-  // nothing in rides.repository.js ever moves a request OUT of 'matched'
-  // except cancelTrip's explicit markCancelled. Completing a trip doesn't
-  // touch its ride_request at all, so as the system exists today a
-  // passenger's FIRST ride_request stays 'matched' forever and genuinely
-  // blocks booking a second one — not something this task is fixing, but
-  // real enough that a live passenger would hit it too. Worked around
-  // here (not fixed) by freeing trip A's slot directly, the same way a
-  // cancellation would, so this test can get to two real completed trips
-  // for one passenger and race their /pay calls.
+  // M8 hardening releases a request's unique booking slot at 'matched':
+  // from that point the trips row owns active lifecycle state, and
+  // rides.service.js rejects a new booking only while that trip remains
+  // assigned/arrived/in_progress. Completing A must therefore allow the
+  // same passenger to book B without a direct SQL workaround.
   const passenger = await createPassenger();
   const setupA = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
   const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
-  await pool.query(
-    `UPDATE ride_requests SET status = 'expired' WHERE id = (SELECT request_id FROM trips WHERE trip_code = $1)`,
-    [setupA.tripCode],
-  );
-
   const setupB = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
   const completedB = await completeAssignedTrip(setupB.tripCode, setupB.driver.accessToken);
 

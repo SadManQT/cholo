@@ -14,6 +14,10 @@ export const logger = {
     write(console.info, 'info', message, context);
   },
 
+  warn(message, context = {}) {
+    write(console.warn, 'warn', message, context);
+  },
+
   error(message, error, context = {}) {
     write(console.error, 'error', message, {
       ...context,

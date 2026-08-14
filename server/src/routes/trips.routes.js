@@ -3,6 +3,7 @@ import { Router } from 'express';
 import * as tripsController from '../controllers/trips.controller.js';
 import { auth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
+import { paymentMutationLimiter } from '../middlewares/rateLimit.js';
 import {
   cancelTripSchema,
   completeTripSchema,
@@ -79,6 +80,7 @@ router.post(
 router.post(
   '/:tripCode/pay',
   requireRole('PASSENGER'),
+  paymentMutationLimiter,
   validate(tripCodeParamsSchema, 'params'),
   validate(payTripSchema),
   tripsController.pay,

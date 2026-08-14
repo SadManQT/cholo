@@ -75,3 +75,37 @@ export const resendOtpLimiter = createRateLimiter({
   limit: isTest ? 1000 : 3,
   keyGenerator: phoneAndIpKey,
 });
+
+// Money/session-adjacent mutations are intentionally tighter than normal
+// reads. These limits are independent from business idempotency: a replay
+// still cannot double-charge, while the limiter keeps abusive clients from
+// consuming gateway/database capacity indefinitely.
+export const paymentMutationLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: isTest ? 1000 : 20,
+});
+
+export const bookingLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: isTest ? 1000 : 30,
+});
+
+export const supportMutationLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: isTest ? 1000 : 20,
+});
+
+export const disputeLimiter = createRateLimiter({
+  windowMs: 24 * HOUR,
+  limit: isTest ? 1000 : 10,
+});
+
+export const passwordMutationLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: isTest ? 1000 : 8,
+});
+
+export const adminMutationLimiter = createRateLimiter({
+  windowMs: 15 * MINUTE,
+  limit: isTest ? 1000 : 100,
+});

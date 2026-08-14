@@ -7,12 +7,14 @@ import * as pricingRepo from '../repositories/pricing.repository.js';
 import * as promosRepo from '../repositories/promos.repository.js';
 import * as receiptsRepo from '../repositories/receipts.repository.js';
 import * as ridesRepo from '../repositories/rides.repository.js';
+import * as safetyRepo from '../repositories/safety.repository.js';
 import * as tripsRepo from '../repositories/trips.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
 import { getIO } from '../sockets/index.js';
 import { broadcastTripStatus } from '../sockets/rooms.js';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../utils/logger.js';
 import { computeCommission } from '../utils/commissionMath.js';
 import { quote as computeFare, round2 } from '../utils/fareMath.js';
 import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
@@ -340,7 +342,7 @@ async function loadPayableTrip(passengerId, tripCode, client) {
   // Only a completed trip has a final total_fare to pay — the fare
   // columns are all still 0 (their DEFAULT) before completeTrip runs.
   if (trip.status !== 'completed') throw new AppError(409, 'BAD_TRANSITION');
-  if (trip.paymentStatus === 'paid') throw new AppError(409, 'ALREADY_PAID');
+  if (trip.paymentStatus !== 'unpaid') throw new AppError(409, 'ALREADY_PAID');
   return trip;
 }
 
@@ -664,10 +666,25 @@ export async function sendMessage(userId, tripCode, input) {
 }
 
 export async function triggerSos(userId, tripCode, location) {
-  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
-  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
-  if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) {
-    throw new AppError(409, 'TRIP_CLOSED');
-  }
-  return tripsRepo.insertSosAlert(trip.id, userId, location);
+  const result = await withTransaction(async (client) => {
+    const trip = await tripsRepo.findParticipantTrip(tripCode, userId, client);
+    if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+    if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) {
+      throw new AppError(409, 'TRIP_CLOSED');
+    }
+    const alert = await tripsRepo.insertSosAlert(trip.id, userId, location, client);
+    await safetyRepo.notifyAdmins(alert, userId, client);
+    const contacts = await safetyRepo.listEmergencyContacts(userId, client);
+    return { alert, contacts };
+  });
+
+  // SMS fan-out is a documented v1 scope-cut: log the explicit targets so
+  // the demo proves who would be contacted without pretending a provider
+  // integration exists. The safety row and admin notification are real.
+  logger.warn('SOS triggered — emergency contact fan-out', {
+    alertId: result.alert.id,
+    userId,
+    contacts: result.contacts.map(({ name, phone, priority }) => ({ name, phone, priority })),
+  });
+  return result.alert;
 }

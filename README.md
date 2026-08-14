@@ -14,19 +14,33 @@ A ride-sharing platform for Bangladesh, built as a learning project by two peopl
 git clone <this-repo-url>
 cd cholo
 cp .env.example .env
-docker compose up -d
+docker compose up -d --build
 ```
 
-That starts PostgreSQL 16 in a container and loads `database/schema.sql` plus
-the required roles and vehicle categories from `database/seeds/` automatically
-(only on first boot — see [Resetting the database](#resetting-the-database)
-below).
+That starts the complete stack: PostgreSQL 16, the production Express image,
+and the production React/Nginx image. PostgreSQL loads `database/schema.sql`
+plus required reference data on first boot; the API applies numbered migrations
+before it starts.
+
+Open `http://localhost:4173`. Verify both services:
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:4173/healthz
+```
+
+For hot-reload development, start only PostgreSQL first:
+
+```bash
+docker compose up -d postgres
+```
 
 Install and start the API in a second terminal:
 
 ```bash
 cd server
-npm install
+npm ci
+npm run db:init
 npm run dev
 ```
 
@@ -61,7 +75,7 @@ Install and start the frontend in a third terminal:
 ```bash
 cd client
 cp .env.example .env
-npm install
+npm ci
 npm run dev
 ```
 
@@ -100,15 +114,29 @@ docker compose exec postgres psql -U cholo -d cholo \
   -f /docker-entrypoint-initdb.d/02-seed-reference.sql
 ```
 
-After pulling changes that add files under `database/migrations/`, apply them
-in order to upgrade an existing persistent volume without deleting its data:
+After pulling changes, apply only unrecorded migrations and refresh idempotent
+reference data without deleting your existing volume:
 
 ```bash
-for migration in database/migrations/*.sql; do
-  docker compose exec -T postgres sh -c \
-    'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$migration"
-done
+npm run db:init
 ```
+
+### Demo world
+
+Load the idempotent Nusrat/Rafiq/Ayesha showcase data in local development:
+
+```bash
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U cholo -d cholo \
+  < database/seeds/seed.dev.sql
+```
+
+All three accounts use password `DemoPass123`:
+
+- Passenger Nusrat: `01710000001`
+- Driver Rafiq: `01810000002`
+- Super admin Ayesha: `01510009993`
+
+Never run `seed.dev.sql` against production.
 
 ### Verify it worked
 
@@ -124,11 +152,13 @@ docker compose ps
 docker compose exec postgres psql -U cholo -d cholo -c "\dt"
 ```
 
-You should see **54 tables** listed. To double-check the count directly:
+You should see the **54 application tables** plus `schema_migrations` (the
+deployment runner's one metadata table), for **55 runtime tables**. To
+double-check the application-table count directly:
 
 ```bash
 docker compose exec postgres psql -U cholo -d cholo -t -c \
-  "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';"
+  "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name <> 'schema_migrations';"
 ```
 
 should print `54`.
@@ -171,7 +201,7 @@ cholo/
 │   ├── migrations/        # numbered, append-only upgrades for persistent databases
 │   └── seeds/             # idempotent reference rows required by the API
 ├── docs/                  # the design blueprint (read before changing schema/API/architecture)
-├── docker-compose.yml     # PostgreSQL 16, auto-loads schema.sql
+├── docker-compose.yml     # production-like client + API + PostgreSQL 16 stack
 ├── .env.example           # every env var this project needs, with fake values
 ├── AGENTS.md              # shared conventions for any AI coding agent (Claude Code, Codex, ...)
 ├── CLAUDE.md              # imports AGENTS.md, so Claude Code stays in sync
@@ -192,11 +222,15 @@ cholo/
 ## Status
 
 Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
-**M7 — Money** are complete: auth, driver onboarding/fleet,
+the repository-side **M8 — Admin, Hardening & Launch** work are complete: auth, driver onboarding/fleet,
 pricing/dispatch/ride lifecycle, the real passenger and driver apps with
 Leaflet maps, Socket.io offers/tracking/status, reconnect fallback, chat,
 SOS, and trip history/detail/receipt views, and the full money path — wallet
 + ledger, cash and wallet-paid trips, an SSLCommerz sandbox gateway with an
 idempotent webhook, driver earnings, payout accounts + withdrawals (finance-
-admin approval), and promo validation/redemption + auto-generated receipts.
-The next milestone is **M8 — Admin, Hardening & Launch**.
+admin approval), promo validation/redemption + auto-generated receipts, the
+operational admin console, support/dispute/SOS workflows, targeted abuse
+limits, release tests, full-stack Docker, deploy blueprints, and a seeded demo
+world. The live-deploy checklist remains open until the owners connect their
+Vercel, Render, and payment-provider credentials. See `docs/M8-LAUNCH-GUIDE.md`
+and `docs/M8-VIVA-REHEARSAL.md`.

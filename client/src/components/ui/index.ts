@@ -2,6 +2,7 @@ export { Button } from './Button';
 export { Input } from './Input';
 export { Card } from './Card';
 export { StatusBadge } from './StatusBadge';
+export { StatePill } from './StatePill';
 export type { StatusBadgeStatus } from './StatusBadge';
 export { BottomSheet } from './BottomSheet';
 export type { SnapPoint } from './BottomSheet';
