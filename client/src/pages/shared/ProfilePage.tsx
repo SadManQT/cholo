@@ -4,7 +4,7 @@ import * as meApi from '../../api/me.api';
 import { Button, Card, Input, StatePill, toast } from '../../components/ui';
 import { useAuth } from '../../context/auth';
 import { getApiErrorMessage } from '../../utils/apiError';
-import { formatBDT, formatDate } from '../../utils/format';
+import { formatBDT, formatDateTime } from '../../utils/format';
 
 export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
   const { user, refreshUser, logout } = useAuth();
@@ -102,7 +102,7 @@ export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
           {user.photoUrl ? <img src={user.photoUrl} alt="" className="h-16 w-16 rounded-full object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cholo-700 text-lg font-bold text-white">{initials}</div>}
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold">{user.fullName}</h2>
-            <p className="text-sm text-ink-500">{user.phone} · Joined {formatDate(user.createdAt)}</p>
+            <p className="text-sm text-ink-500">{user.phone} · Joined {formatDateTime(user.createdAt)}</p>
             <div className="mt-2 flex flex-wrap gap-2">{user.roles.map((role) => <StatePill key={role} state={role.toLowerCase()} />)}</div>
           </div>
           <p className="text-sm font-semibold">Wallet {formatBDT(user.wallet.balance)}</p>
