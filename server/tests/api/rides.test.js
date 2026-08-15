@@ -65,23 +65,30 @@ before(async () => {
         }),
       };
     }
-    if (typeof url === 'string' && url.startsWith(env.NOMINATIM_BASE_URL)) {
-      if (url.includes('/search?')) {
+    // GEO_PROVIDER defaults to 'photon' (env.js) — this file exercises
+    // whichever geocoder is actually wired up as the default, same as
+    // OSRM above, rather than pinning to one provider's request shape.
+    if (typeof url === 'string' && url.startsWith(env.PHOTON_BASE_URL)) {
+      if (url.includes('/api/?q=')) {
         return {
           ok: true,
-          json: async () => [{
-            lat: '23.8103',
-            lon: '90.4125',
-            display_name: 'Gulshan, Dhaka, Bangladesh',
-            address: { country_code: 'bd' },
-          }],
+          json: async () => ({
+            features: [{
+              type: 'Feature',
+              properties: { name: 'Gulshan', city: 'Dhaka', countrycode: 'BD' },
+              geometry: { type: 'Point', coordinates: [90.4125, 23.8103] },
+            }],
+          }),
         };
       }
       return {
         ok: true,
         json: async () => ({
-          display_name: 'Dhanmondi, Dhaka, Bangladesh',
-          address: { country_code: reverseCountryCode },
+          features: [{
+            type: 'Feature',
+            properties: { name: 'Dhanmondi', city: 'Dhaka', countrycode: reverseCountryCode },
+            geometry: { type: 'Point', coordinates: [90.3742, 23.7461] },
+          }],
         }),
       };
     }
@@ -168,12 +175,12 @@ test('GET /geo/geocode and /geo/reverse expose authenticated address lookup', as
   assert.deepEqual((await geocoded.json()).data, {
     lat: 23.8103,
     lng: 90.4125,
-    address: 'Gulshan, Dhaka, Bangladesh',
+    address: 'Gulshan, Dhaka',
   });
 
   const reversed = await request('GET', '/geo/reverse?lat=23.7461&lng=90.3742', { accessToken: passenger.accessToken });
   assert.equal(reversed.status, 200);
-  assert.deepEqual((await reversed.json()).data, { address: 'Dhanmondi, Dhaka, Bangladesh' });
+  assert.deepEqual((await reversed.json()).data, { address: 'Dhanmondi, Dhaka' });
 });
 
 test('POST /geo/route returns the shortest road geometry to authenticated users', async () => {

@@ -7,6 +7,11 @@ export async function geocode(query: string) {
   return response.data.data;
 }
 
+export async function search(query: string, signal?: AbortSignal) {
+  const response = await apiClient.get<ApiSuccess<Place[]>>('/geo/search', { params: { query }, signal });
+  return response.data.data;
+}
+
 export async function reverseGeocode(lat: number, lng: number) {
   const response = await apiClient.get<ApiSuccess<{ address: string }>>('/geo/reverse', { params: { lat, lng } });
   return { lat, lng, address: response.data.data.address } satisfies Place;

@@ -19,10 +19,12 @@ const envSchema = z.object({
   REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
   // Geo abstraction (doc 05-06-07 §8): one interface, swappable provider.
-  // Only 'osm' is implemented — 'google' is the documented future adapter.
-  GEO_PROVIDER: z.enum(['osm', 'google']).default('osm'),
+  // 'osm' and 'photon' are implemented — 'google' is the documented future
+  // paid adapter, for whenever OSM-based coverage stops being enough.
+  GEO_PROVIDER: z.enum(['osm', 'photon', 'google']).default('photon'),
   OSRM_BASE_URL: z.string().url().default('https://router.project-osrm.org'),
   NOMINATIM_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
+  PHOTON_BASE_URL: z.string().url().default('https://photon.komoot.io'),
 
   // Payment gateway abstraction (doc 05-06-07 §8's adapter pattern, applied
   // to doc 09 §7/§10.4's gateway sandbox): one interface, swappable
