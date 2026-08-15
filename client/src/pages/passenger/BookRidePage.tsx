@@ -11,6 +11,7 @@ import { BottomSheet, Button, EmptyState, Input, Skeleton, toast } from '../../c
 import type { SnapPoint } from '../../components/ui/BottomSheet';
 import { useSocket } from '../../context/socket';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { usePlaceSuggestions } from '../../hooks/usePlaceSuggestions';
 import type { LatLng, Place } from '../../types/geo.types';
 import type {
   City,
@@ -29,6 +30,32 @@ type LocationField = 'pickup' | 'dropoff';
 
 function locationLabel(field: LocationField) {
   return field === 'pickup' ? 'Pickup' : 'Dropoff';
+}
+
+// onMouseDown (not onClick) fires before the input's onBlur — picking a
+// suggestion this way beats the input's own delayed blur-clear (see the
+// forms below) instead of racing it.
+function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; onSelect: (place: Place) => void }) {
+  if (suggestions.length === 0) return null;
+
+  return (
+    <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-xl border border-border bg-surface shadow-lg">
+      {suggestions.map((place) => (
+        <li key={`${place.lat},${place.lng}`}>
+          <button
+            type="button"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              onSelect(place);
+            }}
+            className="block w-full px-3.5 py-2.5 text-left text-sm text-ink-900 hover:bg-surface-alt"
+          >
+            {place.address}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function BookRidePage() {
@@ -218,6 +245,25 @@ export function BookRidePage() {
 
   const stage = rideRequest ? 'searching' : pickup && dropoff ? 'choosing' : 'idle';
 
+  // enabled=false right after a place is picked (typed Find, tapped a
+  // suggestion, or the current-location autofill) — the query text now
+  // just IS that place's own address, not a fresh thing to search for.
+  const pickupSuggestions = usePlaceSuggestions(pickupQuery, pickup?.address !== pickupQuery);
+  const dropoffSuggestions = usePlaceSuggestions(dropoffQuery, dropoff?.address !== dropoffQuery);
+
+  function selectSuggestion(field: LocationField, place: Place) {
+    if (field === 'pickup') {
+      setPickup(place);
+      setPickupQuery(place.address);
+      pickupSuggestions.clear();
+    } else {
+      setDropoff(place);
+      setDropoffQuery(place.address);
+      dropoffSuggestions.clear();
+    }
+    setMapField(field === 'pickup' ? 'dropoff' : 'pickup');
+  }
+
   async function resolveSearch(field: LocationField, event: FormEvent) {
     event.preventDefault();
     const query = field === 'pickup' ? pickupQuery : dropoffQuery;
@@ -225,14 +271,7 @@ export function BookRidePage() {
     setResolvingField(field);
     try {
       const place = await geoApi.geocode(query);
-      if (field === 'pickup') {
-        setPickup(place);
-        setPickupQuery(place.address);
-      } else {
-        setDropoff(place);
-        setDropoffQuery(place.address);
-      }
-      setMapField(field === 'pickup' ? 'dropoff' : 'pickup');
+      selectSuggestion(field, place);
     } catch (error) {
       toast.error(getApiErrorMessage(error, `Could not find that ${field}.`));
     } finally {
@@ -359,25 +398,31 @@ export function BookRidePage() {
               <p className="text-sm text-ink-500">Search an address or tap the map.</p>
             </div>
 
-            <form onSubmit={(event) => resolveSearch('pickup', event)} className="flex items-end gap-2">
+            <form onSubmit={(event) => resolveSearch('pickup', event)} className="relative flex items-end gap-2">
               <Input
                 label="Pickup"
                 value={pickupQuery}
                 onChange={(event) => setPickupQuery(event.target.value)}
+                onBlur={() => window.setTimeout(pickupSuggestions.clear, 150)}
                 placeholder="Current location or address"
                 containerClassName="min-w-0 flex-1"
+                autoComplete="off"
               />
               <Button type="submit" variant="secondary" loading={resolvingField === 'pickup'} aria-label="Find pickup">Find</Button>
+              <PlaceSuggestionList suggestions={pickupSuggestions.suggestions} onSelect={(place) => selectSuggestion('pickup', place)} />
             </form>
-            <form onSubmit={(event) => resolveSearch('dropoff', event)} className="flex items-end gap-2">
+            <form onSubmit={(event) => resolveSearch('dropoff', event)} className="relative flex items-end gap-2">
               <Input
                 label="Dropoff"
                 value={dropoffQuery}
                 onChange={(event) => setDropoffQuery(event.target.value)}
+                onBlur={() => window.setTimeout(dropoffSuggestions.clear, 150)}
                 placeholder="Where to?"
                 containerClassName="min-w-0 flex-1"
+                autoComplete="off"
               />
               <Button type="submit" variant="secondary" loading={resolvingField === 'dropoff'} aria-label="Find dropoff">Find</Button>
+              <PlaceSuggestionList suggestions={dropoffSuggestions.suggestions} onSelect={(place) => selectSuggestion('dropoff', place)} />
             </form>
 
             {geolocation.state === 'denied' && (
