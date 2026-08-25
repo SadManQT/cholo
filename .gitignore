@@ -14,3 +14,9 @@ coverage/
 
 # OS cruft
 .DS_Store
+
+# machine-specific agent config (hardcoded to this contributor's home dir)
+.codex/
+
+# playwright MCP session artifacts (ephemeral, per-run)
+.playwright-mcp/
