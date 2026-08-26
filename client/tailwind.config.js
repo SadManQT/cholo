@@ -37,6 +37,13 @@ export default {
       fontFamily: {
         sans: ['Inter', '"Noto Sans Bengali"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      // The project's one set of motion curves (animate skill §5) — every
+      // screen extends these, none hand-rolls its own cubic-bezier.
+      transitionTimingFunction: {
+        'cholo-out': 'cubic-bezier(0.23, 1, 0.32, 1)', // entering/exiting
+        'cholo-in-out': 'cubic-bezier(0.77, 0, 0.175, 1)', // moving/morphing on screen
+        'cholo-drawer': 'cubic-bezier(0.32, 0.72, 0, 1)', // iOS-like sheet/drawer curve
+      },
     },
   },
   plugins: [],
