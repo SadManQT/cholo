@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
 
 // doc 11-12 §2.4: "OtpInput | 6 boxes, auto-advance, paste support |
@@ -15,8 +15,37 @@ interface OtpInputProps {
   disabled?: boolean;
 }
 
+// One-off feedback pop on a filled digit — "occasional" tier (once per
+// registration/payout confirm, animate skill §1), WAAPI rather than a CSS
+// class since each box fills at most once per keystroke, nothing to fight.
+function pop(el: HTMLInputElement | null | undefined) {
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  el.animate(
+    [{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }],
+    { duration: 160, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+  );
+}
+
 export function OtpInput({ value, onChange, onComplete, length = 6, error = false, disabled = false }: OtpInputProps) {
   const boxRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  // Shake on a wrong code — state indication, occasional (once per failed
+  // attempt), transform-only, gated by reduced motion.
+  useEffect(() => {
+    if (!error || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    groupRef.current?.animate(
+      [
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(-4px)' },
+        { transform: 'translateX(4px)' },
+        { transform: 'translateX(0)' },
+      ],
+      { duration: 300, easing: 'ease-in-out' },
+    );
+  }, [error]);
 
   function commit(nextValue: string) {
     onChange(nextValue);
@@ -32,8 +61,9 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
     const nextValue = next.join('').slice(0, length);
     commit(nextValue);
 
-    if (digit && index < length - 1) {
-      boxRefs.current[index + 1]?.focus();
+    if (digit) {
+      pop(boxRefs.current[index]);
+      if (index < length - 1) boxRefs.current[index + 1]?.focus();
     }
   }
 
@@ -56,10 +86,15 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
     commit(digits);
     // Focus the box right after the last pasted digit (or the last box if fully filled).
     boxRefs.current[Math.min(digits.length, length - 1)]?.focus();
+    // Stagger the pop across the pasted digits (animate skill RECIPES.md
+    // "stagger a group entrance") instead of every box popping at once.
+    for (let i = 0; i < digits.length; i += 1) {
+      window.setTimeout(() => pop(boxRefs.current[i]), i * 40);
+    }
   }
 
   return (
-    <div className="flex justify-between gap-2" role="group" aria-label="Verification code">
+    <div ref={groupRef} className="flex justify-between gap-2" role="group" aria-label="Verification code">
       {Array.from({ length }, (_, index) => (
         <input
           key={index}
@@ -75,6 +110,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
           autoComplete={index === 0 ? 'one-time-code' : 'off'}
           aria-label={`Digit ${index + 1} of ${length}`}
           className={`h-14 w-11 rounded-xl border text-center text-xl font-semibold text-ink-900 tabular-nums
+                      transition-colors duration-150 ease-cholo-out
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
                       disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-70
                       ${error ? 'border-danger-600 focus-visible:ring-danger-600' : 'border-border focus-visible:ring-cholo-700'}`}
