@@ -4,6 +4,7 @@ import { Card, EmptyState, Skeleton } from '../../components/ui';
 import type { DailyEarning, EarningTripRow } from '../../types/earnings.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDate, formatDateTime } from '../../utils/format';
+import { staggerStyle } from '../../utils/stagger';
 
 // doc 12 §7: "date-range chips" — three fixed presets rather than a full
 // date picker; the backend query is just ?from&to (server/src/validators/
@@ -67,7 +68,7 @@ export function EarningsPage() {
             key={option.days}
             type="button"
             onClick={() => setRangeDays(option.days)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 ease-cholo-out ${
               rangeDays === option.days ? 'bg-cholo-700 text-white' : 'bg-surface-alt text-ink-500 hover:text-ink-900'
             }`}
           >
@@ -109,8 +110,8 @@ export function EarningsPage() {
             <EmptyState title="No earnings in this range" hint="Completed, paid trips will show up here." />
           ) : (
             <div className="mb-6 space-y-2">
-              {daily.map((row) => (
-                <Card key={row.earningDate} className="flex items-center justify-between p-3">
+              {daily.map((row, index) => (
+                <Card key={row.earningDate} className="flex items-center justify-between p-3 animate-stagger-in" style={staggerStyle(index)}>
                   <div>
                     <p className="text-sm font-medium">{formatDate(row.earningDate)}</p>
                     <p className="text-xs text-ink-500">{row.tripsCount} trip{row.tripsCount === 1 ? '' : 's'}</p>
@@ -126,8 +127,8 @@ export function EarningsPage() {
             <EmptyState title="No trips in this range" />
           ) : (
             <div className="space-y-2">
-              {trips.map((row) => (
-                <Card key={row.id} className="p-3">
+              {trips.map((row, index) => (
+                <Card key={row.id} className="p-3 animate-stagger-in" style={staggerStyle(index)}>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{row.tripCode}</p>
                     <p className="font-semibold tabular-nums">{formatBDT(row.netEarning)}</p>
