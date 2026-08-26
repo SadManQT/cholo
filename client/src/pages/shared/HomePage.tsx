@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BikeRiderIllustration } from '../../components/marketing/BikeRiderIllustration';
+import { FeatureTour } from '../../components/marketing/FeatureTour';
+import type { TourFeature } from '../../components/marketing/FeatureTour';
 import { ScrollReveal } from '../../components/marketing/ScrollReveal';
 
 // doc 12 §10: "real <button>" is the rule for actual buttons, but these are
@@ -12,13 +14,43 @@ const CTA_PRIMARY = `${CTA_BASE} bg-cholo-700 text-white hover:bg-cholo-800`;
 const CTA_SECONDARY = `${CTA_BASE} border border-border bg-surface text-ink-900 hover:bg-surface-alt`;
 const CTA_ON_DARK = `${CTA_BASE} border border-white/40 bg-white/10 text-white hover:bg-white/20 focus-visible:ring-offset-cholo-700`;
 
-const FEATURES: Array<{ icon: string; title: string; body: string }> = [
-  { icon: '📍', title: 'Live tracking, start to finish', body: 'Watch your driver glide toward you on the map, in real time — no refreshing, no guessing.' },
-  { icon: '🗺️', title: 'Routes that make sense', body: 'Road-accurate routing that stays on real Bangladesh roads — never a straight line through a building.' },
-  { icon: '💵', title: 'Cash or wallet, your call', body: 'Pay however suits you, with a fare breakdown you can actually read before you ride.' },
-  { icon: '🆘', title: 'Help, one tap away', body: 'A visible SOS button on every ride, with our safety team alerted the moment it’s pressed.' },
-  { icon: '🌐', title: 'বাংলা ও English', body: 'Every screen works in Bangla or English — pick whichever feels like home.' },
-  { icon: '💰', title: 'Earnings you can see', body: 'Drivers get a transparent per-trip breakdown and fast payouts to bKash or Nagad.' },
+const FEATURES: TourFeature[] = [
+  {
+    icon: 'location',
+    accent: 'bg-info-600',
+    title: 'Live tracking, start to finish',
+    body: "Watch your driver's live position update on the map from the moment they accept — the exact same view your driver sees, so you're never left wondering where your ride actually is.",
+  },
+  {
+    icon: 'route',
+    accent: 'bg-cholo-700',
+    title: 'Routes that make sense',
+    body: 'Real, road-accurate routing that stays on actual Bangladesh roads and inside the border — never a straight line through a building, a river, or another country.',
+  },
+  {
+    icon: 'wallet',
+    accent: 'bg-marigold-500',
+    title: 'Pay your way',
+    body: 'Cash, wallet balance, bKash, or Nagad — whichever you prefer. Every fare shows its full breakdown before you confirm, and every taka is recorded to an append-only ledger.',
+  },
+  {
+    icon: 'shield',
+    accent: 'bg-danger-600',
+    title: 'A ride you can trust',
+    body: "Every driver's NID, license, and vehicle documents are reviewed and approved before they can go online. A one-tap SOS button on every ride alerts our safety team instantly, and you can request a women-only driver for extra peace of mind.",
+  },
+  {
+    icon: 'globe',
+    accent: 'bg-ink-900',
+    title: 'বাংলা ও English',
+    body: 'Every screen, every notification, every receipt — available in Bangla or English. Pick whichever feels like home, and switch anytime.',
+  },
+  {
+    icon: 'coin',
+    accent: 'bg-cholo-800',
+    title: 'Earnings you can see',
+    body: 'Drivers get a transparent breakdown on every single trip — gross fare, commission, net earning — plus fast payouts straight to bKash or Nagad, no waiting around.',
+  },
 ];
 
 const STEPS: Array<{ title: string; body: string }> = [
@@ -58,22 +90,12 @@ export function HomePage() {
           <BikeRiderIllustration className="mx-auto h-64 w-full max-w-md sm:h-80" />
         </section>
 
-        <section className="py-12 md:py-20">
+        <section className="pt-12 md:pt-20">
           <ScrollReveal>
             <h2 className="text-center text-2xl font-bold sm:text-3xl">Everything you need for the ride</h2>
           </ScrollReveal>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((feature, index) => (
-              <ScrollReveal key={feature.title} delay={Math.min(index, 5) * 0.05}>
-                <div className="h-full rounded-2xl border border-border bg-surface p-6">
-                  <span className="text-3xl" aria-hidden="true">{feature.icon}</span>
-                  <h3 className="mt-3 font-semibold">{feature.title}</h3>
-                  <p className="mt-1.5 text-sm text-ink-500">{feature.body}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
         </section>
+        <FeatureTour features={FEATURES} />
 
         <section className="py-12 md:py-20">
           <ScrollReveal>
