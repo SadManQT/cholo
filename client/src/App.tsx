@@ -10,6 +10,7 @@ import { PassengerLayout } from './layouts/PassengerLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { OtpVerifyPage } from './pages/auth/OtpVerifyPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { HomePage } from './pages/shared/HomePage';
 import { NotFoundPage } from './pages/shared/NotFoundPage';
 import { PlaceholderPage } from './pages/shared/PlaceholderPage';
 
@@ -42,8 +43,10 @@ function App() {
     <>
       <Suspense fallback={<FullScreenSpinner />}>
         <Routes>
+        {/* Full-bleed marketing page — not the centered AuthLayout card. */}
+        <Route path="/welcome" element={<HomePage />} />
+
         <Route element={<AuthLayout />}>
-          <Route path="/welcome" element={<PlaceholderPage title="Welcome" />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify" element={<OtpVerifyPage />} />
           <Route path="/login" element={<LoginPage />} />

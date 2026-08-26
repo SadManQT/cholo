@@ -18,7 +18,11 @@ export function ProtectedRoute({ roles = [], children }: { roles?: Role[]; child
   const { user, loading } = useAuth();
 
   if (loading) return <FullScreenSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  // doc 12 §3: "Landing / Login / Register / OTP" is one entry funnel before
+  // role-based routing — an anonymous visitor hitting any gated URL lands on
+  // the marketing homepage (with its own Login/Register CTAs), not straight
+  // on the login form.
+  if (!user) return <Navigate to="/welcome" replace />;
 
   const hasRole = roles.length === 0 || roles.some((role) => user.roles.includes(role));
   if (!hasRole) {
