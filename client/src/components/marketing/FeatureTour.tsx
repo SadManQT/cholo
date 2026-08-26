@@ -43,7 +43,17 @@ export function FeatureTour({ features }: FeatureTourProps) {
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-    const observer = new IntersectionObserver(([entry]) => setSectionInView(entry.isIntersecting));
+    // The fixed backdrop covers the full viewport and, being a positioned
+    // element, paints above any preceding *static*-flow content regardless
+    // of DOM order (a plain z-0 still beats z-index:auto) — so triggering
+    // on the section's bare top edge crossing into view made it cover
+    // still-relevant content above it (the trip preview cards) a full
+    // screen too early. Requiring the top edge to reach the viewport's
+    // vertical middle means whatever was above has already scrolled mostly
+    // clear by the time the backdrop takes over.
+    const observer = new IntersectionObserver(([entry]) => setSectionInView(entry.isIntersecting), {
+      rootMargin: '0px 0px -50% 0px',
+    });
     observer.observe(section);
     return () => observer.disconnect();
   }, []);
