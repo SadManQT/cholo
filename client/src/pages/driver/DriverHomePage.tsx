@@ -173,9 +173,9 @@ export function DriverHomePage() {
               aria-checked={online}
               disabled={switching || status.availabilityStatus === 'on_trip'}
               onClick={toggleOnline}
-              className={`relative h-12 w-24 rounded-full p-1 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 ${online ? 'bg-cholo-700 text-white' : 'bg-ink-500/20 text-ink-900'} disabled:opacity-60`}
+              className={`relative h-12 w-24 rounded-full p-1 text-xs font-bold transition-[background-color,color] duration-200 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 ${online ? 'bg-cholo-700 text-white' : 'bg-ink-500/20 text-ink-900'} disabled:opacity-60 disabled:active:scale-100`}
             >
-              <span className={`absolute top-1 h-10 w-10 rounded-full bg-surface shadow transition-transform ${online ? 'translate-x-12' : 'translate-x-0'}`} />
+              <span className={`absolute top-1 h-10 w-10 rounded-full bg-surface shadow transition-transform duration-200 ease-cholo-in-out ${online ? 'translate-x-12' : 'translate-x-0'}`} />
               <span className="relative">{switching ? '…' : online ? 'ON' : 'OFF'}</span>
             </button>
           </div>
