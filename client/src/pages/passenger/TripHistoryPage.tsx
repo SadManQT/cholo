@@ -4,6 +4,7 @@ import { TripRow } from '../../components/ride/TripRow';
 import { Button, EmptyState, Skeleton } from '../../components/ui';
 import type { TripStatus, TripSummary } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { staggerStyle } from '../../utils/stagger';
 
 type HistoryFilter = 'all' | 'active' | 'completed' | 'cancelled';
 
@@ -99,8 +100,10 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
         />
       ) : (
         <div className="space-y-3">
-          {trips.map((trip) => (
-            <TripRow key={trip.publicCode} trip={trip} to={`${detailPath}/${trip.publicCode}`} />
+          {trips.map((trip, index) => (
+            <div key={trip.publicCode} className="animate-stagger-in" style={staggerStyle(index)}>
+              <TripRow trip={trip} to={`${detailPath}/${trip.publicCode}`} />
+            </div>
           ))}
           {error && (
             <EmptyState title="More trips did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(page + 1) }} className="py-6" />
