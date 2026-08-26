@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { BikeRiderIllustration } from '../../components/marketing/BikeRiderIllustration';
+import { BookingPreviewCard } from '../../components/marketing/BookingPreviewCard';
 import { FeatureTour } from '../../components/marketing/FeatureTour';
 import type { TourFeature } from '../../components/marketing/FeatureTour';
 import { ScrollReveal } from '../../components/marketing/ScrollReveal';
+import { TripPreviewCards } from '../../components/marketing/TripPreviewCards';
 
 // doc 12 §10: "real <button>" is the rule for actual buttons, but these are
 // *navigations* (real hrefs, right-clickable, openable in a new tab) — a
@@ -53,6 +55,17 @@ const FEATURES: TourFeature[] = [
   },
 ];
 
+// Feature-based, not fabricated usage numbers — this is a real
+// in-development project, not a live service with a rides/revenue count
+// to report, so a "5M+ rides completed" style stats strip would just be
+// dishonest marketing copy. Everything here is true regardless of how
+// many people have actually used it yet.
+const FACTS: Array<{ value: string; label: string }> = [
+  { value: '3', label: 'ride types — bike, CNG, car' },
+  { value: '2', label: 'languages — বাংলা & English' },
+  { value: '24/7', label: 'SOS safety monitoring' },
+];
+
 const STEPS: Array<{ title: string; body: string }> = [
   { title: 'Tell us where to', body: 'Set your pickup and destination — see your fare before you book.' },
   { title: 'Get matched', body: 'A nearby driver accepts your ride in seconds.' },
@@ -72,22 +85,53 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        <section className="grid items-center gap-10 py-10 md:py-16 lg:grid-cols-2">
-          <div>
-            <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
-              Dhaka's ride,<br />done right.
-            </h1>
-            <p className="mt-4 max-w-md text-lg text-ink-500">
-              Book a bike, CNG, or car in seconds. Track it live. Pay however you like.
-              Cholo is Bangladesh-first, built for real roads and real riders.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={CTA_PRIMARY}>Ride with Cholo</Link>
-              <Link to="/register?intent=driver" className={CTA_SECONDARY}>Drive with Cholo</Link>
+        {/* The bike now rides as a faint background flourish rather than a
+            foreground column — frees up the right column for something
+            more convincing: a live-looking (if illustrative) booking
+            preview, closer to what an actual visitor wants to see first. */}
+        <section className="relative overflow-hidden py-10 md:py-16">
+          <BikeRiderIllustration className="pointer-events-none absolute -right-16 top-1/2 hidden h-[26rem] w-[36rem] -translate-y-1/2 opacity-[0.14] lg:block" />
+          <div className="relative grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
+                Dhaka's ride,<br />done right.
+              </h1>
+              <p className="mt-4 max-w-md text-lg text-ink-500">
+                Book a bike, CNG, or car in seconds. Track it live. Pay however you like.
+                Cholo is Bangladesh-first, built for real roads and real riders.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/register" className={CTA_PRIMARY}>Ride with Cholo</Link>
+                <Link to="/register?intent=driver" className={CTA_SECONDARY}>Drive with Cholo</Link>
+              </div>
+              <BikeRiderIllustration className="mx-auto mt-10 h-48 w-full max-w-sm lg:hidden" />
+            </div>
+
+            <div className="mx-auto w-full max-w-sm lg:mx-0 lg:ml-auto">
+              <BookingPreviewCard />
             </div>
           </div>
+        </section>
 
-          <BikeRiderIllustration className="mx-auto h-64 w-full max-w-md sm:h-80" />
+        <ScrollReveal className="border-y border-border py-8">
+          <div className="grid grid-cols-3 divide-x divide-border text-center">
+            {FACTS.map((fact) => (
+              <div key={fact.label} className="px-2">
+                <p className="text-2xl font-bold tabular-nums text-cholo-700 sm:text-3xl">{fact.value}</p>
+                <p className="mt-1 text-xs text-ink-500 sm:text-sm">{fact.label}</p>
+              </div>
+            ))}
+          </div>
+        </ScrollReveal>
+
+        <section className="py-12 md:py-20">
+          <ScrollReveal>
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl font-bold sm:text-3xl">Your ride, at a glance</h2>
+              <p className="mt-2 text-ink-500">A preview of the real screens — from match to receipt.</p>
+            </div>
+          </ScrollReveal>
+          <TripPreviewCards />
         </section>
 
         <section className="pt-12 md:pt-20">
