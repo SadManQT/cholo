@@ -5,9 +5,13 @@ import { ScrollReveal } from './ScrollReveal';
 // inventing new ones: initials-avatar fallback (ProfilePage), receipt rows
 // (TripDetailPage's fare breakdown), the searching radar's motion-safe
 // pulse convention for the "on trip" live dot.
-export function TripPreviewCards() {
+//
+// `layout="stack"` renders single-column instead of the 3-up grid — used
+// when this sits inside the hero's narrower text column (alongside the
+// sticky booking card) rather than as its own full-width section.
+export function TripPreviewCards({ layout = 'grid' }: { layout?: 'grid' | 'stack' }) {
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className={layout === 'grid' ? 'grid gap-6 md:grid-cols-3' : 'space-y-4'}>
       <ScrollReveal>
         <div className="h-full rounded-2xl border border-border bg-surface p-5 shadow-lg">
           <div className="flex items-center justify-between">
