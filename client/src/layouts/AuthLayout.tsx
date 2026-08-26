@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocation, useOutlet } from 'react-router-dom';
+import { EASE_OUT } from '../utils/motion';
 
 // doc 12 §4: guest/auth screens — "full-screen, phone-first; desktop shows
 // centered card", "single column, one screen, no scroll."
@@ -26,7 +27,7 @@ export function AuthLayout() {
             initial={{ opacity: 0, transform: 'translateY(8px)' }}
             animate={{ opacity: 1, transform: 'translateY(0px)' }}
             exit={{ opacity: 0, transform: 'translateY(-8px)' }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
           >
             {element}
           </motion.div>

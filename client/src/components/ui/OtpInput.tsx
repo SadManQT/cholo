@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
+import { EASE_IN_OUT_CSS, EASE_OUT_CSS } from '../../utils/motion';
 
 // doc 11-12 §2.4: "OtpInput | 6 boxes, auto-advance, paste support |
 // registration, payout confirm." Controlled: the parent owns the full code
@@ -22,7 +23,7 @@ function pop(el: HTMLInputElement | null | undefined) {
   if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   el.animate(
     [{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }],
-    { duration: 160, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+    { duration: 160, easing: EASE_OUT_CSS },
   );
 }
 
@@ -43,7 +44,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
         { transform: 'translateX(4px)' },
         { transform: 'translateX(0)' },
       ],
-      { duration: 300, easing: 'ease-in-out' },
+      { duration: 300, easing: EASE_IN_OUT_CSS },
     );
   }, [error]);
 

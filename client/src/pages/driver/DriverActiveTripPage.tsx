@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as tripsApi from '../../api/trips.api';
@@ -15,6 +16,7 @@ import { useGeolocation } from '../../hooks/useGeolocation';
 import { useRideTracking } from '../../hooks/useRideTracking';
 import type { TripDetail, TripStatus } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { EASE_OUT } from '../../utils/motion';
 
 function actionFor(status: TripStatus) {
   if (status === 'assigned') return { label: 'mark arrived', next: 'arrived' as const };
@@ -138,7 +140,7 @@ export function DriverActiveTripPage() {
       >
         <div className="space-y-4 pb-2">
           <div className="flex items-start justify-between gap-3">
-            <div><p className="text-sm text-ink-500">{trip.publicCode}</p><h1 className="text-xl font-bold">{trip.status === 'in_progress' ? 'Drive to dropoff' : 'Head to pickup'}</h1></div>
+            <div><p className="text-sm text-ink-500">{trip.publicCode}</p><AnimatePresence mode="wait"><motion.h1 key={trip.status} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: EASE_OUT }} className="text-xl font-bold">{trip.status === 'in_progress' ? 'Drive to dropoff' : 'Head to pickup'}</motion.h1></AnimatePresence></div>
             <StatusBadge status={trip.status} />
           </div>
           <TripStatusStepper status={trip.status} />

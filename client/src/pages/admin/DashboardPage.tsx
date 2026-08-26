@@ -77,7 +77,7 @@ export function DashboardPage() {
                   an animated `height`, which would be a layout property. */}
               <div className="h-40 w-full">
                 <div
-                  className="h-full w-full origin-bottom rounded-t-lg bg-cholo-700 transition-transform duration-500 ease-cholo-out"
+                  className="h-full w-full origin-bottom rounded-t-lg bg-cholo-700 transition-transform duration-300 ease-cholo-out"
                   style={{ transform: `scaleY(${Math.max(0.025, Number(row.grossRevenue) / maxGross)})` }}
                   title={`${row.completedTrips} completed trips`}
                 />

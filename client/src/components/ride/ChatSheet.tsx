@@ -1,9 +1,11 @@
+import { motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import * as tripsApi from '../../api/trips.api';
 import type { TripMessage } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
 import { BottomSheet, Button, EmptyState, Input, Skeleton, toast } from '../ui';
 
 const QUICK_REPLIES = ['I am here', 'Coming in 2 minutes', 'Please call me'];
@@ -86,13 +88,19 @@ export function ChatSheet({ open, tripCode, currentUserId, onClose }: ChatSheetP
               {messages.map((message) => {
                 const mine = message.senderId === currentUserId;
                 return (
-                  <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, transform: 'translateY(8px)' }}
+                    animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                    transition={{ duration: 0.2, ease: EASE_OUT }}
+                    className={`flex ${mine ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div className={`max-w-[82%] rounded-2xl px-3 py-2 ${mine ? 'bg-cholo-700 text-white' : 'bg-surface-alt text-ink-900'}`}>
                       {!mine && <p className="mb-0.5 text-xs font-semibold opacity-70">{message.senderName}</p>}
                       <p className="text-sm">{message.body}</p>
                       <p className="mt-1 text-[10px] opacity-70">{formatDateTime(message.sentAt)}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
               <div ref={bottomRef} />

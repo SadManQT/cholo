@@ -9,6 +9,9 @@ interface SlideToConfirmProps {
   onConfirm: () => void;
 }
 
+const THUMB_SIZE_PX = 48; // h-12/w-12
+const THUMB_MARGIN_PX = 4; // left-1/top-1, and the matching gap on the right
+
 // animate skill "drag to dismiss" recipe: settle an interrupted gesture with
 // a spring, not an instant snap — releasing below the threshold used to
 // teleport the thumb back to 0. A confirmed slide (>=92%) still resets
@@ -19,8 +22,23 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
   const [value, setValue] = useState(0);
   const reduceMotion = useReducedMotion();
   const springRef = useRef<AnimationPlaybackControls | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => () => springRef.current?.stop(), []);
+
+  // The thumb's travel distance is a fraction of the *track's* pixel width,
+  // not the thumb's own — a translateX(%) resolves against the element's
+  // own box (animate skill: "percentages in translate() are relative to the
+  // element's own size"), so unlike the fill bar below, this needs a real
+  // measurement rather than a plain percentage.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => setTrackWidth(entries[0].contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function stopSpring() {
     springRef.current?.stop();
@@ -45,12 +63,17 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
     });
   }
 
+  const thumbTravelPx = Math.max(0, trackWidth - THUMB_SIZE_PX - THUMB_MARGIN_PX * 2);
+
   return (
-    <div className="relative h-14 overflow-hidden rounded-2xl bg-cholo-700 shadow-lg">
+    <div ref={trackRef} className="relative h-14 overflow-hidden rounded-2xl bg-cholo-700 shadow-lg">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-16 text-center font-bold text-white">
         {loading ? 'Working…' : `Slide to ${label}`}
       </div>
-      <div className="pointer-events-none absolute inset-y-0 left-0 bg-cholo-800" style={{ width: `${Math.max(14, value)}%` }} />
+      <div
+        className="pointer-events-none absolute inset-0 origin-left bg-cholo-800"
+        style={{ transform: `scaleX(${Math.max(14, value) / 100})` }}
+      />
       <input
         type="range"
         min="0"
@@ -70,7 +93,7 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
       />
       <div
         className="pointer-events-none absolute left-1 top-1 flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-xl font-bold text-cholo-700"
-        style={{ left: `calc(${value}% - ${value * 0.56}px + 4px)` }}
+        style={{ transform: `translateX(${(value / 100) * thumbTravelPx}px)` }}
         aria-hidden="true"
       >
         →

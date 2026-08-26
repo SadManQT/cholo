@@ -23,7 +23,9 @@ import type {
 } from '../../types/ride.types';
 import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
 import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
+import { staggerStyle } from '../../utils/stagger';
 
 const ACTIVE_REQUEST_KEY = 'cholo.activeRideRequest';
 type LocationField = 'pickup' | 'dropoff';
@@ -351,7 +353,7 @@ export function BookRidePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
               className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center"
             >
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-marigold-500/15 motion-safe:animate-pulse">
@@ -373,7 +375,7 @@ export function BookRidePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
               className="space-y-4 pb-2"
             >
             <div>
@@ -424,14 +426,15 @@ export function BookRidePage() {
                     <EmptyState title="No fares available" hint={quoteError} className="py-6" />
                   ) : (
                     <div className="space-y-2">
-                      {categories.filter((category) => quotes[category.id]).map((category) => (
-                        <FareEstimateCard
-                          key={category.id}
-                          category={category}
-                          quote={quotes[category.id]}
-                          selected={category.id === selectedCategoryId}
-                          onSelect={() => setSelectedCategoryId(category.id)}
-                        />
+                      {categories.filter((category) => quotes[category.id]).map((category, index) => (
+                        <div key={category.id} className="animate-stagger-in" style={staggerStyle(index)}>
+                          <FareEstimateCard
+                            category={category}
+                            quote={quotes[category.id]}
+                            selected={category.id === selectedCategoryId}
+                            onSelect={() => setSelectedCategoryId(category.id)}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as tripsApi from '../../api/trips.api';
@@ -15,6 +16,7 @@ import type { TripDetail } from '../../types/ride.types';
 import type { LatLng } from '../../types/geo.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
 
 export function LiveTripPage() {
   const { code } = useParams();
@@ -134,13 +136,22 @@ export function LiveTripPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm text-ink-500">Trip {trip.publicCode}</p>
-              <h1 className="text-xl font-bold">
-                {tracking.status === 'assigned' && 'Driver is on the way'}
-                {tracking.status === 'arrived' && 'Driver has arrived'}
-                {tracking.status === 'in_progress' && 'You are on your way'}
-                {tracking.status === 'completed' && 'Trip complete'}
-                {tracking.status === 'cancelled' && 'Trip cancelled'}
-              </h1>
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={tracking.status}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: EASE_OUT }}
+                  className="text-xl font-bold"
+                >
+                  {tracking.status === 'assigned' && 'Driver is on the way'}
+                  {tracking.status === 'arrived' && 'Driver has arrived'}
+                  {tracking.status === 'in_progress' && 'You are on your way'}
+                  {tracking.status === 'completed' && 'Trip complete'}
+                  {tracking.status === 'cancelled' && 'Trip cancelled'}
+                </motion.h1>
+              </AnimatePresence>
             </div>
             <StatusBadge status={tracking.status} />
           </div>

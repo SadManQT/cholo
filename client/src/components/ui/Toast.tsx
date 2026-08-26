@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useSyncExternalStore } from 'react';
+import { EASE_OUT } from '../../utils/motion';
 import { dismissToast, getToastSnapshot, subscribeToToasts } from './toastStore';
 import type { ToastItem, ToastVariant } from './toastStore';
 
@@ -32,7 +33,7 @@ function ToastRow({ item }: { item: ToastItem }) {
       initial={offscreen}
       animate={{ opacity: 1, transform: 'translateY(0px)' }}
       exit={offscreen}
-      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: 0.2, ease: EASE_OUT }}
       role="status"
       className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border bg-surface p-3.5 shadow-lg ${config.classes}`}
     >

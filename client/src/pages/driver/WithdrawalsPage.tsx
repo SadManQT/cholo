@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import * as driverApi from '../../api/driver.api';
@@ -7,6 +8,7 @@ import type { PayoutAccount, PayoutAccountType, Withdrawal, WithdrawalStatus } f
 import type { Wallet } from '../../types/wallet.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
 import { staggerStyle } from '../../utils/stagger';
 
 // withdrawal_status (schema.sql) is its own enum, separate from ride/trip
@@ -203,34 +205,44 @@ export function WithdrawalsPage() {
           </Button>
         </div>
 
-        {showAddAccount && (
-          <form onSubmit={handleAddAccount} className="mb-4 space-y-3 border-b border-border pb-4 animate-stagger-in">
-            <label className="block text-sm font-medium text-ink-900">
-              Type
-              <select
-                value={accountType}
-                onChange={(event) => setAccountType(event.target.value as PayoutAccountType)}
-                className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
-              >
-                <option value="bkash">bKash</option>
-                <option value="nagad">Nagad</option>
-                <option value="bank">Bank</option>
-              </select>
-            </label>
-            <Input label="Account holder name" value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
-            <Input
-              label={accountType === 'bank' ? 'Account number' : 'Mobile number'}
-              variant={accountType === 'bank' ? 'text' : 'phone'}
-              value={accountNo}
-              onChange={(event) => setAccountNo(event.target.value)}
-              required
-            />
-            {accountType === 'bank' && (
-              <Input label="Bank name" value={bankName} onChange={(event) => setBankName(event.target.value)} required />
-            )}
-            <Button type="submit" loading={savingAccount} className="w-full">Save account</Button>
-          </form>
-        )}
+        <AnimatePresence>
+          {showAddAccount && (
+            <motion.form
+              key="add-account-form"
+              onSubmit={handleAddAccount}
+              initial={{ opacity: 0, transform: 'translateY(-8px)' }}
+              animate={{ opacity: 1, transform: 'translateY(0px)' }}
+              exit={{ opacity: 0, transform: 'translateY(-8px)' }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
+              className="mb-4 space-y-3 border-b border-border pb-4"
+            >
+              <label className="block text-sm font-medium text-ink-900">
+                Type
+                <select
+                  value={accountType}
+                  onChange={(event) => setAccountType(event.target.value as PayoutAccountType)}
+                  className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
+                >
+                  <option value="bkash">bKash</option>
+                  <option value="nagad">Nagad</option>
+                  <option value="bank">Bank</option>
+                </select>
+              </label>
+              <Input label="Account holder name" value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+              <Input
+                label={accountType === 'bank' ? 'Account number' : 'Mobile number'}
+                variant={accountType === 'bank' ? 'text' : 'phone'}
+                value={accountNo}
+                onChange={(event) => setAccountNo(event.target.value)}
+                required
+              />
+              {accountType === 'bank' && (
+                <Input label="Bank name" value={bankName} onChange={(event) => setBankName(event.target.value)} required />
+              )}
+              <Button type="submit" loading={savingAccount} className="w-full">Save account</Button>
+            </motion.form>
+          )}
+        </AnimatePresence>
 
         {accounts.length === 0 ? (
           <p className="text-sm text-ink-500">No payout accounts yet.</p>
