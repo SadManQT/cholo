@@ -7,6 +7,7 @@ import type { PayoutAccount, PayoutAccountType, Withdrawal, WithdrawalStatus } f
 import type { Wallet } from '../../types/wallet.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
+import { staggerStyle } from '../../utils/stagger';
 
 // withdrawal_status (schema.sql) is its own enum, separate from ride/trip
 // status — doc 11-12 §2.1's shared StatusBadge is explicitly scoped to
@@ -203,7 +204,7 @@ export function WithdrawalsPage() {
         </div>
 
         {showAddAccount && (
-          <form onSubmit={handleAddAccount} className="mb-4 space-y-3 border-b border-border pb-4">
+          <form onSubmit={handleAddAccount} className="mb-4 space-y-3 border-b border-border pb-4 animate-stagger-in">
             <label className="block text-sm font-medium text-ink-900">
               Type
               <select
@@ -235,8 +236,8 @@ export function WithdrawalsPage() {
           <p className="text-sm text-ink-500">No payout accounts yet.</p>
         ) : (
           <div className="space-y-2">
-            {accounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between rounded-xl border border-border p-3">
+            {accounts.map((account, index) => (
+              <div key={account.id} className="flex items-center justify-between rounded-xl border border-border p-3 animate-stagger-in" style={staggerStyle(index)}>
                 <div>
                   <p className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[account.accountType]} · {account.accountNoMasked}</p>
                   <p className="text-xs text-ink-500">{account.accountName}{account.bankName ? ` · ${account.bankName}` : ''}</p>
@@ -253,8 +254,8 @@ export function WithdrawalsPage() {
         <EmptyState title="No withdrawals yet" hint="Requests you make will show up here with their review status." />
       ) : (
         <div className="space-y-2">
-          {withdrawals.map((withdrawal) => (
-            <Card key={withdrawal.id} className="p-3">
+          {withdrawals.map((withdrawal, index) => (
+            <Card key={withdrawal.id} className="p-3 animate-stagger-in" style={staggerStyle(index)}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold tabular-nums">{formatBDT(withdrawal.amount)}</p>
