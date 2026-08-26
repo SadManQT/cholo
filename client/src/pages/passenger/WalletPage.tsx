@@ -5,6 +5,7 @@ import { EmptyState, Skeleton } from '../../components/ui';
 import type { Wallet, WalletTransaction } from '../../types/wallet.types';
 import { formatBDT } from '../../utils/format';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { staggerStyle } from '../../utils/stagger';
 
 export function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -86,8 +87,10 @@ export function WalletPage() {
             <EmptyState title="No transactions yet" hint="Trip payments, top-ups, and earnings will show up here." />
           ) : (
             <div className="space-y-3">
-              {transactions.map((txn) => (
-                <WalletTxnRow key={txn.id} txn={txn} />
+              {transactions.map((txn, index) => (
+                <div key={txn.id} className="animate-stagger-in" style={staggerStyle(index)}>
+                  <WalletTxnRow txn={txn} />
+                </div>
               ))}
               {error && (
                 <EmptyState title="More transactions did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(page + 1) }} className="py-6" />

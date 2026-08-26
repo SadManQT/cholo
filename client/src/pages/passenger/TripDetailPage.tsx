@@ -7,6 +7,7 @@ import { Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../co
 import type { TripDetail } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime, formatDistance } from '../../utils/format';
+import { staggerStyle } from '../../utils/stagger';
 
 const FARE_ROWS: Array<{ key: keyof TripDetail['fare']; label: string }> = [
   { key: 'base', label: 'Base fare' },
@@ -137,7 +138,11 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         <h2 className="mb-3 font-semibold">Status history</h2>
         <ol className="space-y-3">
           {trip.history.map((entry, index) => (
-            <li key={`${entry.toStatus}-${entry.changedAt}-${index}`} className="flex gap-3 text-sm">
+            <li
+              key={`${entry.toStatus}-${entry.changedAt}-${index}`}
+              className="flex gap-3 text-sm animate-stagger-in"
+              style={staggerStyle(index)}
+            >
               <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-cholo-700" aria-hidden="true" />
               <div><p className="font-medium capitalize">{entry.toStatus.replace('_', ' ')}</p><p className="text-ink-500">{formatDateTime(entry.changedAt)}</p></div>
             </li>
