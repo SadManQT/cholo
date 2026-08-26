@@ -1,3 +1,4 @@
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useSyncExternalStore } from 'react';
 import { dismissToast, getToastSnapshot, subscribeToToasts } from './toastStore';
 import type { ToastItem, ToastVariant } from './toastStore';
@@ -15,10 +16,23 @@ const VARIANT_CONFIG: Record<ToastVariant, { classes: string; icon: string }> = 
   info: { classes: 'border-info-600/30 text-info-600', icon: 'i' },
 };
 
+// Enter/exit only (feedback + state-indication, doc 12 §2.4) — a toast is
+// dismissed both by the auto-timeout and the ✕ button, and both go through
+// the same dismissToast() call, so AnimatePresence's exit fires either way.
+// Slide+fade, symmetric (exits the way it entered), reduced-motion keeps the
+// fade and drops the slide only — animate skill §7.
 function ToastRow({ item }: { item: ToastItem }) {
   const config = VARIANT_CONFIG[item.variant];
+  const reduceMotion = useReducedMotion();
+  const offscreen = { opacity: 0, transform: reduceMotion ? 'none' : 'translateY(16px)' };
+
   return (
-    <div
+    <motion.div
+      layout
+      initial={offscreen}
+      animate={{ opacity: 1, transform: 'translateY(0px)' }}
+      exit={offscreen}
+      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
       role="status"
       className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border bg-surface p-3.5 shadow-lg ${config.classes}`}
     >
@@ -34,7 +48,7 @@ function ToastRow({ item }: { item: ToastItem }) {
       >
         ✕
       </button>
-    </div>
+    </motion.div>
   );
 }
 
@@ -45,9 +59,11 @@ export function Toaster() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:left-auto sm:right-4 sm:items-end">
-      {items.map((item) => (
-        <ToastRow key={item.id} item={item} />
-      ))}
+      <AnimatePresence>
+        {items.map((item) => (
+          <ToastRow key={item.id} item={item} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
