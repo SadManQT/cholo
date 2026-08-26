@@ -17,6 +17,7 @@ export function OtpVerifyPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const phone = searchParams.get('phone');
+  const intent = searchParams.get('intent');
 
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +46,9 @@ export function OtpVerifyPage() {
     try {
       const user = await verifyOtp(phone!, otp);
       toast.success('Welcome to Cholo!');
-      navigate(roleHomePath(user.roles), { replace: true });
+      // "Drive with Cholo" on the homepage set this — there's no driver
+      // role yet at this point, just the intent to apply for one.
+      navigate(intent === 'driver' ? '/driver/apply' : roleHomePath(user.roles), { replace: true });
     } catch (thrown) {
       const message = getApiErrorMessage(thrown, 'Could not verify that code. Please try again.');
       setError(message);
