@@ -43,7 +43,7 @@ export function Card({ variant = 'flat', selected = false, className = '', child
 
   const { ...divProps } = props as HTMLAttributes<HTMLDivElement>;
   return (
-    <div className={`${shared} transition-colors ${className}`} {...divProps}>
+    <div className={`${shared} transition-colors duration-150 ease-cholo-out ${className}`} {...divProps}>
       {children}
     </div>
   );

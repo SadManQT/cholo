@@ -1,9 +1,12 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import * as adminApi from '../../api/admin.api';
 import { Button, Card, EmptyState, Input, Skeleton, toast } from '../../components/ui';
 import type { WithdrawalQueueRow } from '../../types/earnings.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
+import { staggerDelaySeconds } from '../../utils/stagger';
 
 const ACCOUNT_TYPE_LABELS = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank' } as const;
 
@@ -83,8 +86,16 @@ export function PayoutsPage() {
         <EmptyState title="Nothing to review" hint="Every requested withdrawal has been reviewed." />
       ) : (
         <div className="space-y-3">
-          {rows.map((row) => (
-            <Card key={row.id} className="p-4">
+          <AnimatePresence>
+          {rows.map((row, index) => (
+            <motion.div
+              key={row.id}
+              layout
+              initial={{ opacity: 0, transform: 'translateY(8px)' }}
+              animate={{ opacity: 1, transform: 'translateY(0px)', transition: { duration: 0.2, ease: EASE_OUT, delay: staggerDelaySeconds(index) } }}
+              exit={{ opacity: 0, transform: 'translateY(-8px)', transition: { duration: 0.2, ease: EASE_OUT } }}
+            >
+            <Card className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{row.driverName} · {row.driverPhone}</p>
@@ -139,7 +150,9 @@ export function PayoutsPage() {
                 </div>
               )}
             </Card>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { AnimationPlaybackControls } from 'motion';
 import type { PointerEvent, ReactNode } from 'react';
+import { EASE_DRAWER } from '../../utils/motion';
 
 // doc 11-12 §2.4: "BottomSheet | snap points: peek / half / full · drag
 // handle | booking flow, trip actions, confirmations." §1: "the map is the
@@ -18,10 +19,8 @@ const SNAP_FRACTIONS: Record<SnapPoint, number> = {
 const SNAP_ORDER: SnapPoint[] = ['peek', 'half', 'full'];
 const DISMISS_DRAG_PX = 80; // dragging this far below "peek" closes the sheet
 const FLICK_VELOCITY_PX_S = 500; // above this, honor the flick's direction over nearest-distance
-// animate skill §5 drawer curve, as cubic-bezier control points for Motion's
-// spring-less tween. 350ms rather than the recipe's 500ms — sheets like the
+// 350ms rather than the animate skill drawer recipe's 500ms — sheets like the
 // driver Offer Sheet are a 15-second decision; a slower entrance eats into it.
-const DRAWER_EASE: [number, number, number, number] = [0.32, 0.72, 0, 1];
 const ENTRANCE_DURATION_S = 0.35;
 
 // iOS-style rubber band: resistance rises the further a drag pushes past a
@@ -42,6 +41,11 @@ interface BottomSheetProps {
 
 export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, children, className = '' }: BottomSheetProps) {
   const reduceMotion = useReducedMotion();
+  // "visiblePx" — how much of the sheet pokes above the viewport bottom.
+  // The sheet's own box is always a fixed heightPxFor('full') tall (below,
+  // in the JSX); this state drives a `translateY` that pushes the box down
+  // by (full - visiblePx), never the box's actual `height` — animate skill
+  // §5: height/top/left are layout properties, transform is not.
   const [heightPx, setHeightPx] = useState(0);
   const controls = useRef<AnimationPlaybackControls | null>(null);
   const dragStart = useRef<{ y: number; heightPx: number } | null>(null);
@@ -70,7 +74,7 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
     controls.current?.stop();
     controls.current = animate(0, target, {
       duration: ENTRANCE_DURATION_S,
-      ease: DRAWER_EASE,
+      ease: EASE_DRAWER,
       onUpdate: setHeightPx,
     });
     return () => controls.current?.stop();
@@ -192,6 +196,8 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
     onSnapPointChange(target);
   }
 
+  const fullPx = heightPxFor('full');
+
   return (
     <>
       <div
@@ -204,8 +210,8 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
       <div
         role="dialog"
         aria-modal={snapPoint === 'full'}
-        style={{ height: `${heightPx}px` }}
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg ${className}`}
+        style={{ height: `${fullPx}px`, transform: `translateY(${fullPx - heightPx}px)` }}
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
       >
         <div
           onPointerDown={handlePointerDown}
