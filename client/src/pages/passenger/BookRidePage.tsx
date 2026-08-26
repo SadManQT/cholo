@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -337,8 +338,22 @@ export function BookRidePage() {
           </div>
         ) : referenceError ? (
           <EmptyState title="Ride options did not load" hint={referenceError} action={{ label: 'Retry', onClick: loadReferences }} />
-        ) : stage === 'searching' && rideRequest ? (
-          <div className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center">
+        ) : (
+          // Cross-fade between the form/fare-list stage and the searching
+          // stage — they differ enough in layout (top-aligned form vs.
+          // centered radar) that a shared-element move would look wrong;
+          // a plain opacity swap is the "preventing a jarring change" fix
+          // (animate skill §2). mode="wait" avoids the two overlapping.
+          <AnimatePresence mode="wait">
+          {stage === 'searching' && rideRequest ? (
+            <motion.div
+              key="searching"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center"
+            >
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-marigold-500/15 motion-safe:animate-pulse">
               <span className="text-3xl" aria-hidden="true">📡</span>
             </div>
@@ -351,9 +366,16 @@ export function BookRidePage() {
             <Button variant="danger" loading={cancelling} onClick={cancelSearching} className="w-full">
               Cancel request
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-4 pb-2">
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="space-y-4 pb-2"
+            >
             <div>
               <h1 className="text-xl font-bold">Where are you going?</h1>
               <p className="text-sm text-ink-500">Search an address or tap the map.</p>
@@ -455,7 +477,9 @@ export function BookRidePage() {
                 </Button>
               </>
             )}
-          </div>
+            </motion.div>
+          )}
+          </AnimatePresence>
         )}
       </BottomSheet>
     </main>
