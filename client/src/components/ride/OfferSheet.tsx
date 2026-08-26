@@ -65,8 +65,8 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-border">
             <div
-              className={`h-full transition-[width] duration-1000 ${urgent ? 'bg-danger-600' : 'bg-marigold-500'}`}
-              style={{ width: `${percent}%` }}
+              className={`h-full w-full origin-left transition-transform duration-1000 ease-linear ${urgent ? 'bg-danger-600' : 'bg-marigold-500'}`}
+              style={{ transform: `scaleX(${percent / 100})` }}
             />
           </div>
         </div>

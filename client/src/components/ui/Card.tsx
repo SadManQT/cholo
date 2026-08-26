@@ -21,7 +21,7 @@ type CardProps =
 // never a <div onClick> — free keyboard/focus/role handling instead of
 // reinventing it per card.
 export function Card({ variant = 'flat', selected = false, className = '', children, ...props }: CardProps) {
-  const shared = `rounded-xl border p-4 text-left transition-colors
+  const shared = `rounded-xl border p-4 text-left
                    ${selected ? 'border-cholo-700 bg-cholo-50' : 'border-border bg-surface'}`;
 
   if (variant === 'interactive') {
@@ -30,6 +30,7 @@ export function Card({ variant = 'flat', selected = false, className = '', child
       <button
         type="button"
         className={`w-full cursor-pointer ${shared}
+                    transition-[color,background-color,border-color,transform] duration-150 ease-cholo-out active:scale-[0.98]
                     hover:border-cholo-700/50
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2
                     ${className}`}
@@ -42,7 +43,7 @@ export function Card({ variant = 'flat', selected = false, className = '', child
 
   const { ...divProps } = props as HTMLAttributes<HTMLDivElement>;
   return (
-    <div className={`${shared} ${className}`} {...divProps}>
+    <div className={`${shared} transition-colors ${className}`} {...divProps}>
       {children}
     </div>
   );
