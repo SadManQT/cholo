@@ -1,10 +1,14 @@
+import { motion, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BikeRiderIllustration } from '../../components/marketing/BikeRiderIllustration';
 import { BookingPreviewCard } from '../../components/marketing/BookingPreviewCard';
 import { FeatureTour } from '../../components/marketing/FeatureTour';
 import type { TourFeature } from '../../components/marketing/FeatureTour';
 import { ScrollReveal } from '../../components/marketing/ScrollReveal';
 import { TripPreviewCards } from '../../components/marketing/TripPreviewCards';
+import { UpcomingFeatures } from '../../components/marketing/UpcomingFeatures';
+import type { UpcomingFeature } from '../../components/marketing/UpcomingFeatures';
+import { EASE_IN_OUT } from '../../utils/motion';
 
 // doc 12 §10: "real <button>" is the rule for actual buttons, but these are
 // *navigations* (real hrefs, right-clickable, openable in a new tab) — a
@@ -20,38 +24,61 @@ const FEATURES: TourFeature[] = [
   {
     icon: 'location',
     accent: 'bg-info-600',
-    title: 'Live tracking, start to finish',
-    body: "Watch your driver's live position update on the map from the moment they accept — the exact same view your driver sees, so you're never left wondering where your ride actually is.",
+    title: 'Watch it happen, live',
+    body: "Your driver's exact position, updating in real time from the moment they accept — the same view they see. No refreshing, no guessing, no \"where are you?\" texts.",
   },
   {
     icon: 'route',
     accent: 'bg-cholo-700',
-    title: 'Routes that make sense',
-    body: 'Real, road-accurate routing that stays on actual Bangladesh roads and inside the border — never a straight line through a building, a river, or another country.',
+    title: 'Routes that actually make sense',
+    body: "Real road-accurate routing, built for Bangladesh's streets — never a straight line through a building, a river, or across a border.",
   },
   {
     icon: 'wallet',
     accent: 'bg-marigold-500',
-    title: 'Pay your way',
-    body: 'Cash, wallet balance, bKash, or Nagad — whichever you prefer. Every fare shows its full breakdown before you confirm, and every taka is recorded to an append-only ledger.',
+    title: 'Pay however works for you',
+    body: 'Cash, wallet, bKash, or Nagad — your call. Every fare is broken down before you confirm, and every taka is logged, permanently, so nothing goes missing.',
   },
   {
     icon: 'shield',
     accent: 'bg-danger-600',
-    title: 'A ride you can trust',
-    body: "Every driver's NID, license, and vehicle documents are reviewed and approved before they can go online. A one-tap SOS button on every ride alerts our safety team instantly, and you can request a women-only driver for extra peace of mind.",
+    title: 'Ride with total peace of mind',
+    body: "Every driver is ID-verified before they can go online. One tap sends an SOS straight to our safety team, and you can request a women-only driver whenever you'd like.",
   },
   {
     icon: 'globe',
     accent: 'bg-ink-900',
-    title: 'বাংলা ও English',
-    body: 'Every screen, every notification, every receipt — available in Bangla or English. Pick whichever feels like home, and switch anytime.',
+    title: 'Speaks your language',
+    body: 'বাংলা or English, your choice, everywhere — every screen, every notification, every receipt. Switch anytime, no settings hunt required.',
   },
   {
     icon: 'coin',
     accent: 'bg-cholo-800',
-    title: 'Earnings you can see',
-    body: 'Drivers get a transparent breakdown on every single trip — gross fare, commission, net earning — plus fast payouts straight to bKash or Nagad, no waiting around.',
+    title: 'Earn on your terms',
+    body: 'See exactly what you make on every trip — gross, commission, net, no fine print — then cash out to bKash or Nagad whenever you need it.',
+  },
+];
+
+// Real roadmap items, not shipped yet — kept visually distinct (see
+// UpcomingFeatures) so the page never implies these already work.
+const UPCOMING: UpcomingFeature[] = [
+  {
+    icon: 'clock',
+    accent: 'bg-info-600',
+    title: 'Book ahead',
+    body: "Got a flight or an early meeting? Lock in your ride a day, or a week, in advance — no need to book the moment you walk out the door.",
+  },
+  {
+    icon: 'users',
+    accent: 'bg-marigold-500',
+    title: 'Split the ride, split the fare',
+    body: 'Heading the same way as someone else? Share the trip and the cost, automatically split down the middle.',
+  },
+  {
+    icon: 'route',
+    accent: 'bg-cholo-700',
+    title: 'More than one stop',
+    body: 'Need to grab something on the way, or drop a friend off first? Add extra stops to a single trip instead of booking twice.',
   },
 ];
 
@@ -73,6 +100,22 @@ const STEPS: Array<{ title: string; body: string }> = [
   { title: 'Arrive, pay, rate', body: 'Cash or wallet — then rate your trip.' },
 ];
 
+// A slow, continuous idle float — "delight" tier (animate skill §1: rare/
+// first-time viewing, a marketing hero earns more than the restrained
+// motion the rest of the app uses). Kept to opacity-safe transform only,
+// and settles to a fixed pose rather than disappearing under reduced motion.
+function FloatingCard({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      animate={{ y: reduceMotion ? 0 : [0, -10, 0] }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 4, repeat: Infinity, ease: EASE_IN_OUT }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export function HomePage() {
   return (
     <div className="min-h-screen bg-surface-alt text-ink-900">
@@ -85,53 +128,52 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        {/* The bike now rides as a faint background flourish rather than a
-            foreground column — frees up the right column for something
-            more convincing: a live-looking (if illustrative) booking
-            preview, closer to what an actual visitor wants to see first. */}
-        <section className="relative overflow-hidden py-10 md:py-16">
-          <BikeRiderIllustration className="pointer-events-none absolute -right-16 top-1/2 hidden h-[26rem] w-[36rem] -translate-y-1/2 opacity-[0.14] lg:block" />
-          <div className="relative grid items-center gap-10 lg:grid-cols-2">
-            <div>
-              <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
-                Dhaka's ride,<br />done right.
-              </h1>
-              <p className="mt-4 max-w-md text-lg text-ink-500">
-                Book a bike, CNG, or car in seconds. Track it live. Pay however you like.
-                Cholo is Bangladesh-first, built for real roads and real riders.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/register" className={CTA_PRIMARY}>Ride with Cholo</Link>
-                <Link to="/register?intent=driver" className={CTA_SECONDARY}>Drive with Cholo</Link>
-              </div>
-              <BikeRiderIllustration className="mx-auto mt-10 h-48 w-full max-w-sm lg:hidden" />
+        {/* The booking card is the one visual now — sticky alongside the
+            left column on desktop (self-start, not the grid's default
+            stretch/center, is what lets it hold position while the taller
+            column scrolls past) so it's "seen throughout" this section
+            instead of disappearing the moment you scroll past the
+            headline. Gently floating, not static, but it settles — see
+            FloatingCard below. */}
+        <section className="relative grid gap-10 py-10 md:py-16 lg:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
+              Dhaka's ride,<br />done right.
+            </h1>
+            <p className="mt-4 max-w-md text-lg text-ink-500">
+              Book a bike, CNG, or car in seconds. Track it live. Pay however you like.
+              Cholo is Bangladesh-first, built for real roads and real riders.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/register" className={CTA_PRIMARY}>Ride with Cholo</Link>
+              <Link to="/register?intent=driver" className={CTA_SECONDARY}>Drive with Cholo</Link>
             </div>
 
-            <div className="mx-auto w-full max-w-sm lg:mx-0 lg:ml-auto">
+            <div className="mt-16 grid grid-cols-3 divide-x divide-border border-y border-border py-6">
+              {FACTS.map((fact) => (
+                <div key={fact.label} className="px-2 text-center">
+                  <p className="text-2xl font-bold tabular-nums text-cholo-700 sm:text-3xl">{fact.value}</p>
+                  <p className="mt-1 text-xs text-ink-500 sm:text-sm">{fact.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-16">
+              <ScrollReveal>
+                <h2 className="text-2xl font-bold sm:text-3xl">Your ride, at a glance</h2>
+                <p className="mt-2 text-ink-500">A preview of the real screens — from match to receipt.</p>
+              </ScrollReveal>
+              <div className="mt-6">
+                <TripPreviewCards layout="stack" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-sm lg:sticky lg:top-24 lg:mx-0 lg:ml-auto lg:self-start">
+            <FloatingCard>
               <BookingPreviewCard />
-            </div>
+            </FloatingCard>
           </div>
-        </section>
-
-        <ScrollReveal className="border-y border-border py-8">
-          <div className="grid grid-cols-3 divide-x divide-border text-center">
-            {FACTS.map((fact) => (
-              <div key={fact.label} className="px-2">
-                <p className="text-2xl font-bold tabular-nums text-cholo-700 sm:text-3xl">{fact.value}</p>
-                <p className="mt-1 text-xs text-ink-500 sm:text-sm">{fact.label}</p>
-              </div>
-            ))}
-          </div>
-        </ScrollReveal>
-
-        <section className="py-12 md:py-20">
-          <ScrollReveal>
-            <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold sm:text-3xl">Your ride, at a glance</h2>
-              <p className="mt-2 text-ink-500">A preview of the real screens — from match to receipt.</p>
-            </div>
-          </ScrollReveal>
-          <TripPreviewCards />
         </section>
 
         <section className="pt-12 md:pt-20">
@@ -140,6 +182,16 @@ export function HomePage() {
           </ScrollReveal>
         </section>
         <FeatureTour features={FEATURES} />
+
+        <section className="py-12 md:py-20">
+          <ScrollReveal>
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl font-bold sm:text-3xl">What's coming next</h2>
+              <p className="mt-2 text-ink-500">On the roadmap — not live yet, but on the way.</p>
+            </div>
+          </ScrollReveal>
+          <UpcomingFeatures features={UPCOMING} />
+        </section>
 
         <section className="py-12 md:py-20">
           <ScrollReveal>

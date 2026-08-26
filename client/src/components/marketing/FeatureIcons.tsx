@@ -63,3 +63,22 @@ export function CoinIcon({ className }: IconProps) {
   );
 }
 
+export function ClockIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <circle {...BASE} cx={12} cy={12} r={8.5} />
+      <path {...BASE} d="M12 7.5V12l3.2 2" />
+    </svg>
+  );
+}
+
+export function UsersIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <circle {...BASE} cx={9} cy={9} r={3} />
+      <path {...BASE} d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5" />
+      <path {...BASE} d="M15.5 6.2c1.3.3 2.3 1.5 2.3 2.9 0 1.4-.9 2.5-2.2 2.9M17.8 14.7c2 .6 3.3 2 3.9 4.3" />
+    </svg>
+  );
+}
+
