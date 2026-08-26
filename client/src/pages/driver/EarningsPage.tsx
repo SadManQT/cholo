@@ -68,7 +68,7 @@ export function EarningsPage() {
             key={option.days}
             type="button"
             onClick={() => setRangeDays(option.days)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-150 ease-cholo-out ${
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-[color,background-color,transform] duration-150 ease-cholo-out active:scale-[0.97] ${
               rangeDays === option.days ? 'bg-cholo-700 text-white' : 'bg-surface-alt text-ink-500 hover:text-ink-900'
             }`}
           >

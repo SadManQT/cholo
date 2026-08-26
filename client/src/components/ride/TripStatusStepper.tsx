@@ -22,15 +22,15 @@ export function TripStatusStepper({ status }: { status: TripStatus }) {
           <li key={step.status} className="relative flex flex-1 flex-col items-center gap-1 text-center">
             {index > 0 && (
               <span
-                className={`absolute right-1/2 top-2.5 h-0.5 w-full ${index <= currentIndex ? 'bg-cholo-700' : 'bg-border'}`}
+                className={`absolute right-1/2 top-2.5 h-0.5 w-full transition-colors duration-300 ease-cholo-out ${index <= currentIndex ? 'bg-cholo-700' : 'bg-border'}`}
                 aria-hidden="true"
               />
             )}
             <span
-              className={`relative z-10 h-5 w-5 rounded-full border-2 ${complete ? 'border-cholo-700 bg-cholo-700' : 'border-border bg-surface'}`}
+              className={`relative z-10 h-5 w-5 rounded-full border-2 transition-colors duration-300 ease-cholo-out ${complete ? 'border-cholo-700 bg-cholo-700' : 'border-border bg-surface'}`}
               aria-hidden="true"
             />
-            <span className={`text-xs ${complete ? 'font-semibold text-cholo-700' : 'text-ink-500'}`}>{step.label}</span>
+            <span className={`text-xs transition-colors duration-300 ease-cholo-out ${complete ? 'font-semibold text-cholo-700' : 'text-ink-500'}`}>{step.label}</span>
           </li>
         );
       })}

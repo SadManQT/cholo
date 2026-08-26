@@ -1,9 +1,12 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import * as adminApi from '../../api/admin.api';
 import { Button, Card, EmptyState, Skeleton, StatePill, toast } from '../../components/ui';
 import type { DriverApplication, ReviewDocument, VehicleApplication } from '../../types/admin.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
+import { EASE_OUT } from '../../utils/motion';
+import { staggerDelaySeconds } from '../../utils/stagger';
 
 function DocumentRows({ documents, vehicle, busy, onDone }: { documents: ReviewDocument[]; vehicle: boolean; busy: string | null; onDone: () => void }) {
   async function decide(document: ReviewDocument, status: 'approved' | 'rejected') {
@@ -59,15 +62,17 @@ export function DriverApprovalsPage() {
     <div><h1 className="text-2xl font-bold">Approval queue</h1><p className="text-sm text-ink-500">Review every required document before approving a profile.</p></div>
     <div className="flex gap-2"><Button variant={tab === 'drivers' ? 'primary' : 'secondary'} onClick={() => setTab('drivers')}>Drivers ({drivers.length})</Button><Button variant={tab === 'vehicles' ? 'primary' : 'secondary'} onClick={() => setTab('vehicles')}>Vehicles ({vehicles.length})</Button></div>
     {loading ? <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div> : error && rows.length === 0 ? <EmptyState title="Queue did not load" hint={error} action={{ label: 'Retry', onClick: load }} /> : rows.length === 0 ? <EmptyState title="Nothing pending" hint={`There are no pending ${tab}.`} /> : <div className="space-y-4">
-      {tab === 'drivers' ? drivers.map((row) => <Card key={row.id}>
+      <AnimatePresence>
+      {tab === 'drivers' ? drivers.map((row, index) => <motion.div key={row.id} layout initial={{ opacity: 0, transform: 'translateY(8px)' }} animate={{ opacity: 1, transform: 'translateY(0px)', transition: { duration: 0.2, ease: EASE_OUT, delay: staggerDelaySeconds(index) } }} exit={{ opacity: 0, transform: 'translateY(-8px)', transition: { duration: 0.2, ease: EASE_OUT } }}><Card>
         <div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold">{row.fullName}</h2><p className="text-sm text-ink-500">{row.phone} · NID {row.nidNumber} · License {row.licenseNumber}</p><p className="text-xs text-ink-500">Applied {formatDateTime(row.appliedAt)}</p></div><StatePill state={row.verificationStatus} /></div>
         <DocumentRows documents={row.documents} vehicle={false} busy={busy} onDone={load} />
         <div className="mt-3 flex justify-end gap-2"><Button variant="secondary" disabled={busy != null} onClick={() => void decide('driver', row.id, 'reject')}>Reject</Button><Button loading={busy === `driver-${row.id}`} onClick={() => void decide('driver', row.id, 'approve')}>Approve driver</Button></div>
-      </Card>) : vehicles.map((row) => <Card key={row.id}>
+      </Card></motion.div>) : vehicles.map((row, index) => <motion.div key={row.id} layout initial={{ opacity: 0, transform: 'translateY(8px)' }} animate={{ opacity: 1, transform: 'translateY(0px)', transition: { duration: 0.2, ease: EASE_OUT, delay: staggerDelaySeconds(index) } }} exit={{ opacity: 0, transform: 'translateY(-8px)', transition: { duration: 0.2, ease: EASE_OUT } }}><Card>
         <div className="flex flex-wrap justify-between gap-3"><div><h2 className="font-semibold">{row.registrationNo} · {row.categoryName}</h2><p className="text-sm text-ink-500">{row.driverName} · {row.driverPhone}</p><p className="text-xs text-ink-500">{[row.color, row.brand, row.model, row.modelYear].filter(Boolean).join(' ')}</p></div><StatePill state={row.verificationStatus} /></div>
         <DocumentRows documents={row.documents} vehicle busy={busy} onDone={load} />
         <div className="mt-3 flex justify-end gap-2"><Button variant="secondary" disabled={busy != null} onClick={() => void decide('vehicle', row.id, 'reject')}>Reject</Button><Button loading={busy === `vehicle-${row.id}`} onClick={() => void decide('vehicle', row.id, 'approve')}>Approve vehicle</Button></div>
-      </Card>)}
+      </Card></motion.div>)}
+      </AnimatePresence>
     </div>}
   </main>;
 }
