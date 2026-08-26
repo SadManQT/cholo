@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as authApi from '../../api/auth.api';
 import { Button, Input, toast } from '../../components/ui';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -15,6 +15,14 @@ const MIN_PASSWORD_LENGTH = 8;
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Set by the homepage's "Drive with Cholo" CTA — there's no one-step
+  // driver signup (doc 08-09-10 §6: becoming a driver is the separate
+  // /driver/apply review flow), so this just carries the intent through
+  // registration + OTP to redirect there once verification succeeds,
+  // instead of the usual roleHomePath().
+  const intent = searchParams.get('intent');
+  const isDriverIntent = intent === 'driver';
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +40,9 @@ export function RegisterPage() {
       // to hold yet, so this calls the api/ layer directly rather than
       // routing through useAuth().
       await authApi.register({ fullName, phone, password });
-      navigate(`/verify?phone=${encodeURIComponent(phone)}`);
+      const verifyParams = new URLSearchParams({ phone });
+      if (intent) verifyParams.set('intent', intent);
+      navigate(`/verify?${verifyParams.toString()}`);
     } catch (thrown) {
       const message = getApiErrorMessage(thrown, 'Could not create your account. Please try again.');
       setError(message);
@@ -48,7 +58,9 @@ export function RegisterPage() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Create your account</h1>
-        <p className="mt-1 text-sm text-ink-500">Book your first ride in under two minutes.</p>
+        <p className="mt-1 text-sm text-ink-500">
+          {isDriverIntent ? "Next you'll apply to drive — it only takes a minute here." : 'Book your first ride in under two minutes.'}
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
