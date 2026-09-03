@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js';
+import { pool, withTransaction } from '../config/db.js';
 import * as otpRepo from '../repositories/otp.repository.js';
 import * as passengersRepo from '../repositories/passengers.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
@@ -103,29 +103,38 @@ export async function resendOtp({ phone, purpose }) {
   sendOtpSms(phone, otp);
 }
 
+// The attempts check-then-increment is inside one transaction, holding
+// FOR UPDATE on the otp_verifications row for the whole sequence (same
+// reasoning as refresh()'s token-rotation lock above) — otherwise concurrent
+// guesses against the same code all read the same stale `attempts` and all
+// slip under OTP_MAX_ATTEMPTS instead of being serialized against the cap.
 export async function verifyOtp({ phone, otp, purpose }, device) {
-  const record = await otpRepo.findLatestActive(phone, purpose);
-  if (!record) {
-    throw new AppError(401, 'OTP_INVALID');
-  }
-  if (record.expiresAt.getTime() < Date.now()) {
-    throw new AppError(410, 'OTP_EXPIRED');
-  }
-  if (record.attempts >= OTP_MAX_ATTEMPTS) {
-    throw new AppError(429, 'RATE_LIMITED');
-  }
-  if (hashOtp(otp) !== record.otpHash) {
-    await otpRepo.incrementAttempts(record.id);
-    throw new AppError(401, 'OTP_INVALID');
-  }
+  const userId = await withTransaction(async (client) => {
+    const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
+    if (!record) {
+      throw new AppError(401, 'OTP_INVALID');
+    }
+    if (record.expiresAt.getTime() < Date.now()) {
+      throw new AppError(410, 'OTP_EXPIRED');
+    }
+    if (record.attempts >= OTP_MAX_ATTEMPTS) {
+      throw new AppError(429, 'RATE_LIMITED');
+    }
+    if (hashOtp(otp) !== record.otpHash) {
+      await otpRepo.incrementAttempts(record.id, client);
+      throw new AppError(401, 'OTP_INVALID');
+    }
 
-  await otpRepo.markVerified(record.id);
+    await otpRepo.markVerified(record.id, client);
 
-  if (purpose === 'signup') {
-    await usersRepo.markPhoneVerified(record.userId);
-  }
+    if (purpose === 'signup') {
+      await usersRepo.markPhoneVerified(record.userId, client);
+    }
 
-  return mintSession(record.userId, device);
+    return record.userId;
+  });
+
+  return mintSession(userId, device);
 }
 
 export async function login({ phone, password }, device) {

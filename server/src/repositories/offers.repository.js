@@ -85,11 +85,19 @@ export async function findByIdForDriver(offerId, driverId, client = pool) {
   return rows[0];
 }
 
+// Guarded by `AND response = 'pending'` — same as the withdraw* queries
+// below — so a reject/timeout that loses the race against a concurrent
+// accept/withdrawal can't stomp the winning write back to its own response.
+// Returns whether this call actually applied, so the caller can tell "I won"
+// from "someone else already resolved this offer".
 export async function markResponse(offerId, response, client = pool) {
-  await client.query(
-    `UPDATE ride_offers SET response = $2, responded_at = now() WHERE id = $1`,
+  const { rowCount } = await client.query(
+    `UPDATE ride_offers SET response = $2, responded_at = now()
+     WHERE id = $1 AND response = 'pending'`,
     [offerId, response],
   );
+
+  return rowCount > 0;
 }
 
 // The request is taken — every other driver's pending offer for it is now

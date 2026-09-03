@@ -51,6 +51,7 @@ export const ERROR_MESSAGES = Object.freeze({
   TRIP_CLOSED: 'This trip is closed and can no longer be updated.',
   BAD_TRANSITION: 'That action is not valid for the trip\'s current status.',
   ALREADY_PAID: 'This trip has already been paid.',
+  PAYMENT_IN_PROGRESS: 'A payment for this trip is already in progress.',
   INSUFFICIENT_FUNDS: 'Your wallet balance is not enough to cover this fare.',
   GATEWAY_UNAVAILABLE: 'The payment gateway is temporarily unavailable. Please try again.',
   GATEWAY_SESSION_FAILED: 'The payment gateway could not start this payment.',

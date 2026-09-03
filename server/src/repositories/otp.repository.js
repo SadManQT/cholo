@@ -18,29 +18,34 @@ export async function insert({ userId, phone, otpHash, purpose, expiresAt }) {
 // the lifetime of a transaction, so two inserts issued close together can
 // share an identical created_at — id is a BIGINT IDENTITY column, strictly
 // increasing regardless, and is the only reliable "most recent" tiebreaker.
-export async function findLatestActive(phone, purpose) {
-  const { rows } = await pool.query(
+//
+// FOR UPDATE: verifyOtp holds this lock for its whole check-attempts-then-
+// write sequence so two guesses racing on the same OTP record can't both
+// read the same stale `attempts` and both slip under OTP_MAX_ATTEMPTS.
+export async function findLatestActiveForUpdate(phone, purpose, client) {
+  const { rows } = await client.query(
     `SELECT id, user_id AS "userId", otp_hash AS "otpHash", attempts,
             expires_at AS "expiresAt"
      FROM otp_verifications
      WHERE phone = $1 AND purpose = $2 AND verified_at IS NULL
      ORDER BY id DESC
-     LIMIT 1`,
+     LIMIT 1
+     FOR UPDATE`,
     [phone, purpose],
   );
 
   return rows[0];
 }
 
-export async function incrementAttempts(id) {
-  await pool.query(
+export async function incrementAttempts(id, client = pool) {
+  await client.query(
     `UPDATE otp_verifications SET attempts = attempts + 1 WHERE id = $1`,
     [id],
   );
 }
 
-export async function markVerified(id) {
-  await pool.query(
+export async function markVerified(id, client = pool) {
+  await client.query(
     `UPDATE otp_verifications SET verified_at = now() WHERE id = $1`,
     [id],
   );
