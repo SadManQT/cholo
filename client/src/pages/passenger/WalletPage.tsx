@@ -16,8 +16,10 @@ export function WalletPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
 
   const loadPage = useCallback(async (nextPage: number, replace = false) => {
+    const requestId = ++requestIdRef.current;
     if (replace) setLoading(true);
     else setLoadingMore(true);
     setError(null);
@@ -29,15 +31,21 @@ export function WalletPage() {
         replace ? walletApi.getWallet() : null,
         walletApi.listTransactions({ page: nextPage, limit: 20 }),
       ]);
+      // A retry click can overlap the request it's retrying; don't let the
+      // older one clobber a newer response that already landed.
+      if (requestId !== requestIdRef.current) return;
       if (replace) setWallet(nextWallet);
       setTransactions((current) => replace ? result.data : [...current, ...result.data]);
       setPage(nextPage);
       setTotal(result.meta?.total ?? result.data.length);
     } catch (thrown) {
+      if (requestId !== requestIdRef.current) return;
       setError(getApiErrorMessage(thrown, 'Could not load your wallet.'));
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 

@@ -23,6 +23,22 @@ export async function insertPayment(
   return rows[0];
 }
 
+// trips.service.js's loadPayableTrip guard against opening a second gateway
+// session on the same trip: called inside the same transaction that already
+// holds the trip row's FOR UPDATE lock, so a second /pay call for the same
+// trip either blocks until the first commits (and then sees this row) or
+// runs after it — never races it.
+export async function findActiveForTrip(tripId, client) {
+  const { rows } = await client.query(
+    `SELECT id FROM payments
+     WHERE trip_id = $1 AND purpose = 'trip' AND status = 'initiated'
+     LIMIT 1`,
+    [tripId],
+  );
+
+  return rows[0];
+}
+
 export async function findByPublicId(publicId, client = pool) {
   const { rows } = await client.query(
     `SELECT id, public_id AS "publicId", purpose, trip_id AS "tripId", payer_id AS "payerId",

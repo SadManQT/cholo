@@ -11,12 +11,13 @@ import type { SocketConnectionState } from './socket';
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connectionState, setConnectionState] = useState<SocketConnectionState>('disconnected');
   const recovering = useRef(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setSocket(null);
       setConnectionState('disconnected');
       return;
@@ -79,7 +80,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       nextSocket.io.removeAllListeners();
       nextSocket.close();
     };
-  }, [user]);
+    // Keyed on the user's id, not the `user` object itself — AuthContext
+    // hands out a fresh object on every profile refresh, and reconnecting
+    // the socket each time drops it mid-session for no reason (the auth
+    // callback above already re-reads the live access token on every
+    // reconnect, so a stale closure over `user` isn't a concern here).
+  }, [userId]);
 
   return <SocketContext.Provider value={{ socket, connectionState }}>{children}</SocketContext.Provider>;
 }
