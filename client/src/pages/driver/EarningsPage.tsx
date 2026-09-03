@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as driverApi from '../../api/driver.api';
 import { Card, EmptyState, Skeleton } from '../../components/ui';
 import type { DailyEarning, EarningTripRow } from '../../types/earnings.types';
@@ -26,18 +26,25 @@ export function EarningsPage() {
   const [trips, setTrips] = useState<EarningTripRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async (days: number) => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const result = await driverApi.getEarnings({ from: isoDaysAgo(days), to: new Date().toISOString().slice(0, 10) });
+      // Clicking a range chip while the previous range's request is still
+      // in flight must not let that older response overwrite the numbers
+      // for the chip the user actually has selected now.
+      if (requestId !== requestIdRef.current) return;
       setDaily(result.daily);
       setTrips(result.trips);
     } catch (thrown) {
+      if (requestId !== requestIdRef.current) return;
       setError(getApiErrorMessage(thrown, 'Could not load your earnings.'));
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, []);
 

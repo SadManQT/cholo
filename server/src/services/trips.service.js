@@ -343,6 +343,16 @@ async function loadPayableTrip(passengerId, tripCode, client) {
   // columns are all still 0 (their DEFAULT) before completeTrip runs.
   if (trip.status !== 'completed') throw new AppError(409, 'BAD_TRANSITION');
   if (trip.paymentStatus !== 'unpaid') throw new AppError(409, 'ALREADY_PAID');
+  // trip.paymentStatus only moves off 'unpaid' once a gateway webhook
+  // actually confirms money moved, so without this a double-click, client
+  // retry, or a reopened checkout tab sails through the check above and
+  // opens a SECOND SSLCommerz session for the same fare. If the passenger
+  // completes both, only the first webhook can ever mark a payment
+  // 'succeeded' (ux_payment_one_success) — the second is a real charge
+  // with no way left to record it as settled.
+  if (await paymentsRepo.findActiveForTrip(trip.id, client)) {
+    throw new AppError(409, 'PAYMENT_IN_PROGRESS');
+  }
   return trip;
 }
 

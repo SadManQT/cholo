@@ -24,8 +24,10 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
 
   const loadPage = useCallback(async (nextPage: number, replace = false) => {
+    const requestId = ++requestIdRef.current;
     if (replace) setLoading(true);
     else setLoadingMore(true);
     setError(null);
@@ -37,6 +39,10 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
         status,
         role: driverMode ? 'driver' : 'passenger',
       });
+      // Switching the filter chip fires a new loadPage(1, true) while an
+      // older filter's request may still be in flight; if that older one
+      // resolves second it must not overwrite the newer filter's results.
+      if (requestId !== requestIdRef.current) return;
       setTrips((current) => replace ? result.data : [
         ...current,
         ...result.data.filter((next) => !current.some((item) => item.publicCode === next.publicCode)),
@@ -44,10 +50,13 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
       setPage(nextPage);
       setTotal(result.meta?.total ?? result.data.length);
     } catch (thrown) {
+      if (requestId !== requestIdRef.current) return;
       setError(getApiErrorMessage(thrown, 'Could not load your trips.'));
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, [driverMode, filter]);
 
