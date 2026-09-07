@@ -108,21 +108,28 @@ export async function resendOtp({ phone, purpose }) {
 // reasoning as refresh()'s token-rotation lock above) — otherwise concurrent
 // guesses against the same code all read the same stale `attempts` and all
 // slip under OTP_MAX_ATTEMPTS instead of being serialized against the cap.
+// Failures are RETURNED, not thrown, out of the transaction body and only
+// raised once it has committed. Throwing from inside would make
+// withTransaction ROLLBACK — which on the wrong-code path would undo the
+// very incrementAttempts that the lockout depends on, leaving `attempts`
+// pinned at 0 and OTP_MAX_ATTEMPTS unreachable no matter how many guesses
+// arrive. The FOR UPDATE lock is still held for the whole
+// check-then-increment sequence, so concurrent guesses stay serialized.
 export async function verifyOtp({ phone, otp, purpose }, device) {
-  const userId = await withTransaction(async (client) => {
+  const outcome = await withTransaction(async (client) => {
     const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
     if (!record) {
-      throw new AppError(401, 'OTP_INVALID');
+      return { failure: new AppError(401, 'OTP_INVALID') };
     }
     if (record.expiresAt.getTime() < Date.now()) {
-      throw new AppError(410, 'OTP_EXPIRED');
+      return { failure: new AppError(410, 'OTP_EXPIRED') };
     }
     if (record.attempts >= OTP_MAX_ATTEMPTS) {
-      throw new AppError(429, 'RATE_LIMITED');
+      return { failure: new AppError(429, 'RATE_LIMITED') };
     }
     if (hashOtp(otp) !== record.otpHash) {
       await otpRepo.incrementAttempts(record.id, client);
-      throw new AppError(401, 'OTP_INVALID');
+      return { failure: new AppError(401, 'OTP_INVALID') };
     }
 
     await otpRepo.markVerified(record.id, client);
@@ -131,10 +138,14 @@ export async function verifyOtp({ phone, otp, purpose }, device) {
       await usersRepo.markPhoneVerified(record.userId, client);
     }
 
-    return record.userId;
+    return { userId: record.userId };
   });
 
-  return mintSession(userId, device);
+  if (outcome.failure) {
+    throw outcome.failure;
+  }
+
+  return mintSession(outcome.userId, device);
 }
 
 export async function login({ phone, password }, device) {
