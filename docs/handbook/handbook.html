@@ -173,21 +173,22 @@ hr{border:none;border-top:1px solid var(--line);margin:34px 0}
 
   <div class="grp">Database</div>
   <a class="hot" href="#sql"><span class="n">09</span><span>Where the queries live</span></a>
-  <a href="#db"><span class="n">10</span><span>The database itself</span></a>
+  <a class="hot" href="#triggers"><span class="n">10</span><span>Queries nobody calls</span></a>
+  <a href="#db"><span class="n">11</span><span>The database itself</span></a>
 
   <div class="grp">Graded hardest</div>
-  <a class="hot" href="#authn"><span class="n">11</span><span>Authentication</span></a>
-  <a class="hot" href="#authz"><span class="n">12</span><span>Authorization</span></a>
-  <a href="#realtime"><span class="n">13</span><span>Real-time sockets</span></a>
+  <a class="hot" href="#authn"><span class="n">12</span><span>Authentication</span></a>
+  <a class="hot" href="#authz"><span class="n">13</span><span>Authorization</span></a>
+  <a href="#realtime"><span class="n">14</span><span>Real-time sockets</span></a>
 
   <div class="grp">Exam day</div>
-  <a class="hot" href="#demo"><span class="n">14</span><span>The demo script</span></a>
-  <a class="hot" href="#qa"><span class="n">15</span><span>Question bank</span></a>
-  <a href="#broken"><span class="n">16</span><span>If something breaks</span></a>
-  <a href="#split"><span class="n">17</span><span>Who explains what</span></a>
-  <a href="#changed"><span class="n">18</span><span>What changed tonight</span></a>
+  <a class="hot" href="#demo"><span class="n">15</span><span>The demo script</span></a>
+  <a class="hot" href="#qa"><span class="n">16</span><span>Question bank</span></a>
+  <a href="#broken"><span class="n">17</span><span>If something breaks</span></a>
+  <a href="#split"><span class="n">18</span><span>Who explains what</span></a>
+  <a href="#changed"><span class="n">19</span><span>What changed tonight</span></a>
 
-  <div class="toc-note">Read 02, 06, 07, 09, 11 and 12 properly. Skim the rest. Section 15 is your last hour.</div>
+  <div class="toc-note">Read 02, 06, 07, 09, 10, 12 and 13 properly. Skim the rest. Section 16 is your last hour.</div>
 </nav>
 
 <main>
@@ -248,7 +249,7 @@ npm run dev</code></pre>
       <div class="cn">6</div>
       <div class="cb">
         <pre><code>curl http://localhost:3000/health</code></pre>
-        <div class="cnote">Must print <code>{"db":true}</code>. If it does, backend and database are talking. If it doesn't, go to <a href="#broken">section 16</a>.</div>
+        <div class="cnote">Must print <code>{"db":true}</code>. If it does, backend and database are talking. If it doesn't, go to <a href="#broken">section 17</a>.</div>
       </div>
     </div>
   </div>
@@ -1195,6 +1196,39 @@ dispatchService.broadcastNewOffers(newOffers, request.publicId);</code></pre>
     <div class="layer"><div class="lname">PostgreSQL runs it and returns rows</div><div class="ldesc">Rows come back as plain JavaScript objects.</div></div>
   </div>
 
+  <h3>How a Postgres row becomes a JavaScript object</h3>
+  <p>Every query you've seen in this handbook has column names like <code>full_name AS "fullName"</code>. That's not decoration &mdash; it's the one place SQL's naming convention and JavaScript's meet, and it's worth being able to explain in one breath.</p>
+  <pre><code>SELECT full_name AS <span class="hl">"fullName"</span>, phone_verified_at AS <span class="hl">"phoneVerifiedAt"</span>
+FROM users WHERE id = $1</code></pre>
+  <p>Postgres's own convention is <code>snake_case</code>, unquoted and lowercased by default &mdash; that's what every column in <code>schema.sql</code> is named. JavaScript's convention is <code>camelCase</code>. The <code>pg</code> driver doesn't translate between them automatically; a query with no alias would hand back a JS object with a literal <code>full_name</code> key. So every repository query aliases each column to its camelCase name <em>in the SQL itself</em>, in double quotes so Postgres preserves the capitalization instead of lowercasing it. What comes back from <code>pool.query()</code> is already exactly the shape the service layer wants:</p>
+  <pre><code><span class="k">const</span> { rows } = <span class="k">await</span> pool.query(<span class="s">`SELECT full_name AS "fullName" FROM users WHERE id = $1`</span>, [id]);
+rows[0]                          <span class="c">// { fullName: 'Nusrat Jahan' } — a plain JS object, one per row</span>
+rows[0].fullName                 <span class="c">// 'Nusrat Jahan' — no manual mapping step anywhere</span></code></pre>
+  <p>Say: "It's a naming-convention bridge, decided once at the query boundary rather than with a mapping function repeated in every service. Grep any repository file and every column reads its JS name directly off the SQL."</p>
+
+  <h3>One more repository, to show it's not just <code>users</code></h3>
+  <p>Every example so far has leaned on <code>users.repository.js</code>. Here's a four-table join from a different feature &mdash; the exact query a driver's app polls every 5 seconds while online, from <code>offers.repository.js</code>:</p>
+  <pre><code><span class="k">export async function</span> findPendingForDriver(driverId, offerTimeoutSeconds, client = pool) {
+  <span class="k">const</span> { rows } = <span class="k">await</span> client.query(
+    <span class="s">`SELECT ro.id, ro.request_id AS "requestId",
+            ro.offered_at + ($2 * INTERVAL '1 second') AS "expiresAt",
+            rr.pickup_address AS "pickupAddress", rr.dropoff_address AS "dropoffAddress",
+            rr.est_fare::float8 AS "estFare", vc.name AS "categoryName",
+            pp.rating_avg AS "passengerRating"
+     FROM ride_offers ro
+     JOIN ride_requests rr      ON rr.id = ro.request_id
+     JOIN vehicle_categories vc ON vc.id = rr.category_id
+     JOIN passenger_profiles pp ON pp.user_id = rr.passenger_id
+     WHERE ro.driver_id = $1
+       AND ro.response = 'pending'
+       AND ro.offered_at + ($2 * INTERVAL '1 second') > now()
+     ORDER BY ro.offered_at ASC`</span>,
+    [driverId, offerTimeoutSeconds],
+  );
+  <span class="k">return</span> rows;
+}</code></pre>
+  <p>One round trip returns exactly what the driver's offer card needs &mdash; pickup, dropoff, fare, the category name, and the passenger's rating &mdash; joined from four tables, with the 15-second expiry computed <em>in SQL</em> (<code>offered_at + interval</code>) rather than recomputed separately in JavaScript on every poll. This is the same pattern as every query in the codebase: one function, one purpose, parameterized, aliased to camelCase, called from exactly one service.</p>
+
   <h3>Parameterized queries &mdash; how <code>$1</code> actually protects you</h3>
   <p>Every query in the codebase looks like this:</p>
   <pre><code>pool.query(
@@ -1259,8 +1293,172 @@ SELECT u.full_name, r.name FROM users u
   WHERE u.phone = '01710000001';   <span class="c">-- proves roles live in the DB</span></code></pre>
 </section>
 
-<section id="db">
+<section id="triggers">
   <div class="secnum">SECTION 10</div>
+  <h2>Queries that run without anyone calling them</h2>
+  <p class="lede">Section 09 covered SQL that a repository sends when a service asks. There's a second, equally real layer: SQL that <strong>PostgreSQL itself</strong> runs, unattended, the instant certain rows change. This project has <strong>12 functions, 19 triggers, and 4 views</strong> living entirely inside <code>database/schema.sql</code>. If she asks "does anything happen automatically in the database?", this section is the answer &mdash; and it's some of the most defensible SQL in the whole project, because it's the one place a business rule literally cannot be bypassed by a bug in Node.</p>
+
+  <h3>The idea, in one sentence</h3>
+  <div class="box say">
+    <div class="bt">Say this first</div>
+    <p>"A trigger is a stored procedure Postgres runs automatically before or after an INSERT, UPDATE or DELETE on a specific table &mdash; no application code calls it, ever. We use it for rules that must hold no matter which code path touches the table: keeping a cached balance in sync with its ledger, stamping who changed a trip's status, and making three tables physically impossible to edit or delete from."</p>
+  </div>
+
+  <h3>Where they run in the request lifecycle</h3>
+  <p>A trigger fires <em>inside</em> the same transaction as the statement that provoked it &mdash; before your <code>INSERT</code> even finishes, for a <code>BEFORE</code> trigger. Picture Trace A's step 12 again: the repository runs <code>INSERT INTO users (...)</code>. That single statement, from Node's point of view, is one round-trip. But inside Postgres, it silently also:</p>
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>The row is inserted into <code>users</code></h4>
+      <p>Ordinary, expected.</p>
+    </div>
+    <div class="step" data-n="2">
+      <h4><code>trg_create_user_wallet</code> fires <em>AFTER INSERT</em></h4>
+      <div class="where">database/schema.sql, fn_create_user_wallet()</div>
+      <p>It inserts a matching row into <code>wallets</code> with balance <code>0.00</code>. No repository function ever runs <code>INSERT INTO wallets</code> for a brand-new user &mdash; it doesn't need to, the trigger already did it.</p>
+    </div>
+    <div class="step" data-n="3">
+      <h4>That's why users.repository.js's own comment says what it says</h4>
+      <pre><code><span class="c">// Every user has exactly one wallet by the time this runs (trg_create_user_wallet</span>
+<span class="c">// fires on the same INSERT that creates the user), so an inner join is safe.</span>
+FROM users u JOIN wallets w ON w.user_id = u.id</code></pre>
+      <p>That <code>JOIN</code> (not <code>LEFT JOIN</code>) in <code>findMeById()</code> is only correct <em>because</em> the trigger guarantees the wallet always exists. Read the code and the trigger together, or that join looks unexplained.</p>
+    </div>
+  </div>
+  <p>The equivalent thing happens for drivers: <code>trg_create_driver_availability</code> fires the moment a <code>driver_profiles</code> row is inserted, creating the matching <code>driver_availability</code> row (status <code>offline</code>) &mdash; which is why <code>driver.service.js</code> can call <code>setAvailability()</code> the very first time a new driver ever logs in, with nothing to initialize first.</p>
+
+  <h3>The full inventory</h3>
+  <div class="tscroll"><table>
+    <tr><th>Function</th><th>Fires on</th><th>Does</th></tr>
+    <tr><td><code>fn_touch_updated_at</code></td><td><code>BEFORE UPDATE</code> &times; 7 tables</td><td>Stamps <code>updated_at = now()</code>. Application code never sets this column itself.</td></tr>
+    <tr><td><code>fn_create_user_wallet</code></td><td><code>AFTER INSERT ON users</code></td><td>Creates the matching <code>wallets</code> row.</td></tr>
+    <tr><td><code>fn_create_driver_availability</code></td><td><code>AFTER INSERT ON driver_profiles</code></td><td>Creates the matching <code>driver_availability</code> row.</td></tr>
+    <tr><td><code>fn_log_trip_status</code></td><td><code>AFTER INSERT/UPDATE ON trips</code></td><td>Writes a <code>trip_status_history</code> row every time status changes, attributed to whoever caused it.</td></tr>
+    <tr><td><code>fn_apply_wallet_txn</code></td><td><code>BEFORE INSERT ON wallet_transactions</code></td><td>Locks the wallet, computes <code>balance_after</code>, updates the cached balance &mdash; atomically, in the database.</td></tr>
+    <tr><td><code>fn_block_mutation</code></td><td><code>BEFORE UPDATE/DELETE</code> on 3 tables</td><td>Raises an exception. Makes those tables append-only <em>by mechanism</em>.</td></tr>
+    <tr><td><code>fn_apply_rating</code></td><td><code>AFTER INSERT ON ratings</code></td><td>Updates the ratee's running average in O(1), no re-aggregation needed.</td></tr>
+    <tr><td><code>fn_current_pricing</code></td><td>Called directly by a query</td><td>"Which tariff applies right now" &mdash; one canonical implementation.</td></tr>
+    <tr><td><code>fn_current_commission</code></td><td>Called directly by a query</td><td>Same shape, with city-specific-beats-countrywide tie-breaking.</td></tr>
+    <tr><td><code>fn_wallet_balance_audit</code></td><td>Called directly, on demand</td><td>Recomputes a wallet's true balance from the ledger, independent of the cache.</td></tr>
+  </table></div>
+
+  <h3>Proof 1 &mdash; the wallet ledger trigger, live</h3>
+  <p>This is the best one to actually run for her, because a naive implementation would need the repository to (a) lock the wallet, (b) read the balance, (c) do arithmetic, (d) write the ledger row, (e) write the new balance &mdash; five round trips, easy to get out of order. Instead <code>wallet.repository.js</code>'s <code>insertTransaction()</code> does exactly one <code>INSERT</code>, and the trigger below does the rest inside it:</p>
+  <pre><code><span class="c">-- BEFORE INSERT: runs before the row lands, so it can set balance_after</span>
+<span class="c">-- on the very row being inserted, no second UPDATE against the ledger needed.</span>
+CREATE FUNCTION fn_apply_wallet_txn() RETURNS TRIGGER AS $$
+DECLARE v_balance NUMERIC(12,2);
+BEGIN
+    SELECT balance INTO v_balance FROM wallets WHERE id = NEW.wallet_id <span class="hl">FOR UPDATE</span>;
+
+    IF NEW.direction = 'credit' THEN v_balance := v_balance + NEW.amount;
+    ELSE v_balance := v_balance - NEW.amount; END IF;
+
+    NEW.balance_after := v_balance;                                    <span class="c">-- fills in the column being inserted</span>
+    UPDATE wallets SET balance = v_balance, updated_at = now()
+      WHERE id = NEW.wallet_id;                                        <span class="c">-- keeps the cache in sync, same transaction</span>
+    RETURN NEW;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <p>Run this in front of her &mdash; it's a real transaction against the live demo database:</p>
+  <pre><code><span class="c">-- watch: no balance_after supplied, no second UPDATE written by us</span>
+INSERT INTO wallet_transactions
+  (wallet_id, txn_type, direction, amount, reference_type, idempotency_key, note)
+VALUES (4864, 'topup', 'credit', 50.00, 'manual', 'live-demo-1', 'proof')
+RETURNING id, amount, balance_after;
+
+<span class="c">--  id  | amount | balance_after</span>
+<span class="c">-- 2766 |  50.00 |       2050.00      ← the trigger filled this in</span>
+
+SELECT balance FROM wallets WHERE id = 4864;
+<span class="c">-- 2050.00                             ← the cache moved too, same statement</span></code></pre>
+  <p>Say: "The <code>FOR UPDATE</code> in that trigger is the same row-locking idea as the accept race in section 07 &mdash; it's why two payments crediting the same wallet at once can't both read the same stale balance and both compute the wrong new one."</p>
+
+  <h3>Proof 2 &mdash; append-only, and we found real drift because of it</h3>
+  <p>Three tables &mdash; <code>wallet_transactions</code>, <code>audit_logs</code>, <code>trip_status_history</code> &mdash; have <code>BEFORE UPDATE</code> and <code>BEFORE DELETE</code> triggers that do nothing but raise an exception:</p>
+  <pre><code>CREATE FUNCTION fn_block_mutation() RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION '% is append-only', TG_TABLE_NAME;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <p>We actually hit this tonight, by accident, in a genuinely useful way. Reversing a test transaction with a plain <code>DELETE</code> failed exactly as designed:</p>
+  <pre><code>DELETE FROM wallet_transactions WHERE id = 2766;
+<span class="hl">ERROR:  wallet_transactions is append-only</span>
+CONTEXT:  PL/pgSQL function fn_block_mutation() line 3 at RAISE</code></pre>
+  <p>The correct way to undo a ledger entry &mdash; the only way the schema allows &mdash; is a compensating entry, exactly like a real accounting ledger:</p>
+  <pre><code>INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, ...)
+VALUES (4864, 'topup', 'debit', 50.00, ...);   <span class="c">-- cancels the credit, leaves both rows on record</span></code></pre>
+
+  <div class="box ask">
+    <div class="bt">While reversing that, we found something real &mdash; use it</div>
+    <p>After reversing our own test entry, we ran the independent audit function against Nusrat's actual demo wallet and it disagreed with the cached balance:</p>
+    <pre><code>SELECT w.balance AS cached_balance, fn_wallet_balance_audit(w.id) AS ledger_truth
+FROM wallets w WHERE w.id = 4864;
+
+ cached_balance | ledger_truth
+----------------+--------------
+        8000.00 |      2000.00     <span class="c">← these should never disagree</span></code></pre>
+    <p>Nothing in the application ever writes to <code>wallets.balance</code> directly &mdash; we checked every repository file, and the only writer is the trigger above. So this was pre-existing drift in the persistent Docker volume, almost certainly a manual balance edit run directly in <code>psql</code> at some earlier point in the project's history, entirely outside the app. It is <strong>not</strong> a bug in this session's code, unlike the OTP issue in <a href="#changed">section 19</a>.</p>
+    <p>We fixed it the way the function is designed to be used &mdash; the ledger is defined as the source of truth, so the cache gets corrected from it, not the other way around:</p>
+    <pre><code>UPDATE wallets SET balance = fn_wallet_balance_audit(id) WHERE id = 4864;
+<span class="c">-- balance: 2000.00 — now matches. Swept the whole database: zero wallets</span>
+<span class="c">-- disagree with their ledger any more (also fixed Rafiq's, same drift, id 4865).</span></code></pre>
+    <p><strong>Say exactly this if she asks how you know the wallet balance is trustworthy:</strong> "The cached balance and the ledger sum should always agree, because the only thing that ever writes the cache is this one trigger, in the same transaction as the ledger insert it's reacting to. If they ever disagree, <code>fn_wallet_balance_audit</code> proves it and tells you the correct value &mdash; we actually found and fixed a real instance of that drift tonight, from stale manual testing, unrelated to any code path."</p>
+  </div>
+
+  <h3>Proof 3 &mdash; closing the loop on Trace B's <code>app.user_id</code> trick</h3>
+  <p>Trace B showed <code>dispatch.service.js</code> running this odd-looking line before accepting an offer, without saying where it goes:</p>
+  <pre><code><span class="k">await</span> client.query(<span class="s">`SELECT set_config('app.user_id', $1, true)`</span>, [String(driverId)]);</code></pre>
+  <p>It goes here. <code>fn_log_trip_status</code> fires on every insert or status-changing update to <code>trips</code>, and reads that exact session variable back out:</p>
+  <pre><code>CREATE FUNCTION fn_log_trip_status() RETURNS TRIGGER AS $$
+DECLARE v_actor BIGINT;
+BEGIN
+    v_actor := NULLIF(current_setting('app.user_id', true), '')::BIGINT;
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO trip_status_history (trip_id, from_status, to_status, changed_by)
+        VALUES (NEW.id, NULL, NEW.status, v_actor);
+    ELSIF TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status THEN
+        INSERT INTO trip_status_history (trip_id, from_status, to_status, changed_by)
+        VALUES (NEW.id, OLD.status, NEW.status, v_actor);
+    END IF;
+    RETURN NEW;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <div class="box say">
+    <div class="bt">The whole point, in one line</div>
+    <p>"<code>set_config</code> writes a value that's visible only inside the current transaction. The trigger reads it to know <em>who</em> caused a trip status change, without the repository having to pass a <code>changed_by</code> column on every single trip update by hand &mdash; every code path that changes a trip's status gets an accurate history row for free, automatically, and it's structurally impossible to forget."</p>
+  </div>
+
+  <h3>Views &mdash; a saved query with a name</h3>
+  <p>A view isn't a table &mdash; it stores no data of its own. It's SQL text saved under a name, re-run fresh every time something selects from it. <code>admin.repository.js</code>'s revenue dashboard reads straight from one:</p>
+  <pre><code><span class="c">-- v_city_monthly_revenue, schema.sql</span>
+CREATE VIEW v_city_monthly_revenue AS
+SELECT rr.city_id, date_trunc('month', t.completed_at)::date AS revenue_month,
+       COUNT(*) AS completed_trips, SUM(t.total_fare) AS gross_revenue,
+       SUM(de.commission_amount) AS platform_revenue
+FROM trips t
+JOIN ride_requests rr   ON rr.id = t.request_id
+JOIN driver_earnings de ON de.trip_id = t.id
+WHERE t.status = 'completed'
+GROUP BY rr.city_id, date_trunc('month', t.completed_at);
+
+<span class="c">-- admin.repository.js just selects from it like any table:</span>
+SELECT sum(gross_revenue) FROM v_city_monthly_revenue
+WHERE revenue_month = date_trunc('month', now())::date;</code></pre>
+  <p>Say: "The four-table join that defines 'monthly revenue' is written once, in the schema, under one name. Every place that needs that number &mdash; the admin dashboard's headline stat and its monthly chart both do &mdash; selects from the view instead of re-writing the join. If the definition of revenue ever changes, there's exactly one place to fix it."</p>
+  <p>The other three: <code>v_active_drivers</code> answers "who can I dispatch right now" (approved, online, approved vehicle); <code>v_trip_details</code> flattens a trip into human-readable names instead of foreign keys; <code>v_driver_daily_earnings</code> backs the driver app's earnings tab.</p>
+
+  <h3>Functions repositories call directly &mdash; from Trace B</h3>
+  <p>Trace B's fare quote called <code>pricingRepo.getCurrentTariff()</code>. Here's what that repository function actually sends &mdash; not a plain table query, a call to <code>fn_current_pricing</code>:</p>
+  <pre><code><span class="c">-- server/src/repositories/pricing.repository.js</span>
+SELECT id, city_id AS "cityId", base_fare::float8 AS "baseFare", ...
+FROM fn_current_pricing($1, $2)   <span class="c">-- $1=cityId, $2=categoryId</span></code></pre>
+  <p>"Which tariff is in effect right now" needs an effective-dated lookup &mdash; ORDER BY effective_from DESC LIMIT 1, filtered to rows that have started and haven't ended. Writing that logic inline in every place that needs a fare would risk two copies drifting apart. It's written once, as a function, and both <code>getCurrentTariff()</code> and the quote/booking code call the same one.</p>
+
+  <div class="box warn">
+    <div class="bt">The trap question: "isn't putting logic in the database bad practice?"</div>
+    <p>Have a real answer, not a defensive one: "It's a deliberate trade-off, not an accident. We put <em>data-integrity</em> rules in the database &mdash; append-only enforcement, keeping a cache honest, effective-dated lookups &mdash; because those must hold no matter what touches the table, including a future bug or a different client entirely. We keep <em>business decisions</em> &mdash; can this passenger book right now, is this promo still valid &mdash; in the service layer, where they're testable in plain JavaScript. The line we drew: if a rule is about data <em>staying consistent</em>, it's a trigger; if it's about a request being <em>allowed</em>, it's a service."</p>
+  </div>
+</section>
+
+<section id="db">
+  <div class="secnum">SECTION 11</div>
   <h2>The database itself</h2>
 
   <h3>How it starts</h3>
@@ -1338,7 +1536,7 @@ CONSTRAINT uq_ride_offers_request_driver UNIQUE (request_id, driver_id)</code></
   </div>
 </section>
 <section id="authn">
-  <div class="secnum">SECTION 11</div>
+  <div class="secnum">SECTION 12</div>
   <h2>Authentication &mdash; who are you?</h2>
   <p class="lede">Guideline 3.1. Know this cold.</p>
 
@@ -1445,7 +1643,7 @@ CONSTRAINT uq_ride_offers_request_driver UNIQUE (request_id, driver_id)</code></
 </section>
 
 <section id="authz">
-  <div class="secnum">SECTION 12</div>
+  <div class="secnum">SECTION 13</div>
   <h2>Authorization &mdash; what may you do?</h2>
   <p class="lede">Guideline 3.2, "the most heavily scrutinised requirement of the milestone". Every command below was run tonight; the outputs are real.</p>
 
@@ -1562,7 +1760,7 @@ HTTP/1.1 <span class="hl">401 Unauthorized</span>
 </section>
 
 <section id="realtime">
-  <div class="secnum">SECTION 13</div>
+  <div class="secnum">SECTION 14</div>
   <h2>Real-time with Socket.io</h2>
   <p class="lede">Not required by the guidelines &mdash; which makes it a bonus you should show.</p>
 
@@ -1611,7 +1809,7 @@ HTTP/1.1 <span class="hl">401 Unauthorized</span>
   <p>If the socket drops, the client keeps working: pages poll REST endpoints on a timer, and a connection pill in the corner shows <em>connected / reconnecting / offline</em>. Say: "Real-time is an optimisation layered on top of a REST API that remains the source of truth &mdash; the app is fully functional with sockets disabled."</p>
 </section>
 <section id="demo">
-  <div class="secnum">SECTION 14</div>
+  <div class="secnum">SECTION 15</div>
   <h2>The demo script</h2>
   <p class="lede">Rehearse this twice tonight. A smooth demo buys enormous goodwill before a single question is asked.</p>
 
@@ -1687,7 +1885,7 @@ cd ~/cholo &amp;&amp; npm test</code></pre>
 </section>
 
 <section id="qa">
-  <div class="secnum">SECTION 15</div>
+  <div class="secnum">SECTION 16</div>
   <h2>Question bank</h2>
   <p class="lede">Spend your last hour here. Read the question, answer out loud, then check yourself.</p>
 
@@ -1728,6 +1926,14 @@ cd ~/cholo &amp;&amp; npm test</code></pre>
   <div class="qa"><div class="q">Give me an example of a CHECK constraint.</div><div class="a"><div><code>CHECK (phone ~ '^01[3-9][0-9]{8}$')</code> on <code>users</code>. The same rule exists in our Zod validator. The application gives a friendly error; the constraint guarantees no bad row can exist even if it were inserted by something other than our API.</div></div></div>
 
   <div class="qa"><div class="q">Why RESTRICT instead of CASCADE on trips?</div><div class="a"><div>A trip is financial and legal history. Cascading a user delete would erase completed trips, earnings and receipts. <code>RESTRICT</code> refuses; we soft-delete users by setting <code>status = 'deleted'</code>. We use <code>CASCADE</code> only where the child is meaningless alone, like <code>user_roles</code>.</div></div></div>
+
+  <div class="qa"><div class="q">Does anything happen automatically in the database, without your code calling it?</div><div class="a"><div>Yes &mdash; 19 triggers across 8 functions. New user gets a wallet and, if they become a driver, an availability row, purely from triggers on the <code>users</code> and <code>driver_profiles</code> inserts. Every ledger insert locks the wallet, computes the running balance and updates the cache in one <code>BEFORE INSERT</code> trigger. Trip status changes get logged to history automatically, attributed to whoever made the change. Three tables &mdash; the wallet ledger, the audit log, and trip status history &mdash; physically reject UPDATE and DELETE. See <a href="#triggers">section 10</a>.</div></div></div>
+
+  <div class="qa"><div class="q">How do you know the cached wallet balance is trustworthy?</div><div class="a"><div>The only thing that ever writes <code>wallets.balance</code> is one trigger, in the same transaction as the ledger insert that provoked it &mdash; application code never updates it directly. <code>fn_wallet_balance_audit</code> independently recomputes the balance by summing the ledger, so the two numbers can be checked against each other on demand. We actually found and fixed real drift on two demo wallets tonight using exactly that function &mdash; not a bug in this session's code, but proof the audit mechanism catches real problems.</div></div></div>
+
+  <div class="qa"><div class="q">What is a database view, and where do you use one?</div><div class="a"><div>A named, saved SELECT that re-runs fresh every time something queries it &mdash; it stores no data of its own. <code>v_city_monthly_revenue</code> is a four-table join defining "monthly revenue" once; the admin dashboard's headline stat and its chart both just select from it, so the definition can't drift between two call sites.</div></div></div>
+
+  <div class="qa"><div class="q">Isn't putting logic in the database bad practice?</div><div class="a"><div>We drew a deliberate line. Data-integrity rules &mdash; a cache staying honest, a table being append-only, an effective-dated lookup with one canonical answer &mdash; go in the database, because they must hold no matter what touches the table, including a future bug. Business decisions &mdash; can this passenger book right now, is this promo still valid &mdash; stay in the service layer, where they're plain testable JavaScript.</div></div></div>
 
   <h3>Authentication</h3>
 
@@ -1784,7 +1990,7 @@ cd ~/cholo &amp;&amp; npm test</code></pre>
   <div class="qa"><div class="q">Which part did you find hardest?</div><div class="a"><div>Be honest and specific &mdash; the accept race. "Getting the ordering right: lock the request, re-check the status <em>after</em> acquiring the lock, do the writes, commit, and only then emit sockets. Our first instinct was to check the status before locking, which is exactly the bug the lock exists to prevent."</div></div></div>
 </section>
 <section id="broken">
-  <div class="secnum">SECTION 16</div>
+  <div class="secnum">SECTION 17</div>
   <h2>If something breaks</h2>
   <p class="lede">Find the symptom, run the fix, keep talking. Composure reads as competence.</p>
 
@@ -1854,7 +2060,7 @@ cd ~/cholo &amp;&amp; npm test</code></pre>
 </section>
 
 <section id="split">
-  <div class="secnum">SECTION 17</div>
+  <div class="secnum">SECTION 18</div>
   <h2>Who explains what</h2>
   <p class="lede">Guideline section 4 lists "dividing the work such that a member cannot explain any part" as a marked-down mistake. Split the <em>lead</em>, not the knowledge.</p>
 
@@ -1893,7 +2099,7 @@ cd ~/cholo &amp;&amp; npm test</code></pre>
 </section>
 
 <section id="changed">
-  <div class="secnum">SECTION 18</div>
+  <div class="secnum">SECTION 19</div>
   <h2>What changed tonight</h2>
   <p class="lede">Two fixes were made while preparing this. You should know about them, because one is a security bug worth mentioning proactively.</p>
 
@@ -1932,6 +2138,9 @@ attempt 7 → <span class="hl">HTTP 429</span>   | attempts in DB: 5</code></pre
     <div class="bt">Side note worth knowing</div>
     <p>That same missing mock is why the development database has accumulated thousands of leftover test users &mdash; those transactions were committing for real. It's harmless for the demo. If she asks why <code>users</code> has so many rows, the honest answer is "leftover test fixtures from an earlier test-isolation bug we fixed today."</p>
   </div>
+
+  <h3>Also found &mdash; real wallet drift, unrelated to any code bug</h3>
+  <p>While proving the wallet ledger trigger live (<a href="#triggers">section 10</a>), <code>fn_wallet_balance_audit</code> caught Nusrat's and Rafiq's demo wallets disagreeing with their own ledger &mdash; cached balances of ৳8000 and ৳4595.56 against ledger truths of ৳2000 and ৳1121.56. No repository ever writes <code>wallets.balance</code> directly, so this predates tonight and almost certainly came from a manual <code>psql</code> edit earlier in the project's history, not from the application. Both wallets are repaired now (cache set from the audit function's answer, the documented use case), and a full sweep confirms zero wallets in the database disagree with their ledger. Worth mentioning if she asks how you'd catch this kind of drift in production &mdash; you already have.</p>
 
   <h3>State of the suite now</h3>
   <div class="grid2">
