@@ -9,12 +9,36 @@ import { logger } from '../../src/utils/logger.js';
 let server;
 let baseUrl;
 let databaseClient;
+let savepointCounter = 0;
 
 before(async () => {
   databaseClient = await pool.connect();
   await databaseClient.query('BEGIN');
 
   mock.method(pool, 'query', (sql, values) => databaseClient.query(sql, values));
+  // Services that use withTransaction (auth's verifyOtp, the wallet writes
+  // below) check out their OWN connection via pool.connect and run a real
+  // BEGIN/COMMIT on it. This suite lives inside one outer, never-committed
+  // transaction on `databaseClient`, so a genuinely separate connection
+  // could not see any of its uncommitted rows. Hand back the same client
+  // and translate BEGIN/COMMIT/ROLLBACK into nested SAVEPOINTs — the same
+  // pattern auth.test.js already uses.
+  mock.method(pool, 'connect', async () => {
+    const savepointName = `wallet_sp_${savepointCounter += 1}`;
+
+    return {
+      async query(sql, values) {
+        const command = typeof sql === 'string' ? sql.trim().toUpperCase() : '';
+
+        if (command === 'BEGIN') return databaseClient.query(`SAVEPOINT ${savepointName}`);
+        if (command === 'COMMIT') return databaseClient.query(`RELEASE SAVEPOINT ${savepointName}`);
+        if (command === 'ROLLBACK') return databaseClient.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+
+        return databaseClient.query(sql, values);
+      },
+      release() {},
+    };
+  });
   mock.method(logger, 'info', () => {});
 
   server = app.listen(0, '127.0.0.1');
