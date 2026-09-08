@@ -109,3 +109,13 @@ export const adminMutationLimiter = createRateLimiter({
   windowMs: 15 * MINUTE,
   limit: isTest ? 1000 : 100,
 });
+
+// /geo/search fires on every debounced keystroke, unlike the single-shot
+// geocode button click — Nominatim's public demo instance polices its own
+// ~1 req/sec usage policy per IP, and this app shares one origin IP across
+// every passenger typing at once. A generous per-user ceiling here is what
+// keeps the whole app's geocoding (not just search) from getting blocked.
+export const geoSearchLimiter = createRateLimiter({
+  windowMs: MINUTE,
+  limit: isTest ? 1000 : 30,
+});
