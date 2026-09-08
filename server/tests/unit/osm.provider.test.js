@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, mock, test } from 'node:test';
 
-import { geocode, reverseGeocode, route } from '../../src/services/providers/osm.provider.js';
+import { geocode, reverseGeocode, route, search } from '../../src/services/providers/osm.provider.js';
 
 function jsonResponse(body, { ok = true } = {}) {
   return { ok, json: async () => body };
@@ -188,4 +188,113 @@ test('reverseGeocode() throws ADDRESS_NOT_FOUND when Nominatim reports an error'
       return true;
     },
   );
+});
+
+// A passenger doesn't need to see postcode/district/division/country on
+// every suggestion — this app only ever serves Bangladesh, so that part of
+// Nominatim's own display_name never actually distinguishes one result
+// from another.
+test('geocode() builds a compact address from name + suburb + city, dropping postcode/district/division/country', async () => {
+  mock.method(globalThis, 'fetch', async () => jsonResponse([{
+    lat: '23.7640558',
+    lon: '90.3856872',
+    name: 'Bangladesh Military Museum',
+    display_name: 'Bangladesh Military Museum, Bijoy Sharani, Elenbari, Tejgaon, Dhaka, Dhaka Metropolitan, Dhaka District, Dhaka Division, 1215, Bangladesh',
+    address: {
+      tourism: 'Bangladesh Military Museum',
+      road: 'Bijoy Sharani',
+      quarter: 'Elenbari',
+      suburb: 'Tejgaon',
+      city: 'Dhaka',
+      state_district: 'Dhaka District',
+      state: 'Dhaka Division',
+      postcode: '1215',
+      country: 'Bangladesh',
+      country_code: 'bd',
+    },
+  }]));
+
+  const result = await geocode('Bangladesh Military Museum');
+
+  assert.equal(result.address, 'Bangladesh Military Museum, Tejgaon, Dhaka');
+});
+
+// A plain road result has no separate POI name — the road itself becomes
+// the primary label instead of duplicating it as both name and road.
+test('geocode() falls back to the road as the primary label when there is no named place', async () => {
+  mock.method(globalThis, 'fetch', async () => jsonResponse([{
+    lat: '23.7355069',
+    lon: '90.3841708',
+    name: 'Mirpur Road',
+    display_name: 'Mirpur Road, Nilkhet, Azimpur, Dhaka, Dhaka Metropolitan, Dhaka District, Dhaka Division, 1205, Bangladesh',
+    address: {
+      road: 'Mirpur Road',
+      quarter: 'Nilkhet',
+      suburb: 'Azimpur',
+      city: 'Dhaka',
+      country_code: 'bd',
+    },
+  }]));
+
+  const result = await geocode('Mirpur Road');
+
+  // "Mirpur Road" would otherwise appear twice (once as name, once as
+  // address.road) — the dedupe is what keeps it to one clean mention.
+  assert.equal(result.address, 'Mirpur Road, Azimpur, Dhaka');
+});
+
+test('search() returns every candidate with a compact address, not just the first', async () => {
+  const fetchMock = mock.method(globalThis, 'fetch', async (url) => {
+    assert.match(url, /\/search\?q=Gulshan/);
+    assert.match(url, /limit=5/);
+    return jsonResponse([
+      {
+        lat: '23.7947191', lon: '90.4136986', name: 'Gulshan 2',
+        display_name: 'Gulshan 2, Gulshan, Dhaka, Dhaka Metropolitan, Dhaka District, Dhaka Division, 1212, Bangladesh',
+        address: { quarter: 'Gulshan 2', suburb: 'Gulshan', city: 'Dhaka', country_code: 'bd' },
+      },
+      {
+        lat: '23.7925', lon: '90.4078', name: 'Gulshan 1',
+        display_name: 'Gulshan 1, Gulshan, Dhaka, Dhaka Metropolitan, Dhaka District, Dhaka Division, 1212, Bangladesh',
+        address: { quarter: 'Gulshan 1', suburb: 'Gulshan', city: 'Dhaka', country_code: 'bd' },
+      },
+    ]);
+  });
+
+  const results = await search('Gulshan');
+
+  assert.equal(results.length, 2);
+  assert.deepEqual(results[0], { lat: 23.7947191, lng: 90.4136986, address: 'Gulshan 2, Gulshan, Dhaka', countryCode: 'bd' });
+  assert.deepEqual(results[1], { lat: 23.7925, lng: 90.4078, address: 'Gulshan 1, Gulshan, Dhaka', countryCode: 'bd' });
+  assert.equal(fetchMock.mock.callCount(), 1);
+});
+
+// Reverse-geocoding a residential road can come back with no city/town/
+// village tag at all (just a suburb) — the fallback to a cleaned county/
+// state_district is what stops the result from reading as just "Lalmatia"
+// with no city alongside it.
+test('reverseGeocode() falls back to a cleaned county/state_district when city is missing entirely', async () => {
+  mock.method(globalThis, 'fetch', async () => jsonResponse({
+    name: '',
+    display_name: 'Dhanmondi Residential Area, Lalmatia, Mohammadpur, Dhaka Metropolitan, Dhaka District, Dhaka Division, 1205, Bangladesh',
+    address: {
+      residential: 'Dhanmondi Residential Area',
+      suburb: 'Lalmatia',
+      county: 'Dhaka Metropolitan',
+      state_district: 'Dhaka District',
+      country_code: 'bd',
+    },
+  }));
+
+  const result = await reverseGeocode(23.7461, 90.3742);
+
+  assert.equal(result.address, 'Lalmatia, Dhaka');
+});
+
+test('search() returns an empty array (not an error) when Nominatim has no matches yet', async () => {
+  mock.method(globalThis, 'fetch', async () => jsonResponse([]));
+
+  const results = await search('xyz');
+
+  assert.deepEqual(results, []);
 });
