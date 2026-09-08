@@ -1,0 +1,2171 @@
+<title>Cholo Viva Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#F4F7F6; --surface:#FFFFFF; --surface-2:#EDF3F1; --surface-3:#E4EDEA;
+  --text:#0B1F2E; --text-2:#415A66; --text-3:#6B8593;
+  --line:#DAE5E1; --line-2:#C6D6D1;
+  --cholo:#0E7A5F; --cholo-2:#0A5C48; --cholo-wash:#E4F2ED;
+  --gold:#B5761A; --gold-wash:#FBF0DC; --gold-line:#E8C98A;
+  --red:#C42828; --red-wash:#FBE9E9; --red-line:#EFB9B9;
+  --blue:#1E56C4; --blue-wash:#E7EEFB; --blue-line:#B9CCEF;
+  --code-bg:#0C2029; --code-text:#DCE9E4;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#081418; --surface:#0E2028; --surface-2:#132B34; --surface-3:#1A3742;
+    --text:#E6EFEC; --text-2:#A8C0BA; --text-3:#7D9A93;
+    --line:#1F3D47; --line-2:#2B5060;
+    --cholo:#42C79C; --cholo-2:#6BDBB6; --cholo-wash:#0F2E28;
+    --gold:#E8B45E; --gold-wash:#2E2415; --gold-line:#5C4620;
+    --red:#F08585; --red-wash:#2E1717; --red-line:#5E2A2A;
+    --blue:#7FA9F5; --blue-wash:#141F33; --blue-line:#2C4573;
+    --code-bg:#061218; --code-text:#CFE2DC;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#081418; --surface:#0E2028; --surface-2:#132B34; --surface-3:#1A3742;
+  --text:#E6EFEC; --text-2:#A8C0BA; --text-3:#7D9A93;
+  --line:#1F3D47; --line-2:#2B5060;
+  --cholo:#42C79C; --cholo-2:#6BDBB6; --cholo-wash:#0F2E28;
+  --gold:#E8B45E; --gold-wash:#2E2415; --gold-line:#5C4620;
+  --red:#F08585; --red-wash:#2E1717; --red-line:#5E2A2A;
+  --blue:#7FA9F5; --blue-wash:#141F33; --blue-line:#2C4573;
+  --code-bg:#061218; --code-text:#CFE2DC;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;max-width:1240px;margin:0 auto}
+nav.rail{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:26px 18px 40px;border-right:1px solid var(--line);background:var(--surface)}
+nav.rail .brand{font-family:var(--serif);font-weight:700;font-size:19px;line-height:1.25;color:var(--text);margin-bottom:2px}
+nav.rail .brandsub{font-size:11.5px;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px}
+nav.rail a{display:flex;gap:9px;text-decoration:none;color:var(--text-2);font-size:13.5px;padding:5px 8px;border-radius:6px;line-height:1.4}
+nav.rail a:hover{background:var(--surface-2);color:var(--text)}
+nav.rail a .n{color:var(--text-3);font-family:var(--mono);font-size:11.5px;font-weight:500;flex:none;width:20px;padding-top:2px}
+nav.rail a.hot{color:var(--cholo);font-weight:600}
+nav.rail a.hot .n{color:var(--cholo)}
+nav.rail .grp{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:18px 0 6px 8px;font-weight:600}
+main{padding:34px 46px 120px;min-width:0}
+section{margin-bottom:60px;scroll-margin-top:20px}
+h1{font-family:var(--serif);font-size:40px;line-height:1.12;font-weight:700;margin:0 0 10px;text-wrap:balance;letter-spacing:-.015em}
+h2{font-family:var(--serif);font-size:27px;line-height:1.2;font-weight:700;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em;scroll-margin-top:20px}
+h3{font-family:var(--serif);font-size:19.5px;font-weight:600;margin:30px 0 8px;text-wrap:balance}
+h4{font-size:14.5px;font-weight:600;margin:22px 0 6px;color:var(--text)}
+p{margin:0 0 13px;max-width:74ch}
+ul,ol{margin:0 0 13px;padding-left:22px;max-width:74ch}
+li{margin-bottom:6px}
+a{color:var(--cholo)}
+code{font-family:var(--mono);font-size:.875em;background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:4px;white-space:nowrap}
+strong{font-weight:600}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cholo);font-weight:600;margin-bottom:8px}
+.lede{font-size:18px;line-height:1.6;color:var(--text-2);max-width:70ch;margin-bottom:20px}
+.secnum{font-family:var(--mono);font-size:12px;color:var(--text-3);font-weight:500;letter-spacing:.1em;margin-bottom:4px}
+pre{background:var(--code-bg);color:var(--code-text);font-family:var(--mono);font-size:13px;line-height:1.62;padding:15px 17px;border-radius:9px;overflow-x:auto;margin:0 0 15px;border:1px solid var(--line)}
+pre code{background:none;border:none;padding:0;white-space:pre;font-size:inherit;color:inherit}
+pre .c{color:#7FA396}
+pre .k{color:#F0B96B}
+pre .s{color:#8FD3B4}
+pre .hl{background:rgba(66,199,156,.17);display:inline-block;width:100%}
+.filetag{font-family:var(--mono);font-size:11.5px;color:var(--text-3);margin:0 0 5px;display:flex;align-items:center;gap:7px}
+.filetag::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--cholo);opacity:.6;flex:none}
+.box{border-radius:10px;padding:15px 17px;margin:0 0 16px;border:1px solid var(--line);background:var(--surface);max-width:78ch}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+.box .bt{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;margin-bottom:7px;font-family:var(--mono)}
+.say{background:var(--cholo-wash);border-color:var(--cholo);border-left-width:4px}
+.say .bt{color:var(--cholo)}
+.warn{background:var(--gold-wash);border-color:var(--gold-line);border-left:4px solid var(--gold)}
+.warn .bt{color:var(--gold)}
+.ask{background:var(--blue-wash);border-color:var(--blue-line);border-left:4px solid var(--blue)}
+.ask .bt{color:var(--blue)}
+.stop{background:var(--red-wash);border-color:var(--red-line);border-left:4px solid var(--red)}
+.stop .bt{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 16px}
+.tscroll{overflow-x:auto;margin-bottom:16px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.tscroll table{margin:0}
+th{text-align:left;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);font-weight:600;padding:10px 13px;border-bottom:1px solid var(--line-2);white-space:nowrap;background:var(--surface-2)}
+td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+td code{white-space:nowrap}
+.mono{font-family:var(--mono);font-size:13px}
+.tnum{font-variant-numeric:tabular-nums}
+.trace{margin:0 0 20px;border-left:2px solid var(--line-2);padding-left:0;max-width:80ch}
+.step{position:relative;padding:0 0 20px 28px;margin-left:14px;border-left:2px solid var(--line-2)}
+.step:last-child{border-left-color:transparent;padding-bottom:4px}
+.step::before{content:attr(data-n);position:absolute;left:-15px;top:0;width:28px;height:28px;border-radius:50%;background:var(--cholo);color:#fff;font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;border:3px solid var(--ground)}
+.step h4{margin:2px 0 4px;font-size:15.5px;font-weight:600}
+.step .where{font-family:var(--mono);font-size:11.5px;color:var(--text-3);margin-bottom:7px;word-break:break-all}
+.step p{font-size:14.5px;margin-bottom:9px}
+.step pre{font-size:12.5px;margin-bottom:9px}
+.layers{display:flex;flex-direction:column;gap:0;margin:0 0 20px;max-width:60ch}
+.layer{border:1px solid var(--line);background:var(--surface);padding:11px 15px;position:relative}
+.layer:first-child{border-radius:9px 9px 0 0}
+.layer:last-child{border-radius:0 0 9px 9px}
+.layer+.layer{border-top:none}
+.layer .lname{font-weight:600;font-size:14.5px;display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.layer .lfile{font-family:var(--mono);font-size:11.5px;color:var(--text-3);font-weight:400}
+.layer .ldesc{font-size:13.5px;color:var(--text-2);margin-top:2px;line-height:1.5}
+.layer.acc{border-left:4px solid var(--cholo)}
+.arrowcol{display:flex;align-items:center;justify-content:center;font-family:var(--mono);color:var(--text-3);font-size:15px;padding:2px 0}
+.pill{display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.p200{background:var(--cholo-wash);color:var(--cholo);border:1px solid var(--cholo)}
+.p400{background:var(--gold-wash);color:var(--gold);border:1px solid var(--gold-line)}
+.p500{background:var(--red-wash);color:var(--red);border:1px solid var(--red-line)}
+.pinfo{background:var(--blue-wash);color:var(--blue);border:1px solid var(--blue-line)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px;margin-bottom:18px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.tile .tl{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);font-weight:600;margin-bottom:5px;font-family:var(--mono)}
+.tile .tv{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);word-break:break-all;line-height:1.45}
+.tile .tn{font-size:13px;color:var(--text-2);margin-top:5px;line-height:1.5}
+.qa{border-top:1px solid var(--line);padding:15px 0;max-width:78ch}
+.qa:last-child{border-bottom:1px solid var(--line)}
+.qa .q{font-weight:600;font-size:15.5px;margin-bottom:6px;color:var(--text);display:flex;gap:9px}
+.qa .q::before{content:"Q";font-family:var(--mono);color:var(--cholo);font-size:12.5px;font-weight:700;padding-top:3px;flex:none}
+.qa .a{font-size:14.5px;color:var(--text-2);display:flex;gap:9px}
+.qa .a::before{content:"A";font-family:var(--mono);color:var(--text-3);font-size:12.5px;font-weight:700;padding-top:3px;flex:none}
+.qa .a p{margin-bottom:9px}
+.qa .a p:last-child{margin-bottom:0}
+.qa .a>div{min-width:0}
+hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+.hero{border:1px solid var(--cholo);border-left:5px solid var(--cholo);background:var(--surface);border-radius:11px;padding:20px 22px;margin-bottom:26px}
+.hero h2{font-size:22px;margin-bottom:3px}
+.hero .hsub{color:var(--text-2);font-size:14.5px;margin-bottom:15px}
+.cmdrow{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:start;margin-bottom:11px}
+.cmdrow .cn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:#fff;background:var(--cholo);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-top:6px}
+.cmdrow .cb{min-width:0}
+.cmdrow pre{margin-bottom:4px}
+.cmdrow .cnote{font-size:13px;color:var(--text-2);line-height:1.5}
+.toc-note{font-size:13px;color:var(--text-3);margin-top:14px;padding-top:12px;border-top:1px solid var(--line);line-height:1.5}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line);padding:20px}
+  main{padding:24px 20px 80px}
+  h1{font-size:31px}
+  h2{font-size:23px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--cholo);outline-offset:2px;border-radius:3px}
+</style>
+
+<div class="wrap">
+<nav class="rail">
+  <div class="brand">Cholo Viva Handbook</div>
+  <div class="brandsub">CSE 216 &middot; 60% Evaluation</div>
+
+  <div class="grp">Before you walk in</div>
+  <a class="hot" href="#panic"><span class="n">00</span><span>Panic card &mdash; start it up</span></a>
+  <a href="#what"><span class="n">01</span><span>What you actually built</span></a>
+  <a href="#words"><span class="n">02</span><span>Every word, explained</span></a>
+
+  <div class="grp">Running it</div>
+  <a href="#start"><span class="n">03</span><span>Starting the project</span></a>
+  <a href="#map"><span class="n">04</span><span>Map of the codebase</span></a>
+  <a href="#boot"><span class="n">05</span><span>What runs first</span></a>
+
+  <div class="grp">The core &mdash; read twice</div>
+  <a class="hot" href="#traceA"><span class="n">06</span><span>Trace A: the Login button</span></a>
+  <a class="hot" href="#traceB"><span class="n">07</span><span>Trace B: booking a ride</span></a>
+  <a href="#pipeline"><span class="n">08</span><span>The backend pipeline</span></a>
+
+  <div class="grp">Database</div>
+  <a class="hot" href="#sql"><span class="n">09</span><span>Where the queries live</span></a>
+  <a class="hot" href="#triggers"><span class="n">10</span><span>Queries nobody calls</span></a>
+  <a href="#db"><span class="n">11</span><span>The database itself</span></a>
+
+  <div class="grp">Graded hardest</div>
+  <a class="hot" href="#authn"><span class="n">12</span><span>Authentication</span></a>
+  <a class="hot" href="#authz"><span class="n">13</span><span>Authorization</span></a>
+  <a href="#realtime"><span class="n">14</span><span>Real-time sockets</span></a>
+
+  <div class="grp">Exam day</div>
+  <a class="hot" href="#demo"><span class="n">15</span><span>The demo script</span></a>
+  <a class="hot" href="#qa"><span class="n">16</span><span>Question bank</span></a>
+  <a href="#broken"><span class="n">17</span><span>If something breaks</span></a>
+  <a href="#split"><span class="n">18</span><span>Who explains what</span></a>
+  <a href="#changed"><span class="n">19</span><span>What changed tonight</span></a>
+
+  <div class="toc-note">Read 02, 06, 07, 09, 10, 12 and 13 properly. Skim the rest. Section 16 is your last hour.</div>
+</nav>
+
+<main>
+
+<section id="panic">
+  <div class="eyebrow">Section 00</div>
+  <h1>Cholo Viva Handbook</h1>
+  <p class="lede">Everything about how your ride-sharing platform actually works &mdash; written for two people who can build it but have never been taught what any of it is called.</p>
+
+  <div class="hero">
+    <h2>Panic card</h2>
+    <div class="hsub">If you read nothing else, read this. These are the exact commands, verified working tonight.</div>
+
+    <div class="cmdrow">
+      <div class="cn">1</div>
+      <div class="cb">
+        <pre><code>open -a Docker</code></pre>
+        <div class="cnote">Start Docker Desktop and <strong>wait for the whale icon to stop animating</strong>. Nothing else works until this is done. Do this first, ~30 seconds.</div>
+      </div>
+    </div>
+
+    <div class="cmdrow">
+      <div class="cn">2</div>
+      <div class="cb">
+        <pre><code>cd ~/cholo
+docker compose up -d postgres</code></pre>
+        <div class="cnote">Starts the PostgreSQL database in a container. Check it with <code>docker compose ps</code> &mdash; you want <code>healthy</code>.</div>
+      </div>
+    </div>
+
+    <div class="cmdrow">
+      <div class="cn">3</div>
+      <div class="cb">
+        <pre><code>npm run db:init</code></pre>
+        <div class="cnote">Creates the tables if the database is empty, applies any pending migrations, and loads reference data (roles, cities, vehicle categories).</div>
+      </div>
+    </div>
+
+    <div class="cmdrow">
+      <div class="cn">4</div>
+      <div class="cb">
+        <pre><code>cd ~/cholo/server
+npm run dev</code></pre>
+        <div class="cnote"><strong>Leave this terminal open.</strong> It prints <code>Cholo API listening on port 3000</code>. This terminal is also where OTP codes appear during registration.</div>
+      </div>
+    </div>
+
+    <div class="cmdrow">
+      <div class="cn">5</div>
+      <div class="cb">
+        <pre><code>cd ~/cholo/client
+npm run dev</code></pre>
+        <div class="cnote"><strong>Second terminal, leave open.</strong> Prints <code>Local: http://localhost:5173/</code>. That is the website.</div>
+      </div>
+    </div>
+
+    <div class="cmdrow">
+      <div class="cn">6</div>
+      <div class="cb">
+        <pre><code>curl http://localhost:3000/health</code></pre>
+        <div class="cnote">Must print <code>{"db":true}</code>. If it does, backend and database are talking. If it doesn't, go to <a href="#broken">section 17</a>.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>The three logins</h3>
+  <p>All three demo accounts use the password <code>DemoPass123</code>. Verified working tonight.</p>
+
+  <div class="grid2">
+    <div class="tile">
+      <div class="tl">Passenger &mdash; Nusrat Jahan</div>
+      <div class="tv">01710000001</div>
+      <div class="tn">Lands on <code>/</code> &mdash; the book-a-ride map screen.</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Driver &mdash; Rafiq Islam</div>
+      <div class="tv">01810000002</div>
+      <div class="tn">Lands on <code>/driver</code> &mdash; go online, receive offers.</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Admin &mdash; Ayesha Admin</div>
+      <div class="tv">01510009993</div>
+      <div class="tn">Lands on <code>/admin</code> &mdash; dashboard, approvals, payouts.</div>
+    </div>
+  </div>
+
+  <div class="box warn">
+    <div class="bt">If the demo accounts don't exist</div>
+    <p>The three accounts live in a seed file. If a login fails with "Phone or password is incorrect", load them:</p>
+    <pre><code>cd ~/cholo
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U cholo -d cholo \
+  &lt; database/seeds/seed.dev.sql</code></pre>
+    <p>It's idempotent &mdash; running it twice is safe and repairs the accounts.</p>
+  </div>
+
+  <h3>The three URLs</h3>
+  <div class="tscroll"><table>
+    <tr><th>URL</th><th>What it is</th></tr>
+    <tr><td><code>http://localhost:5173</code></td><td>The website. This is what you show the instructor.</td></tr>
+    <tr><td><code>http://localhost:3000/api/v1/...</code></td><td>The API. Postman/curl hits this directly to prove server-side security.</td></tr>
+    <tr><td><code>http://localhost:3000/health</code></td><td>Proves the backend can reach the database.</td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">Say this if asked "how do I run it?"</div>
+    <p>"It's three processes. PostgreSQL runs in a Docker container on port 5433. The Express API runs on port 3000 and connects to Postgres through a connection pool. The React frontend runs on Vite's dev server on port 5173 and calls the API over HTTP. They're separate programs &mdash; the frontend never touches the database directly."</p>
+  </div>
+</section>
+<section id="what">
+  <div class="secnum">SECTION 01</div>
+  <h2>What you actually built</h2>
+  <p class="lede">Before you can explain the code, you need one clean sentence about the product.</p>
+
+  <p><strong>Cholo is a ride-hailing platform for Bangladesh &mdash; an Uber/Pathao-style system.</strong> A passenger books a ride, the system finds nearby drivers and offers them the ride, one driver accepts, the trip runs with live GPS tracking, the passenger pays, and the platform takes a commission. An admin approves drivers, sets pricing, handles payouts and disputes.</p>
+
+  <p>Three roles: <strong>PASSENGER</strong>, <strong>DRIVER</strong>, <strong>ADMIN</strong>. Each one gets a completely different interface after login.</p>
+
+  <h3>The numbers, so you can quote them</h3>
+  <div class="grid2">
+    <div class="tile"><div class="tl">Database tables</div><div class="tv">54</div><div class="tn">Plus <code>schema_migrations</code> for tracking applied migrations.</div></div>
+    <div class="tile"><div class="tl">API endpoints</div><div class="tv">89</div><div class="tn">Across 16 route files, all under <code>/api/v1</code>.</div></div>
+    <div class="tile"><div class="tl">Automated tests</div><div class="tv">317 passing</div><div class="tn">Unit, integration and API tests. <code>npm test</code> at the repo root.</div></div>
+    <div class="tile"><div class="tl">PostgreSQL enum types</div><div class="tv">50+</div><div class="tn">Status columns are real enums, not free-text strings.</div></div>
+  </div>
+
+  <h3>How you meet the 60% requirements</h3>
+  <p>The guidelines list four graded areas. Here is where each one lives, so you can point at it instantly.</p>
+
+  <div class="tscroll"><table>
+    <tr><th>Requirement</th><th>Where it is</th><th>How you prove it</th></tr>
+    <tr>
+      <td><strong>3.1</strong> Authentication for all roles</td>
+      <td><code>server/src/routes/auth.routes.js</code><br><code>services/auth.service.js</code></td>
+      <td>Log in as all three demo accounts one after another.</td>
+    </tr>
+    <tr>
+      <td><strong>3.1</strong> Hashed + salted passwords</td>
+      <td><code>server/src/utils/password.js</code></td>
+      <td>bcrypt, cost factor 12. Salt is built into the hash string.</td>
+    </tr>
+    <tr>
+      <td><strong>3.1</strong> Session management</td>
+      <td><code>utils/tokens.js</code>, <code>controllers/auth.controller.js</code></td>
+      <td>Short-lived JWT access token + httpOnly refresh cookie, both stored in <code>login_sessions</code> / <code>refresh_tokens</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>3.1</strong> Logout that really invalidates</td>
+      <td><code>auth.service.js</code> &rarr; <code>logout()</code></td>
+      <td>Revokes the refresh token row and ends the session row in the DB.</td>
+    </tr>
+    <tr>
+      <td><strong>3.1</strong> Role stored in DB, resolved at login</td>
+      <td><code>roles</code> + <code>user_roles</code> tables</td>
+      <td>Roles are read from SQL at login and signed into the token. The client never sends its role.</td>
+    </tr>
+    <tr>
+      <td><strong>3.2</strong> Distinct capability per role</td>
+      <td><code>client/src/App.tsx</code> + <code>middlewares/auth.js</code></td>
+      <td>Three different layouts and three different route trees.</td>
+    </tr>
+    <tr>
+      <td><strong>3.2</strong> Cross-role access blocked <span class="pill p400">403</span></td>
+      <td><code>requireRole()</code> in <code>middlewares/auth.js</code></td>
+      <td>curl an admin endpoint with a passenger token &rarr; <code>403 FORBIDDEN_ROLE</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>3.2</strong> Object-level ownership (IDOR)</td>
+      <td><code>services/trips.service.js</code> &rarr; <code>loadOwnedTripForUpdate()</code></td>
+      <td>Ask for another user's trip code &rarr; <code>404 TRIP_NOT_FOUND</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>3.2</strong> Server-side enforcement</td>
+      <td>Every route file</td>
+      <td>Postman with no browser involved still gets 401/403.</td>
+    </tr>
+    <tr>
+      <td><strong>3.3</strong> REST conventions + status codes</td>
+      <td>All 16 route files</td>
+      <td>200/201/204/400/401/403/404/409/410/422/429/500 all in use.</td>
+    </tr>
+    <tr>
+      <td><strong>3.3</strong> Parameterized queries only</td>
+      <td><code>server/src/repositories/*.js</code></td>
+      <td>Every query uses <code>$1, $2</code> placeholders. No string concatenation of user input.</td>
+    </tr>
+    <tr>
+      <td><strong>3.4</strong> Minimal working frontend</td>
+      <td><code>client/src/pages/</code></td>
+      <td>Login/register/OTP screens, role-aware UI, forms, tables, error toasts.</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong> No ORM &mdash; raw SQL</td>
+      <td><code>repositories/</code> using the <code>pg</code> driver</td>
+      <td>Hand-written SQL strings. No Sequelize, no Prisma, no TypeORM.</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong> No secrets committed</td>
+      <td><code>.env</code> is git-ignored; <code>.env.example</code> has fake values</td>
+      <td><code>git check-ignore .env</code> confirms it.</td>
+    </tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">If she asks "did you use an ORM?"</div>
+    <p>"No. The guidelines prohibit it. We use the <code>pg</code> driver directly and write raw parameterized SQL. All of it lives in the <code>repositories/</code> folder &mdash; that's the only layer allowed to contain SQL, which is why it's easy to audit."</p>
+  </div>
+</section>
+
+<section id="words">
+  <div class="secnum">SECTION 02</div>
+  <h2>Every word, explained</h2>
+  <p class="lede">You know Java and JavaFX. Every tool here has a Java equivalent. Learn the left column by mapping it to the right column.</p>
+
+  <div class="tscroll"><table>
+    <tr><th>This project</th><th>The Java thing you already know</th><th>What it actually does</th></tr>
+    <tr>
+      <td><strong>JavaScript</strong></td>
+      <td>Java, the language</td>
+      <td>The programming language everything here is written in. Runs in browsers <em>and</em> on servers.</td>
+    </tr>
+    <tr>
+      <td><strong>Node.js</strong></td>
+      <td>The JVM</td>
+      <td>The runtime that executes JavaScript <em>outside</em> a browser. When you type <code>node src/server.js</code> that's exactly like <code>java Server</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>npm</strong></td>
+      <td>Maven / Gradle</td>
+      <td>Package manager. <code>npm install</code> downloads libraries into <code>node_modules/</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>package.json</strong></td>
+      <td><code>pom.xml</code> / <code>build.gradle</code></td>
+      <td>Lists dependencies and defines shortcut commands (<code>npm run dev</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>Express</strong></td>
+      <td>Servlets + a filter chain</td>
+      <td>The web framework. It maps URLs to functions and runs a chain of middleware before each one.</td>
+    </tr>
+    <tr>
+      <td><strong>middleware</strong></td>
+      <td><code>javax.servlet.Filter</code></td>
+      <td>A function that runs <em>before</em> your handler and can either pass control on (<code>next()</code>) or reject the request.</td>
+    </tr>
+    <tr>
+      <td><strong>React</strong></td>
+      <td>JavaFX (Scene, Controls)</td>
+      <td>The UI library. You build the screen out of components, and when data changes React redraws the affected parts.</td>
+    </tr>
+    <tr>
+      <td><strong>component</strong></td>
+      <td>A custom JavaFX control</td>
+      <td>A reusable function that returns a piece of UI. <code>&lt;Button /&gt;</code>, <code>&lt;LoginPage /&gt;</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>JSX</strong> (the HTML-in-JS)</td>
+      <td>FXML, but inline</td>
+      <td>Lets you write markup inside JavaScript. It gets compiled into function calls.</td>
+    </tr>
+    <tr>
+      <td><strong>state</strong> (<code>useState</code>)</td>
+      <td><code>SimpleStringProperty</code> and observers</td>
+      <td>A variable React watches. Change it and the screen re-renders automatically.</td>
+    </tr>
+    <tr>
+      <td><strong>useEffect</strong></td>
+      <td><code>initialize()</code> + listeners</td>
+      <td>"Run this code after the component appears" &mdash; used for loading data, subscribing to sockets, timers.</td>
+    </tr>
+    <tr>
+      <td><strong>TypeScript</strong></td>
+      <td>Java's type system</td>
+      <td>JavaScript plus compile-time types. <code>.tsx</code> files are TypeScript with JSX. Types vanish at runtime.</td>
+    </tr>
+    <tr>
+      <td><strong>Vite</strong></td>
+      <td>Gradle + a dev server, combined</td>
+      <td>The frontend build tool. In dev it serves the app with instant hot-reload; <code>npm run build</code> compiles it into static files.</td>
+    </tr>
+    <tr>
+      <td><strong>Tailwind CSS</strong></td>
+      <td>Inline styles, but disciplined</td>
+      <td>Instead of writing a stylesheet, you put utility classes on elements: <code>className="flex gap-4 rounded-xl"</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>axios</strong></td>
+      <td><code>HttpClient</code></td>
+      <td>The HTTP library the frontend uses to call the API.</td>
+    </tr>
+    <tr>
+      <td><strong>PostgreSQL</strong></td>
+      <td>MySQL/Oracle &mdash; a real RDBMS</td>
+      <td>The database. Version 16, running in Docker.</td>
+    </tr>
+    <tr>
+      <td><strong>pg</strong></td>
+      <td>The JDBC driver</td>
+      <td>The Node library that speaks the PostgreSQL wire protocol.</td>
+    </tr>
+    <tr>
+      <td><strong>connection pool</strong></td>
+      <td>HikariCP</td>
+      <td>A reusable set of open DB connections, so you don't pay connection cost per request.</td>
+    </tr>
+    <tr>
+      <td><strong>JWT</strong></td>
+      <td>A signed session ticket</td>
+      <td>A string the server signs. The client sends it back on every request to prove who it is. See <a href="#authn">section 11</a>.</td>
+    </tr>
+    <tr>
+      <td><strong>bcrypt</strong></td>
+      <td>A deliberately slow password hasher</td>
+      <td>Turns a password into an irreversible hash with a built-in random salt.</td>
+    </tr>
+    <tr>
+      <td><strong>Socket.io</strong></td>
+      <td>A raw <code>Socket</code> that stays open</td>
+      <td>A persistent two-way connection so the server can <em>push</em> to the client without being asked.</td>
+    </tr>
+    <tr>
+      <td><strong>Zod</strong></td>
+      <td>Bean Validation (<code>@NotNull</code>)</td>
+      <td>Declares the shape of an incoming request body and rejects anything that doesn't match.</td>
+    </tr>
+    <tr>
+      <td><strong>Docker</strong></td>
+      <td>A pre-configured VM in a box</td>
+      <td>Runs PostgreSQL without installing it on your Mac. <code>docker compose</code> starts it from a config file.</td>
+    </tr>
+    <tr>
+      <td><strong>REST API</strong></td>
+      <td>A set of URL endpoints</td>
+      <td>The contract between frontend and backend: URLs + HTTP verbs + JSON.</td>
+    </tr>
+  </table></div>
+
+  <h3>The two ideas that confuse everyone</h3>
+
+  <h4>1. The frontend and backend are two separate programs</h4>
+  <p>This is the biggest mental shift from JavaFX. In a JavaFX app, your button handler can call a database method directly &mdash; same program, same memory. Here they are <strong>two processes that don't share memory</strong>. They talk only by sending HTTP messages over the network.</p>
+
+  <div class="layers">
+    <div class="layer acc">
+      <div class="lname">Browser (React) <span class="lfile">port 5173</span></div>
+      <div class="ldesc">Draws the screen. Has no database access at all, and no passwords.</div>
+    </div>
+    <div class="arrowcol">&darr;&nbsp; HTTP request with a JWT &nbsp;&darr;</div>
+    <div class="layer acc">
+      <div class="lname">Express API (Node) <span class="lfile">port 3000</span></div>
+      <div class="ldesc">Checks who you are, checks what you're allowed to do, runs the business rules, talks to Postgres.</div>
+    </div>
+    <div class="arrowcol">&darr;&nbsp; SQL over a pooled connection &nbsp;&darr;</div>
+    <div class="layer acc">
+      <div class="lname">PostgreSQL <span class="lfile">port 5433</span></div>
+      <div class="ldesc">Stores everything. Enforces constraints as the final line of defence.</div>
+    </div>
+  </div>
+
+  <div class="box say">
+    <div class="bt">Why this matters for your grade</div>
+    <p>Because they're separate programs, <strong>hiding a button in React hides nothing</strong>. Anyone can open Postman and call the API directly. That's exactly why the guidelines say authorization must be enforced in the backend &mdash; and why we check roles and ownership on the server in every single route.</p>
+  </div>
+
+  <h4>2. "Asynchronous" and <code>await</code></h4>
+  <p>Database calls take time. Node does not block and wait like Java does by default &mdash; it goes off and does other work. The <code>await</code> keyword means "pause <em>this function</em> until the result comes back, but let the server keep handling other requests meanwhile."</p>
+  <pre><code><span class="c">// This reads top-to-bottom exactly like Java. The await just means</span>
+<span class="c">// "the server can serve other people while this query runs".</span>
+<span class="k">const</span> user = <span class="k">await</span> usersRepo.findAuthByPhone(phone);
+<span class="k">const</span> matches = <span class="k">await</span> verifyPassword(password, user.passwordHash);</code></pre>
+  <p>Any function containing <code>await</code> must be declared <code>async</code>. That's the whole rule.</p>
+</section>
+<section id="start">
+  <div class="secnum">SECTION 03</div>
+  <h2>Starting the project</h2>
+  <p class="lede">Two ways to run it. Know both, use the first.</p>
+
+  <h3>Way 1 &mdash; development mode (use this for the demo)</h3>
+  <p>Three terminals. This is the mode where you can <strong>see the OTP codes</strong> in the API terminal, which you need if you want to register a brand new account live.</p>
+
+  <div class="tscroll"><table>
+    <tr><th>#</th><th>Terminal</th><th>Command</th><th>Healthy output</th></tr>
+    <tr><td class="mono">1</td><td>Docker</td><td><code>docker compose up -d postgres</code></td><td><code>Container cholo-postgres-1 Started</code></td></tr>
+    <tr><td class="mono">2</td><td>Setup (runs once, then exits)</td><td><code>npm run db:init</code></td><td>Silent = already up to date. Or "Applied migration&hellip;"</td></tr>
+    <tr><td class="mono">3</td><td>API &mdash; keep open</td><td><code>cd server &amp;&amp; npm run dev</code></td><td><code>Cholo API listening on port 3000</code></td></tr>
+    <tr><td class="mono">4</td><td>Frontend &mdash; keep open</td><td><code>cd client &amp;&amp; npm run dev</code></td><td><code>Local: http://localhost:5173/</code></td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">What each command actually does</div>
+    <ul>
+      <li><code>docker compose up -d postgres</code> &mdash; reads <code>docker-compose.yml</code>, pulls the <code>postgres:16</code> image, and starts it in the background (<code>-d</code> = detached). On the <em>very first</em> boot only, it runs <code>database/schema.sql</code> and the reference seed automatically.</li>
+      <li><code>npm run db:init</code> &mdash; runs <code>server/scripts/db-init.js</code>. It checks whether the <code>users</code> table exists; if not it loads the schema. Then it applies any numbered migration files not yet recorded in <code>schema_migrations</code>, and re-applies the idempotent reference seed.</li>
+      <li><code>npm run dev</code> in <code>server/</code> &mdash; runs <code>nodemon src/server.js</code>. Nodemon restarts Node automatically when you edit a file.</li>
+      <li><code>npm run dev</code> in <code>client/</code> &mdash; starts Vite's dev server, which compiles TypeScript/JSX on the fly and hot-reloads the browser.</li>
+    </ul>
+  </div>
+
+  <h3>Way 2 &mdash; full Docker (the "it just works" fallback)</h3>
+  <pre><code>cd ~/cholo
+docker compose up -d --build</code></pre>
+  <p>This builds and runs <strong>all three</strong> services: Postgres, the API, and a production build of the frontend served by nginx. The website is then at <code>http://localhost:4173</code> (note: <strong>4173</strong>, not 5173).</p>
+
+  <div class="box warn">
+    <div class="bt">Trade-off you should know</div>
+    <p>Full Docker is more reliable but slower to start and you <em>can't see OTP codes</em> as easily (they're in <code>docker compose logs api</code>, not your terminal). Use Way 1 for the demo, keep Way 2 as your backup if a Node process misbehaves.</p>
+  </div>
+
+  <h3>Proving it works</h3>
+  <pre><code><span class="c"># backend can reach the database</span>
+curl http://localhost:3000/health
+<span class="c"># → {"db":true}</span>
+
+<span class="c"># a real endpoint through the full route→controller→service→repository path</span>
+curl http://localhost:3000/api/v1/cities
+<span class="c"># → {"success":true,"data":[{"id":1,"name":"Dhaka",...}]}</span></code></pre>
+
+  <h3>The night-before checklist</h3>
+  <ol>
+    <li>Docker Desktop starts and the whale stops animating.</li>
+    <li><code>docker compose ps</code> shows postgres <code>healthy</code>.</li>
+    <li><code>curl http://localhost:3000/health</code> returns <code>{"db":true}</code>.</li>
+    <li>All three demo accounts log in on the website.</li>
+    <li><code>npm test</code> at the repo root finishes with exit code 0.</li>
+    <li>You've done the full demo once, start to finish, without reading this.</li>
+    <li>Laptop charger packed. Browser bookmarks for 5173 and the three logins ready.</li>
+  </ol>
+</section>
+
+<section id="map">
+  <div class="secnum">SECTION 04</div>
+  <h2>Map of the codebase</h2>
+  <p class="lede">One rule governs the whole backend: <strong>folders are layers, files are features.</strong></p>
+
+  <pre><code>cholo/
+├── database/
+│   ├── schema.sql            <span class="c">← all 54 CREATE TABLEs, constraints, triggers</span>
+│   ├── migrations/           <span class="c">← numbered, append-only schema changes</span>
+│   └── seeds/
+│       ├── seed.reference.sql  <span class="c">← roles, cities, categories (required)</span>
+│       └── seed.dev.sql        <span class="c">← Nusrat / Rafiq / Ayesha demo world</span>
+├── server/
+│   └── src/
+│       ├── server.js         <span class="c">← THE ENTRY POINT. opens the port</span>
+│       ├── app.js            <span class="c">← builds the Express app + middleware chain</span>
+│       ├── config/           <span class="c">← db pool, env validation, CORS</span>
+│       ├── routes/           <span class="c">← URL → which controller function</span>
+│       ├── middlewares/      <span class="c">← auth, validate, errorHandler, rateLimit</span>
+│       ├── controllers/      <span class="c">← unwrap the HTTP request, call a service</span>
+│       ├── services/         <span class="c">← THE BUSINESS RULES. transactions live here</span>
+│       ├── repositories/     <span class="c">← THE ONLY PLACE SQL IS ALLOWED</span>
+│       ├── validators/       <span class="c">← Zod schemas describing valid input</span>
+│       ├── sockets/          <span class="c">← Socket.io setup, rooms, live location</span>
+│       ├── jobs/             <span class="c">← cron: expire stale ride requests</span>
+│       └── utils/            <span class="c">← password hashing, JWT, fare math, errors</span>
+└── client/
+    └── src/
+        ├── main.tsx          <span class="c">← THE ENTRY POINT. mounts React</span>
+        ├── App.tsx           <span class="c">← the whole sitemap as routes</span>
+        ├── api/              <span class="c">← the ONLY place axios is called</span>
+        ├── context/          <span class="c">← AuthContext (who am I), SocketContext</span>
+        ├── layouts/          <span class="c">← the shell per role (tabs / sidebar)</span>
+        ├── pages/            <span class="c">← one file per screen, grouped by role</span>
+        ├── components/       <span class="c">← reusable UI: Button, BottomSheet, MapView</span>
+        └── utils/            <span class="c">← formatting, error message extraction</span></code></pre>
+
+  <h3>The five backend layers, and the rule for each</h3>
+
+  <div class="layers">
+    <div class="layer acc">
+      <div class="lname">routes/ <span class="lfile">rides.routes.js</span></div>
+      <div class="ldesc"><strong>Maps a URL + verb to a handler, and lists the gates it must pass.</strong> No logic. This is where you can read the security policy of an endpoint in one line.</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">middlewares/ <span class="lfile">auth.js, validate.js</span></div>
+      <div class="ldesc"><strong>Runs before the controller and can reject.</strong> Is there a valid token? Does the body match the schema? Is this role allowed?</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">controllers/ <span class="lfile">rides.controller.js</span></div>
+      <div class="ldesc"><strong>Translates HTTP to plain values and back.</strong> Reads <code>req.body</code>, <code>req.user.id</code>, calls one service function, sets the status code. Never contains business rules and never contains SQL.</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">services/ <span class="lfile">rides.service.js</span></div>
+      <div class="ldesc"><strong>The actual thinking.</strong> Fare calculation, "can this passenger book right now?", transactions, ownership checks, calling other services. Knows nothing about HTTP.</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">repositories/ <span class="lfile">rides.repository.js</span></div>
+      <div class="ldesc"><strong>SQL, and only SQL.</strong> One function per query. Takes plain arguments, returns plain rows. No business decisions.</div>
+    </div>
+  </div>
+
+  <div class="box say">
+    <div class="bt">Say this when asked about your architecture</div>
+    <p>"It's a layered architecture. Each folder is a layer with one job, and each file inside is one feature. A request goes route &rarr; middleware &rarr; controller &rarr; service &rarr; repository &rarr; PostgreSQL, then the result travels back the same way. SQL is only permitted in <code>repositories/</code>, which means we can audit every query in the system by looking in one folder. Controllers never contain business logic and services never know they're being called over HTTP &mdash; which is why the services are testable without a web server."</p>
+  </div>
+</section>
+
+<section id="boot">
+  <div class="secnum">SECTION 05</div>
+  <h2>What runs first</h2>
+  <p class="lede">"Which file executes first?" is a favourite viva question. Here is the exact order, both sides.</p>
+
+  <h3>Backend boot &mdash; <code>npm run dev</code></h3>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>Node loads <code>src/server.js</code></h4>
+      <div class="where">server/src/server.js</div>
+      <p>This is the entry point named in <code>package.json</code>. Its <code>import</code> statements run first, which pulls in everything below before a single line of its own body executes.</p>
+    </div>
+    <div class="step" data-n="2">
+      <h4><code>config/env.js</code> validates the environment</h4>
+      <div class="where">server/src/config/env.js</div>
+      <p>Reads the root <code>.env</code> file and runs it through a Zod schema. If <code>DATABASE_URL</code> is missing or <code>JWT_SECRET</code> is shorter than 32 characters, <strong>the server refuses to start</strong> with a readable error. Failing loudly at boot beats failing mysteriously at 2am.</p>
+    </div>
+    <div class="step" data-n="3">
+      <h4><code>config/db.js</code> creates the connection pool</h4>
+      <div class="where">server/src/config/db.js</div>
+      <pre><code><span class="k">export const</span> pool = <span class="k">new</span> Pool({ connectionString: env.DATABASE_URL });</code></pre>
+      <p>Note it does <em>not</em> connect yet &mdash; the pool opens connections lazily on first use.</p>
+    </div>
+    <div class="step" data-n="4">
+      <h4><code>app.js</code> assembles the Express application</h4>
+      <div class="where">server/src/app.js</div>
+      <p>Registers the global middleware chain in order (CORS &rarr; JSON parser &rarr; cookie parser &rarr; request logger), mounts <code>/health</code>, mounts every API route under <code>/api/v1</code>, then finally the 404 handler and the error handler.</p>
+    </div>
+    <div class="step" data-n="5">
+      <h4><code>routes/index.js</code> mounts the 16 routers</h4>
+      <div class="where">server/src/routes/index.js</div>
+      <p>Each feature router gets a URL prefix: <code>/auth</code>, <code>/rides</code>, <code>/admin</code>, <code>/trips</code>, etc. Combined with the <code>/api/v1</code> prefix, that's how <code>POST /api/v1/auth/login</code> finds its handler.</p>
+    </div>
+    <div class="step" data-n="6">
+      <h4>The port opens</h4>
+      <div class="where">server/src/server.js</div>
+      <pre><code><span class="k">const</span> server = app.listen(env.PORT, () => {
+  console.log(<span class="s">`Cholo API listening on port ${env.PORT}`</span>);
+});</code></pre>
+      <p>This is the first line of <code>server.js</code>'s own body to run, and the message you see in your terminal.</p>
+    </div>
+    <div class="step" data-n="7">
+      <h4>Socket.io attaches to the same server</h4>
+      <div class="where">server/src/sockets/index.js</div>
+      <p>One Node process, one HTTP server, one port. Express handles normal <code>/api/*</code> requests; Socket.io intercepts connections that ask to upgrade to WebSocket.</p>
+    </div>
+    <div class="step" data-n="8">
+      <h4>The cron job starts</h4>
+      <div class="where">server/src/jobs/expireRequests.job.js</div>
+      <p>Every minute, it marks ride requests older than 5 minutes as <code>expired</code> and withdraws their pending offers.</p>
+    </div>
+  </div>
+
+  <div class="box ask">
+    <div class="bt">Why are sockets and cron in server.js instead of app.js?</div>
+    <p>Because the test suite imports <code>app.js</code> directly to fire fake HTTP requests at it. If sockets and cron lived in <code>app.js</code>, every test run would open a real port and start a background timer. Splitting the entry into two files keeps <code>app.js</code> a pure, side-effect-free Express app. That's a deliberate design decision and a great thing to be able to explain.</p>
+  </div>
+
+  <h3>Frontend boot &mdash; opening <code>localhost:5173</code></h3>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4><code>index.html</code> loads</h4>
+      <div class="where">client/index.html</div>
+      <p>An almost empty page. It contains <code>&lt;div id="root"&gt;&lt;/div&gt;</code> and one script tag pointing at <code>/src/main.tsx</code>. This is a <strong>single-page application</strong>: the server sends one HTML shell and JavaScript builds everything else.</p>
+    </div>
+    <div class="step" data-n="2">
+      <h4><code>main.tsx</code> mounts React into that div</h4>
+      <div class="where">client/src/main.tsx</div>
+      <pre><code>createRoot(document.getElementById(<span class="s">'root'</span>)!).render(
+  &lt;BrowserRouter&gt;
+    &lt;AuthProvider&gt;
+      &lt;SocketProvider&gt;
+        &lt;App /&gt;
+      &lt;/SocketProvider&gt;
+    &lt;/AuthProvider&gt;
+  &lt;/BrowserRouter&gt;
+);</code></pre>
+      <p>Read it outside-in: routing wraps auth, auth wraps sockets, sockets wrap the app. Anything inside can ask "who is logged in?" and "is the socket connected?".</p>
+    </div>
+    <div class="step" data-n="3">
+      <h4><code>AuthProvider</code> tries to restore your session</h4>
+      <div class="where">client/src/context/AuthContext.tsx</div>
+      <p>On mount it calls <code>GET /api/v1/me</code>. There's no access token in memory yet on a fresh page load, so that returns <span class="pill p400">401</span> &mdash; which automatically triggers the refresh-cookie flow. If you had a valid session, you're silently logged back in. If not, the 401 just means "not logged in" and the app shows the marketing page.</p>
+    </div>
+    <div class="step" data-n="4">
+      <h4><code>App.tsx</code> picks a page from the URL</h4>
+      <div class="where">client/src/App.tsx</div>
+      <p>React Router matches the current URL against the route table and renders the matching page, wrapped in a <code>ProtectedRoute</code> that checks your role.</p>
+    </div>
+  </div>
+</section>
+<section id="traceA">
+  <div class="secnum">SECTION 06</div>
+  <h2>Trace A: the Login button</h2>
+  <p class="lede">The single most valuable thing in this handbook. If you can narrate these 13 steps, you understand the whole system &mdash; every other feature is this same shape.</p>
+
+  <p><strong>Setup:</strong> Nusrat types <code>01710000001</code> and <code>DemoPass123</code>, and clicks <strong>Log in</strong>.</p>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>The browser fires the form's submit handler</h4>
+      <div class="where">client/src/pages/auth/LoginPage.tsx</div>
+      <p>The button is <code>type="submit"</code> inside a <code>&lt;form onSubmit={handleSubmit}&gt;</code>. Clicking it runs <code>handleSubmit</code>. In JavaFX terms this is your <code>setOnAction</code> handler.</p>
+      <pre><code><span class="k">async function</span> handleSubmit(event) {
+  event.preventDefault();      <span class="c">// stop the browser's own page reload</span>
+  setSubmitting(<span class="k">true</span>);         <span class="c">// re-renders → button shows a spinner</span>
+  <span class="k">const</span> user = <span class="k">await</span> login(phone, password);
+  navigate(roleHomePath(user.roles), { replace: <span class="k">true</span> });
+}</code></pre>
+      <p><code>setSubmitting(true)</code> is the React idea in miniature: you change state, and React redraws the button as disabled with a spinner. You never touch the DOM yourself.</p>
+    </div>
+
+    <div class="step" data-n="2">
+      <h4>The page calls <code>login()</code> from AuthContext</h4>
+      <div class="where">client/src/context/AuthContext.tsx</div>
+      <p>The page doesn't know how logging in works. It asks the shared auth context, which is available to every component in the app.</p>
+      <pre><code><span class="k">async function</span> login(phone, password) {
+  <span class="k">await</span> authApi.login(phone, password);
+  <span class="k">return</span> loadFullProfile();   <span class="c">// then GET /me for the full user</span>
+}</code></pre>
+    </div>
+
+    <div class="step" data-n="3">
+      <h4>The API layer sends the actual HTTP request</h4>
+      <div class="where">client/src/api/auth.api.ts</div>
+      <pre><code><span class="k">const</span> { data } = <span class="k">await</span> apiClient.post(<span class="s">'/auth/login'</span>, { phone, password });
+setAccessToken(data.data.accessToken);   <span class="c">// stored in memory only</span>
+<span class="k">return</span> data.data.user;</code></pre>
+      <p><strong>This is the boundary.</strong> Everything above is browser; everything below is server. A real <code>POST</code> now travels to <code>http://localhost:3000/api/v1/auth/login</code> carrying JSON.</p>
+      <div class="box say">
+        <div class="bt">Architectural rule worth quoting</div>
+        <p>Components never call axios directly &mdash; only files in <code>api/</code> do. That's why token handling exists in exactly one place, and why no page has ever seen a raw token.</p>
+      </div>
+    </div>
+
+    <div class="step" data-n="4">
+      <h4>Express receives it and runs the global middleware chain</h4>
+      <div class="where">server/src/app.js</div>
+      <pre><code>app.use(cors(corsOptions));   <span class="c">// 1. is localhost:5173 allowed to call us?</span>
+app.use(express.json());      <span class="c">// 2. parse the JSON body into req.body</span>
+app.use(cookieParser());      <span class="c">// 3. parse cookies into req.cookies</span>
+app.use(requestLogger);       <span class="c">// 4. start a timer, log when finished</span>
+app.use(<span class="s">'/api/v1'</span>, apiRouter);</code></pre>
+      <p>These run <strong>in the order written</strong>, on every request. Order matters: <code>express.json()</code> must come before anything that reads <code>req.body</code>.</p>
+    </div>
+
+    <div class="step" data-n="5">
+      <h4>The router matches the URL</h4>
+      <div class="where">server/src/routes/index.js &rarr; auth.routes.js</div>
+      <p><code>/api/v1</code> strips off, <code>/auth</code> selects the auth router, <code>/login</code> selects this line:</p>
+      <pre><code>router.post(<span class="s">'/login'</span>, loginLimiter, validate(loginSchema), authController.login);</code></pre>
+      <p>Read left to right &mdash; that line <em>is</em> the security policy: rate-limit it, validate it, then handle it.</p>
+    </div>
+
+    <div class="step" data-n="6">
+      <h4>Rate limiter: too many failed attempts?</h4>
+      <div class="where">server/src/middlewares/rateLimit.js</div>
+      <p>Keyed by <strong>phone + IP</strong> so an attacker can't lock out everyone sharing an IP. 8 failed attempts per 15 minutes in production. Successful logins don't count &mdash; logging in nine times legitimately shouldn't throttle you.</p>
+      <p>If exceeded: <span class="pill p400">429 RATE_LIMITED</span> and the chain stops here.</p>
+    </div>
+
+    <div class="step" data-n="7">
+      <h4>Validation: does the body have the right shape?</h4>
+      <div class="where">server/src/middlewares/validate.js + validators/auth.schema.js</div>
+      <pre><code><span class="k">export const</span> loginSchema = z.object({
+  phone: z.string().regex(<span class="s">/^01[3-9][0-9]{8}$/</span>, <span class="s">'...valid Bangladeshi number'</span>),
+  password: z.string().min(1).max(72),
+});</code></pre>
+      <p>If it fails, the request never reaches your code &mdash; it returns <span class="pill p400">422 VALIDATION_FAILED</span> with a per-field list. If it passes, <code>req.body</code> is <em>replaced</em> with the parsed, type-clean version.</p>
+      <div class="box say">
+        <div class="bt">First line of SQL-injection defence</div>
+        <p>Note that <code>phone</code> can only ever be 11 digits matching that regex. A string like <code>' OR 1=1--</code> is rejected here, before it ever reaches the database &mdash; and even if it got through, the query is parameterized. Two independent fences.</p>
+      </div>
+    </div>
+
+    <div class="step" data-n="8">
+      <h4>The controller unwraps HTTP and calls the service</h4>
+      <div class="where">server/src/controllers/auth.controller.js</div>
+      <pre><code><span class="k">export const</span> login = asyncHandler(<span class="k">async</span> (request, response) => {
+  <span class="k">const</span> { accessToken, refreshToken, user } =
+    <span class="k">await</span> authService.login(request.body, deviceFromRequest(request));
+
+  setRefreshCookie(response, refreshToken);
+  response.json({ success: <span class="k">true</span>, data: { accessToken, user } });
+});</code></pre>
+      <p>Notice how thin it is. It knows about <code>request</code> and <code>response</code>; it makes no decisions. <code>asyncHandler</code> wraps it so that any thrown error is forwarded to the central error handler instead of crashing Node.</p>
+    </div>
+
+    <div class="step" data-n="9">
+      <h4>The service applies the actual rules</h4>
+      <div class="where">server/src/services/auth.service.js</div>
+      <pre><code><span class="k">export async function</span> login({ phone, password }, device) {
+  <span class="k">const</span> user = <span class="k">await</span> usersRepo.findAuthByPhone(phone);
+
+  <span class="c">// Always compare, even when no user was found (against a dummy hash)</span>
+  <span class="c">// so response timing can't reveal whether the phone exists.</span>
+  <span class="k">const</span> passwordMatches = <span class="k">await</span> verifyPassword(password, user?.passwordHash);
+
+  <span class="k">if</span> (!user || !passwordMatches) <span class="k">throw new</span> AppError(401, <span class="s">'BAD_CREDENTIALS'</span>);
+  <span class="k">if</span> (user.status === <span class="s">'suspended'</span>) <span class="k">throw new</span> AppError(403, <span class="s">'ACCOUNT_SUSPENDED'</span>);
+  <span class="k">if</span> (user.status !== <span class="s">'active'</span>) <span class="k">throw new</span> AppError(401, <span class="s">'BAD_CREDENTIALS'</span>);
+
+  <span class="k">return</span> mintSession(user.id, device);
+}</code></pre>
+      <div class="box ask">
+        <div class="bt">She will ask about that dummy-hash line</div>
+        <p>"If we skipped the bcrypt comparison when the user doesn't exist, that response would come back in 2ms instead of 250ms. An attacker could time our responses to discover which phone numbers are registered. So we always run a comparison &mdash; against a real hash of a random password when there's no user &mdash; making both paths take the same time." That's called a <strong>timing attack</strong>, and defending against it is worth marks.</p>
+      </div>
+    </div>
+
+    <div class="step" data-n="10">
+      <h4>The repository runs the SQL &mdash; <em>this is the query</em></h4>
+      <div class="where">server/src/repositories/users.repository.js</div>
+      <pre><code><span class="k">export async function</span> findAuthByPhone(phone) {
+  <span class="k">const</span> { rows } = <span class="k">await</span> pool.query(
+    <span class="s">`SELECT id, public_id AS "publicId", full_name AS "fullName", phone,
+            password_hash AS "passwordHash", status, phone_verified_at
+     FROM users
+     WHERE phone = $1`</span>,
+    [phone],
+  );
+  <span class="k">return</span> rows[0];
+}</code></pre>
+      <p><strong><code>$1</code> is the whole SQL-injection defence.</strong> The SQL text and the value travel to PostgreSQL <em>separately</em>. Postgres parses the query first, then binds <code>phone</code> as data. It is structurally impossible for the value to become executable SQL. See <a href="#sql">section 09</a>.</p>
+    </div>
+
+    <div class="step" data-n="11">
+      <h4>Password check with bcrypt</h4>
+      <div class="where">server/src/utils/password.js</div>
+      <pre><code><span class="k">export function</span> verifyPassword(password, hash) {
+  <span class="k">return</span> bcrypt.compare(password, hash ?? DUMMY_HASH);
+}</code></pre>
+      <p>We never decrypt anything &mdash; hashing is one-way. bcrypt reads the salt and cost factor out of the stored hash, hashes the submitted password the same way, and compares. Cost 12 means 2<sup>12</sup> rounds, roughly 250ms, deliberately slow to make brute force expensive.</p>
+    </div>
+
+    <div class="step" data-n="12">
+      <h4>Mint the session &mdash; three database writes</h4>
+      <div class="where">server/src/services/auth.service.js &rarr; mintSession()</div>
+      <ol>
+        <li><strong>Read the roles from SQL</strong> &mdash; <code>SELECT r.name FROM user_roles ur JOIN roles r ...</code>. The role comes from the database, never from the client.</li>
+        <li><strong>Insert a <code>login_sessions</code> row</strong> recording device type, IP and user-agent.</li>
+        <li><strong>Sign a JWT access token</strong> containing the user id, roles and session id, expiring in 15 minutes.</li>
+        <li><strong>Generate a random refresh token</strong>, store only its SHA-256 hash in <code>refresh_tokens</code>, and return the raw value once.</li>
+      </ol>
+    </div>
+
+    <div class="step" data-n="13">
+      <h4>The response travels back and React re-renders</h4>
+      <div class="where">back up the whole chain</div>
+      <p>The controller puts the refresh token in an <strong>httpOnly cookie</strong> (JavaScript cannot read it, so an XSS bug can't steal it) and the access token in the JSON body. Back in the browser: <code>setAccessToken()</code> keeps it in a plain variable in memory, <code>AuthContext</code> stores the user in state, that state change re-renders the app, and <code>navigate(roleHomePath(user.roles))</code> sends Nusrat to <code>/</code>, Rafiq to <code>/driver</code>, Ayesha to <code>/admin</code>.</p>
+    </div>
+  </div>
+
+  <div class="box say">
+    <div class="bt">The 30-second version, for the viva</div>
+    <p>"The click calls a submit handler, which calls our auth context, which calls our API layer, which sends <code>POST /api/v1/auth/login</code>. On the server it passes CORS, JSON parsing, a rate limiter and Zod validation, then the controller calls the auth service. The service looks the user up by phone with a parameterized query, compares the password with bcrypt, reads the roles from the <code>user_roles</code> table, creates a session row, signs a 15-minute JWT and issues a refresh token whose hash is stored in the database. The response carries the access token in JSON and the refresh token in an httpOnly cookie. React stores the user in context and redirects to the role's home page."</p>
+  </div>
+</section>
+
+<section id="traceB">
+  <div class="secnum">SECTION 07</div>
+  <h2>Trace B: booking a ride</h2>
+  <p class="lede">Your flagship feature. It has everything the course cares about: a transaction, row locking, a race condition, and a real-time push.</p>
+
+  <p><strong>Setup:</strong> Nusrat has picked a pickup and dropoff, sees fares, and clicks <strong>Confirm Car &mdash; ৳320</strong>.</p>
+
+  <h3>Part 1 &mdash; before the click: getting a fare</h3>
+  <p>As soon as both pickup and dropoff exist, a <code>useEffect</code> fires one <code>POST /rides/quote</code> per vehicle category. Each quote: check the points are inside Bangladesh, load the current tariff for that city+category, ask OpenStreetMap's routing service for distance and duration, then compute base + per-km + per-minute, apply surge, clamp to a minimum. The passenger sees a real price before committing.</p>
+
+  <h3>Part 2 &mdash; the click</h3>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4><code>confirmRide()</code> runs in the page</h4>
+      <div class="where">client/src/pages/passenger/BookRidePage.tsx</div>
+      <pre><code><span class="k">const</span> created = <span class="k">await</span> ridesApi.createRequest({
+  cityId: cities[0].id, categoryId: selectedCategoryId,
+  pickup, dropoff, paymentIntent, womenOnly,
+});
+sessionStorage.setItem(ACTIVE_REQUEST_KEY, created.publicId);
+setRideRequest(created);   <span class="c">// → screen switches to "Finding your driver…"</span></code></pre>
+    </div>
+
+    <div class="step" data-n="2">
+      <h4>POST /api/v1/ride-requests, gated by role</h4>
+      <div class="where">server/src/routes/rideRequests.routes.js</div>
+      <pre><code>router.use(auth, requireRole(<span class="s">'PASSENGER'</span>));
+router.post(<span class="s">'/'</span>, bookingLimiter, validate(createRideRequestSchema), ridesController.createRequest);</code></pre>
+      <p>Two gates before anything runs: <code>auth</code> verifies the JWT and puts <code>req.user</code> on the request; <code>requireRole('PASSENGER')</code> rejects a driver or admin with <span class="pill p400">403</span>.</p>
+    </div>
+
+    <div class="step" data-n="3">
+      <h4>The service re-computes the fare &mdash; it does not trust the client</h4>
+      <div class="where">server/src/services/rides.service.js</div>
+      <p>The browser sent a price on screen, but the server ignores it and calls <code>buildQuote()</code> again. <strong>Never trust a price that came from the client</strong> &mdash; otherwise anyone could book a ৳500 trip for ৳1 by editing the request in Postman.</p>
+    </div>
+
+    <div class="step" data-n="4">
+      <h4>The transaction opens</h4>
+      <div class="where">server/src/config/db.js &rarr; withTransaction()</div>
+      <pre><code><span class="k">export async function</span> withTransaction(work) {
+  <span class="k">const</span> client = <span class="k">await</span> pool.connect();   <span class="c">// one dedicated connection</span>
+  <span class="k">try</span> {
+    <span class="k">await</span> client.query(<span class="s">'BEGIN'</span>);
+    <span class="k">const</span> result = <span class="k">await</span> work(client);
+    <span class="k">await</span> client.query(<span class="s">'COMMIT'</span>);
+    <span class="k">return</span> result;
+  } <span class="k">catch</span> (error) {
+    <span class="k">await</span> client.query(<span class="s">'ROLLBACK'</span>).catch(() => {});
+    <span class="k">throw</span> error;
+  } <span class="k">finally</span> { client.release(); }
+}</code></pre>
+      <div class="box ask">
+        <div class="bt">Why one connection matters</div>
+        <p>A transaction is a property of <em>a connection</em>. If half your statements ran on a different pooled connection they'd be outside the transaction. That's why <code>withTransaction</code> checks out one client and passes it down to every repository call inside.</p>
+      </div>
+    </div>
+
+    <div class="step" data-n="5">
+      <h4>Lock the passenger, then check for an active ride</h4>
+      <div class="where">rides.service.js, inside the transaction</div>
+      <pre><code><span class="k">await</span> ridesRepo.lockPassengerBooking(passengerId, client);
+<span class="k">if</span> (<span class="k">await</span> ridesRepo.hasActiveTrip(passengerId, client))
+  <span class="k">throw new</span> AppError(409, <span class="s">'ACTIVE_REQUEST_EXISTS'</span>);</code></pre>
+      <p>Without the lock, double-clicking Confirm could run two "do you have an active ride?" checks simultaneously, both see "no", and both insert. The lock serializes them.</p>
+    </div>
+
+    <div class="step" data-n="6">
+      <h4>Insert the ride request</h4>
+      <div class="where">repositories/rides.repository.js</div>
+      <p>Status <code>searching</code>, with <code>expires_at = now() + 5 minutes</code>. The fare estimate is <strong>snapshotted onto the row</strong> &mdash; if an admin changes pricing tomorrow, this ride keeps the price the passenger was actually shown.</p>
+    </div>
+
+    <div class="step" data-n="7">
+      <h4>Fan out offers to nearby drivers</h4>
+      <div class="where">server/src/services/dispatch.service.js</div>
+      <p>SQL finds every driver who is <code>online</code>, has an <em>approved active vehicle in the requested category</em>, and (for women-only rides) is female. Then in JavaScript, haversine distance filters to a 5&nbsp;km radius and sorts nearest-first. One <code>ride_offers</code> row is inserted per driver.</p>
+      <pre><code>WHERE da.status = <span class="s">'online'</span>
+  AND da.current_lat IS NOT NULL
+  AND v.category_id = $1
+  AND ($2 = false OR u.gender = <span class="s">'female'</span>)</code></pre>
+    </div>
+
+    <div class="step" data-n="8">
+      <h4>COMMIT &mdash; and only then push notifications</h4>
+      <div class="where">rides.service.js</div>
+      <pre><code>});  <span class="c">// ← transaction commits here</span>
+
+<span class="c">// Only AFTER the commit. Otherwise a driver could be notified about an</span>
+<span class="c">// offer that a later statement in the same transaction rolls back.</span>
+dispatchService.broadcastNewOffers(newOffers, request.publicId);</code></pre>
+      <p>This ordering is a genuinely good design point &mdash; mention it unprompted. Each driver's socket room gets an <code>offer:new</code> event.</p>
+    </div>
+  </div>
+
+  <h3>Part 3 &mdash; the accept race (the best question you'll get)</h3>
+  <p>Five drivers now have the same offer on screen with a 15-second timer. <strong>Two tap Accept at the same millisecond.</strong> Exactly one must win, and the other must be told cleanly.</p>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>Both drivers hit POST /driver/offers/:id/respond</h4>
+      <div class="where">server/src/services/dispatch.service.js &rarr; acceptOffer()</div>
+      <p>Both requests are now inside their own transactions on their own connections, running the same code at the same time.</p>
+    </div>
+
+    <div class="step" data-n="2">
+      <h4>The lock &mdash; this is the whole answer</h4>
+      <div class="where">repositories/rides.repository.js &rarr; findForUpdate()</div>
+      <pre><code>SELECT ... FROM ride_requests WHERE id = $1 <span class="hl">FOR UPDATE</span></code></pre>
+      <p><code>FOR UPDATE</code> takes an exclusive row lock. <strong>Driver A gets it. Driver B's query blocks &mdash; it does not fail, it waits</strong> for A's transaction to finish.</p>
+    </div>
+
+    <div class="step" data-n="3">
+      <h4>Driver A does all the work and commits</h4>
+      <div class="where">dispatch.service.js</div>
+      <pre><code><span class="k">if</span> (request?.status !== <span class="s">'searching'</span>) <span class="k">throw new</span> AppError(409, <span class="s">'ALREADY_TAKEN'</span>);
+
+<span class="k">await</span> ridesRepo.markMatched(requestId, client);          <span class="c">// searching → matched</span>
+<span class="k">await</span> offersRepo.markResponse(offerId, <span class="s">'accepted'</span>, client);
+<span class="k">await</span> offersRepo.withdrawOtherOffersForRequest(requestId, driverId, client);
+<span class="k">const</span> trip = <span class="k">await</span> tripsRepo.insertTrip({ requestId, passengerId, driverId, vehicleId }, client);
+<span class="k">await</span> driversRepo.updateAvailability(driverId, { status: <span class="s">'on_trip'</span> }, client);</code></pre>
+      <p>COMMIT. The lock releases.</p>
+    </div>
+
+    <div class="step" data-n="4">
+      <h4>Driver B's query unblocks and re-reads</h4>
+      <p>B's <code>SELECT ... FOR UPDATE</code> now returns &mdash; and because it re-reads the row <em>after</em> A committed, it sees <code>status = 'matched'</code>, not <code>'searching'</code>. So:</p>
+      <pre><code><span class="k">throw new</span> AppError(409, <span class="s">'ALREADY_TAKEN'</span>);</code></pre>
+      <p>B's transaction rolls back cleanly. Their app shows "Too late &mdash; another driver accepted it." No corruption, no double booking.</p>
+    </div>
+
+    <div class="step" data-n="5">
+      <h4>The database backstop</h4>
+      <div class="where">database/schema.sql</div>
+      <pre><code>request_id BIGINT NOT NULL <span class="hl">UNIQUE</span> REFERENCES ride_requests(id)</code></pre>
+      <p>Even if the lock were somehow bypassed, <code>trips.request_id</code> is <code>UNIQUE</code> &mdash; a second trip for the same request is <em>physically unstorable</em>. The application catches that unique violation and converts it to the same 409.</p>
+    </div>
+  </div>
+
+  <div class="box say">
+    <div class="bt">Say exactly this when asked about the race condition</div>
+    <p>"We lock the ride request row with <code>SELECT ... FOR UPDATE</code> inside a transaction. The second driver's query blocks rather than failing, and when it unblocks it re-reads the row and sees the status is already <code>matched</code>, so it returns <span class="pill p400">409 ALREADY_TAKEN</span>. We also have a <code>UNIQUE</code> constraint on <code>trips.request_id</code> as a database-level backstop, so even a bug in our application logic couldn't create two trips for one request. Application logic prevents it; the constraint makes it impossible."</p>
+  </div>
+
+  <h3>Part 4 &mdash; both apps update instantly</h3>
+  <p>The server calls <code>broadcastTripStatus</code>, which puts both participants' sockets into a <code>trip:{id}</code> room and emits <code>trip:status</code>. Nusrat's booking page is listening; it sees status <code>assigned</code> and navigates to the live trip screen. Rafiq's app navigates to the active trip screen. Neither one polled &mdash; the server pushed.</p>
+  <p><strong>And if the socket is down?</strong> The booking page <em>also</em> polls <code>GET /ride-requests/:publicId</code> every 3 seconds. Real-time is an enhancement; the REST API is the source of truth. That belt-and-braces design is worth pointing out.</p>
+</section>
+<section id="pipeline">
+  <div class="secnum">SECTION 08</div>
+  <h2>The backend pipeline</h2>
+  <p class="lede">Every one of the 89 endpoints goes through this. Learn it once.</p>
+
+  <h3>The middleware chain, in execution order</h3>
+  <div class="tscroll"><table>
+    <tr><th>#</th><th>Middleware</th><th>Job</th><th>Can it reject?</th></tr>
+    <tr><td class="mono">1</td><td><code>cors</code></td><td>Allows only <code>http://localhost:5173</code> to call the API from a browser, with credentials.</td><td>Yes &mdash; browser blocks it</td></tr>
+    <tr><td class="mono">2</td><td><code>express.json()</code></td><td>Parses the JSON body into <code>req.body</code>.</td><td><span class="pill p400">422</span> on malformed JSON</td></tr>
+    <tr><td class="mono">3</td><td><code>cookieParser</code></td><td>Parses cookies into <code>req.cookies</code> &mdash; needed for the refresh token.</td><td>No</td></tr>
+    <tr><td class="mono">4</td><td><code>requestLogger</code></td><td>Times the request, logs method/path/status/duration when it finishes.</td><td>No</td></tr>
+    <tr><td class="mono">5</td><td><em>rate limiter</em></td><td>Per-route abuse limits (login, OTP, booking, payments).</td><td><span class="pill p400">429</span></td></tr>
+    <tr><td class="mono">6</td><td><code>auth</code></td><td>Verifies the JWT signature and expiry, sets <code>req.user</code>.</td><td><span class="pill p400">401</span></td></tr>
+    <tr><td class="mono">7</td><td><code>requireRole(...)</code></td><td>Checks the roles already verified onto <code>req.user</code>.</td><td><span class="pill p400">403</span></td></tr>
+    <tr><td class="mono">8</td><td><code>validate(schema)</code></td><td>Zod-checks body/params/query, replaces it with the parsed version.</td><td><span class="pill p400">422</span></td></tr>
+    <tr><td class="mono">9</td><td><em>controller</em></td><td>Calls the service, sets the status code.</td><td>Delegates</td></tr>
+    <tr><td class="mono">10</td><td><code>notFound</code></td><td>Nothing matched the URL.</td><td><span class="pill p400">404</span></td></tr>
+    <tr><td class="mono">11</td><td><code>errorHandler</code></td><td>Turns every thrown error into one consistent JSON envelope.</td><td>&mdash;</td></tr>
+  </table></div>
+
+  <h3>One error shape, everywhere</h3>
+  <p>Every failure in the system comes back in the same format, so the frontend has exactly one way to read errors:</p>
+  <pre><code>{ <span class="s">"success"</span>: <span class="k">false</span>,
+  <span class="s">"error"</span>: { <span class="s">"code"</span>: <span class="s">"FORBIDDEN_ROLE"</span>,
+             <span class="s">"message"</span>: <span class="s">"Your account does not have access to do that."</span> } }</code></pre>
+  <p>Successes are equally uniform: <code>{ "success": true, "data": ... }</code>.</p>
+
+  <h4>How the error handler decides the status</h4>
+  <div class="tscroll"><table>
+    <tr><th>Thrown thing</th><th>Becomes</th></tr>
+    <tr><td><code>AppError(409, 'ALREADY_TAKEN')</code></td><td>That exact status and code</td></tr>
+    <tr><td>Postgres error <code>23505</code> (unique violation)</td><td><span class="pill p400">409 DUPLICATE</span></td></tr>
+    <tr><td>Postgres error <code>23503</code> (foreign key)</td><td><span class="pill p400">422 VALIDATION_FAILED</span></td></tr>
+    <tr><td>Postgres error <code>23514</code> (CHECK constraint)</td><td><span class="pill p400">422 VALIDATION_FAILED</span></td></tr>
+    <tr><td>Anything else unexpected</td><td>Logged in full, client gets a bare <span class="pill p500">500 INTERNAL</span></td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">Why 500 gives no detail</div>
+    <p>"An unexpected error is logged server-side with the stack trace, but the client only receives a generic <code>INTERNAL</code>. Leaking a stack trace or a SQL error message tells an attacker your table names and structure."</p>
+  </div>
+
+  <div class="box ask">
+    <div class="bt">Why does registering a duplicate phone rely on the database?</div>
+    <p>We deliberately don't pre-check "does this phone exist?" before inserting. Two simultaneous registrations would both pass that check and both insert. Instead we let the <code>UNIQUE</code> constraint on <code>users.phone</code> be the authority, and translate error <code>23505</code> into <span class="pill p400">409 DUPLICATE</span>. The database is the only thing that can arbitrate a race.</p>
+  </div>
+
+  <h3>Status codes you actually return</h3>
+  <div class="tscroll"><table>
+    <tr><th>Code</th><th>When</th><th>Example</th></tr>
+    <tr><td><span class="pill p200">200</span></td><td>Successful read or action</td><td><code>GET /trips</code></td></tr>
+    <tr><td><span class="pill p200">201</span></td><td>Something was created</td><td><code>POST /auth/register</code>, <code>POST /ride-requests</code></td></tr>
+    <tr><td><span class="pill p200">204</span></td><td>Success, nothing to return</td><td><code>POST /auth/logout</code></td></tr>
+    <tr><td><span class="pill p400">401</span></td><td>Not authenticated / bad credentials</td><td>No token, expired token, wrong password</td></tr>
+    <tr><td><span class="pill p400">403</span></td><td>Authenticated but not allowed</td><td>Passenger calling an admin endpoint</td></tr>
+    <tr><td><span class="pill p400">404</span></td><td>Not found &mdash; <em>or not yours</em></td><td>Another user's trip code</td></tr>
+    <tr><td><span class="pill p400">409</span></td><td>Conflict with current state</td><td>Duplicate phone, offer already taken</td></tr>
+    <tr><td><span class="pill p400">410</span></td><td>Was valid, now gone</td><td>Expired OTP, expired offer</td></tr>
+    <tr><td><span class="pill p400">422</span></td><td>Input failed validation</td><td>Bad phone format, password too short</td></tr>
+    <tr><td><span class="pill p400">429</span></td><td>Too many requests</td><td>Login/OTP rate limits</td></tr>
+    <tr><td><span class="pill p500">500</span></td><td>Our bug</td><td>Anything unhandled</td></tr>
+  </table></div>
+
+  <div class="box warn">
+    <div class="bt">Be ready for: "why 404 and not 403 for someone else's trip?"</div>
+    <p>"Returning 403 would confirm that the trip code exists &mdash; an attacker could enumerate valid IDs just by watching whether they get 403 or 404. Returning 404 for both 'doesn't exist' and 'not yours' leaks nothing."</p>
+  </div>
+</section>
+
+<section id="sql">
+  <div class="secnum">SECTION 09</div>
+  <h2>Where the queries live</h2>
+  <p class="lede">This is a database course. This section is where most of your marks are.</p>
+
+  <h3>The one-sentence answer</h3>
+  <div class="box say">
+    <div class="bt">Where are the queries?</div>
+    <p>"Every SQL statement in this project lives in <code>server/src/repositories/</code> &mdash; 27 files, one per feature area. No other layer is permitted to contain SQL. Services call repository functions; repositories run parameterized queries through the <code>pg</code> driver against a connection pool."</p>
+  </div>
+
+  <h3>When does a query run?</h3>
+  <p>Only when a service asks. Nothing runs on a timer except the one cron job. The chain is always:</p>
+  <div class="layers">
+    <div class="layer"><div class="lname">A user does something</div><div class="ldesc">Clicks a button, or an external service calls a webhook.</div></div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer"><div class="lname">Controller calls a service function</div><div class="ldesc"><code>ridesService.createRequest(userId, body)</code></div></div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer"><div class="lname">Service decides which queries are needed</div><div class="ldesc">Maybe one; maybe eight inside a transaction.</div></div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc"><div class="lname">Repository executes SQL</div><div class="ldesc"><code>pool.query(text, values)</code> &mdash; the only place this call appears.</div></div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer"><div class="lname">PostgreSQL runs it and returns rows</div><div class="ldesc">Rows come back as plain JavaScript objects.</div></div>
+  </div>
+
+  <h3>How a Postgres row becomes a JavaScript object</h3>
+  <p>Every query you've seen in this handbook has column names like <code>full_name AS "fullName"</code>. That's not decoration &mdash; it's the one place SQL's naming convention and JavaScript's meet, and it's worth being able to explain in one breath.</p>
+  <pre><code>SELECT full_name AS <span class="hl">"fullName"</span>, phone_verified_at AS <span class="hl">"phoneVerifiedAt"</span>
+FROM users WHERE id = $1</code></pre>
+  <p>Postgres's own convention is <code>snake_case</code>, unquoted and lowercased by default &mdash; that's what every column in <code>schema.sql</code> is named. JavaScript's convention is <code>camelCase</code>. The <code>pg</code> driver doesn't translate between them automatically; a query with no alias would hand back a JS object with a literal <code>full_name</code> key. So every repository query aliases each column to its camelCase name <em>in the SQL itself</em>, in double quotes so Postgres preserves the capitalization instead of lowercasing it. What comes back from <code>pool.query()</code> is already exactly the shape the service layer wants:</p>
+  <pre><code><span class="k">const</span> { rows } = <span class="k">await</span> pool.query(<span class="s">`SELECT full_name AS "fullName" FROM users WHERE id = $1`</span>, [id]);
+rows[0]                          <span class="c">// { fullName: 'Nusrat Jahan' } — a plain JS object, one per row</span>
+rows[0].fullName                 <span class="c">// 'Nusrat Jahan' — no manual mapping step anywhere</span></code></pre>
+  <p>Say: "It's a naming-convention bridge, decided once at the query boundary rather than with a mapping function repeated in every service. Grep any repository file and every column reads its JS name directly off the SQL."</p>
+
+  <h3>One more repository, to show it's not just <code>users</code></h3>
+  <p>Every example so far has leaned on <code>users.repository.js</code>. Here's a four-table join from a different feature &mdash; the exact query a driver's app polls every 5 seconds while online, from <code>offers.repository.js</code>:</p>
+  <pre><code><span class="k">export async function</span> findPendingForDriver(driverId, offerTimeoutSeconds, client = pool) {
+  <span class="k">const</span> { rows } = <span class="k">await</span> client.query(
+    <span class="s">`SELECT ro.id, ro.request_id AS "requestId",
+            ro.offered_at + ($2 * INTERVAL '1 second') AS "expiresAt",
+            rr.pickup_address AS "pickupAddress", rr.dropoff_address AS "dropoffAddress",
+            rr.est_fare::float8 AS "estFare", vc.name AS "categoryName",
+            pp.rating_avg AS "passengerRating"
+     FROM ride_offers ro
+     JOIN ride_requests rr      ON rr.id = ro.request_id
+     JOIN vehicle_categories vc ON vc.id = rr.category_id
+     JOIN passenger_profiles pp ON pp.user_id = rr.passenger_id
+     WHERE ro.driver_id = $1
+       AND ro.response = 'pending'
+       AND ro.offered_at + ($2 * INTERVAL '1 second') > now()
+     ORDER BY ro.offered_at ASC`</span>,
+    [driverId, offerTimeoutSeconds],
+  );
+  <span class="k">return</span> rows;
+}</code></pre>
+  <p>One round trip returns exactly what the driver's offer card needs &mdash; pickup, dropoff, fare, the category name, and the passenger's rating &mdash; joined from four tables, with the 15-second expiry computed <em>in SQL</em> (<code>offered_at + interval</code>) rather than recomputed separately in JavaScript on every poll. This is the same pattern as every query in the codebase: one function, one purpose, parameterized, aliased to camelCase, called from exactly one service.</p>
+
+  <h3>Parameterized queries &mdash; how <code>$1</code> actually protects you</h3>
+  <p>Every query in the codebase looks like this:</p>
+  <pre><code>pool.query(
+  <span class="s">`SELECT id, password_hash FROM users WHERE phone = $1`</span>,
+  [phone],
+);</code></pre>
+
+  <p>The SQL text and the values are sent to PostgreSQL as <strong>two separate things</strong>. Postgres parses and plans the query first, using <code>$1</code> as a typed placeholder. Only then does it bind the value. The value is never parsed as SQL &mdash; it can only ever be <em>data</em>.</p>
+
+  <h4>What the vulnerable version would look like</h4>
+  <pre><code><span class="c">// WE DO NOT DO THIS ANYWHERE. This is the SQL-injection defect</span>
+<span class="c">// the guidelines penalise.</span>
+pool.query(<span class="s">`SELECT * FROM users WHERE phone = '`</span> + phone + <span class="s">`'`</span>);</code></pre>
+  <p>If <code>phone</code> were <code>' OR '1'='1</code> the database would receive <code>WHERE phone = '' OR '1'='1'</code> and return every user. With <code>$1</code> it searches for a user whose phone is literally the string <code>' OR '1'='1</code>, finds none, and returns nothing.</p>
+
+  <div class="box ask">
+    <div class="bt">She may grep your code for <code>${</code> in SQL. Have this ready.</div>
+    <p>There <em>are</em> a few template literals inside SQL strings &mdash; and every one of them interpolates a <strong>hard-coded constant or a whitelisted column name</strong>, never user input. Two examples worth being able to defend:</p>
+    <ul>
+      <li><code>users.repository.js</code> &mdash; <code>updateProfile()</code> builds a <code>SET</code> clause dynamically, but the column names come from a fixed <code>PROFILE_COLUMNS</code> map, and Zod has already restricted the keys. The <em>values</em> are still <code>$2, $3, …</code>.</li>
+      <li><code>admin.repository.js</code> &mdash; <code>listUsers()</code> builds <code>const pattern = \`%${search}%\`</code>, which looks alarming but is passed as bind parameter <code>$2</code>. It builds a <em>value</em> for <code>ILIKE</code>, not SQL text.</li>
+    </ul>
+    <p>Say: "We interpolate column names from a fixed whitelist so a user can never inject one. All user-supplied values, without exception, go through bind parameters."</p>
+  </div>
+
+  <h3>Transactions</h3>
+  <p>A transaction groups several statements so they all succeed or all fail. Booking a ride inserts a request <em>and</em> several offers &mdash; a crash between them must not leave a request nobody was offered.</p>
+  <pre><code><span class="k">await</span> withTransaction(<span class="k">async</span> (client) => {
+  <span class="k">await</span> ridesRepo.lockPassengerBooking(passengerId, client);
+  <span class="k">const</span> inserted = <span class="k">await</span> ridesRepo.insertRequest({...}, client);
+  <span class="k">await</span> dispatchService.fanOutOffers({...}, client);
+  <span class="k">return</span> inserted;
+});  <span class="c">// COMMIT here, or ROLLBACK if anything threw</span></code></pre>
+  <p>Notice <code>client</code> being threaded through every call. Every repository function takes an optional client and falls back to the pool: <code>async function insertRequest(data, client = pool)</code>. That one pattern lets the same function work inside or outside a transaction.</p>
+
+  <h3>Row locking &mdash; <code>FOR UPDATE</code></h3>
+  <p>Used in five places, always for the same reason: <strong>a check followed by a write, where a second request must not slip between them.</strong></p>
+  <div class="tscroll"><table>
+    <tr><th>Where</th><th>Protects against</th></tr>
+    <tr><td>Accepting a ride offer</td><td>Two drivers accepting the same request</td></tr>
+    <tr><td>Verifying an OTP</td><td>Parallel guesses all reading the same stale attempt count</td></tr>
+    <tr><td>Rotating a refresh token</td><td>Two tabs refreshing at once and both winning</td></tr>
+    <tr><td>Wallet writes</td><td>Two payments both reading the same balance</td></tr>
+    <tr><td>Redeeming a promo code</td><td>Two trips both squeezing past a usage limit</td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">The general principle, in one line</div>
+    <p>"Any time we read a value, make a decision from it, and then write &mdash; we hold a row lock across all three steps. Otherwise two requests can both read the old value and both act on it."</p>
+  </div>
+
+  <h3>Proving it live in the viva</h3>
+  <p>Open a terminal and show the actual SQL running against the actual database:</p>
+  <pre><code>docker compose exec postgres psql -U cholo -d cholo
+
+\dt                                <span class="c">-- list all tables</span>
+\d users                           <span class="c">-- describe the users table</span>
+SELECT id, phone, status FROM users LIMIT 5;
+SELECT u.full_name, r.name FROM users u
+  JOIN user_roles ur ON ur.user_id = u.id
+  JOIN roles r ON r.id = ur.role_id
+  WHERE u.phone = '01710000001';   <span class="c">-- proves roles live in the DB</span></code></pre>
+</section>
+
+<section id="triggers">
+  <div class="secnum">SECTION 10</div>
+  <h2>Queries that run without anyone calling them</h2>
+  <p class="lede">Section 09 covered SQL that a repository sends when a service asks. There's a second, equally real layer: SQL that <strong>PostgreSQL itself</strong> runs, unattended, the instant certain rows change. This project has <strong>12 functions, 19 triggers, and 4 views</strong> living entirely inside <code>database/schema.sql</code>. If she asks "does anything happen automatically in the database?", this section is the answer &mdash; and it's some of the most defensible SQL in the whole project, because it's the one place a business rule literally cannot be bypassed by a bug in Node.</p>
+
+  <h3>The idea, in one sentence</h3>
+  <div class="box say">
+    <div class="bt">Say this first</div>
+    <p>"A trigger is a stored procedure Postgres runs automatically before or after an INSERT, UPDATE or DELETE on a specific table &mdash; no application code calls it, ever. We use it for rules that must hold no matter which code path touches the table: keeping a cached balance in sync with its ledger, stamping who changed a trip's status, and making three tables physically impossible to edit or delete from."</p>
+  </div>
+
+  <h3>Where they run in the request lifecycle</h3>
+  <p>A trigger fires <em>inside</em> the same transaction as the statement that provoked it &mdash; before your <code>INSERT</code> even finishes, for a <code>BEFORE</code> trigger. Picture Trace A's step 12 again: the repository runs <code>INSERT INTO users (...)</code>. That single statement, from Node's point of view, is one round-trip. But inside Postgres, it silently also:</p>
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>The row is inserted into <code>users</code></h4>
+      <p>Ordinary, expected.</p>
+    </div>
+    <div class="step" data-n="2">
+      <h4><code>trg_create_user_wallet</code> fires <em>AFTER INSERT</em></h4>
+      <div class="where">database/schema.sql, fn_create_user_wallet()</div>
+      <p>It inserts a matching row into <code>wallets</code> with balance <code>0.00</code>. No repository function ever runs <code>INSERT INTO wallets</code> for a brand-new user &mdash; it doesn't need to, the trigger already did it.</p>
+    </div>
+    <div class="step" data-n="3">
+      <h4>That's why users.repository.js's own comment says what it says</h4>
+      <pre><code><span class="c">// Every user has exactly one wallet by the time this runs (trg_create_user_wallet</span>
+<span class="c">// fires on the same INSERT that creates the user), so an inner join is safe.</span>
+FROM users u JOIN wallets w ON w.user_id = u.id</code></pre>
+      <p>That <code>JOIN</code> (not <code>LEFT JOIN</code>) in <code>findMeById()</code> is only correct <em>because</em> the trigger guarantees the wallet always exists. Read the code and the trigger together, or that join looks unexplained.</p>
+    </div>
+  </div>
+  <p>The equivalent thing happens for drivers: <code>trg_create_driver_availability</code> fires the moment a <code>driver_profiles</code> row is inserted, creating the matching <code>driver_availability</code> row (status <code>offline</code>) &mdash; which is why <code>driver.service.js</code> can call <code>setAvailability()</code> the very first time a new driver ever logs in, with nothing to initialize first.</p>
+
+  <h3>The full inventory</h3>
+  <div class="tscroll"><table>
+    <tr><th>Function</th><th>Fires on</th><th>Does</th></tr>
+    <tr><td><code>fn_touch_updated_at</code></td><td><code>BEFORE UPDATE</code> &times; 7 tables</td><td>Stamps <code>updated_at = now()</code>. Application code never sets this column itself.</td></tr>
+    <tr><td><code>fn_create_user_wallet</code></td><td><code>AFTER INSERT ON users</code></td><td>Creates the matching <code>wallets</code> row.</td></tr>
+    <tr><td><code>fn_create_driver_availability</code></td><td><code>AFTER INSERT ON driver_profiles</code></td><td>Creates the matching <code>driver_availability</code> row.</td></tr>
+    <tr><td><code>fn_log_trip_status</code></td><td><code>AFTER INSERT/UPDATE ON trips</code></td><td>Writes a <code>trip_status_history</code> row every time status changes, attributed to whoever caused it.</td></tr>
+    <tr><td><code>fn_apply_wallet_txn</code></td><td><code>BEFORE INSERT ON wallet_transactions</code></td><td>Locks the wallet, computes <code>balance_after</code>, updates the cached balance &mdash; atomically, in the database.</td></tr>
+    <tr><td><code>fn_block_mutation</code></td><td><code>BEFORE UPDATE/DELETE</code> on 3 tables</td><td>Raises an exception. Makes those tables append-only <em>by mechanism</em>.</td></tr>
+    <tr><td><code>fn_apply_rating</code></td><td><code>AFTER INSERT ON ratings</code></td><td>Updates the ratee's running average in O(1), no re-aggregation needed.</td></tr>
+    <tr><td><code>fn_current_pricing</code></td><td>Called directly by a query</td><td>"Which tariff applies right now" &mdash; one canonical implementation.</td></tr>
+    <tr><td><code>fn_current_commission</code></td><td>Called directly by a query</td><td>Same shape, with city-specific-beats-countrywide tie-breaking.</td></tr>
+    <tr><td><code>fn_wallet_balance_audit</code></td><td>Called directly, on demand</td><td>Recomputes a wallet's true balance from the ledger, independent of the cache.</td></tr>
+  </table></div>
+
+  <h3>Proof 1 &mdash; the wallet ledger trigger, live</h3>
+  <p>This is the best one to actually run for her, because a naive implementation would need the repository to (a) lock the wallet, (b) read the balance, (c) do arithmetic, (d) write the ledger row, (e) write the new balance &mdash; five round trips, easy to get out of order. Instead <code>wallet.repository.js</code>'s <code>insertTransaction()</code> does exactly one <code>INSERT</code>, and the trigger below does the rest inside it:</p>
+  <pre><code><span class="c">-- BEFORE INSERT: runs before the row lands, so it can set balance_after</span>
+<span class="c">-- on the very row being inserted, no second UPDATE against the ledger needed.</span>
+CREATE FUNCTION fn_apply_wallet_txn() RETURNS TRIGGER AS $$
+DECLARE v_balance NUMERIC(12,2);
+BEGIN
+    SELECT balance INTO v_balance FROM wallets WHERE id = NEW.wallet_id <span class="hl">FOR UPDATE</span>;
+
+    IF NEW.direction = 'credit' THEN v_balance := v_balance + NEW.amount;
+    ELSE v_balance := v_balance - NEW.amount; END IF;
+
+    NEW.balance_after := v_balance;                                    <span class="c">-- fills in the column being inserted</span>
+    UPDATE wallets SET balance = v_balance, updated_at = now()
+      WHERE id = NEW.wallet_id;                                        <span class="c">-- keeps the cache in sync, same transaction</span>
+    RETURN NEW;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <p>Run this in front of her &mdash; it's a real transaction against the live demo database:</p>
+  <pre><code><span class="c">-- watch: no balance_after supplied, no second UPDATE written by us</span>
+INSERT INTO wallet_transactions
+  (wallet_id, txn_type, direction, amount, reference_type, idempotency_key, note)
+VALUES (4864, 'topup', 'credit', 50.00, 'manual', 'live-demo-1', 'proof')
+RETURNING id, amount, balance_after;
+
+<span class="c">--  id  | amount | balance_after</span>
+<span class="c">-- 2766 |  50.00 |       2050.00      ← the trigger filled this in</span>
+
+SELECT balance FROM wallets WHERE id = 4864;
+<span class="c">-- 2050.00                             ← the cache moved too, same statement</span></code></pre>
+  <p>Say: "The <code>FOR UPDATE</code> in that trigger is the same row-locking idea as the accept race in section 07 &mdash; it's why two payments crediting the same wallet at once can't both read the same stale balance and both compute the wrong new one."</p>
+
+  <h3>Proof 2 &mdash; append-only, and we found real drift because of it</h3>
+  <p>Three tables &mdash; <code>wallet_transactions</code>, <code>audit_logs</code>, <code>trip_status_history</code> &mdash; have <code>BEFORE UPDATE</code> and <code>BEFORE DELETE</code> triggers that do nothing but raise an exception:</p>
+  <pre><code>CREATE FUNCTION fn_block_mutation() RETURNS TRIGGER AS $$
+BEGIN
+    RAISE EXCEPTION '% is append-only', TG_TABLE_NAME;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <p>We actually hit this tonight, by accident, in a genuinely useful way. Reversing a test transaction with a plain <code>DELETE</code> failed exactly as designed:</p>
+  <pre><code>DELETE FROM wallet_transactions WHERE id = 2766;
+<span class="hl">ERROR:  wallet_transactions is append-only</span>
+CONTEXT:  PL/pgSQL function fn_block_mutation() line 3 at RAISE</code></pre>
+  <p>The correct way to undo a ledger entry &mdash; the only way the schema allows &mdash; is a compensating entry, exactly like a real accounting ledger:</p>
+  <pre><code>INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, ...)
+VALUES (4864, 'topup', 'debit', 50.00, ...);   <span class="c">-- cancels the credit, leaves both rows on record</span></code></pre>
+
+  <div class="box ask">
+    <div class="bt">While reversing that, we found something real &mdash; use it</div>
+    <p>After reversing our own test entry, we ran the independent audit function against Nusrat's actual demo wallet and it disagreed with the cached balance:</p>
+    <pre><code>SELECT w.balance AS cached_balance, fn_wallet_balance_audit(w.id) AS ledger_truth
+FROM wallets w WHERE w.id = 4864;
+
+ cached_balance | ledger_truth
+----------------+--------------
+        8000.00 |      2000.00     <span class="c">← these should never disagree</span></code></pre>
+    <p>Nothing in the application ever writes to <code>wallets.balance</code> directly &mdash; we checked every repository file, and the only writer is the trigger above. So this was pre-existing drift in the persistent Docker volume, almost certainly a manual balance edit run directly in <code>psql</code> at some earlier point in the project's history, entirely outside the app. It is <strong>not</strong> a bug in this session's code, unlike the OTP issue in <a href="#changed">section 19</a>.</p>
+    <p>We fixed it the way the function is designed to be used &mdash; the ledger is defined as the source of truth, so the cache gets corrected from it, not the other way around:</p>
+    <pre><code>UPDATE wallets SET balance = fn_wallet_balance_audit(id) WHERE id = 4864;
+<span class="c">-- balance: 2000.00 — now matches. Swept the whole database: zero wallets</span>
+<span class="c">-- disagree with their ledger any more (also fixed Rafiq's, same drift, id 4865).</span></code></pre>
+    <p><strong>Say exactly this if she asks how you know the wallet balance is trustworthy:</strong> "The cached balance and the ledger sum should always agree, because the only thing that ever writes the cache is this one trigger, in the same transaction as the ledger insert it's reacting to. If they ever disagree, <code>fn_wallet_balance_audit</code> proves it and tells you the correct value &mdash; we actually found and fixed a real instance of that drift tonight, from stale manual testing, unrelated to any code path."</p>
+  </div>
+
+  <h3>Proof 3 &mdash; closing the loop on Trace B's <code>app.user_id</code> trick</h3>
+  <p>Trace B showed <code>dispatch.service.js</code> running this odd-looking line before accepting an offer, without saying where it goes:</p>
+  <pre><code><span class="k">await</span> client.query(<span class="s">`SELECT set_config('app.user_id', $1, true)`</span>, [String(driverId)]);</code></pre>
+  <p>It goes here. <code>fn_log_trip_status</code> fires on every insert or status-changing update to <code>trips</code>, and reads that exact session variable back out:</p>
+  <pre><code>CREATE FUNCTION fn_log_trip_status() RETURNS TRIGGER AS $$
+DECLARE v_actor BIGINT;
+BEGIN
+    v_actor := NULLIF(current_setting('app.user_id', true), '')::BIGINT;
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO trip_status_history (trip_id, from_status, to_status, changed_by)
+        VALUES (NEW.id, NULL, NEW.status, v_actor);
+    ELSIF TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status THEN
+        INSERT INTO trip_status_history (trip_id, from_status, to_status, changed_by)
+        VALUES (NEW.id, OLD.status, NEW.status, v_actor);
+    END IF;
+    RETURN NEW;
+END; $$ LANGUAGE plpgsql;</code></pre>
+  <div class="box say">
+    <div class="bt">The whole point, in one line</div>
+    <p>"<code>set_config</code> writes a value that's visible only inside the current transaction. The trigger reads it to know <em>who</em> caused a trip status change, without the repository having to pass a <code>changed_by</code> column on every single trip update by hand &mdash; every code path that changes a trip's status gets an accurate history row for free, automatically, and it's structurally impossible to forget."</p>
+  </div>
+
+  <h3>Views &mdash; a saved query with a name</h3>
+  <p>A view isn't a table &mdash; it stores no data of its own. It's SQL text saved under a name, re-run fresh every time something selects from it. <code>admin.repository.js</code>'s revenue dashboard reads straight from one:</p>
+  <pre><code><span class="c">-- v_city_monthly_revenue, schema.sql</span>
+CREATE VIEW v_city_monthly_revenue AS
+SELECT rr.city_id, date_trunc('month', t.completed_at)::date AS revenue_month,
+       COUNT(*) AS completed_trips, SUM(t.total_fare) AS gross_revenue,
+       SUM(de.commission_amount) AS platform_revenue
+FROM trips t
+JOIN ride_requests rr   ON rr.id = t.request_id
+JOIN driver_earnings de ON de.trip_id = t.id
+WHERE t.status = 'completed'
+GROUP BY rr.city_id, date_trunc('month', t.completed_at);
+
+<span class="c">-- admin.repository.js just selects from it like any table:</span>
+SELECT sum(gross_revenue) FROM v_city_monthly_revenue
+WHERE revenue_month = date_trunc('month', now())::date;</code></pre>
+  <p>Say: "The four-table join that defines 'monthly revenue' is written once, in the schema, under one name. Every place that needs that number &mdash; the admin dashboard's headline stat and its monthly chart both do &mdash; selects from the view instead of re-writing the join. If the definition of revenue ever changes, there's exactly one place to fix it."</p>
+  <p>The other three: <code>v_active_drivers</code> answers "who can I dispatch right now" (approved, online, approved vehicle); <code>v_trip_details</code> flattens a trip into human-readable names instead of foreign keys; <code>v_driver_daily_earnings</code> backs the driver app's earnings tab.</p>
+
+  <h3>Functions repositories call directly &mdash; from Trace B</h3>
+  <p>Trace B's fare quote called <code>pricingRepo.getCurrentTariff()</code>. Here's what that repository function actually sends &mdash; not a plain table query, a call to <code>fn_current_pricing</code>:</p>
+  <pre><code><span class="c">-- server/src/repositories/pricing.repository.js</span>
+SELECT id, city_id AS "cityId", base_fare::float8 AS "baseFare", ...
+FROM fn_current_pricing($1, $2)   <span class="c">-- $1=cityId, $2=categoryId</span></code></pre>
+  <p>"Which tariff is in effect right now" needs an effective-dated lookup &mdash; ORDER BY effective_from DESC LIMIT 1, filtered to rows that have started and haven't ended. Writing that logic inline in every place that needs a fare would risk two copies drifting apart. It's written once, as a function, and both <code>getCurrentTariff()</code> and the quote/booking code call the same one.</p>
+
+  <div class="box warn">
+    <div class="bt">The trap question: "isn't putting logic in the database bad practice?"</div>
+    <p>Have a real answer, not a defensive one: "It's a deliberate trade-off, not an accident. We put <em>data-integrity</em> rules in the database &mdash; append-only enforcement, keeping a cache honest, effective-dated lookups &mdash; because those must hold no matter what touches the table, including a future bug or a different client entirely. We keep <em>business decisions</em> &mdash; can this passenger book right now, is this promo still valid &mdash; in the service layer, where they're testable in plain JavaScript. The line we drew: if a rule is about data <em>staying consistent</em>, it's a trigger; if it's about a request being <em>allowed</em>, it's a service."</p>
+  </div>
+</section>
+
+<section id="db">
+  <div class="secnum">SECTION 11</div>
+  <h2>The database itself</h2>
+
+  <h3>How it starts</h3>
+  <ol>
+    <li><code>docker compose up -d postgres</code> starts a <code>postgres:16</code> container, mapping container port 5432 to <strong>host port 5433</strong> (5432 is often taken by a local Postgres install).</li>
+    <li><strong>On the very first boot only</strong>, with an empty data directory, Postgres runs the files mounted into <code>/docker-entrypoint-initdb.d/</code> &mdash; that's <code>schema.sql</code> then <code>seed.reference.sql</code>.</li>
+    <li>Data lives in a named Docker volume, so it survives <code>docker compose down</code> and restarts.</li>
+    <li><code>npm run db:init</code> handles everything after that first boot: creates the schema if missing, applies unrecorded migrations, re-applies the idempotent reference seed.</li>
+  </ol>
+
+  <div class="box warn">
+    <div class="bt">The one command that destroys your data</div>
+    <p><code>docker compose down -v</code> &mdash; the <code>-v</code> deletes the volume. You need it if you edit <code>schema.sql</code> and want it reloaded, because the init scripts only run on an <em>empty</em> data directory. <strong>Don't run it during the demo.</strong> If you do, re-run <code>db:init</code> and the dev seed.</p>
+  </div>
+
+  <h3>The three SQL file types</h3>
+  <div class="tscroll"><table>
+    <tr><th>File</th><th>Purpose</th><th>Re-runnable?</th></tr>
+    <tr><td><code>database/schema.sql</code></td><td>The complete DDL &mdash; 54 tables, 50+ enums, constraints, indexes, triggers, views.</td><td>No, first boot only</td></tr>
+    <tr><td><code>database/migrations/000N_*.sql</code></td><td>Numbered, append-only changes for databases that already exist. Tracked in <code>schema_migrations</code>.</td><td>Each runs once</td></tr>
+    <tr><td><code>database/seeds/seed.reference.sql</code></td><td>Data the app <em>needs</em>: roles, cities, vehicle categories.</td><td>Yes, idempotent</td></tr>
+    <tr><td><code>database/seeds/seed.dev.sql</code></td><td>The demo world: Nusrat, Rafiq, Ayesha and a completed trip.</td><td>Yes, idempotent</td></tr>
+  </table></div>
+
+  <h3>The table families</h3>
+  <div class="tscroll"><table>
+    <tr><th>Family</th><th>Key tables</th></tr>
+    <tr><td>Identity &amp; access</td><td><code>users</code>, <code>roles</code>, <code>user_roles</code>, <code>passenger_profiles</code>, <code>driver_profiles</code>, <code>admin_profiles</code></td></tr>
+    <tr><td>Sessions</td><td><code>login_sessions</code>, <code>refresh_tokens</code>, <code>otp_verifications</code>, <code>password_reset_tokens</code></td></tr>
+    <tr><td>Fleet</td><td><code>vehicles</code>, <code>driver_documents</code>, <code>vehicle_documents</code>, <code>driver_availability</code></td></tr>
+    <tr><td>Marketplace</td><td><code>ride_requests</code>, <code>ride_offers</code>, <code>trips</code>, <code>trip_status_history</code>, <code>trip_location_pings</code></td></tr>
+    <tr><td>Pricing</td><td><code>pricing_rules</code>, <code>surge_pricing</code>, <code>commission_rules</code>, <code>promo_codes</code></td></tr>
+    <tr><td>Money</td><td><code>payments</code>, <code>wallets</code>, <code>wallet_transactions</code>, <code>driver_earnings</code>, <code>withdrawals</code>, <code>receipts</code></td></tr>
+    <tr><td>Safety &amp; support</td><td><code>sos_alerts</code>, <code>emergency_contacts</code>, <code>support_tickets</code>, <code>disputes</code>, <code>audit_logs</code></td></tr>
+  </table></div>
+
+  <h3>Constraints you should be able to point at</h3>
+  <pre><code><span class="c">-- 1. A CHECK constraint mirroring the app's validation</span>
+CONSTRAINT chk_users_phone_format CHECK (phone ~ <span class="s">'^01[3-9][0-9]{8}$'</span>)
+
+<span class="c">-- 2. A partial unique index: one open immediate request per passenger</span>
+CREATE UNIQUE INDEX ux_one_active_request_per_passenger
+  ON ride_requests (passenger_id)
+  WHERE status IN (<span class="s">'pending'</span>, <span class="s">'searching'</span>) AND scheduled_for IS NULL;
+
+<span class="c">-- 3. The accept-race backstop</span>
+request_id BIGINT NOT NULL UNIQUE REFERENCES ride_requests(id) ON DELETE RESTRICT
+
+<span class="c">-- 4. A driver can be offered a given request only once</span>
+CONSTRAINT uq_ride_offers_request_driver UNIQUE (request_id, driver_id)</code></pre>
+
+  <div class="box ask">
+    <div class="bt">"Why <code>ON DELETE RESTRICT</code> on trips?"</div>
+    <p>"A trip is financial history. If someone deleted a user, cascading that delete would silently erase completed trips, earnings and receipts. <code>RESTRICT</code> refuses the delete instead. Users are <em>soft-deleted</em> by setting <code>status = 'deleted'</code>, which preserves history. We use <code>CASCADE</code> only where the child row is meaningless without its parent &mdash; like <code>user_roles</code>."</p>
+  </div>
+
+  <h3>Two design decisions worth volunteering</h3>
+  <div class="grid2">
+    <div class="tile">
+      <div class="tl">Money is NUMERIC, never float</div>
+      <div class="tn"><code>NUMERIC(12,2)</code>. Floating point can't represent 0.1 exactly; with money those errors accumulate into real missing taka. In JSON, money is serialised as a <em>string</em> to avoid JavaScript's float conversion.</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Time is TIMESTAMPTZ, never naive</div>
+      <div class="tn">Every timestamp carries a timezone. Bangladesh is UTC+6; a naive timestamp is ambiguous the moment a server runs in another region.</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Two IDs per row</div>
+      <div class="tn">An internal <code>BIGINT id</code> for joins and a public <code>UUID public_id</code> exposed in the API. Sequential IDs would let anyone count your users or enumerate records.</div>
+    </div>
+    <div class="tile">
+      <div class="tl">Fares are snapshotted</div>
+      <div class="tn">A trip stores its own fare breakdown rather than pointing at a pricing rule. Change prices tomorrow and yesterday's receipts stay correct.</div>
+    </div>
+  </div>
+</section>
+<section id="authn">
+  <div class="secnum">SECTION 12</div>
+  <h2>Authentication &mdash; who are you?</h2>
+  <p class="lede">Guideline 3.1. Know this cold.</p>
+
+  <h3>The seven auth endpoints</h3>
+  <div class="tscroll"><table>
+    <tr><th>Endpoint</th><th>Does</th><th>Returns</th></tr>
+    <tr><td><code>POST /auth/register</code></td><td>Creates the user, grants PASSENGER, sends an OTP</td><td><span class="pill p200">201</span> <code>{userId}</code></td></tr>
+    <tr><td><code>POST /auth/verify-otp</code></td><td>Confirms the phone, then logs you in</td><td><span class="pill p200">200</span> + tokens</td></tr>
+    <tr><td><code>POST /auth/resend-otp</code></td><td>Sends a new code</td><td><span class="pill p200">204</span> always</td></tr>
+    <tr><td><code>POST /auth/login</code></td><td>Phone + password</td><td><span class="pill p200">200</span> + tokens</td></tr>
+    <tr><td><code>POST /auth/refresh</code></td><td>Swaps the refresh cookie for a new access token</td><td><span class="pill p200">200</span> + new token</td></tr>
+    <tr><td><code>POST /auth/logout</code></td><td>Kills this session in the database</td><td><span class="pill p200">204</span></td></tr>
+    <tr><td><code>POST /auth/logout-all</code></td><td>Kills every session for this user</td><td><span class="pill p200">204</span></td></tr>
+  </table></div>
+
+  <h3>Registration &rarr; OTP &rarr; logged in</h3>
+  <ol>
+    <li>Zod validates name, phone format, password &ge; 8 chars.</li>
+    <li>bcrypt hashes the password at cost 12 (~250ms).</li>
+    <li><code>INSERT INTO users</code>. A duplicate phone hits the <code>UNIQUE</code> constraint and becomes <span class="pill p400">409 DUPLICATE</span>.</li>
+    <li>The <strong>PASSENGER</strong> role is granted by looking up <code>roles</code> and inserting into <code>user_roles</code>. A <code>passenger_profiles</code> row is created too, because <code>ride_requests.passenger_id</code> references it.</li>
+    <li>A 6-digit OTP is generated, <strong>SHA-256 hashed</strong> before storage, and "sent" &mdash; in development <code>sms.service.js</code> just logs it to your API terminal.</li>
+    <li><code>POST /auth/verify-otp</code> compares hashes, marks the phone verified, and mints a session.</li>
+  </ol>
+
+  <div class="box say">
+    <div class="bt">Where do I find the OTP in the demo?</div>
+    <p>It's printed in the <strong>API terminal</strong> as <code>Mock SMS sent … Your Cholo code: 123456</code>. Say: "SMS delivery is behind an adapter interface. In development the adapter logs the code; swapping in Twilio or a local SMS gateway is a config change, not a rewrite."</p>
+  </div>
+
+  <h3>Password storage</h3>
+  <pre><code><span class="k">const</span> BCRYPT_COST = 12;
+<span class="k">export function</span> hashPassword(password) { <span class="k">return</span> bcrypt.hash(password, BCRYPT_COST); }
+<span class="k">export function</span> verifyPassword(password, hash) { <span class="k">return</span> bcrypt.compare(password, hash ?? DUMMY_HASH); }</code></pre>
+  <p>A stored hash looks like this &mdash; and the salt is <em>inside</em> it:</p>
+  <pre><code>$2b$12$WOaMwC4X4gaEJTpE9DGw/uGTxEDN49DOkjppNvr3z3.gcD4qoF/ce
+ │   │  └─────────────────────┬────────────────────────────┘
+ │   │                  salt + hash together
+ │   └── cost factor 12 (2¹² rounds)
+ └────── algorithm: bcrypt</code></pre>
+
+  <div class="box ask">
+    <div class="bt">"Where is the salt?"</div>
+    <p>"bcrypt generates a random 16-byte salt per password and stores it inside the hash string. We don't manage it manually &mdash; that's the point of using bcrypt rather than a bare SHA. Two users with the same password get completely different hashes, so a rainbow table is useless."</p>
+  </div>
+
+  <h3>JWT &mdash; what's actually inside</h3>
+  <p>Three base64 segments separated by dots: <strong>header.payload.signature</strong>. The payload from a real login tonight:</p>
+  <pre><code>{
+  <span class="s">"roles"</span>: [<span class="s">"PASSENGER"</span>],   <span class="c">// read from the DB at login, not from the client</span>
+  <span class="s">"sid"</span>: <span class="s">"693"</span>,             <span class="c">// login_sessions row id</span>
+  <span class="s">"iat"</span>: 1788784719,        <span class="c">// issued at</span>
+  <span class="s">"exp"</span>: 1788785619,        <span class="c">// expires — 15 minutes later</span>
+  <span class="s">"sub"</span>: <span class="s">"4904"</span>             <span class="c">// the user id</span>
+}</code></pre>
+
+  <div class="box warn">
+    <div class="bt">The trap question: "isn't a JWT just base64? Can't I edit it?"</div>
+    <p><strong>Answer:</strong> "The payload is only encoded, not encrypted &mdash; anyone can read it, which is why we put no secrets in it. But it's <em>signed</em> with a server-side secret using HMAC-SHA256. If you change <code>roles</code> to <code>ADMIN</code> and re-encode, the signature no longer matches, <code>jwt.verify</code> throws, and you get <span class="pill p400">401</span>. You cannot forge one without <code>JWT_SECRET</code>, which lives only in our git-ignored <code>.env</code>."</p>
+    <p>You can <em>demonstrate</em> this: paste a token into <a href="https://jwt.io">jwt.io</a>, change the role, paste it back into Postman, and show the 401.</p>
+  </div>
+
+  <h3>Two tokens, and why</h3>
+  <div class="tscroll"><table>
+    <tr><th></th><th>Access token</th><th>Refresh token</th></tr>
+    <tr><td><strong>Type</strong></td><td>JWT, signed</td><td>Opaque random 32 bytes</td></tr>
+    <tr><td><strong>Lives</strong></td><td>15 minutes</td><td>30 days</td></tr>
+    <tr><td><strong>Stored where (client)</strong></td><td>A plain variable in memory</td><td>httpOnly cookie</td></tr>
+    <tr><td><strong>Stored where (server)</strong></td><td>Nowhere &mdash; stateless</td><td>SHA-256 hash in <code>refresh_tokens</code></td></tr>
+    <tr><td><strong>Sent as</strong></td><td><code>Authorization: Bearer …</code></td><td>Automatically by the browser</td></tr>
+    <tr><td><strong>Revocable?</strong></td><td>No &mdash; expires naturally</td><td>Yes, instantly</td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">"Why two tokens instead of one?"</div>
+    <p>"It's a trade-off between speed and revocability. Checking the access token needs no database query at all &mdash; just a signature check &mdash; so it's fast on every request. The cost is that we can't revoke it early, so we keep it alive only 15 minutes. Revocation lives on the refresh side, which <em>is</em> stored in the database and can be killed instantly. Worst case, a stolen access token is useful for under 15 minutes."</p>
+  </div>
+
+  <h4>Why the access token isn't in localStorage</h4>
+  <p>Anything in <code>localStorage</code> is readable by any JavaScript on the page &mdash; one XSS bug and your token is gone. Ours lives in a module-level variable that disappears on refresh, and the refresh token is <code>httpOnly</code>, meaning JavaScript <em>cannot read it at all</em>. The cookie also carries <code>sameSite: 'strict'</code> (CSRF defence) and <code>secure</code> in production (HTTPS only).</p>
+
+  <h3>Refresh rotation and theft detection</h3>
+  <p>Each refresh <strong>rotates</strong>: the old token is revoked the instant a new one is issued. If a token that was already rotated is presented again, that means someone is replaying a dead token &mdash; so we <strong>kill the entire session</strong>, not just that token.</p>
+  <pre><code><span class="k">if</span> (record.revokedAt) {
+  <span class="c">// Could be the user's stale copy or a thief's stolen copy — no way</span>
+  <span class="c">// to tell, so treat it as a compromise and end the whole session.</span>
+  <span class="k">await</span> sessionsRepo.revokeActiveForSession(record.sessionId, client);
+  <span class="k">await</span> sessionsRepo.endSession(record.sessionId, client);
+  <span class="k">throw new</span> AppError(401, <span class="s">'REFRESH_REUSED'</span>);
+}</code></pre>
+
+  <h3>Logout that genuinely invalidates</h3>
+  <p>The guidelines call out "not merely a redirect on the frontend". Ours does three things:</p>
+  <pre><code><span class="k">export async function</span> logout(sessionId) {
+  <span class="k">await</span> sessionsRepo.revokeActiveForSession(sessionId);  <span class="c">// refresh_tokens.revoked_at = now()</span>
+  <span class="k">await</span> sessionsRepo.endSession(sessionId);             <span class="c">// login_sessions.is_active = false</span>
+}</code></pre>
+  <p>Plus the controller clears the cookie. <strong>Prove it live:</strong> log out, then in Postman call <code>POST /auth/refresh</code> &mdash; <span class="pill p400">401</span>. The session is dead server-side, not just hidden in the UI.</p>
+
+  <div class="box ask">
+    <div class="bt">"Can the old access token still be used after logout?"</div>
+    <p>Be honest, it scores better: "Yes, for up to 15 minutes, because access tokens are stateless by design. That's the documented trade-off of the access/refresh pattern. If we needed instant revocation we'd check a session table on every request, which costs a database round-trip per request. For a ride-hailing app a 15-minute window is an acceptable trade; for banking it wouldn't be."</p>
+  </div>
+</section>
+
+<section id="authz">
+  <div class="secnum">SECTION 13</div>
+  <h2>Authorization &mdash; what may you do?</h2>
+  <p class="lede">Guideline 3.2, "the most heavily scrutinised requirement of the milestone". Every command below was run tonight; the outputs are real.</p>
+
+  <h3>Three independent layers</h3>
+  <div class="layers">
+    <div class="layer acc">
+      <div class="lname">Layer 1 &mdash; Are you logged in? <span class="lfile">middlewares/auth.js</span></div>
+      <div class="ldesc">Verifies the JWT signature and expiry, sets <code>req.user</code>. No token or bad token &rarr; <span class="pill p400">401</span>.</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">Layer 2 &mdash; Is your role allowed? <span class="lfile">requireRole('ADMIN')</span></div>
+      <div class="ldesc">Reads the roles already verified onto <code>req.user</code>. Wrong role &rarr; <span class="pill p400">403</span>.</div>
+    </div>
+    <div class="arrowcol">&darr;</div>
+    <div class="layer acc">
+      <div class="lname">Layer 3 &mdash; Is this <em>your</em> record? <span class="lfile">inside each service</span></div>
+      <div class="ldesc">Compares the resource's owner to <code>req.user.id</code>. Not yours &rarr; <span class="pill p400">404</span>. This is the IDOR defence.</div>
+    </div>
+  </div>
+
+  <p>Layer 2 alone is not enough: it proves "a driver", never "<em>this</em> driver's own trip". Both are required.</p>
+
+  <pre><code><span class="c">// Layer 1 + 2 — middlewares/auth.js</span>
+<span class="k">export const</span> requireRole = (...allowed) => (request, _response, next) =>
+  allowed.some((role) => request.user.roles.includes(role))
+    ? next()
+    : next(<span class="k">new</span> AppError(403, <span class="s">'FORBIDDEN_ROLE'</span>));
+
+<span class="c">// Layer 3 — services/trips.service.js</span>
+<span class="k">if</span> (!trip || Number(trip.driverId) !== driverId) {
+  <span class="k">throw new</span> AppError(404, <span class="s">'TRIP_NOT_FOUND'</span>);   <span class="c">// 404, not 403 — don't confirm it exists</span>
+}</code></pre>
+
+  <h3>Reading the policy off a route file</h3>
+  <pre><code><span class="c">// admin.routes.js — every admin endpoint, one line</span>
+router.use(auth, requireRole(<span class="s">'ADMIN'</span>));
+
+<span class="c">// rideRequests.routes.js — passengers only</span>
+router.use(auth, requireRole(<span class="s">'PASSENGER'</span>));
+
+<span class="c">// driver.routes.js — note the deliberate split</span>
+router.use(auth);                              <span class="c">// any logged-in user…</span>
+router.post(<span class="s">'/apply'</span>, ...);                  <span class="c">// …can apply to become a driver</span>
+router.use(requireRole(<span class="s">'DRIVER'</span>));           <span class="c">// everything below needs the role</span></code></pre>
+
+  <div class="box say">
+    <div class="bt">That <code>/driver/apply</code> split is a great detail to volunteer</div>
+    <p>"A passenger applying to become a driver doesn't have the DRIVER role yet, so that one endpoint can't sit behind <code>requireRole('DRIVER')</code>. We put it above the role gate deliberately."</p>
+  </div>
+
+  <h3>The four live proofs &mdash; run these in Postman or curl</h3>
+
+  <h4>Proof 1 &mdash; no token is rejected</h4>
+  <pre><code>curl -i http://localhost:3000/api/v1/admin/stats
+
+HTTP/1.1 <span class="hl">401 Unauthorized</span>
+{"success":false,"error":{"code":"AUTH_REQUIRED",
+ "message":"You must be logged in to do that."}}</code></pre>
+
+  <h4>Proof 2 &mdash; a passenger cannot reach an admin endpoint</h4>
+  <pre><code><span class="c"># log in as Nusrat (PASSENGER) and keep the token</span>
+PASS=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"phone":"01710000001","password":"DemoPass123"}' \
+  | sed -E 's/.*"accessToken":"([^"]*)".*/\1/')
+
+curl -i -H "Authorization: Bearer $PASS" http://localhost:3000/api/v1/admin/stats
+
+HTTP/1.1 <span class="hl">403 Forbidden</span>
+{"success":false,"error":{"code":"FORBIDDEN_ROLE",
+ "message":"Your account does not have access to do that."}}</code></pre>
+
+  <h4>Proof 3 &mdash; IDOR: you cannot read someone else's trip</h4>
+  <pre><code><span class="c"># Nusrat's own trip → 200</span>
+curl -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $PASS" \
+  http://localhost:3000/api/v1/trips/JT-2026-001277
+<span class="hl">200</span>
+
+<span class="c"># somebody else's trip, same valid token → 404, not 403</span>
+curl -i -H "Authorization: Bearer $PASS" \
+  http://localhost:3000/api/v1/trips/JT-2026-001557
+HTTP/1.1 <span class="hl">404 Not Found</span>
+{"success":false,"error":{"code":"TRIP_NOT_FOUND","message":"The trip was not found."}}</code></pre>
+
+  <div class="box say">
+    <div class="bt">This is the single most impressive thing you can show</div>
+    <p>Guideline 3.2 item 3 asks for exactly this. Do it in Postman, in front of her, and say: "Same authenticated user, same valid token, one identifier changed. The ownership check is in the service layer, so it applies no matter how the endpoint is reached."</p>
+  </div>
+
+  <h4>Proof 4 &mdash; a tampered token is rejected</h4>
+  <pre><code>curl -i -H "Authorization: Bearer notarealtoken" \
+  http://localhost:3000/api/v1/admin/stats
+
+HTTP/1.1 <span class="hl">401 Unauthorized</span>
+{"success":false,"error":{"code":"TOKEN_EXPIRED",
+ "message":"Your session has expired. Please log in again."}}</code></pre>
+
+  <h3>Frontend gating is cosmetic &mdash; and we say so in the code</h3>
+  <pre><code><span class="c">// client/src/components/layout/ProtectedRoute.tsx</span>
+<span class="c">// "UX, not security — the API is the security."</span>
+<span class="c">// Every check here is ALSO enforced server-side.</span>
+<span class="k">const</span> hasRole = roles.length === 0 || roles.some((r) => user.roles.includes(r));
+<span class="k">if</span> (!hasRole) <span class="k">return</span> &lt;Navigate to={roleHomePath(user.roles)} replace /&gt;;</code></pre>
+
+  <div class="box ask">
+    <div class="bt">"So your frontend checks roles &mdash; isn't that the mistake the guidelines warn about?"</div>
+    <p>"The mistake is checking <em>only</em> on the frontend. Ours is a duplicate of a check that already exists on the server. It's there so a driver doesn't see a broken admin screen &mdash; but deleting our entire frontend would not weaken security by one bit, and I can prove that with Postman."</p>
+  </div>
+
+  <h3>Admin access levels &mdash; a fourth layer</h3>
+  <p>Being an ADMIN isn't enough for money operations. <code>admin_profiles.access_level</code> (<code>super</code> / <code>ops</code> / <code>finance</code> / <code>support</code>) is re-read <em>from the database</em> inside the withdrawal service, because it isn't in the JWT.</p>
+  <p>Say: "Role gets you in the door. Approving a payout additionally requires finance access level, which we read from the database at the moment of the decision rather than trusting a claim in the token."</p>
+</section>
+
+<section id="realtime">
+  <div class="secnum">SECTION 14</div>
+  <h2>Real-time with Socket.io</h2>
+  <p class="lede">Not required by the guidelines &mdash; which makes it a bonus you should show.</p>
+
+  <h3>Why sockets at all?</h3>
+  <p>HTTP is client-initiated: the server can only answer questions. But a driver needs to hear about a ride offer <em>the moment it exists</em>. Polling every second would be wasteful and still laggy. A WebSocket stays open so the server can push.</p>
+
+  <h3>The handshake is authenticated exactly like HTTP</h3>
+  <pre><code><span class="c">// sockets/index.js — runs ONCE per connection, before it is accepted</span>
+<span class="k">function</span> verifyHandshake(socket, next) {
+  <span class="k">const</span> token = socket.handshake.auth?.token;
+  <span class="k">if</span> (!token) <span class="k">return</span> next(<span class="k">new</span> Error(<span class="s">'AUTH_REQUIRED'</span>));
+  <span class="k">try</span> {
+    <span class="k">const</span> claims = jwt.verify(token, env.JWT_SECRET);   <span class="c">// same secret, same check</span>
+    socket.user = { id: Number(claims.sub), roles: claims.roles, sessionId: claims.sid };
+    next();
+  } <span class="k">catch</span> { next(<span class="k">new</span> Error(<span class="s">'TOKEN_EXPIRED'</span>)); }
+}</code></pre>
+  <p>Say: "An unauthenticated socket is never accepted. The same JWT verification runs at the handshake as in our HTTP middleware."</p>
+
+  <h3>Rooms &mdash; how a message reaches only the right people</h3>
+  <div class="tscroll"><table>
+    <tr><th>Room</th><th>Who's in it</th><th>Used for</th></tr>
+    <tr><td><code>user:{id}</code></td><td>Just that user's devices</td><td>Pulling them into a trip room later</td></tr>
+    <tr><td><code>driver:{id}</code></td><td>That driver only</td><td><code>offer:new</code> ride offers</td></tr>
+    <tr><td><code>trip:{id}</code></td><td>The passenger <em>and</em> the driver on that trip</td><td><code>trip:status</code>, <code>location:update</code></td></tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">Security question you should pre-empt</div>
+    <p>"Joining <code>user:{id}</code> and <code>driver:{id}</code> needs no check &mdash; they're derived from the verified JWT, so a socket can only ever join its own. But <code>trip:{id}</code> is verified with a real database query confirming this user is the passenger or driver on that trip. A client can't ask to join an arbitrary trip room."</p>
+  </div>
+
+  <h3>The three events</h3>
+  <div class="tscroll"><table>
+    <tr><th>Event</th><th>Direction</th><th>Meaning</th></tr>
+    <tr><td><code>offer:new</code></td><td>server &rarr; driver</td><td>A ride offer arrived. Deliberately thin &mdash; the app then calls <code>GET /driver/offers</code> for the full card.</td></tr>
+    <tr><td><code>trip:status</code></td><td>server &rarr; both</td><td>assigned / arrived / in_progress / completed / cancelled.</td></tr>
+    <tr><td><code>location:update</code></td><td>driver &rarr; server &rarr; passenger</td><td>GPS ping, written to <code>trip_location_pings</code> then relayed.</td></tr>
+  </table></div>
+
+  <h4>A detail that shows real thought</h4>
+  <p>The handshake proves the token was valid <em>at connect time</em>, but a socket can stay open far longer than 15 minutes. So the one inbound event that writes data re-checks expiry:</p>
+  <pre><code><span class="k">if</span> (Date.now() >= socket.user.tokenExpiresAt) { socket.disconnect(<span class="k">true</span>); <span class="k">return</span>; }</code></pre>
+
+  <h3>Graceful degradation</h3>
+  <p>If the socket drops, the client keeps working: pages poll REST endpoints on a timer, and a connection pill in the corner shows <em>connected / reconnecting / offline</em>. Say: "Real-time is an optimisation layered on top of a REST API that remains the source of truth &mdash; the app is fully functional with sockets disabled."</p>
+</section>
+<section id="demo">
+  <div class="secnum">SECTION 15</div>
+  <h2>The demo script</h2>
+  <p class="lede">Rehearse this twice tonight. A smooth demo buys enormous goodwill before a single question is asked.</p>
+
+  <h3>Window setup, done before she arrives</h3>
+  <div class="tscroll"><table>
+    <tr><th>Window</th><th>Browser mode</th><th>Logged in as</th><th>Why separate</th></tr>
+    <tr><td>1 &mdash; Passenger</td><td>Normal</td><td>Nusrat &mdash; <code>01710000001</code></td><td rowspan="3">Each window needs its own cookie jar. Three normal windows would share one session and overwrite each other.</td></tr>
+    <tr><td>2 &mdash; Driver</td><td>Incognito</td><td>Rafiq &mdash; <code>01810000002</code></td></tr>
+    <tr><td>3 &mdash; Admin</td><td>Different browser (or 2nd incognito profile)</td><td>Ayesha &mdash; <code>01510009993</code></td></tr>
+  </table></div>
+  <p>Also open: your <strong>API terminal</strong> (visible, so she sees requests logging live) and <strong>Postman</strong> with the four authorization proofs ready.</p>
+
+  <h3>The run, in order</h3>
+
+  <div class="trace">
+    <div class="step" data-n="1">
+      <h4>Open with the architecture, 30 seconds</h4>
+      <p>"Cholo is a ride-hailing platform. Three roles &mdash; passenger, driver, admin. React frontend on 5173, Express API on 3000, PostgreSQL 16 in Docker on 5433. 54 tables, 89 endpoints, no ORM &mdash; all raw parameterized SQL." Then move; don't lecture.</p>
+    </div>
+
+    <div class="step" data-n="2">
+      <h4>Registration and OTP &mdash; from a clean state</h4>
+      <p>The guidelines say "log in as every role, one after another, from a clean state". Register a brand-new passenger, read the OTP out of the API terminal, verify, and land on the booking screen. This proves the whole signup path live.</p>
+      <p><strong>Then show a failure:</strong> register the same phone again &rarr; <span class="pill p400">409</span> with a readable message on screen. And submit a bad phone &rarr; <span class="pill p400">422</span> with per-field errors. That's guideline 3.4's "error feedback" in one move.</p>
+    </div>
+
+    <div class="step" data-n="3">
+      <h4>Show all three roles look completely different</h4>
+      <p>Passenger: map + booking sheet, bottom tabs. Driver: online switch, offer sheet, earnings. Admin: sidebar with dashboard, approvals, users, pricing, payouts, disputes, SOS, audit log.</p>
+      <p>Say: "Three different route trees and three different layouts, selected by the roles that came back from the database at login."</p>
+    </div>
+
+    <div class="step" data-n="4">
+      <h4>The authorization proofs &mdash; do these in Postman</h4>
+      <p>This is the heavily-scrutinised part. Run all four from <a href="#authz">section 12</a>: no token &rarr; 401; passenger token on admin endpoint &rarr; 403; another user's trip &rarr; 404; garbage token &rarr; 401.</p>
+      <p>Say while doing it: "This is Postman, not the browser. The frontend isn't involved at all &mdash; the enforcement is entirely server-side."</p>
+    </div>
+
+    <div class="step" data-n="5">
+      <h4>The full ride, both windows side by side</h4>
+      <ol>
+        <li><strong>Driver window:</strong> flip the switch to go online, allow location.</li>
+        <li><strong>Passenger window:</strong> set pickup and dropoff (tap the map), watch real fare estimates load per category, click Confirm.</li>
+        <li><strong>Driver window:</strong> the offer appears <em>without refreshing</em> &mdash; point at that explicitly, it's the socket push. Accept it.</li>
+        <li><strong>Both windows</strong> jump to the trip screen simultaneously.</li>
+        <li><strong>Driver:</strong> Arrived &rarr; Start &rarr; Complete. Passenger's screen follows each step live.</li>
+        <li>Show the receipt, the wallet ledger, driver earnings, and the platform's commission.</li>
+      </ol>
+    </div>
+
+    <div class="step" data-n="6">
+      <h4>Admin operations</h4>
+      <p>Dashboard stats, the driver approval queue, suspend/reinstate a user, publish a pricing rule, approve a withdrawal, resolve a dispute, acknowledge an SOS &mdash; then open the <strong>audit log</strong> and show that every one of those actions was recorded with who did it and when.</p>
+    </div>
+
+    <div class="step" data-n="7">
+      <h4>Close on the database and the tests</h4>
+      <pre><code>docker compose exec postgres psql -U cholo -d cholo -c "\dt"
+cd ~/cholo &amp;&amp; npm test</code></pre>
+      <p>54 tables listed; 317 tests passing. Finish there &mdash; it's a strong last impression.</p>
+    </div>
+  </div>
+
+  <div class="box warn">
+    <div class="bt">Demo discipline</div>
+    <ul>
+      <li>Never say "it usually works". Say what you see and move on.</li>
+      <li>If something fails, don't debug silently &mdash; narrate: "That's the rate limiter; I've hit login several times. Restarting the API resets it."</li>
+      <li>Don't open a code file unless asked. Demo first, code second.</li>
+      <li>Both of you should speak. A member who can't explain any part costs marks (guideline section 4).</li>
+    </ul>
+  </div>
+</section>
+
+<section id="qa">
+  <div class="secnum">SECTION 16</div>
+  <h2>Question bank</h2>
+  <p class="lede">Spend your last hour here. Read the question, answer out loud, then check yourself.</p>
+
+  <h3>Running and architecture</h3>
+
+  <div class="qa"><div class="q">Walk me through what happens when you click Login.</div><div class="a"><div>See <a href="#traceA">section 06</a>. The 30-second version: submit handler &rarr; auth context &rarr; api layer &rarr; <code>POST /api/v1/auth/login</code> &rarr; CORS, JSON parse, rate limit, Zod validate &rarr; controller &rarr; service &rarr; repository runs a parameterized <code>SELECT</code> &rarr; bcrypt compare &rarr; roles read from <code>user_roles</code> &rarr; session row inserted &rarr; JWT signed &rarr; refresh token hashed and stored &rarr; response with token in JSON and refresh in an httpOnly cookie &rarr; React stores the user and redirects to the role's home.</div></div></div>
+
+  <div class="qa"><div class="q">Which file runs first?</div><div class="a"><div><code>server/src/server.js</code> on the backend &mdash; it validates the environment, builds the Express app from <code>app.js</code>, opens port 3000, attaches Socket.io and starts the cron job. On the frontend, <code>index.html</code> loads <code>src/main.tsx</code>, which mounts React into a single <code>&lt;div id="root"&gt;</code>.</div></div></div>
+
+  <div class="qa"><div class="q">Why is the frontend a separate program from the backend?</div><div class="a"><div>Separation of concerns and deployability &mdash; the React app is static files that can go on any CDN, the API scales independently. The security consequence is the important one: because they're separate, the frontend can't be trusted, so every rule is enforced on the server.</div></div></div>
+
+  <div class="qa"><div class="q">What is Vite doing?</div><div class="a"><div>It's the frontend build tool. In development it serves the app and hot-reloads on save; for production <code>npm run build</code> compiles TypeScript and JSX into plain JavaScript bundles. The browser can't run <code>.tsx</code> directly &mdash; Vite is what makes it runnable.</div></div></div>
+
+  <div class="qa"><div class="q">What is Express actually giving you?</div><div class="a"><div>Routing &mdash; mapping a URL and HTTP verb to a function &mdash; and a middleware chain, which is how we run authentication, validation and rate limiting before a handler in a declarative, readable way.</div></div></div>
+
+  <div class="qa"><div class="q">Why Docker for the database?</div><div class="a"><div>Both of us get an identical PostgreSQL 16 with the same config, without installing Postgres locally. <code>docker-compose.yml</code> pins the version, wires the volume for persistence, and runs the schema on first boot, so a fresh clone reaches a working database in one command.</div></div></div>
+
+  <h3>Database</h3>
+
+  <div class="qa"><div class="q">Where are your queries?</div><div class="a"><div>All in <code>server/src/repositories/</code>, 27 files, one per feature. No SQL exists anywhere else in the codebase &mdash; that's an enforced convention, and it means the whole data-access surface can be audited in one folder.</div></div></div>
+
+  <div class="qa"><div class="q">Show me you're safe from SQL injection.</div><div class="a"><div>Every query uses bind parameters: <code>WHERE phone = $1</code> with the value passed separately in an array. PostgreSQL parses the SQL before the value is bound, so a value can never become executable SQL. We also validate every input with Zod first &mdash; two independent fences. The few template literals in SQL strings interpolate whitelisted column names, never user input.</div></div></div>
+
+  <div class="qa"><div class="q">Did you use an ORM?</div><div class="a"><div>No &mdash; it's prohibited. We use the <code>pg</code> driver and hand-written SQL.</div></div></div>
+
+  <div class="qa"><div class="q">What is a connection pool and why use one?</div><div class="a"><div>Opening a TCP connection to Postgres and authenticating is expensive. The pool keeps a set of open connections and hands one out per query, then takes it back. Without it, every request would pay full connection setup cost.</div></div></div>
+
+  <div class="qa"><div class="q">Explain a transaction in your code.</div><div class="a"><div>Booking a ride inserts a <code>ride_requests</code> row and several <code>ride_offers</code> rows. Those must all succeed or all fail, so <code>withTransaction</code> checks out one connection, issues <code>BEGIN</code>, runs the work, and <code>COMMIT</code>s &mdash; or <code>ROLLBACK</code>s on any error. The single connection matters: a transaction is a property of a connection, so we thread that client through every repository call inside.</div></div></div>
+
+  <div class="qa"><div class="q">What is <code>SELECT ... FOR UPDATE</code>?</div><div class="a"><div>An exclusive row lock held until the transaction ends. We use it wherever we read a value, decide from it, and then write &mdash; so a concurrent request can't slip between the read and the write. The second transaction blocks and waits, then re-reads the updated row.</div></div></div>
+
+  <div class="qa"><div class="q">Why NUMERIC for money?</div><div class="a"><div>Floating point can't represent decimal fractions exactly, so repeated arithmetic drifts. With money that becomes real missing taka. <code>NUMERIC(12,2)</code> is exact decimal. We also serialise money as a string in JSON so JavaScript's float handling can't corrupt it.</div></div></div>
+
+  <div class="qa"><div class="q">Why TIMESTAMPTZ?</div><div class="a"><div>It stores an absolute instant with timezone awareness. A naive timestamp is ambiguous the moment the server, the database and the user are in different regions.</div></div></div>
+
+  <div class="qa"><div class="q">Why do rows have two IDs?</div><div class="a"><div>A <code>BIGINT id</code> for internal joins, which is compact and fast, and a <code>UUID public_id</code> for the API. Exposing sequential IDs would let anyone count our users or walk through records by incrementing a number.</div></div></div>
+
+  <div class="qa"><div class="q">Give me an example of a CHECK constraint.</div><div class="a"><div><code>CHECK (phone ~ '^01[3-9][0-9]{8}$')</code> on <code>users</code>. The same rule exists in our Zod validator. The application gives a friendly error; the constraint guarantees no bad row can exist even if it were inserted by something other than our API.</div></div></div>
+
+  <div class="qa"><div class="q">Why RESTRICT instead of CASCADE on trips?</div><div class="a"><div>A trip is financial and legal history. Cascading a user delete would erase completed trips, earnings and receipts. <code>RESTRICT</code> refuses; we soft-delete users by setting <code>status = 'deleted'</code>. We use <code>CASCADE</code> only where the child is meaningless alone, like <code>user_roles</code>.</div></div></div>
+
+  <div class="qa"><div class="q">Does anything happen automatically in the database, without your code calling it?</div><div class="a"><div>Yes &mdash; 19 triggers across 8 functions. New user gets a wallet and, if they become a driver, an availability row, purely from triggers on the <code>users</code> and <code>driver_profiles</code> inserts. Every ledger insert locks the wallet, computes the running balance and updates the cache in one <code>BEFORE INSERT</code> trigger. Trip status changes get logged to history automatically, attributed to whoever made the change. Three tables &mdash; the wallet ledger, the audit log, and trip status history &mdash; physically reject UPDATE and DELETE. See <a href="#triggers">section 10</a>.</div></div></div>
+
+  <div class="qa"><div class="q">How do you know the cached wallet balance is trustworthy?</div><div class="a"><div>The only thing that ever writes <code>wallets.balance</code> is one trigger, in the same transaction as the ledger insert that provoked it &mdash; application code never updates it directly. <code>fn_wallet_balance_audit</code> independently recomputes the balance by summing the ledger, so the two numbers can be checked against each other on demand. We actually found and fixed real drift on two demo wallets tonight using exactly that function &mdash; not a bug in this session's code, but proof the audit mechanism catches real problems.</div></div></div>
+
+  <div class="qa"><div class="q">What is a database view, and where do you use one?</div><div class="a"><div>A named, saved SELECT that re-runs fresh every time something queries it &mdash; it stores no data of its own. <code>v_city_monthly_revenue</code> is a four-table join defining "monthly revenue" once; the admin dashboard's headline stat and its chart both just select from it, so the definition can't drift between two call sites.</div></div></div>
+
+  <div class="qa"><div class="q">Isn't putting logic in the database bad practice?</div><div class="a"><div>We drew a deliberate line. Data-integrity rules &mdash; a cache staying honest, a table being append-only, an effective-dated lookup with one canonical answer &mdash; go in the database, because they must hold no matter what touches the table, including a future bug. Business decisions &mdash; can this passenger book right now, is this promo still valid &mdash; stay in the service layer, where they're plain testable JavaScript.</div></div></div>
+
+  <h3>Authentication</h3>
+
+  <div class="qa"><div class="q">How are passwords stored?</div><div class="a"><div>bcrypt hashes at cost factor 12. Never plain text, never reversible. bcrypt generates a random per-password salt and embeds it in the hash string, so two identical passwords produce different hashes and rainbow tables don't work.</div></div></div>
+
+  <div class="qa"><div class="q">Where's the salt?</div><div class="a"><div>Inside the hash. <code>$2b$12$&lt;salt+hash&gt;</code> &mdash; the algorithm, the cost factor and the 22-character salt are all encoded in the stored string.</div></div></div>
+
+  <div class="qa"><div class="q">What's in your JWT?</div><div class="a"><div>User id (<code>sub</code>), roles, session id, issued-at and expiry. Nothing secret &mdash; the payload is only base64-encoded, not encrypted, so anyone can read it.</div></div></div>
+
+  <div class="qa"><div class="q">Then can't I edit it and make myself admin?</div><div class="a"><div>No. It's signed with HMAC-SHA256 using a server-side secret. Change any byte and the signature stops matching, <code>jwt.verify</code> throws, and you get 401. Forging one requires <code>JWT_SECRET</code>, which is only in our git-ignored <code>.env</code>. I can demonstrate this in jwt.io and Postman.</div></div></div>
+
+  <div class="qa"><div class="q">Where does the role come from?</div><div class="a"><div>From the database. At login we <code>JOIN user_roles</code> with <code>roles</code> and sign the result into the token. The client never sends its role &mdash; the guidelines specifically warn about trusting a client-supplied role, and we don't.</div></div></div>
+
+  <div class="qa"><div class="q">Why two tokens?</div><div class="a"><div>Speed versus revocability. The access token is stateless so checking it costs no database query, but that means we can't revoke it &mdash; so it lives 15 minutes. The refresh token is stored (hashed) in the database, lives 30 days, and can be killed instantly. See <a href="#authn">section 11</a>.</div></div></div>
+
+  <div class="qa"><div class="q">Why not store the token in localStorage?</div><div class="a"><div>Any JavaScript on the page can read <code>localStorage</code>, so one XSS bug leaks the token. Ours lives in a module-level variable in memory, and the refresh token is in an httpOnly cookie that JavaScript cannot read at all.</div></div></div>
+
+  <div class="qa"><div class="q">Does logout really invalidate the session?</div><div class="a"><div>Yes. We set <code>revoked_at</code> on the refresh token row and <code>is_active = false</code> on the session row, and clear the cookie. After logout, <code>POST /auth/refresh</code> returns 401 &mdash; I can show that in Postman. The old access token remains valid until it expires, which is the documented trade-off of stateless access tokens.</div></div></div>
+
+  <div class="qa"><div class="q">What stops OTP brute force?</div><div class="a"><div>Three things. The code expires in 5 minutes. There's a hard cap of 5 attempts per code, enforced under a <code>FOR UPDATE</code> lock so parallel guesses can't all read the same stale counter. And a rate limiter keyed on phone+IP. The OTP is also stored as a SHA-256 hash, not plain text.</div></div></div>
+
+  <div class="qa"><div class="q">What is refresh token rotation?</div><div class="a"><div>Every refresh issues a new token and revokes the old one immediately. If an already-rotated token is presented again, someone is replaying a dead token &mdash; we can't tell whether it's the real user or a thief, so we end the entire session rather than just rejecting that one token.</div></div></div>
+
+  <h3>Authorization</h3>
+
+  <div class="qa"><div class="q">How do you stop a passenger calling an admin endpoint?</div><div class="a"><div><code>requireRole('ADMIN')</code> middleware on the admin router. It reads the roles that <code>auth</code> verified from the signed token and returns 403 otherwise. Let me show you in Postman.</div></div></div>
+
+  <div class="qa"><div class="q">How do you stop me reading someone else's trip by changing the ID?</div><div class="a"><div>Ownership checks in the service layer. Every trip lookup compares the trip's passenger and driver IDs against the authenticated user's ID and throws 404 if it doesn't match. Because it's in the service, it applies regardless of which endpoint reaches it.</div></div></div>
+
+  <div class="qa"><div class="q">Why 404 and not 403 for someone else's record?</div><div class="a"><div>403 would confirm the record exists, letting an attacker enumerate valid IDs by watching the status code. 404 for both "doesn't exist" and "not yours" leaks nothing.</div></div></div>
+
+  <div class="qa"><div class="q">Your React app also checks roles &mdash; isn't that the mistake in the guidelines?</div><div class="a"><div>The mistake is checking <em>only</em> on the frontend. Ours duplicates a server-side check purely so users don't see broken screens. Deleting our entire frontend wouldn't weaken security &mdash; Postman still gets 401 and 403.</div></div></div>
+
+  <div class="qa"><div class="q">Is being an ADMIN enough to approve a payout?</div><div class="a"><div>No. The role gets you past the route gate, then the withdrawal service re-reads <code>admin_profiles.access_level</code> from the database and requires <code>finance</code>. That's deliberately not in the JWT, so it's re-checked at decision time.</div></div></div>
+
+  <h3>Features and design</h3>
+
+  <div class="qa"><div class="q">Two drivers accept the same ride at once. What happens?</div><div class="a"><div>See <a href="#traceB">section 07</a>, part 3. Row lock with <code>FOR UPDATE</code>, second driver blocks then re-reads and sees <code>matched</code>, gets 409 <code>ALREADY_TAKEN</code>. A <code>UNIQUE</code> constraint on <code>trips.request_id</code> makes a double booking physically impossible as a backstop.</div></div></div>
+
+  <div class="qa"><div class="q">Why are ride_requests, ride_offers and trips three separate tables?</div><div class="a"><div>They have different lifecycles. A request is demand &mdash; it can expire with no trip. An offer is one marketplace attempt &mdash; many per request, and the data behind driver acceptance rates. A trip is fulfilment &mdash; it exists only when someone accepted. Collapsing them would lose the ability to analyse unmet demand or driver behaviour.</div></div></div>
+
+  <div class="qa"><div class="q">How is the fare calculated?</div><div class="a"><div>Look up the effective-dated pricing rule for that city and vehicle category, get distance and duration from an OSM routing service, then base fare + per-km + per-minute, multiplied by surge, clamped to a minimum. The result is snapshotted onto the ride request &mdash; the server recomputes it at booking and never trusts a price sent by the client.</div></div></div>
+
+  <div class="qa"><div class="q">What if the passenger's browser closes mid-search?</div><div class="a"><div>A cron job runs every minute and marks requests past their 5-minute window as <code>expired</code>, withdrawing any still-pending offers. On return, the app restores the active request from its public ID.</div></div></div>
+
+  <div class="qa"><div class="q">How does the driver get the offer without refreshing?</div><div class="a"><div>Socket.io. After the booking transaction commits, the server emits <code>offer:new</code> to that driver's room. The push is deliberately thin &mdash; it just says something arrived, and the app then fetches the full offer over REST. The driver app also polls every 5 seconds as a fallback.</div></div></div>
+
+  <div class="qa"><div class="q">Why emit after the commit and not inside the transaction?</div><div class="a"><div>Because a later statement in the same transaction could still roll back. Notifying a driver about an offer that then ceases to exist would be a real bug. We capture what to send inside the transaction and emit only after <code>COMMIT</code>.</div></div></div>
+
+  <div class="qa"><div class="q">What did you deliberately not build?</div><div class="a"><div>Scheduled-ride dispatch, multi-stop trips, PDF receipts, a zone polygon editor, and real SOS SMS fan-out. Surge pricing needs point-in-polygon zone resolution, which needs PostGIS &mdash; rather than fake it we default the multiplier to 1.00 and left the column and the seam in place. Naming a conscious cut is much stronger than pretending everything is finished.</div></div></div>
+
+  <div class="qa"><div class="q">How do you know it works?</div><div class="a"><div>317 automated tests &mdash; unit tests for pure logic like fare and commission math, integration tests for wallet locking and ledger immutability, and API tests that fire real HTTP requests at the app and assert status codes and bodies. Each test file runs inside a transaction that's rolled back, so tests never pollute the database. <code>npm test</code> at the root also runs the frontend lint and a production build.</div></div></div>
+
+  <div class="qa"><div class="q">Which part did you find hardest?</div><div class="a"><div>Be honest and specific &mdash; the accept race. "Getting the ordering right: lock the request, re-check the status <em>after</em> acquiring the lock, do the writes, commit, and only then emit sockets. Our first instinct was to check the status before locking, which is exactly the bug the lock exists to prevent."</div></div></div>
+</section>
+<section id="broken">
+  <div class="secnum">SECTION 17</div>
+  <h2>If something breaks</h2>
+  <p class="lede">Find the symptom, run the fix, keep talking. Composure reads as competence.</p>
+
+  <div class="tscroll"><table>
+    <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+    <tr>
+      <td>Website loads but everything fails</td>
+      <td>API isn't running</td>
+      <td>Check the API terminal for <code>listening on port 3000</code>; restart <code>cd server &amp;&amp; npm run dev</code></td>
+    </tr>
+    <tr>
+      <td><code>/health</code> returns <code>{"db":false}</code> or hangs</td>
+      <td>Postgres isn't up</td>
+      <td><code>docker compose up -d postgres</code>, wait for <code>healthy</code> in <code>docker compose ps</code></td>
+    </tr>
+    <tr>
+      <td><code>ECONNREFUSED ... 5433</code></td>
+      <td>Container stopped, or Docker Desktop isn't running</td>
+      <td>Start Docker Desktop, wait for the whale, then <code>docker compose up -d postgres</code></td>
+    </tr>
+    <tr>
+      <td>Login says "Too many attempts" <span class="pill p400">429</span></td>
+      <td>Rate limiter &mdash; you've been testing a lot</td>
+      <td><strong>Restart the API.</strong> Limits are in-memory, so a restart clears them. Explain it as a feature, not a bug.</td>
+    </tr>
+    <tr>
+      <td>Demo logins rejected</td>
+      <td>Seed not loaded</td>
+      <td><code>docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U cholo -d cholo &lt; database/seeds/seed.dev.sql</code></td>
+    </tr>
+    <tr>
+      <td>Driver never receives an offer</td>
+      <td>Driver is offline, has no location, or the vehicle category doesn't match</td>
+      <td>Go online in the driver window, allow location, and book the <strong>Car</strong> category &mdash; Rafiq's demo vehicle is a Car</td>
+    </tr>
+    <tr>
+      <td>"Address not found" when searching</td>
+      <td>Public OSM geocoding is rate-limited or unreachable</td>
+      <td><strong>Tap the map to set pickup/dropoff instead.</strong> Say: "Geocoding is behind a provider adapter using the free public OSM service, which rate-limits. Map selection is the fallback."</td>
+    </tr>
+    <tr>
+      <td>Blank white page in the browser</td>
+      <td>A frontend crash</td>
+      <td>Open DevTools console (F12). Hard-refresh with <kbd>Cmd+Shift+R</kbd>. Restart <code>npm run dev</code> in <code>client/</code>.</td>
+    </tr>
+    <tr>
+      <td>Socket pill stuck on "reconnecting"</td>
+      <td>Access token expired mid-session</td>
+      <td>Harmless &mdash; polling keeps the app working. Refresh the page to reconnect, and say exactly that.</td>
+    </tr>
+    <tr>
+      <td>"Port 3000 already in use"</td>
+      <td>An old API process is still alive</td>
+      <td><code>pkill -f "node src/server.js"</code> then start again</td>
+    </tr>
+    <tr>
+      <td>Everything is broken and you have 60 seconds</td>
+      <td>&mdash;</td>
+      <td><code>docker compose down &amp;&amp; docker compose up -d --build</code>, then use <strong>port 4173</strong>. Slower, but self-contained.</td>
+    </tr>
+  </table></div>
+
+  <div class="box say">
+    <div class="bt">What to say while a fix runs</div>
+    <p>Silence during a failure is what looks bad, not the failure. Fill it with something true and useful: "While this restarts &mdash; the rate limiter is per phone-and-IP, only counts failed attempts, and stores counters in memory, so a restart resets them. In production that'd be backed by Redis so it survives a deploy."</p>
+  </div>
+</section>
+
+<section id="split">
+  <div class="secnum">SECTION 18</div>
+  <h2>Who explains what</h2>
+  <p class="lede">Guideline section 4 lists "dividing the work such that a member cannot explain any part" as a marked-down mistake. Split the <em>lead</em>, not the knowledge.</p>
+
+  <div class="grid2">
+    <div class="tile">
+      <div class="tl">Person A leads on</div>
+      <div class="tn">
+        Database and backend &mdash; schema, constraints, transactions and locking, where the queries live, SQL injection defence, the accept race, the layered architecture.
+        <br><br>Sections <strong>04, 05, 08, 09, 10</strong> plus Trace B.
+      </div>
+    </div>
+    <div class="tile">
+      <div class="tl">Person B leads on</div>
+      <div class="tn">
+        Auth, security and the frontend &mdash; bcrypt, JWT anatomy, access vs refresh, the three authorization layers, the Postman proofs, React routing and role-aware UI.
+        <br><br>Sections <strong>02, 06, 11, 12, 13</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="box warn">
+    <div class="bt">Both of you must be able to answer these five, alone</div>
+    <ol>
+      <li>What happens when you click Login? (<a href="#traceA">Trace A</a>)</li>
+      <li>Where are your SQL queries and why are they safe? (<a href="#sql">§09</a>)</li>
+      <li>How are passwords stored? (<a href="#authn">§11</a>)</li>
+      <li>How do you stop one user reading another's data? (<a href="#authz">§12</a>)</li>
+      <li>What happens when two drivers accept at the same time? (<a href="#traceB">§07</a>)</li>
+    </ol>
+  </div>
+
+  <div class="box say">
+    <div class="bt">If you genuinely don't know something</div>
+    <p>Don't invent. Say: "I didn't implement that part, but I know it lives in <code>X</code> and works by <code>Y</code> &mdash; can I open the file?" Instructors reward accurate boundaries far more than confident fiction, and they can always tell.</p>
+  </div>
+</section>
+
+<section id="changed">
+  <div class="secnum">SECTION 19</div>
+  <h2>What changed tonight</h2>
+  <p class="lede">Two fixes were made while preparing this. You should know about them, because one is a security bug worth mentioning proactively.</p>
+
+  <h3>Fix 1 &mdash; the OTP lockout never actually locked out</h3>
+  <p><strong>The bug.</strong> <code>verifyOtp</code> incremented the failed-attempt counter and then threw an error to signal "wrong code" &mdash; but both happened <em>inside</em> <code>withTransaction</code>. Throwing triggers <code>ROLLBACK</code>, which undid the increment. The counter was permanently stuck at 0, so the 5-attempt cap could never trigger. Proven live: seven wrong guesses all returned 401, with <code>attempts</code> still 0 in the database.</p>
+
+  <p><strong>The fix.</strong> Failures are now <em>returned</em> out of the transaction rather than thrown from inside it, and raised only after the commit. The <code>FOR UPDATE</code> lock still covers the whole check-then-increment sequence, so parallel guesses stay serialized.</p>
+
+  <pre><code><span class="c">// server/src/services/auth.service.js</span>
+<span class="k">if</span> (hashOtp(otp) !== record.otpHash) {
+  <span class="k">await</span> otpRepo.incrementAttempts(record.id, client);
+  <span class="k">return</span> { failure: <span class="k">new</span> AppError(401, <span class="s">'OTP_INVALID'</span>) };  <span class="c">// return, don't throw</span>
+}
+<span class="c">// … after the transaction commits:</span>
+<span class="k">if</span> (outcome.failure) <span class="k">throw</span> outcome.failure;</code></pre>
+
+  <p><strong>Verified after the fix:</strong></p>
+  <pre><code>attempt 1 → HTTP 401   | attempts in DB: 1
+attempt 2 → HTTP 401   | attempts in DB: 2
+attempt 3 → HTTP 401   | attempts in DB: 3
+attempt 4 → HTTP 401   | attempts in DB: 4
+attempt 5 → HTTP 401   | attempts in DB: 5
+attempt 6 → <span class="hl">HTTP 429</span>   | attempts in DB: 5
+attempt 7 → <span class="hl">HTTP 429</span>   | attempts in DB: 5</code></pre>
+
+  <div class="box say">
+    <div class="bt">This is worth raising yourself</div>
+    <p>"One thing we found while reviewing: our OTP attempt counter was being rolled back by the same transaction that reported the failure, so the lockout never engaged. We fixed it by committing the increment and raising the error after the transaction. It's a good example of why a rollback isn't always what you want &mdash; the failure itself was the thing we needed to record."</p>
+    <p>Volunteering a bug you found and fixed, with a clear explanation of the mechanism, reads as engineering maturity. It's a genuinely interesting transaction-semantics point in a database course.</p>
+  </div>
+
+  <h3>Fix 2 &mdash; six wallet tests were failing</h3>
+  <p><code>tests/api/wallet.test.js</code> mocked <code>pool.query</code> but not <code>pool.connect</code>. Services that use <code>withTransaction</code> check out their own connection, which bypassed the mock and therefore couldn't see the test's uncommitted rows. Adding the same <code>pool.connect</code> mock its sibling test files already use &mdash; translating <code>BEGIN</code>/<code>COMMIT</code>/<code>ROLLBACK</code> into savepoints on the shared client &mdash; fixed all six.</p>
+
+  <div class="box ask">
+    <div class="bt">Side note worth knowing</div>
+    <p>That same missing mock is why the development database has accumulated thousands of leftover test users &mdash; those transactions were committing for real. It's harmless for the demo. If she asks why <code>users</code> has so many rows, the honest answer is "leftover test fixtures from an earlier test-isolation bug we fixed today."</p>
+  </div>
+
+  <h3>Also found &mdash; real wallet drift, unrelated to any code bug</h3>
+  <p>While proving the wallet ledger trigger live (<a href="#triggers">section 10</a>), <code>fn_wallet_balance_audit</code> caught Nusrat's and Rafiq's demo wallets disagreeing with their own ledger &mdash; cached balances of ৳8000 and ৳4595.56 against ledger truths of ৳2000 and ৳1121.56. No repository ever writes <code>wallets.balance</code> directly, so this predates tonight and almost certainly came from a manual <code>psql</code> edit earlier in the project's history, not from the application. Both wallets are repaired now (cache set from the audit function's answer, the documented use case), and a full sweep confirms zero wallets in the database disagree with their ledger. Worth mentioning if she asks how you'd catch this kind of drift in production &mdash; you already have.</p>
+
+  <h3>State of the suite now</h3>
+  <div class="grid2">
+    <div class="tile"><div class="tl">Backend tests</div><div class="tv">317 passing, 0 failing</div><div class="tn">Unit, integration and API suites.</div></div>
+    <div class="tile"><div class="tl">Frontend</div><div class="tv">Lint clean, build OK</div><div class="tn">TypeScript compiles, production bundle builds.</div></div>
+    <div class="tile"><div class="tl"><code>npm test</code> exit code</div><div class="tv">0</div><div class="tn">Safe to run in front of her.</div></div>
+  </div>
+
+  <div class="box warn">
+    <div class="bt">Before you demo: commit these changes</div>
+    <pre><code>cd ~/cholo
+git status
+git add -A
+git commit -m "fix: persist OTP attempt counter and repair wallet test isolation"</code></pre>
+    <p>You're on branch <code>fix/audit-bug-fixes</code>, so this won't touch <code>main</code>.</p>
+  </div>
+
+  <hr>
+
+  <div class="box say">
+    <div class="bt">Last thing</div>
+    <p>You built a genuinely substantial system &mdash; 54 tables, 89 endpoints, three real roles, row-level locking, a real payment path and 317 tests. The gap tomorrow is vocabulary, not capability. Read Trace A and Trace B until you can narrate them without looking, and the rest will follow.</p>
+    <p>Good luck. চলো।</p>
+  </div>
+</section>
+
+</main>
+</div>

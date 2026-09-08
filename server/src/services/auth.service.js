@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js';
+import { pool, withTransaction } from '../config/db.js';
 import * as otpRepo from '../repositories/otp.repository.js';
 import * as passengersRepo from '../repositories/passengers.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
@@ -103,29 +103,49 @@ export async function resendOtp({ phone, purpose }) {
   sendOtpSms(phone, otp);
 }
 
+// The attempts check-then-increment is inside one transaction, holding
+// FOR UPDATE on the otp_verifications row for the whole sequence (same
+// reasoning as refresh()'s token-rotation lock above) — otherwise concurrent
+// guesses against the same code all read the same stale `attempts` and all
+// slip under OTP_MAX_ATTEMPTS instead of being serialized against the cap.
+// Failures are RETURNED, not thrown, out of the transaction body and only
+// raised once it has committed. Throwing from inside would make
+// withTransaction ROLLBACK — which on the wrong-code path would undo the
+// very incrementAttempts that the lockout depends on, leaving `attempts`
+// pinned at 0 and OTP_MAX_ATTEMPTS unreachable no matter how many guesses
+// arrive. The FOR UPDATE lock is still held for the whole
+// check-then-increment sequence, so concurrent guesses stay serialized.
 export async function verifyOtp({ phone, otp, purpose }, device) {
-  const record = await otpRepo.findLatestActive(phone, purpose);
-  if (!record) {
-    throw new AppError(401, 'OTP_INVALID');
-  }
-  if (record.expiresAt.getTime() < Date.now()) {
-    throw new AppError(410, 'OTP_EXPIRED');
-  }
-  if (record.attempts >= OTP_MAX_ATTEMPTS) {
-    throw new AppError(429, 'RATE_LIMITED');
-  }
-  if (hashOtp(otp) !== record.otpHash) {
-    await otpRepo.incrementAttempts(record.id);
-    throw new AppError(401, 'OTP_INVALID');
+  const outcome = await withTransaction(async (client) => {
+    const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
+    if (!record) {
+      return { failure: new AppError(401, 'OTP_INVALID') };
+    }
+    if (record.expiresAt.getTime() < Date.now()) {
+      return { failure: new AppError(410, 'OTP_EXPIRED') };
+    }
+    if (record.attempts >= OTP_MAX_ATTEMPTS) {
+      return { failure: new AppError(429, 'RATE_LIMITED') };
+    }
+    if (hashOtp(otp) !== record.otpHash) {
+      await otpRepo.incrementAttempts(record.id, client);
+      return { failure: new AppError(401, 'OTP_INVALID') };
+    }
+
+    await otpRepo.markVerified(record.id, client);
+
+    if (purpose === 'signup') {
+      await usersRepo.markPhoneVerified(record.userId, client);
+    }
+
+    return { userId: record.userId };
+  });
+
+  if (outcome.failure) {
+    throw outcome.failure;
   }
 
-  await otpRepo.markVerified(record.id);
-
-  if (purpose === 'signup') {
-    await usersRepo.markPhoneVerified(record.userId);
-  }
-
-  return mintSession(record.userId, device);
+  return mintSession(outcome.userId, device);
 }
 
 export async function login({ phone, password }, device) {
