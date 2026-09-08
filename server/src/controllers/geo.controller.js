@@ -6,6 +6,11 @@ export const geocode = asyncHandler(async (request, response) => {
   response.json({ success: true, data });
 });
 
+export const search = asyncHandler(async (request, response) => {
+  const data = await geoService.search(request.query.query);
+  response.json({ success: true, data });
+});
+
 export const reverseGeocode = asyncHandler(async (request, response) => {
   const data = await geoService.reverseGeocode(request.query.lat, request.query.lng);
   response.json({ success: true, data });
