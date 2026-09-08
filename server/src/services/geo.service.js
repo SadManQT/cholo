@@ -2,13 +2,20 @@ import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 import { isRouteInsideBangladesh } from '../utils/bangladeshBoundary.js';
 import * as osmProvider from './providers/osm.provider.js';
+import * as photonProvider from './providers/photon.provider.js';
 
 // The Geo Abstraction (doc 05-06-07 §8): one interface, providers behind it.
-// Switching GEO_PROVIDER=osm|google in env is meant to change zero business
-// code — every caller in this codebase imports THIS file, never a provider
-// module directly.
+// Switching GEO_PROVIDER=osm|photon|google in env is meant to change zero
+// business code — every caller in this codebase imports THIS file, never a
+// provider module directly.
 const providers = {
   osm: osmProvider,
+  // Same OpenStreetMap data as osm, indexed through Elasticsearch instead
+  // of Nominatim's plain-text search — real fuzzy/typo tolerance ("Gulshsn"
+  // still finds "Gulshan") for free, no API key. Does not add coverage OSM
+  // itself lacks. The default: better typo tolerance is a strict upgrade
+  // over osm at zero cost, so there's no reason to default to the worse one.
+  photon: photonProvider,
   // google: not implemented — the documented future adapter for when the
   // free OSM stack needs to be swapped for a billed one (doc 05-06-07 §8).
 };
@@ -83,6 +90,17 @@ export async function geocode(text) {
   assertWithinServiceArea(place);
   assertBangladeshCountry(place.countryCode);
   return { lat: place.lat, lng: place.lng, address: place.address };
+}
+
+// As-you-type pickup/dropoff suggestions. Same service-area/country fence
+// as geocode(), but a result outside Bangladesh is silently dropped from
+// the list rather than failing the whole request — one bad candidate
+// (Nominatim's countrycodes filter is a soft hint, not absolute) shouldn't
+// hide the good ones while someone is still mid-search.
+export async function search(text) {
+  const places = await currentProvider().search(text);
+  return places.filter((place) => isWithinServiceArea(place) && place.countryCode?.toLowerCase() === 'bd')
+    .map((place) => ({ lat: place.lat, lng: place.lng, address: place.address }));
 }
 
 export async function reverseGeocode(lat, lng) {
