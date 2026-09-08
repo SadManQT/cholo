@@ -1,9 +1,13 @@
 export function formatBDT(value: string | number | null | undefined) {
   const amount = Number(value ?? 0);
-  return `৳${new Intl.NumberFormat('en-BD', {
+  // Sign goes before the currency symbol (-৳150), not inside it (৳-150) —
+  // a driver's wallet can legitimately go negative from accumulated
+  // cash-trip commission debt, so this path is real, not hypothetical.
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}৳${new Intl.NumberFormat('en-BD', {
     minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
     maximumFractionDigits: 2,
-  }).format(amount)}`;
+  }).format(Math.abs(amount))}`;
 }
 
 export function formatDateTime(value: string | null | undefined) {

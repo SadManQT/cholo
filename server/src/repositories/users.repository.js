@@ -37,8 +37,8 @@ export async function findById(userId) {
   return rows[0];
 }
 
-export async function markPhoneVerified(userId) {
-  await pool.query(
+export async function markPhoneVerified(userId, client = pool) {
+  await client.query(
     `UPDATE users SET phone_verified_at = now() WHERE id = $1`,
     [userId],
   );

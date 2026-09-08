@@ -23,7 +23,13 @@ const OFFER_TIMEOUT_SECONDS = 15;
 // (doc 04) multi-wave dispatch, but advancing to round 2 needs a scheduled
 // job to detect "nobody answered in time" — that's step 14's expiry cron,
 // not built yet. This fans out once, to every eligible driver in range.
-export async function fanOutOffers({ requestId, requestPublicId, categoryId, pickupLat, pickupLng, womenOnly }, client) {
+//
+// DB work only — no socket emit here. This runs inside the same transaction
+// that inserts the ride_request, so anything pushed from here would notify a
+// driver about an offer a later statement in that same transaction could
+// still roll back. Call broadcastNewOffers() with the return value only
+// after that transaction has committed.
+export async function fanOutOffers({ requestId, categoryId, pickupLat, pickupLng, womenOnly }, client) {
   const candidates = await offersRepo.findEligibleDrivers({ categoryId, womenOnly }, client);
 
   const offers = candidates
@@ -36,30 +42,36 @@ export async function fanOutOffers({ requestId, requestPublicId, categoryId, pic
     .filter((offer) => offer.distanceKm <= DISPATCH_RADIUS_KM)
     .sort((a, b) => a.distanceKm - b.distanceKm);
 
-  if (offers.length > 0) {
-    const inserted = await offersRepo.insertOffers(requestId, offers, client);
+  if (offers.length === 0) return [];
 
-    // doc 08-09-10's own driver/offers row: "Pending offers (push arrives
-    // via socket; this is the pull)" — so the push is deliberately thin,
-    // just enough for the driver app to know something arrived and go
-    // fetch GET /driver/offers for the full card, not a duplicate of that
-    // response over the wire.
-    const io = getIO();
-    if (io) {
-      const expiresAt = new Date(Date.now() + OFFER_TIMEOUT_SECONDS * 1000).toISOString();
-      for (const row of inserted) {
-        const distanceKm = offers.find((offer) => String(offer.driverId) === String(row.driverId))?.distanceKm;
-        io.to(driverRoom(row.driverId)).emit('offer:new', {
-          offerId: row.id,
-          requestPublicId,
-          distanceKm,
-          expiresAt,
-        });
-      }
-    }
+  const inserted = await offersRepo.insertOffers(requestId, offers, client);
+
+  return inserted.map((row) => ({
+    offerId: row.id,
+    driverId: row.driverId,
+    distanceKm: offers.find((offer) => String(offer.driverId) === String(row.driverId))?.distanceKm,
+  }));
+}
+
+// doc 08-09-10's own driver/offers row: "Pending offers (push arrives via
+// socket; this is the pull)" — so the push is deliberately thin, just enough
+// for the driver app to know something arrived and go fetch
+// GET /driver/offers for the full card, not a duplicate of that response
+// over the wire.
+export function broadcastNewOffers(offers, requestPublicId) {
+  if (offers.length === 0) return;
+  const io = getIO();
+  if (!io) return;
+
+  const expiresAt = new Date(Date.now() + OFFER_TIMEOUT_SECONDS * 1000).toISOString();
+  for (const offer of offers) {
+    io.to(driverRoom(offer.driverId)).emit('offer:new', {
+      offerId: offer.offerId,
+      requestPublicId,
+      distanceKm: offer.distanceKm,
+      expiresAt,
+    });
   }
-
-  return offers.length;
 }
 
 export async function listOffersForDriver(driverId) {
@@ -87,7 +99,12 @@ export async function respondToOffer(driverId, offerId, response) {
   }
 
   if (response === 'rejected') {
-    await offersRepo.markResponse(offerId, 'rejected');
+    // Guarded UPDATE (WHERE response = 'pending') — if this loses the race
+    // against a concurrent accept/withdrawal that resolved the offer first,
+    // it applies to zero rows rather than stomping that outcome back to
+    // 'rejected'.
+    const applied = await offersRepo.markResponse(offerId, 'rejected');
+    if (!applied) throw new AppError(409, 'ALREADY_TAKEN');
     return { id: offerId, response: 'rejected' };
   }
 

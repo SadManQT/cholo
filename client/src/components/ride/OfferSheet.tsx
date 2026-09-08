@@ -23,6 +23,12 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
       startedFor.current = null;
       return;
     }
+    // Guard on the id, not object identity: DriverHomePage polls
+    // GET /driver/offers every 5s, so the same still-pending offer arrives
+    // as a brand-new object each poll — without this guard the alert
+    // (vibrate/beep) and countdown would restart every poll instead of once
+    // per offer.
+    if (startedFor.current === offer.id) return;
     startedFor.current = offer.id;
     expiredFor.current = null;
     start(Math.max(0, Math.ceil((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)));

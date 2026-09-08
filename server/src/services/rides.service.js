@@ -72,6 +72,7 @@ export async function createRequest(passengerId, dto) {
   const estPayable = round2(estFare - estDiscount);
 
   let request;
+  let newOffers = [];
   try {
     request = await withTransaction(async (client) => {
       // This lock is also taken by offer acceptance before it moves the
@@ -107,9 +108,8 @@ export async function createRequest(passengerId, dto) {
       // expiry above, there's no "who's nearby" question worth asking for
       // a ride that's days away.
       if (!scheduledFor) {
-        await dispatchService.fanOutOffers({
+        newOffers = await dispatchService.fanOutOffers({
           requestId: inserted.id,
-          requestPublicId: inserted.publicId,
           categoryId,
           pickupLat: pickup.lat,
           pickupLng: pickup.lng,
@@ -127,6 +127,12 @@ export async function createRequest(passengerId, dto) {
     }
     throw error;
   }
+
+  // Only after the transaction above has committed — otherwise a driver
+  // could be pushed offer:new for an offer a later statement in that same
+  // transaction still rolls back, or poll GET /driver/offers before the
+  // insert is even visible to that separate connection.
+  dispatchService.broadcastNewOffers(newOffers, request.publicId);
 
   return {
     publicId: request.publicId,
