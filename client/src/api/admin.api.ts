@@ -11,6 +11,8 @@ import type {
   PublishPricingRuleInput,
   SosAlert,
   VehicleApplication,
+  Zone,
+  ZoneType,
 } from '../types/admin.types';
 import type { TicketDetail, TicketPriority, TicketStatus, TicketSummary } from '../types/support.types';
 
@@ -54,8 +56,10 @@ export async function listUsers(params: { search?: string; status?: string; page
   return collection(response);
 }
 
-export async function decideUser(id: string, decision: 'suspend' | 'reinstate', reason: string) {
-  const response = await apiClient.post<ApiSuccess<AdminUserRow>>(`/admin/users/${id}/${decision}`, { reason });
+export type SuspensionDuration = 'permanent' | '1w' | '1m' | 'custom';
+
+export async function decideUser(id: string, decision: 'suspend' | 'reinstate', reason: string, suspension?: { duration: SuspensionDuration; until?: string }) {
+  const response = await apiClient.post<ApiSuccess<AdminUserRow>>(`/admin/users/${id}/${decision}`, { reason, ...suspension });
   return response.data.data;
 }
 
@@ -141,4 +145,36 @@ export async function rejectWithdrawal(id: string, reason: string) {
     { reason },
   );
   return response.data.data;
+}
+
+export async function startDisputeReview(id: string) {
+  const response = await apiClient.post<ApiSuccess<unknown>>(`/admin/disputes/${id}/review`);
+  return response.data.data;
+}
+
+export interface ZoneInput {
+  cityId: number;
+  name: string;
+  zoneType: ZoneType;
+  points: { lat: number; lng: number }[];
+  isActive?: boolean;
+}
+
+export async function listZones(cityId?: number) {
+  const response = await apiClient.get<ApiSuccess<Zone[]>>('/admin/zones', { params: { cityId } });
+  return response.data.data;
+}
+
+export async function createZone(input: ZoneInput) {
+  const response = await apiClient.post<ApiSuccess<Zone>>('/admin/zones', input);
+  return response.data.data;
+}
+
+export async function updateZone(id: string, input: Partial<Omit<ZoneInput, 'cityId'>>) {
+  const response = await apiClient.patch<ApiSuccess<Zone>>(`/admin/zones/${id}`, input);
+  return response.data.data;
+}
+
+export async function deleteZone(id: string) {
+  await apiClient.delete(`/admin/zones/${id}`);
 }

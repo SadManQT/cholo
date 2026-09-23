@@ -13,11 +13,7 @@ let databaseClient;
 let savepointCounter = 0;
 let phoneCounter = 0;
 
-// Gulshan 2 -> Dhanmondi 27, roughly — kept fixed and mocked at the fetch
-// boundary (mock.method can't patch a named ESM export, only object
-// properties — see the Cannot redefine property TypeError otherwise) so
-// this suite never depends on OSRM's public demo server being up.
-const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 }; // -> 9.21 km, 9 min
+const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 };
 let routeResponse = DEFAULT_ROUTE;
 let routeShouldFail = false;
 let directRouteCrossesIndia = false;
@@ -51,7 +47,7 @@ before(async () => {
       const encodedCoordinates = url.split('/route/v1/driving/')[1].split('?')[0];
       const coordinates = encodedCoordinates.split(';').map((pair) => pair.split(',').map(Number));
       const geometryCoordinates = directRouteCrossesIndia && coordinates.length === 2
-        ? [coordinates[0], [91.2868, 23.8315], coordinates[1]] // Agartala, India
+        ? [coordinates[0], [91.2868, 23.8315], coordinates[1]]
         : coordinates;
       return {
         ok: true,
@@ -65,9 +61,6 @@ before(async () => {
         }),
       };
     }
-    // GEO_PROVIDER defaults to 'photon' (env.js) — this file exercises
-    // whichever geocoder is actually wired up as the default, same as
-    // OSRM above, rather than pinning to one provider's request shape.
     if (typeof url === 'string' && url.startsWith(env.PHOTON_BASE_URL)) {
       if (url.includes('/api/?q=')) {
         return {
@@ -292,7 +285,7 @@ test('POST /rides/quote returns 422 NO_TARIFF_FOR_MARKET when no pricing_rules r
 
   const response = await request('POST', '/rides/quote', {
     accessToken: passenger.accessToken,
-    body: { cityId, categoryId: 32_000, pickup: PICKUP, dropoff: DROPOFF }, // valid smallint, no such category
+    body: { cityId, categoryId: 32_000, pickup: PICKUP, dropoff: DROPOFF },
   });
 
   assert.equal(response.status, 422);
@@ -315,9 +308,9 @@ test('POST /rides/quote returns a fare breakdown that satisfies the same identit
   assert.equal(data.distanceKm, 9.21);
   assert.equal(data.durationMin, 9);
   assert.equal(data.currency, 'BDT');
-  assert.equal(data.baseFare, 60); // seeded Dhaka/Car tariff, doc 01 §6.1
-  assert.equal(data.distanceFare, 202.62); // 9.21 * 22
-  assert.equal(data.timeFare, 22.5); // 9 * 2.5
+  assert.equal(data.baseFare, 60);
+  assert.equal(data.distanceFare, 202.62);
+  assert.equal(data.timeFare, 22.5);
   assert.equal(data.bookingFee, 10);
 
   const identitySum = data.baseFare + data.distanceFare + data.timeFare

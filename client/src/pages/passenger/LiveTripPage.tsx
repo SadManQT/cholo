@@ -130,7 +130,7 @@ export function LiveTripPage() {
         open
         snapPoint={snapPoint}
         onSnapPointChange={setSnapPoint}
-        className="lg:!inset-y-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
+        className="lg:!top-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
       >
         <div className="space-y-4 pb-2">
           <div className="flex items-start justify-between gap-3">

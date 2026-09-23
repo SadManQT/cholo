@@ -24,8 +24,6 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
         if (location) setDriverPosition(location);
         setStatus(trip.status);
       } catch {
-        // The page's own fetch owns visible error handling. This background
-        // fallback simply tries again on the next interval.
       }
     }
 

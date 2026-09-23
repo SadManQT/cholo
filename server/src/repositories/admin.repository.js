@@ -1,8 +1,6 @@
 import { pool } from '../config/db.js';
 
-// admin_profiles.access_level (doc 08-09-10 §9: "a second dimension...
-// checked in services") — never in the JWT (roles are; access_level
-// isn't), so every access-level-gated action needs this DB read.
+
 export async function getAccessLevel(userId, client = pool) {
   const { rows } = await client.query(
     `SELECT access_level AS "accessLevel" FROM admin_profiles WHERE user_id = $1`,
@@ -114,6 +112,7 @@ export async function listUsers({ search, status, limit, offset }, client = pool
   const { rows } = await client.query(
     `SELECT u.id, u.public_id AS "publicId", u.full_name AS "fullName", u.phone,
             u.email, u.status, u.created_at AS "createdAt", u.last_login_at AS "lastLoginAt",
+            u.suspended_until AS "suspendedUntil", u.suspension_reason AS "suspensionReason",
             w.balance AS "walletBalance", w.currency,
             COALESCE(array_agg(r.name ORDER BY r.name) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles,
             (SELECT count(*)::int FROM trips t WHERE t.passenger_id = u.id OR t.driver_id = u.id) AS "tripCount",
@@ -145,13 +144,27 @@ export async function findUserForUpdate(userId, client) {
   return rows[0];
 }
 
-export async function setUserStatus(userId, status, client) {
+export async function setUserStatus(userId, status, client, { until = null, reason = null } = {}) {
+  const suspended = status === 'suspended';
   const { rows } = await client.query(
-    `UPDATE users SET status = $2 WHERE id = $1
-     RETURNING id, public_id AS "publicId", full_name AS "fullName", status`,
-    [userId, status],
+    `UPDATE users SET status = $2, suspended_until = $3, suspension_reason = $4 WHERE id = $1
+     RETURNING id, public_id AS "publicId", full_name AS "fullName", status,
+               suspended_until AS "suspendedUntil", suspension_reason AS "suspensionReason"`,
+    [userId, status, suspended ? until : null, suspended ? reason : null],
   );
   return rows[0];
+}
+
+/** Lifts every time-limited suspension whose end has passed (optionally just one user's). */
+export async function reinstateExpiredSuspensions(client = pool, userId = null) {
+  const { rows } = await client.query(
+    `UPDATE users SET status = 'active', suspended_until = NULL, suspension_reason = NULL
+     WHERE status = 'suspended' AND suspended_until IS NOT NULL AND suspended_until <= now()
+       AND ($1::bigint IS NULL OR id = $1)
+     RETURNING id`,
+    [userId],
+  );
+  return rows.map((row) => row.id);
 }
 
 export async function listPricingRules({ cityId, categoryId, limit, offset }, client = pool) {

@@ -23,11 +23,6 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
       startedFor.current = null;
       return;
     }
-    // Guard on the id, not object identity: DriverHomePage polls
-    // GET /driver/offers every 5s, so the same still-pending offer arrives
-    // as a brand-new object each poll — without this guard the alert
-    // (vibrate/beep) and countdown would restart every poll instead of once
-    // per offer.
     if (startedFor.current === offer.id) return;
     startedFor.current = offer.id;
     expiredFor.current = null;
@@ -46,8 +41,6 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
       oscillator.stop(context.currentTime + 0.18);
       oscillator.addEventListener('ended', () => void context.close());
     } catch {
-      // Autoplay policies may block audio before a user gesture; vibration
-      // and the full-screen offer remain the non-audio fallbacks.
     }
   }, [offer, start]);
 

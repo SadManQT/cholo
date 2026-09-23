@@ -2,10 +2,6 @@ import { readFileSync } from 'node:fs';
 
 import { haversineDistanceKm } from './haversine.js';
 
-// OSM relation 184640 (Bangladesh), exported through Nominatim as GeoJSON
-// with polygon_threshold=0.002. The checked-in snapshot keeps routing
-// deterministic and avoids a boundary-network call per quote. See
-// server/src/data/README.md for source/licence details.
 const geometry = JSON.parse(readFileSync(
   new URL('../data/bangladesh-boundary.json', import.meta.url),
   'utf8',
@@ -15,9 +11,6 @@ const polygons = geometry.type === 'MultiPolygon'
   ? geometry.coordinates
   : [geometry.coordinates];
 
-// A small tolerance absorbs simplification/road-centreline differences at
-// the border. It is deliberately far smaller than a meaningful transit
-// through India, which will put many route points kilometres outside.
 const BORDER_TOLERANCE_KM = 0.35;
 const SEGMENT_SAMPLE_KM = 0.25;
 
@@ -74,9 +67,6 @@ export function isPointInsideBangladesh(point) {
   return polygons.some((polygon) => pointInPolygon(point, polygon)) || isNearBoundary(point);
 }
 
-// Validate both OSRM vertices and interpolated points between them. That
-// closes the edge case where a sparse polyline exits and re-enters the
-// country between two individually valid vertices.
 export function isRouteInsideBangladesh(path) {
   if (!Array.isArray(path) || path.length < 2) return false;
 

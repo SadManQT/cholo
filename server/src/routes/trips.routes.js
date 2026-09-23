@@ -8,6 +8,7 @@ import {
   cancelTripSchema,
   completeTripSchema,
   payTripSchema,
+  rateTripSchema,
   sosSchema,
   tripCodeParamsSchema,
   tripListQuerySchema,
@@ -16,11 +17,6 @@ import {
 
 const router = Router();
 
-// Only `auth` at the router level — cancel is doc 08-09-10 §5's
-// "participant" (either the passenger or the driver on the trip), unlike
-// arrived/start/complete (DRIVER-only) and pay (§7, PASSENGER-only). Role
-// gates on those five move to each route individually; ownership gate
-// (404 TRIP_NOT_FOUND on mismatch) stays inside trips.service.js either way.
 router.use(auth);
 
 router.get('/', validate(tripListQuerySchema, 'query'), tripsController.list);
@@ -45,6 +41,12 @@ router.post(
   validate(tripCodeParamsSchema, 'params'),
   validate(sosSchema),
   tripsController.triggerSos,
+);
+router.post(
+  '/:tripCode/rating',
+  validate(tripCodeParamsSchema, 'params'),
+  validate(rateTripSchema),
+  tripsController.rate,
 );
 router.get(
   '/:tripCode',

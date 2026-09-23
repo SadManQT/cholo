@@ -9,10 +9,10 @@ import { DriverLayout } from './layouts/DriverLayout';
 import { PassengerLayout } from './layouts/PassengerLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { OtpVerifyPage } from './pages/auth/OtpVerifyPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { HomePage } from './pages/shared/HomePage';
 import { NotFoundPage } from './pages/shared/NotFoundPage';
-import { PlaceholderPage } from './pages/shared/PlaceholderPage';
 
 const BookRidePage = lazy(() => import('./pages/passenger/BookRidePage').then((module) => ({ default: module.BookRidePage })));
 const LiveTripPage = lazy(() => import('./pages/passenger/LiveTripPage').then((module) => ({ default: module.LiveTripPage })));
@@ -34,34 +34,36 @@ const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage').then((modul
 const SupportQueuePage = lazy(() => import('./pages/admin/SupportQueuePage').then((module) => ({ default: module.SupportQueuePage })));
 const SupportPage = lazy(() => import('./pages/shared/SupportPage').then((module) => ({ default: module.SupportPage })));
 const ProfilePage = lazy(() => import('./pages/shared/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const NotificationsPage = lazy(() => import('./pages/shared/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
+const SavedPlacesPage = lazy(() => import('./pages/passenger/SavedPlacesPage').then((module) => ({ default: module.SavedPlacesPage })));
+const PromosPage = lazy(() => import('./pages/passenger/PromosPage').then((module) => ({ default: module.PromosPage })));
+const DriverApplyPage = lazy(() => import('./pages/driver/DriverApplyPage').then((module) => ({ default: module.DriverApplyPage })));
+const DriverDocumentsPage = lazy(() => import('./pages/driver/DriverDocumentsPage').then((module) => ({ default: module.DriverDocumentsPage })));
+const DriverVehiclesPage = lazy(() => import('./pages/driver/DriverVehiclesPage').then((module) => ({ default: module.DriverVehiclesPage })));
+const ZonesPage = lazy(() => import('./pages/admin/ZonesPage').then((module) => ({ default: module.ZonesPage })));
 
-// doc 12 §3-7's full page catalog, as code (doc 11 §8: "the sitemap as
-// code"). Auth, marketplace, money, and M8 operations routes are real;
-// only explicitly later/out-of-scope catalog items remain placeholders.
 function App() {
   return (
     <>
       <Suspense fallback={<FullScreenSpinner />}>
         <Routes>
-        {/* Full-bleed marketing page — not the centered AuthLayout card. */}
+        {}
         <Route path="/welcome" element={<HomePage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify" element={<OtpVerifyPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/reset" element={<PlaceholderPage title="Reset password" />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset" element={<Navigate to="/forgot-password" replace />} />
         </Route>
 
-        {/* doc 08-09-10 §6: POST /driver/apply is auth-only (any logged-in
-            user) — a passenger applying for the DRIVER role doesn't have it
-            yet, so this can't sit inside the DRIVER-gated group below. No
-            DriverLayout chrome either: a wizard isn't the persistent app shell. */}
+        {}
         <Route
           path="/driver/apply"
           element={
             <ProtectedRoute>
-              <PlaceholderPage title="Become a driver" />
+              <DriverApplyPage />
             </ProtectedRoute>
           }
         />
@@ -78,9 +80,9 @@ function App() {
           <Route path="/trips" element={<TripHistoryPage />} />
           <Route path="/trips/:code" element={<TripDetailPage />} />
           <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/wallet/methods" element={<PlaceholderPage title="Payment methods" />} />
-          <Route path="/promos" element={<PlaceholderPage title="Promos" />} />
-          <Route path="/account/places" element={<PlaceholderPage title="Saved places" />} />
+          <Route path="/promos" element={<PromosPage />} />
+          <Route path="/account/places" element={<SavedPlacesPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/account" element={<ProfilePage />} />
           <Route path="/support" element={<SupportPage />} />
         </Route>
@@ -94,8 +96,9 @@ function App() {
           }
         >
           <Route index element={<DriverHomePage />} />
-          <Route path="documents" element={<PlaceholderPage title="Documents" />} />
-          <Route path="vehicles" element={<PlaceholderPage title="Vehicles" />} />
+          <Route path="documents" element={<DriverDocumentsPage />} />
+          <Route path="vehicles" element={<DriverVehiclesPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="trip" element={<DriverActiveTripPage />} />
           <Route path="earnings" element={<EarningsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />
@@ -115,10 +118,11 @@ function App() {
         >
           <Route index element={<DashboardPage />} />
           <Route path="drivers" element={<DriverApprovalsPage />} />
-          <Route path="documents" element={<DriverApprovalsPage />} />
+          <Route path="documents" element={<DriverApprovalsPage documentsOnly />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="pricing" element={<PricingPage />} />
-          <Route path="zones" element={<PlaceholderPage title="Zones" />} />
+          <Route path="zones" element={<ZonesPage />} />
           <Route path="payouts" element={<PayoutsPage />} />
           <Route path="disputes" element={<DisputesPage />} />
           <Route path="sos" element={<SosBoardPage />} />

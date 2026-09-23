@@ -30,11 +30,6 @@ export async function listForDriver(driverId, { page, limit }, client = pool) {
   return rows;
 }
 
-// FOR UPDATE: the same "lock before check" shape as T3's wallet payment —
-// approve/reject both need to be certain they're the only ones acting on
-// this ONE withdrawal at this instant (two finance admins approving the
-// same request concurrently would otherwise both pass a "still requested?"
-// check and both try to move money).
 export async function findByIdForUpdate(withdrawalId, client) {
   const { rows } = await client.query(
     `SELECT id, public_id AS "publicId", driver_id AS "driverId", payout_account_id AS "payoutAccountId",
@@ -71,7 +66,6 @@ export async function markRejected(withdrawalId, adminId, reason, client) {
   return rows[0];
 }
 
-// doc 09 §9: GET /admin/withdrawals?status=requested — the finance queue.
 export async function listQueue({ status, page, limit }, client = pool) {
   const offset = (page - 1) * limit;
   const { rows } = await client.query(

@@ -1,6 +1,8 @@
 import { pool, withTransaction } from '../config/db.js';
+import * as adminRepo from '../repositories/admin.repository.js';
 import * as otpRepo from '../repositories/otp.repository.js';
 import * as passengersRepo from '../repositories/passengers.repository.js';
+import * as passwordResetsRepo from '../repositories/passwordResets.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
@@ -15,6 +17,15 @@ import {
 } from '../utils/tokens.js';
 import { sendOtpSms } from './sms.service.js';
 
+const RESET_TOKEN_TTL_MINUTES = 15;
+
+export function suspendedError(user) {
+  return new AppError(403, 'ACCOUNT_SUSPENDED', {
+    reason: user.suspensionReason ?? null,
+    until: user.suspendedUntil ?? null,
+  });
+}
+
 function toPublicUser(user, roles) {
   return {
     id: user.publicId,
@@ -25,8 +36,6 @@ function toPublicUser(user, roles) {
   };
 }
 
-// Shared by verifyOtp (signup) and login — both end the same way: doc 10 §5
-// step "mint session + tokens (same as login §6 steps 4-6)".
 async function mintSession(userId, device) {
   const roles = await rolesRepo.findRoleNamesForUser(userId);
   const sessionId = await sessionsRepo.createSession({
@@ -53,39 +62,35 @@ async function mintSession(userId, device) {
 
 export async function register({ fullName, phone, password, gender }) {
   const passwordHash = await hashPassword(password);
-  // Unique violation on phone becomes 409 DUPLICATE via the central
-  // errorHandler (doc 08 §9) — no separate pre-check, which would just
-  // race the same constraint.
-  const user = await usersRepo.insert({ fullName, phone, passwordHash, gender });
-
-  const passengerRoleId = await rolesRepo.findIdByName('PASSENGER');
-  if (!passengerRoleId) {
-    throw new Error('PASSENGER role is not seeded — run database/seeds/seed.reference.sql');
-  }
-  await rolesRepo.assignRole(user.id, passengerRoleId);
-  // Every registrant is granted PASSENGER above, so every registrant needs
-  // the matching profile row — ride_requests.passenger_id (and trips,
-  // favorite_drivers) FK to passenger_profiles(user_id), not users(id).
-  await passengersRepo.insertProfile(user.id);
-
   const otp = generateOtp();
-  await otpRepo.insert({
-    userId: user.id,
-    phone,
-    otpHash: hashOtp(otp),
-    purpose: 'signup',
-    expiresAt: otpExpiresAt(),
+
+  // One transaction: a failure part-way must not leave a phone number taken by an account that can't log in.
+  const user = await withTransaction(async (client) => {
+    const created = await usersRepo.insert({ fullName, phone, passwordHash, gender }, client).catch((error) => {
+      if (error.code === '23505') throw new AppError(409, 'PHONE_TAKEN');
+      throw error;
+    });
+
+    const passengerRoleId = await rolesRepo.findIdByName('PASSENGER', client);
+    if (!passengerRoleId) {
+      throw new Error('PASSENGER role is not seeded — run database/seeds/seed.reference.sql');
+    }
+    await rolesRepo.assignRole(created.id, passengerRoleId, client);
+    await passengersRepo.insertProfile(created.id, client);
+    await otpRepo.insert({
+      userId: created.id,
+      phone,
+      otpHash: hashOtp(otp),
+      purpose: 'signup',
+      expiresAt: otpExpiresAt(),
+    }, client);
+    return created;
   });
   sendOtpSms(phone, otp);
 
   return { userId: user.publicId };
 }
 
-// doc 08-09-10 §4's route table: "POST /auth/resend-otp | public | New OTP
-// · phone, purpose | 204 | 429 RATE_LIMITED (SMS costs money)." Always 204,
-// even for a phone with no pending signup — same no-enumeration shape as
-// /auth/forgot-password (doc 08 §8): the response can't be used to probe
-// which phone numbers exist or are already verified.
 export async function resendOtp({ phone, purpose }) {
   const user = await usersRepo.findAuthByPhone(phone);
   if (!user || user.phoneVerifiedAt) {
@@ -103,42 +108,34 @@ export async function resendOtp({ phone, purpose }) {
   sendOtpSms(phone, otp);
 }
 
-// The attempts check-then-increment is inside one transaction, holding
-// FOR UPDATE on the otp_verifications row for the whole sequence (same
-// reasoning as refresh()'s token-rotation lock above) — otherwise concurrent
-// guesses against the same code all read the same stale `attempts` and all
-// slip under OTP_MAX_ATTEMPTS instead of being serialized against the cap.
-// Failures are RETURNED, not thrown, out of the transaction body and only
-// raised once it has committed. Throwing from inside would make
-// withTransaction ROLLBACK — which on the wrong-code path would undo the
-// very incrementAttempts that the lockout depends on, leaving `attempts`
-// pinned at 0 and OTP_MAX_ATTEMPTS unreachable no matter how many guesses
-// arrive. The FOR UPDATE lock is still held for the whole
-// check-then-increment sequence, so concurrent guesses stay serialized.
+// Returns a failure instead of throwing so the attempt counter commits with the transaction.
+async function consumeOtp({ phone, otp, purpose }, client) {
+  const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
+  if (!record) {
+    return { failure: new AppError(401, 'OTP_INVALID') };
+  }
+  if (record.expiresAt.getTime() < Date.now()) {
+    return { failure: new AppError(410, 'OTP_EXPIRED') };
+  }
+  if (record.attempts >= OTP_MAX_ATTEMPTS) {
+    return { failure: new AppError(429, 'RATE_LIMITED') };
+  }
+  if (hashOtp(otp) !== record.otpHash) {
+    await otpRepo.incrementAttempts(record.id, client);
+    return { failure: new AppError(401, 'OTP_INVALID') };
+  }
+
+  await otpRepo.markVerified(record.id, client);
+  return { userId: record.userId };
+}
+
 export async function verifyOtp({ phone, otp, purpose }, device) {
   const outcome = await withTransaction(async (client) => {
-    const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
-    if (!record) {
-      return { failure: new AppError(401, 'OTP_INVALID') };
+    const result = await consumeOtp({ phone, otp, purpose }, client);
+    if (!result.failure && purpose === 'signup') {
+      await usersRepo.markPhoneVerified(result.userId, client);
     }
-    if (record.expiresAt.getTime() < Date.now()) {
-      return { failure: new AppError(410, 'OTP_EXPIRED') };
-    }
-    if (record.attempts >= OTP_MAX_ATTEMPTS) {
-      return { failure: new AppError(429, 'RATE_LIMITED') };
-    }
-    if (hashOtp(otp) !== record.otpHash) {
-      await otpRepo.incrementAttempts(record.id, client);
-      return { failure: new AppError(401, 'OTP_INVALID') };
-    }
-
-    await otpRepo.markVerified(record.id, client);
-
-    if (purpose === 'signup') {
-      await usersRepo.markPhoneVerified(record.userId, client);
-    }
-
-    return { userId: record.userId };
+    return result;
   });
 
   if (outcome.failure) {
@@ -150,27 +147,25 @@ export async function verifyOtp({ phone, otp, purpose }, device) {
 
 export async function login({ phone, password }, device) {
   const user = await usersRepo.findAuthByPhone(phone);
-  // Always compare, even when no user was found (against a dummy hash) —
-  // timing must not reveal whether the phone exists (doc 10 §6).
   const passwordMatches = await verifyPassword(password, user?.passwordHash);
 
   if (!user || !passwordMatches) {
     throw new AppError(401, 'BAD_CREDENTIALS');
   }
+  if (user.status === 'suspended' && user.suspendedUntil && user.suspendedUntil <= new Date()) {
+    await adminRepo.reinstateExpiredSuspensions(pool, user.id);
+    user.status = 'active';
+  }
   if (user.status === 'suspended') {
-    throw new AppError(403, 'ACCOUNT_SUSPENDED');
+    throw suspendedError(user);
   }
   if (user.status !== 'active') {
-    // e.g. soft-deleted: don't distinguish this from bad credentials either.
     throw new AppError(401, 'BAD_CREDENTIALS');
   }
 
   return mintSession(user.id, device);
 }
 
-// Rotation + reuse detection (doc 10 §7). One connection, one transaction:
-// the SELECT ... FOR UPDATE holds the row lock for the whole rotate step so
-// two refreshes racing on the same token can't both succeed.
 export async function refresh(rawRefreshToken) {
   const tokenHash = hashRefreshToken(rawRefreshToken);
   const client = await pool.connect();
@@ -187,10 +182,6 @@ export async function refresh(rawRefreshToken) {
     }
 
     if (record.revokedAt) {
-      // This exact token was already rotated away once — someone is
-      // replaying a dead token. Could be the real user's stale copy or a
-      // thief's stolen copy; there's no way to tell which, so treat it as
-      // a compromise and kill the whole session rather than just this token.
       await sessionsRepo.revokeActiveForSession(record.sessionId, client);
       await sessionsRepo.endSession(record.sessionId, client);
       transactionEnded = true;
@@ -204,9 +195,6 @@ export async function refresh(rawRefreshToken) {
       throw new AppError(401, 'REFRESH_INVALID');
     }
 
-    // Revoke the old token BEFORE inserting the new one: both rows would
-    // otherwise be simultaneously unrevoked for this session, violating
-    // ux_refresh_active_per_session (at most one active token per session).
     await sessionsRepo.revoke(record.id, client);
     const newRefreshToken = generateRefreshToken();
     const newTokenId = await sessionsRepo.createRefreshToken(
@@ -244,4 +232,43 @@ export async function logout(sessionId) {
 export async function logoutAll(userId) {
   await sessionsRepo.revokeActiveForUser(userId);
   await sessionsRepo.endAllSessionsForUser(userId);
+}
+
+export async function requestPasswordReset({ phone }) {
+  const user = await usersRepo.findAuthByPhone(phone);
+  if (!user || user.status === 'deleted') throw new AppError(404, 'ACCOUNT_NOT_FOUND');
+
+  const otp = generateOtp();
+  await otpRepo.insert({ userId: user.id, phone, otpHash: hashOtp(otp), purpose: 'password_reset', expiresAt: otpExpiresAt() });
+  sendOtpSms(phone, otp);
+}
+
+/** Trades a correct reset code for a short-lived, single-use token that authorizes setting a new password. */
+export async function verifyPasswordResetCode({ phone, otp }) {
+  const resetToken = generateRefreshToken();
+  const outcome = await withTransaction(async (client) => {
+    const result = await consumeOtp({ phone, otp, purpose: 'password_reset' }, client);
+    if (!result.failure) {
+      await passwordResetsRepo.insert({
+        userId: result.userId,
+        tokenHash: hashRefreshToken(resetToken),
+        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60_000),
+      }, client);
+    }
+    return result;
+  });
+  if (outcome.failure) throw outcome.failure;
+  return { resetToken };
+}
+
+export async function resetPassword({ resetToken, newPassword }) {
+  const passwordHash = await hashPassword(newPassword);
+  await withTransaction(async (client) => {
+    const token = await passwordResetsRepo.findUsableForUpdate(hashRefreshToken(resetToken), client);
+    if (!token) throw new AppError(410, 'RESET_TOKEN_INVALID');
+    await passwordResetsRepo.markUsed(token.id, client);
+    await usersRepo.updatePasswordHash(token.userId, passwordHash, client);
+    await sessionsRepo.revokeActiveForUser(token.userId, client);
+    await sessionsRepo.endAllSessionsForUser(token.userId, client);
+  });
 }

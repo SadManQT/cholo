@@ -20,3 +20,9 @@ coverage/
 
 # playwright MCP session artifacts (ephemeral, per-run)
 .playwright-mcp/
+
+# driver document uploads (local dev)
+server/uploads/
+
+# graphify knowledge-graph output (local, regenerable)
+graphify-out/

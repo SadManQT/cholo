@@ -1,7 +1,7 @@
 import { pool } from '../config/db.js';
 
-export async function insert({ userId, phone, otpHash, purpose, expiresAt }) {
-  const { rows } = await pool.query(
+export async function insert({ userId, phone, otpHash, purpose, expiresAt }, client = pool) {
+  const { rows } = await client.query(
     `INSERT INTO otp_verifications (user_id, phone, otp_hash, purpose, expires_at)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING id`,
@@ -11,17 +11,6 @@ export async function insert({ userId, phone, otpHash, purpose, expiresAt }) {
   return rows[0].id;
 }
 
-// The most recent unconsumed code for this phone+purpose — older codes are
-// implicitly superseded once a newer one is requested (register() then
-// resendOtp() can each insert a row within the same request-handling
-// window). Ordered by id, not created_at: Postgres's now() is frozen for
-// the lifetime of a transaction, so two inserts issued close together can
-// share an identical created_at — id is a BIGINT IDENTITY column, strictly
-// increasing regardless, and is the only reliable "most recent" tiebreaker.
-//
-// FOR UPDATE: verifyOtp holds this lock for its whole check-attempts-then-
-// write sequence so two guesses racing on the same OTP record can't both
-// read the same stale `attempts` and both slip under OTP_MAX_ATTEMPTS.
 export async function findLatestActiveForUpdate(phone, purpose, client) {
   const { rows } = await client.query(
     `SELECT id, user_id AS "userId", otp_hash AS "otpHash", attempts,

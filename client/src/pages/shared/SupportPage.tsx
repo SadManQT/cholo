@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as supportApi from '../../api/support.api';
 import { Button, Card, EmptyState, Input, Skeleton, StatePill, toast } from '../../components/ui';
+import { DisputeTimeline } from '../../components/support/DisputeTimeline';
 import type { MyDispute, TicketDetail, TicketSummary } from '../../types/support.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
@@ -208,7 +209,15 @@ export function SupportPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {disputes.map((row) => <Card key={row.id}><div className="flex justify-between gap-2"><h2 className="font-semibold">{row.disputeNo} · {row.tripCode}</h2><StatePill state={row.status} /></div><p className="mt-1 text-sm">{row.description}</p><p className="text-xs text-ink-500">{row.disputeType.replaceAll('_', ' ')} · {row.disputedAmount ? formatBDT(row.disputedAmount) : 'No amount'} · {formatDateTime(row.createdAt)}</p>{row.resolutionNote && <p className="mt-2 rounded-xl bg-surface-alt p-3 text-sm">Resolution: {row.resolutionNote}</p>}</Card>)}
+          {disputes.map((row) => (
+            <Card key={row.id}>
+              <div className="flex justify-between gap-2"><h2 className="font-semibold">{row.disputeNo} · {row.tripCode}</h2><StatePill state={row.status} /></div>
+              <p className="mt-1 text-sm">{row.description}</p>
+              <p className="text-xs text-ink-500">{row.disputeType.replaceAll('_', ' ')} · {row.disputedAmount ? formatBDT(row.disputedAmount) : 'No amount'}</p>
+              <DisputeTimeline className="mt-4" dispute={row} />
+              {row.resolutionNote && <p className="mt-3 rounded-xl bg-surface-alt p-3 text-sm">Resolution: {row.resolutionNote}</p>}
+            </Card>
+          ))}
         </div>
       )}
     </main>

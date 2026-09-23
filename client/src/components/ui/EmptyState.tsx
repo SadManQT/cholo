@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button } from './Button';
 
-// doc 11-12 §2.4 lists "EmptyState / ErrorState" as ONE row — same shape
-// (icon + title + hint + optional action), used for both "nothing here
-// yet" and "that failed, try again" (doc §8's Empty and Error states share
-// this exact component, just different copy/icon/action label).
 interface EmptyStateProps {
   icon?: ReactNode;
   title: string;

@@ -29,9 +29,15 @@ export async function listQueue({ status, page, limit }, client = pool) {
             sa.triggered_at AS "triggeredAt", sa.resolved_at AS "resolvedAt",
             sa.resolution_note AS "resolutionNote", u.full_name AS "triggeredByName",
             u.phone AS "triggeredByPhone", t.trip_code AS "tripCode",
-            au.full_name AS "acknowledgedByName", count(*) OVER()::int AS "totalCount"
+            au.full_name AS "acknowledgedByName",
+            lp.lat::float8 AS "liveLat", lp.lng::float8 AS "liveLng", lp.recorded_at AS "liveAt",
+            count(*) OVER()::int AS "totalCount"
      FROM sos_alerts sa JOIN users u ON u.id = sa.triggered_by
      LEFT JOIN trips t ON t.id = sa.trip_id LEFT JOIN users au ON au.id = sa.acknowledged_by
+     LEFT JOIN LATERAL (
+       SELECT p.lat, p.lng, p.recorded_at FROM trip_location_pings p
+       WHERE p.trip_id = sa.trip_id ORDER BY p.recorded_at DESC LIMIT 1
+     ) lp ON true
      WHERE ($1::text IS NULL OR sa.status::text = $1)
      ORDER BY CASE WHEN sa.status = 'active' THEN 0 WHEN sa.status = 'acknowledged' THEN 1 ELSE 2 END,
               sa.triggered_at DESC LIMIT $2 OFFSET $3`,

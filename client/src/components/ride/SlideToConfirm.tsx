@@ -9,15 +9,9 @@ interface SlideToConfirmProps {
   onConfirm: () => void;
 }
 
-const THUMB_SIZE_PX = 48; // h-12/w-12
-const THUMB_MARGIN_PX = 4; // left-1/top-1, and the matching gap on the right
+const THUMB_SIZE_PX = 48;
+const THUMB_MARGIN_PX = 4;
 
-// animate skill "drag to dismiss" recipe: settle an interrupted gesture with
-// a spring, not an instant snap — releasing below the threshold used to
-// teleport the thumb back to 0. A confirmed slide (>=92%) still resets
-// instantly on purpose: `mutating` disables the input right away and the
-// parent remounts this component (key={trip.status}) once the real status
-// change lands, so there's nothing to spring toward.
 export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToConfirmProps) {
   const [value, setValue] = useState(0);
   const reduceMotion = useReducedMotion();
@@ -27,11 +21,6 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
 
   useEffect(() => () => springRef.current?.stop(), []);
 
-  // The thumb's travel distance is a fraction of the *track's* pixel width,
-  // not the thumb's own — a translateX(%) resolves against the element's
-  // own box (animate skill: "percentages in translate() are relative to the
-  // element's own size"), so unlike the fill bar below, this needs a real
-  // measurement rather than a plain percentage.
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;

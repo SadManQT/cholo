@@ -12,14 +12,14 @@ const VEHICLE_DOCUMENT_SELECT = `
   vd.doc_number AS "docNumber", vd.file_url AS "fileUrl",
   vd.issue_date::text AS "issueDate", vd.expiry_date::text AS "expiryDate",
   vd.status, vd.reviewed_by AS "reviewedBy", vd.reviewed_at AS "reviewedAt",
-  vd.uploaded_at AS "uploadedAt"`;
+  vd.rejection_reason AS "rejectionReason", vd.uploaded_at AS "uploadedAt"`;
 
 const VEHICLE_DOCUMENT_RETURNING = `
   id, vehicle_id AS "vehicleId", doc_type AS "docType",
   doc_number AS "docNumber", file_url AS "fileUrl",
   issue_date::text AS "issueDate", expiry_date::text AS "expiryDate",
   status, reviewed_by AS "reviewedBy", reviewed_at AS "reviewedAt",
-  uploaded_at AS "uploadedAt"`;
+  rejection_reason AS "rejectionReason", uploaded_at AS "uploadedAt"`;
 
 export async function insertDriverDocument(
   { driverId, docType, docNumber, fileUrl, issueDate, expiryDate },
@@ -145,16 +145,49 @@ export async function findVehicleDocumentForUpdate(documentId, client) {
 
 export async function reviewVehicleDocument(
   documentId,
-  { status, reviewedBy },
+  { status, reviewedBy, reason },
   client = pool,
 ) {
   const { rows } = await client.query(
     `UPDATE vehicle_documents
-     SET status = $2, reviewed_by = $3, reviewed_at = now()
+     SET status = $2, reviewed_by = $3, reviewed_at = now(), rejection_reason = $4
      WHERE id = $1
      RETURNING ${VEHICLE_DOCUMENT_RETURNING}`,
-    [documentId, status, reviewedBy],
+    [documentId, status, reviewedBy, status === 'rejected' ? reason : null],
   );
 
   return rows[0];
+}
+
+/** Flips approved documents past their expiry date to 'expired' and returns who owns them. */
+export async function expireLapsedDocuments(client = pool) {
+  const { rows } = await client.query(
+    `WITH driver_docs AS (
+       UPDATE driver_documents SET status = 'expired'
+       WHERE status = 'approved' AND expiry_date < CURRENT_DATE
+       RETURNING driver_id, doc_type::text
+     ), vehicle_docs AS (
+       UPDATE vehicle_documents vd SET status = 'expired'
+       FROM vehicles v
+       WHERE v.id = vd.vehicle_id AND vd.status = 'approved' AND vd.expiry_date < CURRENT_DATE
+       RETURNING v.driver_id, vd.doc_type::text
+     )
+     SELECT driver_id AS "driverId", doc_type AS "docType" FROM driver_docs
+     UNION ALL SELECT driver_id, doc_type FROM vehicle_docs`,
+  );
+  return rows;
+}
+
+/** Approved documents that expire exactly `days` from today — the job runs daily, so each is warned once. */
+export async function findExpiringOn(days, client = pool) {
+  const { rows } = await client.query(
+    `SELECT driver_id AS "driverId", doc_type::text AS "docType", expiry_date::text AS "expiryDate"
+     FROM driver_documents WHERE status = 'approved' AND expiry_date = CURRENT_DATE + $1::int
+     UNION ALL
+     SELECT v.driver_id, vd.doc_type::text, vd.expiry_date::text
+     FROM vehicle_documents vd JOIN vehicles v ON v.id = vd.vehicle_id
+     WHERE vd.status = 'approved' AND vd.expiry_date = CURRENT_DATE + $1::int`,
+    [days],
+  );
+  return rows;
 }

@@ -8,8 +8,6 @@ test('haversineDistanceKm returns 0 for identical points', () => {
 });
 
 test('haversineDistanceKm matches the known Gulshan-2 -> Dhanmondi-27 straight-line distance', () => {
-  // ~6.9km straight-line (the 9.21km OSRM route used elsewhere in these
-  // tests is the DRIVING distance, which is always >= straight-line).
   const distance = haversineDistanceKm(23.7925, 90.4078, 23.7461, 90.3742);
   assert.ok(distance > 6 && distance < 8, `expected ~6-8km, got ${distance}`);
 });
@@ -21,6 +19,6 @@ test('haversineDistanceKm is symmetric', () => {
 });
 
 test('haversineDistanceKm scales roughly linearly for small offsets (sanity check on the formula)', () => {
-  const oneKmish = haversineDistanceKm(23.79, 90.40, 23.799, 90.40); // ~1km of latitude
+  const oneKmish = haversineDistanceKm(23.79, 90.40, 23.799, 90.40);
   assert.ok(oneKmish > 0.9 && oneKmish < 1.1, `expected ~1km, got ${oneKmish}`);
 });

@@ -69,12 +69,7 @@ export function DashboardPage() {
           {stats.trend.map((row) => (
             <div key={row.month} className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <span className="text-xs font-semibold tabular-nums">{formatBDT(row.grossRevenue)}</span>
-              {/* This auto-refreshes every 60s (ambient, not user-triggered)
-                  — per the animate skill's frequency gate that's "ok to be
-                  subtle, not delight-tier," so this is a gentle transform
-                  interpolation on value change, not a grow-in effect. Fixed
-                  height (never animated) + scaleY from the bottom instead of
-                  an animated `height`, which would be a layout property. */}
+              {}
               <div className="h-40 w-full">
                 <div
                   className="h-full w-full origin-bottom rounded-t-lg bg-cholo-700 transition-transform duration-300 ease-cholo-out"

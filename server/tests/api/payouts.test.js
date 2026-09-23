@@ -8,11 +8,6 @@ import { pool } from '../../src/config/db.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Same reasoning as trips.test.js/payments.test.js: real pool, no
-// savepoint mocking, no cleanup — trip fixtures are permanently
-// undeletable (append-only trigger). fetch mocked for OSRM only (no
-// gateway calls in this file — withdrawals settle from the wallet, no
-// SSLCommerz session involved).
 let server;
 let baseUrl;
 let seed = randomInt(10_000_000, 100_000_000);
@@ -114,10 +109,8 @@ async function createAdmin(accessLevel) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['ADMIN'], sessionId: userId }) };
 }
 
-// A fourth area of Dhaka, away from every other test file's coordinates
-// (same cross-file collision reasoning established in trips.test.js).
-const PICKUP = { lat: 23.8103, lng: 90.4125 }; // Dhaka geographic center
-const DROPOFF = { lat: 23.8223, lng: 90.3654 }; // Mirpur
+const PICKUP = { lat: 23.8103, lng: 90.4125 };
+const DROPOFF = { lat: 23.8223, lng: 90.3654 };
 
 async function createAssignedTrip(t) {
   const passenger = await createPassenger();
@@ -151,12 +144,6 @@ async function creditWallet(userId, amount) {
   );
 }
 
-// Cash trips settle instantly (T2) with a COMMISSION DEBIT, not a
-// credit — no good for withdrawal tests, which need real WITHDRAWABLE
-// (credit) balance. A wallet-paid trip credits the DRIVER's wallet with
-// net_earning instead (platformCollected: true) — this drives that whole
-// path through the real app rather than hand-crafting a wallet_
-// transactions row, so it's also incidental coverage of T3 + settlement.
 async function createDriverWithBalance(t) {
   const passenger = await createPassenger();
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
@@ -193,9 +180,6 @@ async function createPayoutAccount(driverAccessToken, overrides = {}) {
   return (await response.json()).data;
 }
 
-// ---------------------------------------------------------------------
-// GET /driver/earnings
-// ---------------------------------------------------------------------
 
 test('GET /driver/earnings returns daily aggregates (v_driver_daily_earnings) and per-trip rows for a completed trip', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
@@ -233,9 +217,6 @@ test('GET /driver/earnings requires a bearer token', async () => {
   assert.equal(response.status, 401);
 });
 
-// ---------------------------------------------------------------------
-// Payout accounts
-// ---------------------------------------------------------------------
 
 test('POST /driver/payout-accounts masks the account number and never stores it raw', async (t) => {
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
@@ -310,9 +291,6 @@ test('DELETE /driver/payout-accounts/:id by a non-owner gets 404 (no existence l
   assert.equal((await response.json()).error.code, 'PAYOUT_ACCOUNT_NOT_FOUND');
 });
 
-// ---------------------------------------------------------------------
-// Withdrawal request
-// ---------------------------------------------------------------------
 
 test('POST /driver/withdrawals debits the wallet immediately (holds funds at request time, not approval)', async (t) => {
   const { driver, walletBalance } = await createDriverWithBalance(t);
@@ -342,7 +320,7 @@ test('POST /driver/withdrawals debits the wallet immediately (holds funds at req
 });
 
 test('POST /driver/withdrawals is 422 INSUFFICIENT_BALANCE and touches nothing when the wallet is short', async (t) => {
-  const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng }); // fresh, 0 balance
+  const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
   const account = await createPayoutAccount(driver.accessToken);
 
   const response = await request('POST', '/driver/withdrawals', {
@@ -396,9 +374,6 @@ test('GET /driver/withdrawals lists the caller\'s own request history', async (t
   assert.equal(body.meta.total, 1);
 });
 
-// ---------------------------------------------------------------------
-// Admin payout queue — the finance-access-level enforcement
-// ---------------------------------------------------------------------
 
 test('GET /admin/withdrawals is visible to ANY admin (no access-level restriction on the list itself)', async (t) => {
   const { driver } = await createDriverWithBalance(t);
@@ -428,7 +403,7 @@ test('POST /admin/withdrawals/:id/approve is 403 FORBIDDEN_ACCESS_LEVEL for a no
   assert.equal((await response.json()).error.code, 'FORBIDDEN_ACCESS_LEVEL');
 
   const { rows } = await pool.query(`SELECT status FROM withdrawals WHERE id = $1`, [withdrawalId]);
-  assert.equal(rows[0].status, 'requested'); // untouched
+  assert.equal(rows[0].status, 'requested');
 });
 
 test('POST /admin/withdrawals/:id/approve succeeds for a finance-level admin and is audit-logged', async (t) => {
@@ -481,7 +456,7 @@ test('POST /admin/withdrawals/:id/reject reverses the held amount back into the 
   assert.equal((await response.json()).data.status, 'rejected');
 
   const { rows } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [driver.userId]);
-  assert.equal(Number(rows[0].balance), Math.round(walletBalance * 100) / 100); // fully reversed, back to the pre-request balance
+  assert.equal(Number(rows[0].balance), Math.round(walletBalance * 100) / 100);
 
   const { rows: withdrawalRows } = await pool.query(
     `SELECT rejection_reason AS "rejectionReason" FROM withdrawals WHERE id = $1`,

@@ -94,11 +94,50 @@ export interface DriverStatus {
   currentLng: string | number | null;
   heading: string | number | null;
   lastPingAt: string | null;
+  rejectionReason: string | null;
+  ratingAvg: string;
+  ratingCount: number;
+  nidNumber: string;
+  licenseNumber: string;
+  licenseExpiry: string | null;
   activeVehicle: {
     id: string;
     registrationNo: string;
     verificationStatus: string;
   } | null;
+  documents: DriverDocument[];
+}
+
+export type DocumentStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+export type DriverDocType = 'license' | 'nid' | 'photo' | 'police_clearance';
+export type VehicleDocType = 'registration' | 'fitness' | 'insurance' | 'tax_token';
+
+export interface DriverDocument {
+  id: string;
+  docType: DriverDocType | VehicleDocType;
+  docNumber: string | null;
+  fileUrl: string;
+  issueDate: string | null;
+  expiryDate: string | null;
+  status: DocumentStatus;
+  rejectionReason: string | null;
+  uploadedAt: string;
+}
+
+export interface DriverVehicle {
+  id: string;
+  categoryId: number;
+  categoryName: string;
+  registrationNo: string;
+  brand: string | null;
+  model: string | null;
+  modelYear: number | null;
+  color: string | null;
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+  rejectionReason: string | null;
+  isActive: boolean;
+  isOnDuty: boolean;
+  createdAt: string;
 }
 
 export interface DriverAvailability {
@@ -135,6 +174,7 @@ export interface TripParty {
 }
 
 export interface TripDetail {
+  myRating: { score: number; comment: string | null } | null;
   publicCode: string;
   requestPublicId: string;
   status: TripStatus;
@@ -187,8 +227,6 @@ export interface TripDetail {
     fee: string;
     cancelledAt: string;
   } | null;
-  // null until completeTrip has run (receipts.trip_id only exists for
-  // completed trips) — server/src/services/trips.service.js's toTripDetail.
   receipt: { receiptNo: string; issuedAt: string } | null;
   history: Array<{
     fromStatus: TripStatus | null;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import * as tripsApi from '../../api/trips.api';
 import { MapView } from '../../components/map/MapView';
+import { RateTripCard } from '../../components/ride/RateTripCard';
 import { TripStatusStepper } from '../../components/ride/TripStatusStepper';
 import { Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../components/ui';
 import type { TripDetail } from '../../types/ride.types';
@@ -52,7 +53,6 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
       else await navigator.clipboard.writeText(text);
       toast.success(share ? 'Receipt shared.' : 'Receipt copied.');
     } catch {
-      // Cancelling the native share sheet is not a product error.
     }
   }
 
@@ -93,6 +93,8 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
           </p>
         </div>
       </Card>
+
+      {trip.status === 'completed' && <RateTripCard tripCode={trip.publicCode} counterpartyName={counterparty.name} existing={trip.myRating} />}
 
       <Card className="mb-4 space-y-3">
         <div><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Pickup</p><p>{trip.pickup.address || 'Pickup location'}</p></div>

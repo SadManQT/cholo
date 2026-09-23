@@ -5,10 +5,20 @@ import * as documentsRepo from '../repositories/documents.repository.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
 import * as vehiclesRepo from '../repositories/vehicles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
+import { notify } from './notifications.service.js';
 import { AppError } from '../utils/AppError.js';
 
 const REQUIRED_DRIVER_DOCUMENTS = Object.freeze(['license', 'nid', 'photo', 'police_clearance']);
 const REQUIRED_VEHICLE_DOCUMENTS = Object.freeze(['registration', 'fitness', 'insurance', 'tax_token']);
+
+const DOC_LABELS = { license: 'driving license', nid: 'NID', photo: 'profile photo', police_clearance: 'police clearance', registration: 'registration certificate', fitness: 'fitness certificate', insurance: 'insurance', tax_token: 'tax token' };
+
+function docDecisionNotice(document, decision) {
+  const label = DOC_LABELS[document.docType] ?? 'document';
+  return decision.status === 'approved'
+    ? { category: 'document', title: `Your ${label} was approved` }
+    : { category: 'document', title: `Your ${label} was rejected`, body: decision.reason ?? null };
+}
 
 function isExpired(expiryDate) {
   return expiryDate != null && expiryDate < new Date().toISOString().slice(0, 10);
@@ -52,7 +62,15 @@ export async function listUsers(query) {
   };
 }
 
-export async function decideUser(adminId, userId, targetStatus, reason, ipAddress) {
+const SUSPENSION_DAYS = { '1w': 7, '1m': 30 };
+
+function suspensionEnd(duration, until) {
+  if (duration === 'custom') return new Date(until);
+  if (SUSPENSION_DAYS[duration]) return new Date(Date.now() + SUSPENSION_DAYS[duration] * 86_400_000);
+  return null;
+}
+
+export async function decideUser(adminId, userId, targetStatus, reason, ipAddress, { duration = 'permanent', until } = {}) {
   return withTransaction(async (client) => {
     const level = await requireAccessLevel(adminId, ['super', 'ops'], client);
     const user = await adminRepo.findUserForUpdate(userId, client);
@@ -64,7 +82,8 @@ export async function decideUser(adminId, userId, targetStatus, reason, ipAddres
       throw new AppError(403, 'FORBIDDEN_ACCESS_LEVEL');
     }
 
-    const updated = await adminRepo.setUserStatus(userId, targetStatus, client);
+    const suspendedUntil = targetStatus === 'suspended' ? suspensionEnd(duration, until) : null;
+    const updated = await adminRepo.setUserStatus(userId, targetStatus, client, { until: suspendedUntil, reason });
     if (targetStatus === 'suspended') {
       await sessionsRepo.revokeActiveForUser(userId, client);
       await sessionsRepo.endAllSessionsForUser(userId, client);
@@ -75,8 +94,11 @@ export async function decideUser(adminId, userId, targetStatus, reason, ipAddres
       entityType: 'users',
       entityId: userId,
       oldValue: { status: user.status },
-      newValue: { status: targetStatus, reason },
+      newValue: { status: targetStatus, reason, suspendedUntil },
     }, client);
+    if (targetStatus === 'active') {
+      await notify(userId, { category: 'system', title: 'Your account is active again', body: reason }, client);
+    }
     return updated;
   });
 }
@@ -106,9 +128,6 @@ export async function publishPricingRule(adminId, input, ipAddress) {
       throw new AppError(409, 'PRICING_WINDOW_OVERLAP');
     }
 
-    // Amounts on an old card are immutable. Ending its validity at the
-    // new card's start is the only metadata change needed to keep the
-    // effective-dated timeline gap-free and non-overlapping.
     if (predecessors[0]) {
       await adminRepo.closePricingRule(predecessors[0].id, input.effectiveFrom, client);
     }
@@ -190,6 +209,7 @@ export async function reviewDriverDocument(adminId, documentId, decision, ipAddr
       client,
     );
 
+    await notify(document.driverId, docDecisionNotice(document, decision), client);
     return reviewed;
   });
 }
@@ -226,6 +246,8 @@ export async function reviewVehicleDocument(adminId, documentId, decision, ipAdd
       client,
     );
 
+    const owner = await vehiclesRepo.findForUpdate(document.vehicleId, client);
+    await notify(owner.driverId, docDecisionNotice(document, decision), client);
     return reviewed;
   });
 }
@@ -250,9 +272,12 @@ export async function decideDriver(adminId, driverId, status, reason, ipAddress)
 
     const updated = await driversRepo.setVerificationStatus(
       driverId,
-      { status, verifiedBy: adminId },
+      { status, verifiedBy: adminId, reason },
       client,
     );
+    await notify(driverId, status === 'approved'
+      ? { category: 'document', title: 'You are approved to drive', body: 'Activate an approved vehicle and go online to start receiving offers.' }
+      : { category: 'document', title: 'Your driver application was not approved', body: reason ?? null }, client);
     await auditRepo.insert(
       {
         ...auditContext(adminId, ipAddress),
@@ -284,7 +309,10 @@ export async function decideVehicle(adminId, vehicleId, status, reason, ipAddres
       }
     }
 
-    const updated = await vehiclesRepo.setVerificationStatus(vehicleId, status, client);
+    const updated = await vehiclesRepo.setVerificationStatus(vehicleId, status, client, reason ?? null);
+    await notify(vehicle.driverId, status === 'approved'
+      ? { category: 'document', title: `Vehicle ${vehicle.registrationNo} was approved` }
+      : { category: 'document', title: `Vehicle ${vehicle.registrationNo} was not approved`, body: reason ?? null }, client);
     await auditRepo.insert(
       {
         ...auditContext(adminId, ipAddress),

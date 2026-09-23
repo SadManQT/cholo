@@ -30,8 +30,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       reconnectionAttempts: Infinity,
       reconnectionDelay: 800,
       reconnectionDelayMax: 5000,
-      // Socket.IO invokes this again for every namespace connection, so a
-      // reconnect uses the access token most recently rotated by Axios.
       auth: (callback) => callback({ token: getAccessToken() }),
     });
 
@@ -41,8 +39,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setConnectionState('reconnecting');
 
       try {
-        // An expired bearer makes api/client.ts rotate the httpOnly refresh
-        // cookie, update its in-memory token, then retry this request.
         await meApi.getMe();
         if (!nextSocket.connected) nextSocket.connect();
       } catch {
@@ -80,11 +76,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       nextSocket.io.removeAllListeners();
       nextSocket.close();
     };
-    // Keyed on the user's id, not the `user` object itself — AuthContext
-    // hands out a fresh object on every profile refresh, and reconnecting
-    // the socket each time drops it mid-session for no reason (the auth
-    // callback above already re-reads the live access token on every
-    // reconnect, so a stale closure over `user` isn't a concern here).
   }, [userId]);
 
   return <SocketContext.Provider value={{ socket, connectionState }}>{children}</SocketContext.Provider>;

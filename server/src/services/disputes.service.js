@@ -4,6 +4,13 @@ import * as auditRepo from '../repositories/audit.repository.js';
 import * as disputesRepo from '../repositories/disputes.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
 import { AppError } from '../utils/AppError.js';
+import { notify } from './notifications.service.js';
+
+const OUTCOME_TEXT = {
+  resolved_refunded: 'resolved with a refund to your wallet',
+  resolved_no_action: 'resolved',
+  rejected: 'closed without a change',
+};
 
 function paginate(rows, query) {
   const total = rows[0]?.totalCount ?? 0;
@@ -82,6 +89,34 @@ export async function resolveDispute(adminId, disputeId, input, ipAddress) {
       oldValue: { status: dispute.status },
       newValue: { status: input.status, resolutionNote: input.resolutionNote, refundAmount: input.refundAmount ?? null },
     }, client);
+    await notify(dispute.raisedBy, {
+      category: 'payment',
+      title: `Dispute ${dispute.disputeNo} was ${OUTCOME_TEXT[input.status]}`,
+      body: input.resolutionNote,
+      payload: { disputeId: String(dispute.id) },
+    }, client);
     return resolved;
+  });
+}
+
+export async function startReview(adminId, disputeId, ipAddress) {
+  return withTransaction(async (client) => {
+    await requireResolutionLevel(adminId, false, client);
+    const dispute = await disputesRepo.findForUpdate(disputeId, client);
+    if (!dispute) throw new AppError(404, 'DISPUTE_NOT_FOUND');
+    if (dispute.status !== 'open') throw new AppError(409, 'DISPUTE_NOT_OPEN');
+    const updated = await disputesRepo.startReview(disputeId, client);
+    await auditRepo.insert({
+      actorId: adminId, actorRole: 'ADMIN', ipAddress,
+      action: 'DISPUTE_REVIEW_STARTED', entityType: 'disputes', entityId: disputeId,
+      oldValue: { status: dispute.status }, newValue: { status: updated.status },
+    }, client);
+    await notify(dispute.raisedBy, {
+      category: 'payment',
+      title: `We're reviewing dispute ${dispute.disputeNo}`,
+      body: 'Our team is looking into it and will update you here.',
+      payload: { disputeId: String(dispute.id) },
+    }, client);
+    return updated;
   });
 }

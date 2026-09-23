@@ -6,10 +6,6 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDate, formatDateTime } from '../../utils/format';
 import { staggerStyle } from '../../utils/stagger';
 
-// doc 12 §7: "date-range chips" — three fixed presets rather than a full
-// date picker; the backend query is just ?from&to (server/src/validators/
-// driver.schema.js's earningsQuerySchema), so a chip just picks how far
-// back `from` goes.
 const RANGE_OPTIONS = [
   { label: '7 days', days: 7 },
   { label: '30 days', days: 30 },
@@ -34,9 +30,6 @@ export function EarningsPage() {
     setError(null);
     try {
       const result = await driverApi.getEarnings({ from: isoDaysAgo(days), to: new Date().toISOString().slice(0, 10) });
-      // Clicking a range chip while the previous range's request is still
-      // in flight must not let that older response overwrite the numbers
-      // for the chip the user actually has selected now.
       if (requestId !== requestIdRef.current) return;
       setDaily(result.daily);
       setTrips(result.trips);

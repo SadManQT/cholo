@@ -20,9 +20,6 @@ export const rejectApplicationSchema = z.object({
   reason: z.string().trim().min(1).max(255),
 });
 
-// doc 08-09-10 §9: GET /admin/withdrawals?status=requested — the finance
-// queue. status optional (omitted = every status, newest-requested-first
-// via the repository's own ORDER BY), same shape as driverQueueQuerySchema.
 export const withdrawalQueueQuerySchema = z.object({
   status: z.enum(['requested', 'approved', 'processing', 'paid', 'rejected', 'failed']).optional(),
   page: z.coerce.number().int().positive().default(1),
@@ -46,6 +43,14 @@ export const userListQuerySchema = z.object({
 
 export const userDecisionSchema = z.object({
   reason: z.string().trim().min(3).max(255),
+});
+
+export const suspendUserSchema = userDecisionSchema.extend({
+  duration: z.enum(['permanent', '1w', '1m', 'custom']).default('permanent'),
+  until: z.iso.datetime({ offset: true }).optional(),
+}).refine(({ duration, until }) => duration !== 'custom' || (until && new Date(until) > new Date()), {
+  path: ['until'],
+  message: 'Choose an end date in the future',
 });
 
 export const pricingRulesQuerySchema = z.object({
@@ -129,3 +134,22 @@ export const updateSupportTicketSchema = z
     assignedToMe: z.boolean().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, 'Provide a ticket change');
+
+const zonePoint = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+const zoneFields = {
+  name: z.string().trim().min(2, 'Name the zone').max(80),
+  zoneType: z.enum(['regular', 'airport', 'station', 'restricted']),
+  points: z.array(zonePoint).min(3, 'Draw at least 3 points on the map').max(200),
+  isActive: z.boolean(),
+};
+
+export const createZoneSchema = z.object({
+  cityId: z.number().int().positive(),
+  ...zoneFields,
+  isActive: zoneFields.isActive.default(true),
+});
+
+export const updateZoneSchema = z.object(zoneFields).partial()
+  .refine((data) => Object.keys(data).length > 0, { message: 'Provide at least one field to update.' });
+
+export const zoneListQuerySchema = z.object({ cityId: z.coerce.number().int().positive().optional() });

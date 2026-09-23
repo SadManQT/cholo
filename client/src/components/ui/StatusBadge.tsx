@@ -1,6 +1,3 @@
-// doc 11-12 §2.1's semantic status table — the ONE place these seven
-// statuses (ride_request_status + trip_status, schema.sql) get a color, so
-// every screen that shows a trip/request/document/withdrawal agrees.
 export type StatusBadgeStatus =
   | 'searching'
   | 'assigned'
@@ -24,8 +21,6 @@ const STATUS_CONFIG: Record<StatusBadgeStatus, StatusConfig> = {
   in_progress: { label: 'In progress', classes: 'bg-cholo-50 text-cholo-700' },
   completed: { label: 'Completed', classes: 'bg-cholo-50 text-cholo-700', check: true },
   cancelled: { label: 'Cancelled', classes: 'bg-danger-600/10 text-danger-600' },
-  // no dedicated "gray" token in doc 12 — ink-500 is the palette's own
-  // muted/secondary color, reused here rather than inventing a new hex.
   expired: { label: 'Expired', classes: 'bg-ink-500/10 text-ink-500' },
 };
 
@@ -42,8 +37,6 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-// doc 12 §10: "status conveyed by badge text + color, never color alone" —
-// the label always renders, color is reinforcement, not the only signal.
 export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status];
 

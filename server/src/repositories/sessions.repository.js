@@ -22,9 +22,6 @@ export async function createRefreshToken({ userId, sessionId, tokenHash, expires
   return rows[0].id;
 }
 
-// Locks the row so two concurrent refresh calls with the same token can't
-// both win the rotation race (doc 10 §7) — must be called inside a
-// transaction (BEGIN already issued on `client`).
 export async function findByHashForUpdate(tokenHash, client) {
   const { rows } = await client.query(
     `SELECT id, user_id AS "userId", session_id AS "sessionId",
@@ -81,8 +78,6 @@ export async function endAllSessionsForUser(userId, client = pool) {
   );
 }
 
-// Change-password (doc 10 §8) revokes every OTHER session but keeps the one
-// making the request alive — it just proved it knows the current password.
 export async function revokeActiveForUserExceptSession(userId, exceptSessionId, client = pool) {
   await client.query(
     `UPDATE refresh_tokens SET revoked_at = now()

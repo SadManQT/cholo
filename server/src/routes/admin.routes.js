@@ -15,6 +15,10 @@ import {
   resolveSosSchema,
   reviewDocumentSchema,
   sosQueueQuerySchema,
+  suspendUserSchema,
+  createZoneSchema,
+  updateZoneSchema,
+  zoneListQuerySchema,
   statsQuerySchema,
   supportQueueQuerySchema,
   updateSupportTicketSchema,
@@ -73,10 +77,6 @@ router.post(
   adminController.rejectVehicle,
 );
 
-// doc 08-09-10 §9: role ADMIN gets in the door (requireRole above);
-// access_level ('finance') is re-checked inside withdrawals.service.js —
-// it lives in admin_profiles, not the JWT, so it can't be a route-level
-// middleware the way requireRole is (doc 10 §9 layer 1 vs layer 2).
 router.get(
   '/withdrawals',
   validate(withdrawalQueueQuerySchema, 'query'),
@@ -99,7 +99,7 @@ router.post(
 router.get('/users', validate(userListQuerySchema, 'query'), adminController.listUsers);
 router.post(
   '/users/:id/suspend', adminMutationLimiter,
-  validate(idParamsSchema, 'params'), validate(userDecisionSchema), adminController.suspendUser,
+  validate(idParamsSchema, 'params'), validate(suspendUserSchema), adminController.suspendUser,
 );
 router.post(
   '/users/:id/reinstate', adminMutationLimiter,
@@ -116,6 +116,19 @@ router.post(
   '/disputes/:id/resolve', adminMutationLimiter,
   validate(idParamsSchema, 'params'), validate(resolveDisputeSchema), adminController.resolveDispute,
 );
+
+router.post(
+  '/disputes/:id/review', adminMutationLimiter,
+  validate(idParamsSchema, 'params'), adminController.startDisputeReview,
+);
+
+router.get('/zones', validate(zoneListQuerySchema, 'query'), adminController.listZones);
+router.post('/zones', adminMutationLimiter, validate(createZoneSchema), adminController.createZone);
+router.patch(
+  '/zones/:id', adminMutationLimiter,
+  validate(idParamsSchema, 'params'), validate(updateZoneSchema), adminController.updateZone,
+);
+router.delete('/zones/:id', adminMutationLimiter, validate(idParamsSchema, 'params'), adminController.deleteZone);
 
 router.get('/sos', validate(sosQueueQuerySchema, 'query'), adminController.listSos);
 router.post(

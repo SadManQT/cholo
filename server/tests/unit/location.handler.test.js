@@ -68,13 +68,13 @@ test('a malformed payload is dropped without touching the database', async () =>
 });
 
 test('a driver with no active trip: pings are dropped (nothing to attach them to)', async () => {
-  const query = mock.method(pool, 'query', async () => ({ rows: [] })); // findActiveTripIdForUser -> no row
+  const query = mock.method(pool, 'query', async () => ({ rows: [] }));
   const socket = fakeSocket({ id: 42, roles: ['DRIVER'] });
   registerLocationHandler({}, socket);
 
   await emit(socket, { lat: 23.79, lng: 90.40 });
 
-  assert.equal(query.mock.callCount(), 1); // only the active-trip lookup, no ping insert
+  assert.equal(query.mock.callCount(), 1);
   assert.equal(socket.toEmitCalls.length, 0);
 });
 
@@ -90,7 +90,7 @@ test('a valid ping from a driver on an active trip is recorded and broadcast to 
 
   await emit(socket, { lat: 23.79, lng: 90.40, heading: 45 });
 
-  assert.equal(queries.length, 3); // findActiveTripIdForUser, insertLocationPing, updateLocation
+  assert.equal(queries.length, 3);
   assert.match(queries[1], /INSERT INTO trip_location_pings/);
   assert.match(queries[2], /UPDATE driver_availability/);
 

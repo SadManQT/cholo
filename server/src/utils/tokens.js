@@ -12,8 +12,6 @@ export function signAccessToken({ userId, roles, sessionId }) {
   );
 }
 
-// Opaque random string, never a JWT — only its SHA-256 hash is stored, so a
-// DB leak leaks nothing usable (doc 10 §4).
 export function generateRefreshToken() {
   return randomBytes(32).toString('hex');
 }

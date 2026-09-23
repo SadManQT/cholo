@@ -11,15 +11,6 @@ export async function insertTrip({ requestId, passengerId, driverId, vehicleId }
   return rows[0];
 }
 
-// One SELECT list serves all four lifecycle/payment transitions —
-// arrived/start only need id+driverId+status, complete additionally needs
-// the original request's pickup/dropoff/city/category for fare
-// recomputation, pay (T3) and the gateway webhook (both doc 02-03 §8)
-// need total_fare + payment_status. FOR UPDATE OF t: lock only the trips
-// row, not the joined ride_requests row — this same lock is what
-// serializes two concurrent /pay calls on the SAME trip (a second
-// ALREADY_PAID belt-and-suspenders alongside payments' own
-// ux_payment_one_success UNIQUE INDEX).
 const TRIP_FOR_UPDATE_COLUMNS = `
   t.id, t.trip_code AS "tripCode", t.driver_id AS "driverId",
   t.passenger_id AS "passengerId", t.request_id AS "requestId", t.status,
@@ -45,8 +36,6 @@ export async function findByCodeForUpdate(tripCode, client) {
   return rows[0];
 }
 
-// Same shape, keyed by internal id — the gateway webhook only has a
-// payments.trip_id to work from, never the human-facing trip_code.
 export async function findByIdForUpdate(tripId, client) {
   const { rows } = await client.query(
     `SELECT ${TRIP_FOR_UPDATE_COLUMNS}
@@ -60,12 +49,6 @@ export async function findByIdForUpdate(tripId, client) {
   return rows[0];
 }
 
-// promo_codes.first_ride_only (promos.service.js's validate preview AND
-// trips.service.js's actual redemption check): "has this passenger EVER
-// completed a trip?" EXISTS short-circuits on the first match rather than
-// counting every row. Both call sites run this BEFORE the trip being
-// completed/quoted has status = 'completed' — completeTrip checks this
-// ahead of its own UPDATE — so no self-exclusion is needed.
 export async function hasCompletedTrip(passengerId, client = pool) {
   const { rows } = await client.query(
     `SELECT EXISTS(
@@ -99,11 +82,6 @@ export async function markStarted(tripId, client) {
   return rows[0];
 }
 
-// sockets/rooms.js's connect-time membership check: "is this user currently
-// on a trip?" — the DB round-trip that makes joining trip:{id} a real check,
-// not a client-asserted claim. ORDER BY + LIMIT 1: a user can only ever be
-// on one non-terminal trip at a time (dispatch/accept enforces that), this
-// is just defensive against the impossible.
 export async function findActiveTripIdForUser(userId, client = pool) {
   const { rows } = await client.query(
     `SELECT id FROM trips
@@ -183,7 +161,9 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
             tc.cancelled_by_role AS "cancelledByRole", tc.reason_code AS "cancellationReasonCode",
             tc.reason_text AS "cancellationReasonText", tc.fee_charged AS "cancellationFee",
             tc.cancelled_at AS "cancelledAt",
-            r.receipt_no AS "receiptNo", r.issued_at AS "receiptIssuedAt"
+            r.receipt_no AS "receiptNo", r.issued_at AS "receiptIssuedAt",
+            (SELECT jsonb_build_object('score', rt.score, 'comment', rt.comment)
+             FROM ratings rt WHERE rt.trip_id = t.id AND rt.rater_id = $2) AS "myRating"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id
@@ -295,8 +275,6 @@ export async function insertSosAlert(tripId, userId, { lat, lng }, client = pool
   return rows[0];
 }
 
-// location.handler.js's ~4s GPS breadcrumb (schema.sql's own estimate for
-// this partitioned, high-volume table).
 export async function insertLocationPing(tripId, { lat, lng, heading, speedKmh }, client = pool) {
   await client.query(
     `INSERT INTO trip_location_pings (trip_id, lat, lng, heading, speed_kmh)
@@ -316,9 +294,6 @@ export async function markCancelled(tripId, client) {
   return rows[0];
 }
 
-// trip_cancellations — weak 1:1 (doc 01 §13.9): one row per cancelled trip,
-// holding the details that would otherwise be six always-NULL columns on
-// every non-cancelled trip.
 export async function insertCancellation(
   tripId,
   { cancelledByRole, cancelledBy, reasonCode, reasonText, feeCharged },
@@ -335,13 +310,6 @@ export async function insertCancellation(
   return rows[0];
 }
 
-// Fare fields deliberately NOT cast to float8 — doc 08-09-10 §10.3's worked
-// example shows the completion response as fixed 2-decimal strings
-// ("272.80"), which is NUMERIC(12,2)'s default pg-driver representation.
-// paymentStatus defaults to the column's own 'unpaid' default (doc 02-03
-// §8 T2 only reaches 'paid' for cash, settled atomically in this same
-// UPDATE — every other method leaves the trip unpaid until its own
-// payment flow, gateway webhook or wallet debit, settles it later).
 export async function completeTrip(
   tripId,
   { actualDistanceKm, actualDurationMin, fare, paymentStatus = 'unpaid' },
@@ -371,10 +339,6 @@ export async function completeTrip(
   return rows[0];
 }
 
-// T3 (doc 02-03 §8) settles a trip's payment AFTER completion, via its own
-// /pay call — unlike cash's paymentStatus at completeTrip() time above,
-// this is a separate UPDATE because a separate request, potentially much
-// later, is what triggers it.
 export async function markPaid(tripId, client) {
   const { rows } = await client.query(
     `UPDATE trips SET payment_status = 'paid' WHERE id = $1

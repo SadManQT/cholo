@@ -15,3 +15,25 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(72),
   newPassword: z.string().min(8).max(72),
 });
+
+const phone = z.string().regex(/^01[3-9][0-9]{8}$/, 'Phone must be a valid Bangladeshi number, e.g. 01712345678');
+
+const placeFields = {
+  label: z.string().trim().min(1, 'Give the place a name').max(40, 'Name must be 40 characters or fewer'),
+  address: z.string().trim().min(1, 'Choose an address').max(255),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+};
+
+export const createPlaceSchema = z.object(placeFields);
+
+export const updatePlaceSchema = z.object(placeFields).partial()
+  .refine((data) => Object.keys(data).length > 0, { message: 'Provide at least one field to update.' });
+
+export const createContactSchema = z.object({
+  name: z.string().trim().min(1, 'Enter the contact\'s name').max(120),
+  phone,
+  relationship: z.string().trim().max(40).optional(),
+});
+
+export const idParamsSchema = z.object({ id: z.coerce.number().int().positive() });
