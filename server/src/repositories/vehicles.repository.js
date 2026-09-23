@@ -4,7 +4,7 @@ const VEHICLE_SELECT = `
   v.id, v.driver_id AS "driverId", v.category_id AS "categoryId",
   vc.name AS "categoryName", v.registration_no AS "registrationNo",
   v.brand, v.model, v.model_year AS "modelYear", v.color,
-  v.verification_status AS "verificationStatus", v.is_active AS "isActive",
+  v.verification_status AS "verificationStatus", v.rejection_reason AS "rejectionReason", v.is_active AS "isActive",
   (dp.active_vehicle_id = v.id) AS "isOnDuty",
   v.created_at AS "createdAt", v.updated_at AS "updatedAt"`;
 
@@ -127,20 +127,22 @@ export async function deactivate(vehicleId, driverId, client = pool) {
 
 export async function resetRejectedToPending(vehicleId, client = pool) {
   await client.query(
-    `UPDATE vehicles SET verification_status = 'pending'
+    `UPDATE vehicles SET verification_status = 'pending', rejection_reason = NULL
      WHERE id = $1 AND verification_status = 'rejected'`,
     [vehicleId],
   );
 }
 
-export async function setVerificationStatus(vehicleId, status, client = pool) {
+export async function setVerificationStatus(vehicleId, status, client = pool, reason = null) {
   const { rows } = await client.query(
-    `UPDATE vehicles SET verification_status = $2 WHERE id = $1
+    `UPDATE vehicles SET verification_status = $2,
+            rejection_reason = $3
+     WHERE id = $1
      RETURNING id, driver_id AS "driverId", category_id AS "categoryId",
                registration_no AS "registrationNo", brand, model,
                model_year AS "modelYear", color,
                verification_status AS "verificationStatus", is_active AS "isActive"`,
-    [vehicleId, status],
+    [vehicleId, status, status === 'rejected' ? reason : null],
   );
 
   return rows[0];

@@ -81,3 +81,11 @@ export async function triggerSos(tripCode: string, lat: number, lng: number) {
   );
   return response.data.data;
 }
+
+export async function rateTrip(tripCode: string, score: number, comment?: string) {
+  const response = await apiClient.post<ApiSuccess<{ score: number; comment: string | null }>>(
+    `/trips/${encodeURIComponent(tripCode)}/rating`,
+    { score, ...(comment ? { comment } : {}) },
+  );
+  return response.data.data;
+}

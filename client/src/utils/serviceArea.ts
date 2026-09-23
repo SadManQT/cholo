@@ -1,8 +1,5 @@
 import type { LatLng } from '../types/geo.types';
 
-// Keep this cheap client-side check aligned with geo.service.js. The API is
-// still authoritative; Nominatim verifies the exact country for searched or
-// reverse-geocoded places.
 export const BANGLADESH_BOUNDS = Object.freeze({
   south: 20.34,
   north: 26.64,

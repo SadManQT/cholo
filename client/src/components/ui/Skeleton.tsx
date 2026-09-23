@@ -1,12 +1,7 @@
-// doc 11-12 §2.4 "Skeleton | line / card / map-placeholder" + §8's rule:
-// loading skeletons must be "shaped like the real content" — never a lone
-// spinner for a list. These are the three shapes every loading state
-// composes from.
 type SkeletonVariant = 'line' | 'card' | 'map-placeholder';
 
 interface SkeletonProps {
   variant?: SkeletonVariant;
-  /** Only meaningful for variant="line" — stacked bars for a paragraph/list row. */
   lines?: number;
   className?: string;
 }

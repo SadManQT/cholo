@@ -67,6 +67,23 @@ export interface AdminUserRow {
   currency: string;
   roles: string[];
   tripCount: number;
+  suspendedUntil: string | null;
+  suspensionReason: string | null;
+}
+
+export type ZoneType = 'regular' | 'airport' | 'station' | 'restricted';
+
+export interface Zone {
+  id: string;
+  cityId: number;
+  cityName: string;
+  name: string;
+  zoneType: ZoneType;
+  boundary: { type: 'Polygon'; coordinates: [number, number][][] } | null;
+  isActive: boolean;
+  activeDrivers: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PricingRule {
@@ -117,6 +134,7 @@ export interface AdminDispute {
   status: DisputeStatus;
   resolutionNote: string | null;
   createdAt: string;
+  reviewStartedAt: string | null;
   resolvedAt: string | null;
   raisedByName: string;
   raisedByPhone: string;
@@ -138,6 +156,10 @@ export interface SosAlert {
   triggeredByPhone: string;
   tripCode: string | null;
   acknowledgedByName: string | null;
+  /** Latest GPS ping of the linked trip, if any — the rider's live position. */
+  liveLat: number | null;
+  liveLng: number | null;
+  liveAt: string | null;
 }
 
 export interface AuditLog {

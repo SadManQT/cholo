@@ -16,13 +16,6 @@ before(async () => {
   await databaseClient.query('BEGIN');
 
   mock.method(pool, 'query', (sql, values) => databaseClient.query(sql, values));
-  // Services that use withTransaction (auth's verifyOtp, the wallet writes
-  // below) check out their OWN connection via pool.connect and run a real
-  // BEGIN/COMMIT on it. This suite lives inside one outer, never-committed
-  // transaction on `databaseClient`, so a genuinely separate connection
-  // could not see any of its uncommitted rows. Hand back the same client
-  // and translate BEGIN/COMMIT/ROLLBACK into nested SAVEPOINTs — the same
-  // pattern auth.test.js already uses.
   mock.method(pool, 'connect', async () => {
     const savepointName = `wallet_sp_${savepointCounter += 1}`;
 
@@ -81,9 +74,6 @@ function otpSentTo(phone) {
 }
 
 let seed = 0;
-// fn_create_user_wallet (schema.sql) fires on every users INSERT — going
-// through real registration is what makes wallet_id resolvable at all,
-// same as me.test.js's own registerVerifiedUser.
 async function registerVerifiedUser() {
   seed += 1;
   const phone = `0173${String(seed).padStart(7, '0')}`;
@@ -92,8 +82,6 @@ async function registerVerifiedUser() {
   const response = await request('POST', '/auth/verify-otp', { body: { phone, otp, purpose: 'signup' } });
   const body = await response.json();
 
-  // body.data.user.id is the public UUID (doc 10) — creditWallet needs the
-  // internal BIGINT that wallets.user_id actually references.
   const { rows } = await databaseClient.query(`SELECT id FROM users WHERE phone = $1`, [phone]);
 
   return { accessToken: body.data.accessToken, userId: rows[0].id };
@@ -161,7 +149,7 @@ test('GET /wallet/transactions lists entries newest-first with running balance_a
 
   assert.equal(body.meta.total, 2);
   assert.equal(body.data.length, 2);
-  assert.equal(body.data[0].note, 'two'); // newest first
+  assert.equal(body.data[0].note, 'two');
   assert.equal(body.data[0].balanceAfter, '150.00');
   assert.equal(body.data[1].note, 'one');
   assert.equal(body.data[1].balanceAfter, '100.00');

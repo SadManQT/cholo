@@ -21,8 +21,8 @@ test('quote computes base + distance + time + booking fee for a normal trip', ()
   const fare = quote({ tariff: carTariff, distanceKm: 9.21, durationMin: 9, surgeMultiplier: 1 });
 
   assert.equal(fare.baseFare, 60);
-  assert.equal(fare.distanceFare, 202.62); // 9.21 * 22
-  assert.equal(fare.timeFare, 22.5); // 9 * 2.5
+  assert.equal(fare.distanceFare, 202.62);
+  assert.equal(fare.timeFare, 22.5);
   assert.equal(fare.waitingFare, 0);
   assert.equal(fare.surgeAmount, 0);
   assert.equal(fare.bookingFee, 10);
@@ -32,13 +32,12 @@ test('quote computes base + distance + time + booking fee for a normal trip', ()
 });
 
 test('quote floors the ride cost at minimum_fare for a short trip, folding the top-up into distanceFare', () => {
-  // 60 base + (0.5*22=11) distance + (2*2.5=5) time = 76, below the 120 floor
   const fare = quote({ tariff: carTariff, distanceKm: 0.5, durationMin: 2, surgeMultiplier: 1 });
 
   const rideCost = fare.baseFare + fare.distanceFare + fare.timeFare;
-  assert.equal(rideCost, 120); // floored
-  assert.equal(fare.baseFare, 60); // base_fare itself is never touched
-  assert.equal(fare.totalFare, 130); // 120 ride cost + 10 booking fee
+  assert.equal(rideCost, 120);
+  assert.equal(fare.baseFare, 60);
+  assert.equal(fare.totalFare, 130);
   assertIdentity(fare);
 });
 
@@ -57,10 +56,9 @@ test('quote defaults surgeMultiplier to 1 (no surge) when omitted', () => {
 });
 
 test('quote never returns a negative distanceFare even when the minimum-fare top-up exceeds it', () => {
-  // 0 km, 0 min: ride cost is just base_fare (60), still below the 120 floor
   const fare = quote({ tariff: carTariff, distanceKm: 0, durationMin: 0, surgeMultiplier: 1 });
 
-  assert.equal(fare.distanceFare, 60); // absorbs the entire 60 shortfall
+  assert.equal(fare.distanceFare, 60);
   assert.ok(fare.distanceFare >= 0);
   assertIdentity(fare);
 });
@@ -76,8 +74,8 @@ test('quote bills only waiting time beyond free_wait_minutes, at waiting_per_min
     tariff: waitingTariff, distanceKm: 9.21, durationMin: 9, waitingMinutes: 5,
   });
 
-  assert.equal(fare.waitingFare, 12); // (5 - 1) * 3
-  assert.equal(fare.totalFare, 307.12); // 295.12 + 12
+  assert.equal(fare.waitingFare, 12);
+  assert.equal(fare.totalFare, 307.12);
   assertIdentity(fare);
 });
 

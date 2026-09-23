@@ -44,5 +44,6 @@ export interface MyDispute {
   status: string;
   resolutionNote: string | null;
   createdAt: string;
+  reviewStartedAt: string | null;
   resolvedAt: string | null;
 }

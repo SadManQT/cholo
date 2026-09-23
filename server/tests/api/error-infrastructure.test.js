@@ -51,6 +51,15 @@ testApp.get(
 );
 
 testApp.get(
+  '/postgres-down',
+  asyncHandler(async () => {
+    const error = new Error('connect ECONNREFUSED 127.0.0.1:5433');
+    error.code = 'ECONNREFUSED';
+    throw error;
+  }),
+);
+
+testApp.get(
   '/postgres-check',
   asyncHandler(async () => {
     const error = new Error('new row violates check constraint');
@@ -163,4 +172,14 @@ test('PostgreSQL check violations become a 422 validation response', async () =>
       message: 'The request contains invalid data.',
     },
   });
+});
+
+test('a database outage becomes a logged 503 DATABASE_UNAVAILABLE response', async () => {
+  const loggedError = mock.method(logger, 'error', () => {});
+  const response = await fetch(`${baseUrl}/postgres-down`);
+
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code, 'DATABASE_UNAVAILABLE');
+  assert.equal(loggedError.mock.callCount(), 1);
+  loggedError.mock.restore();
 });

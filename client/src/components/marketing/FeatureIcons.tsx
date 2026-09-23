@@ -1,7 +1,3 @@
-// Small stroke-based icon set for the feature tour — replaces raw emoji
-// with graphics that match the hero illustration's line-art language
-// (currentColor stroke, so each one tints via the feature's accent color).
-// 24x24 viewBox, 1.8 stroke weight, round caps/joins throughout.
 
 type IconProps = { className?: string };
 

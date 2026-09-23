@@ -10,11 +10,6 @@ import { UpcomingFeatures } from '../../components/marketing/UpcomingFeatures';
 import type { UpcomingFeature } from '../../components/marketing/UpcomingFeatures';
 import { EASE_IN_OUT } from '../../utils/motion';
 
-// doc 12 §10: "real <button>" is the rule for actual buttons, but these are
-// *navigations* (real hrefs, right-clickable, openable in a new tab) — a
-// <button onClick={navigate(...)}> would be wrong here. Matches Button.tsx's
-// own recipe (height/radius/weight/transition/press-feedback) so a styled
-// <Link> reads identically, the same pattern ProfilePage's support link uses.
 const CTA_BASE = 'inline-flex h-12 items-center justify-center rounded-xl px-6 text-base font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2';
 const CTA_PRIMARY = `${CTA_BASE} bg-cholo-700 text-white hover:bg-cholo-800`;
 const CTA_SECONDARY = `${CTA_BASE} border border-border bg-surface text-ink-900 hover:bg-surface-alt`;
@@ -59,8 +54,6 @@ const FEATURES: TourFeature[] = [
   },
 ];
 
-// Real roadmap items, not shipped yet — kept visually distinct (see
-// UpcomingFeatures) so the page never implies these already work.
 const UPCOMING: UpcomingFeature[] = [
   {
     icon: 'clock',
@@ -82,11 +75,6 @@ const UPCOMING: UpcomingFeature[] = [
   },
 ];
 
-// Feature-based, not fabricated usage numbers — this is a real
-// in-development project, not a live service with a rides/revenue count
-// to report, so a "5M+ rides completed" style stats strip would just be
-// dishonest marketing copy. Everything here is true regardless of how
-// many people have actually used it yet.
 const FACTS: Array<{ value: string; label: string }> = [
   { value: '3', label: 'ride types — bike, CNG, car' },
   { value: '2', label: 'languages — বাংলা & English' },
@@ -100,10 +88,6 @@ const STEPS: Array<{ title: string; body: string }> = [
   { title: 'Arrive, pay, rate', body: 'Cash or wallet — then rate your trip.' },
 ];
 
-// A slow, continuous idle float — "delight" tier (animate skill §1: rare/
-// first-time viewing, a marketing hero earns more than the restrained
-// motion the rest of the app uses). Kept to opacity-safe transform only,
-// and settles to a fixed pose rather than disappearing under reduced motion.
 function FloatingCard({ children }: { children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   return (
@@ -128,13 +112,7 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        {/* The booking card is the one visual now — sticky alongside the
-            left column on desktop (self-start, not the grid's default
-            stretch/center, is what lets it hold position while the taller
-            column scrolls past) so it's "seen throughout" this section
-            instead of disappearing the moment you scroll past the
-            headline. Gently floating, not static, but it settles — see
-            FloatingCard below. */}
+        {}
         <section className="relative grid gap-10 py-10 md:py-16 lg:grid-cols-2">
           <div>
             <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">

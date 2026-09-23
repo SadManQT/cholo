@@ -8,13 +8,6 @@ import { pool } from '../../src/config/db.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Same reasoning as tests/api/dispatch.test.js: real pool, no savepoint
-// mocking (each test needs its own genuinely-committed trip to transition),
-// and no cleanup — every test here accepts an offer, which creates a trip,
-// which is permanently undeletable (trip_status_history's append-only
-// trigger blocks even the CASCADE a trip delete would trigger). These
-// fixtures are meant to be left in the disposable dev DB, same as the
-// dispatch race test's.
 let server;
 let baseUrl;
 let seed = randomInt(10_000_000, 100_000_000);
@@ -66,11 +59,6 @@ async function createPassenger() {
   return { userId, accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }) };
 }
 
-// t (node:test's TestContext) resets this driver back offline right after
-// ITS OWN test — see tests/api/dispatch.test.js's createOnlineDriver for
-// why that matters: every test here dispatches at the same coordinates, so
-// a driver left 'online' would still be "nearby and eligible" for every
-// later test's booking in the same run, inflating offer counts.
 async function createOnlineDriver(t, { lat, lng }) {
   seed += 1;
   const phone = `018${String(seed).padStart(8, '0').slice(-8)}`;
@@ -103,21 +91,9 @@ async function createOnlineDriver(t, { lat, lng }) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['DRIVER'], sessionId: userId }) };
 }
 
-// Deliberately a DIFFERENT area of Dhaka than tests/api/dispatch.test.js's
-// Gulshan/Dhanmondi coordinates (~10km apart, outside dispatch.service.js's
-// 5km radius either way) — node's test runner can run files concurrently,
-// and per-test t.after() cleanup only protects against cross-test overlap
-// WITHIN a file, not a driver from a different file being briefly online
-// at the exact same spot mid-run.
-const PICKUP = { lat: 23.8759, lng: 90.3795 }; // Uttara Sector 4
-const DROPOFF = { lat: 23.8593, lng: 90.3936 }; // Uttara Sector 10
+const PICKUP = { lat: 23.8759, lng: 90.3795 };
+const DROPOFF = { lat: 23.8593, lng: 90.3936 };
 
-// Books a ride, dispatches it, and has the driver accept — returns the
-// assigned trip's code, ready for arrived/start/complete. paymentIntent
-// defaults to 'cash' (T2 auto-settles at completion); pass 'wallet' for
-// tests that need a trip still 'unpaid' after completion, for T3's /pay.
-// Pass an existing `passenger` to book a SECOND trip for the same person
-// (the double-spend race test needs one passenger, two trips, two drivers).
 async function createAssignedTrip(t, { paymentIntent = 'cash', passenger: existingPassenger } = {}) {
   const passenger = existingPassenger ?? await createPassenger();
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
@@ -228,12 +204,9 @@ test('the full happy path: arrived -> start -> complete, with a fare breakdown s
   const { data } = await completed.json();
 
   assert.equal(data.status, 'completed');
-  assert.equal(data.fare.base, '60.00'); // seeded Dhaka/Car tariff
-  assert.equal(data.fare.distance, '227.48'); // 10.34km real OSRM route * 22/km
+  assert.equal(data.fare.base, '60.00');
+  assert.equal(data.fare.distance, '227.48');
   assert.equal(data.fare.currency, 'BDT');
-  // createAssignedTrip books with paymentIntent: 'cash' — settled inline,
-  // atomically, at completion (doc 02-03 §8 T2), not left pending like a
-  // gateway/wallet payment would be.
   assert.equal(data.payment.method, 'cash');
   assert.equal(data.payment.status, 'paid');
 
@@ -242,8 +215,6 @@ test('the full happy path: arrived -> start -> complete, with a fare breakdown s
     - Number(data.fare.discount);
   assert.equal(Math.round(identitySum * 100) / 100, Number(data.fare.total));
 
-  // The real proof: chk_fare_identity is a DATABASE constraint. If the
-  // insert had violated it, this row would not exist at all.
   const { rows } = await pool.query(
     `SELECT status, total_fare, actual_distance_km, actual_duration_min FROM trips WHERE trip_code = $1`,
     [tripCode],
@@ -293,8 +264,6 @@ test('T2: cash-trip completion inserts a succeeded payment, a driver_earnings sp
   assert.equal(Number(earningRows[0].commission_pct), 15);
   const expectedCommission = Math.round(totalFare * 0.15 * 100) / 100;
   assert.equal(Number(earningRows[0].commission_amount), expectedCommission);
-  // chk_driver_earnings_identity is a DATABASE constraint — this row
-  // existing at all is proof net_earning = gross_fare - commission_amount.
   assert.equal(Number(earningRows[0].net_earning), Math.round((totalFare - expectedCommission) * 100) / 100);
 
   const { rows: ledgerRows } = await pool.query(
@@ -309,18 +278,10 @@ test('T2: cash-trip completion inserts a succeeded payment, a driver_earnings sp
   assert.equal(Number(ledgerRows[0].amount), expectedCommission);
   assert.equal(ledgerRows[0].idempotency_key, `commission-trip-${tripId}`);
 
-  // fn_apply_wallet_txn actually moved the cached balance, not just logged
-  // a row that nothing acted on.
   const { rows: afterRows } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [driver.userId]);
   assert.equal(Number(afterRows[0].balance), Math.round((balanceBefore - expectedCommission) * 100) / 100);
 });
 
-// T3 — wallet payment (doc 02-03 §8): completeAssignedTrip drives a
-// 'wallet'-intent trip to 'completed' (payment_status stays 'unpaid' —
-// only cash auto-settles at completion), creditWallet funds the payer's
-// wallet directly via the ledger (same trigger-computed balance_after
-// path every other credit uses), so /pay is exercised against real state
-// exactly like a passenger would produce it, not a hand-set balance.
 async function completeAssignedTrip(tripCode, driverAccessToken) {
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driverAccessToken });
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driverAccessToken });
@@ -342,10 +303,10 @@ test('T3: POST /trips/:tripCode/pay settles a wallet-intent trip — payment suc
   const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
   assert.equal(completed.status, 'completed');
   assert.equal(completed.payment.method, 'wallet');
-  assert.equal(completed.payment.status, 'unpaid'); // wallet doesn't auto-settle at completion, unlike cash
+  assert.equal(completed.payment.status, 'unpaid');
   const totalFare = Number(completed.fare.total);
 
-  await creditWallet(setup.passenger.userId, totalFare + 100); // more than enough
+  await creditWallet(setup.passenger.userId, totalFare + 100);
 
   const paid = await request('POST', `/trips/${setup.tripCode}/pay`, {
     accessToken: setup.passenger.accessToken,
@@ -387,7 +348,6 @@ test('T3: POST /trips/:tripCode/pay settles a wallet-intent trip — payment suc
 test('T3: POST /trips/:tripCode/pay rejects with 422 INSUFFICIENT_FUNDS and touches nothing when the wallet is short', async (t) => {
   const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
   await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
-  // No creditWallet call — the wallet is still at its fresh 0.00 balance.
 
   const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
     accessToken: setup.passenger.accessToken,
@@ -400,7 +360,7 @@ test('T3: POST /trips/:tripCode/pay rejects with 422 INSUFFICIENT_FUNDS and touc
     `SELECT payment_status FROM trips WHERE trip_code = $1`,
     [setup.tripCode],
   );
-  assert.equal(tripRows[0].payment_status, 'unpaid'); // the failed attempt changed nothing
+  assert.equal(tripRows[0].payment_status, 'unpaid');
 
   const { rows: paymentRows } = await pool.query(
     `SELECT count(*)::int AS n FROM payments p JOIN trips t ON t.id = p.trip_id WHERE t.trip_code = $1`,
@@ -429,8 +389,8 @@ test('T3: POST /trips/:tripCode/pay is 409 ALREADY_PAID on a second attempt', as
 });
 
 test('T3: POST /trips/:tripCode/pay on an ALREADY cash-settled trip is also 409 ALREADY_PAID', async (t) => {
-  const { tripCode, passenger, driver } = await createAssignedTrip(t); // default paymentIntent: 'cash'
-  await completeAssignedTrip(tripCode, driver.accessToken); // T2 auto-settles this
+  const { tripCode, passenger, driver } = await createAssignedTrip(t);
+  await completeAssignedTrip(tripCode, driver.accessToken);
 
   const response = await request('POST', `/trips/${tripCode}/pay`, {
     accessToken: passenger.accessToken,
@@ -441,7 +401,7 @@ test('T3: POST /trips/:tripCode/pay on an ALREADY cash-settled trip is also 409 
 });
 
 test('T3: POST /trips/:tripCode/pay before completion is 409 BAD_TRANSITION', async (t) => {
-  const { tripCode, passenger } = await createAssignedTrip(t, { paymentIntent: 'wallet' }); // still 'assigned'
+  const { tripCode, passenger } = await createAssignedTrip(t, { paymentIntent: 'wallet' });
 
   const response = await request('POST', `/trips/${tripCode}/pay`, {
     accessToken: passenger.accessToken,
@@ -456,7 +416,7 @@ test('T3: POST /trips/:tripCode/pay rejects a non-PASSENGER caller', async (t) =
   await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
 
   const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
-    accessToken: setup.driver.accessToken, // DRIVER role, not PASSENGER
+    accessToken: setup.driver.accessToken,
     body: { method: 'wallet' },
   });
   assert.equal(response.status, 403);
@@ -476,33 +436,8 @@ test('T3: POST /trips/:tripCode/pay by a passenger who is not on the trip gets 4
   assert.equal((await response.json()).error.code, 'TRIP_NOT_FOUND');
 });
 
-// Gateway methods (bkash/nagad/card) are covered in tests/api/payments.
-// test.js, which mocks the SSLCommerz HTTP calls — kept out of this file
-// so trips.test.js's fetch mock (OSRM pass-through only) doesn't also
-// have to know about gateway URLs.
 
-// This fires two real concurrent HTTP requests, same shape as dispatch.
-// test.js's THE RACE — but verified (by temporarily pulling the FOR
-// UPDATE out of getByUserIdForUpdate and running this 20x) that it passes
-// regardless of whether the lock exists: against a fast local Postgres,
-// one request's whole transaction routinely finishes before the second's
-// balance check even starts, so there's often no real overlap to
-// serialize. The deterministic proof of the lock itself — two raw clients
-// with controlled interleaving — lives in tests/integration/walletLock.
-// test.js. This test still earns its keep as an end-to-end functional
-// check: real concurrent requests hit real business-logic error codes and
-// leave the DB in a consistent state, which is worth knowing even when
-// the timing doesn't happen to force the lock to do any work.
 test('two of the SAME passenger\'s trips paid the same instant, wallet funded for exactly one — ends with exactly one 201 and one 422, DB left consistent', async (t) => {
-  // skipCleanup semantics don't apply here (trips.test.js never cleans up
-  // trips anyway — see file-level note near createPassenger), but the
-  // driver fixtures DO reset back offline via t.after in createOnlineDriver.
-  //
-  // M8 hardening releases a request's unique booking slot at 'matched':
-  // from that point the trips row owns active lifecycle state, and
-  // rides.service.js rejects a new booking only while that trip remains
-  // assigned/arrived/in_progress. Completing A must therefore allow the
-  // same passenger to book B without a direct SQL workaround.
   const passenger = await createPassenger();
   const setupA = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
   const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
@@ -512,10 +447,6 @@ test('two of the SAME passenger\'s trips paid the same instant, wallet funded fo
   const fareA = Number(completedA.fare.total);
   const fareB = Number(completedB.fare.total);
 
-  // Fund the ONE shared wallet with enough for exactly the cheaper of the
-  // two trips — not both — so whichever request lands second (whether
-  // that's because it was truly blocked on the lock, or simply because
-  // the first had already finished) must find the wallet already spent.
   const fundedAmount = Math.min(fareA, fareB);
   await creditWallet(passenger.userId, fundedAmount);
 
@@ -524,9 +455,6 @@ test('two of the SAME passenger\'s trips paid the same instant, wallet funded fo
     body: { method: 'wallet' },
   });
 
-  // Real concurrent HTTP requests against the real pool — Promise.all, not
-  // sequential awaits, so both payment attempts genuinely overlap (same
-  // reasoning as dispatch.test.js's THE RACE test for T1's accept race).
   const [responseA, responseB] = await Promise.all([pay(setupA.tripCode), pay(setupB.tripCode)]);
   const [bodyA, bodyB] = await Promise.all([responseA.json(), responseB.json()]);
 
@@ -536,10 +464,6 @@ test('two of the SAME passenger\'s trips paid the same instant, wallet funded fo
   const loserBody = responseA.status === 422 ? bodyA : bodyB;
   assert.equal(loserBody.error.code, 'INSUFFICIENT_FUNDS');
 
-  // The real proof: query actual DB state, not just trust the HTTP
-  // responses. Exactly one payment exists, exactly one trip is paid, and
-  // the wallet landed at exactly 0 — never negative (double-spent) and
-  // never left at fundedAmount (nothing debited at all).
   const { rows: paymentRows } = await pool.query(
     `SELECT t.trip_code AS "tripCode" FROM payments p
      JOIN trips t ON t.id = p.trip_id
@@ -600,7 +524,7 @@ test('waiting time beyond free_wait_minutes is billed at waiting_per_min', async
     });
     const { data } = await response.json();
 
-    assert.equal(data.fare.waiting, '12.00'); // (5 - 1 free) * 3.00
+    assert.equal(data.fare.waiting, '12.00');
   } finally {
     await pool.query(`UPDATE pricing_rules SET waiting_per_min = 0.00, free_wait_minutes = 0 WHERE category_id = 3`);
   }
@@ -657,9 +581,6 @@ test('cancel: passenger cancelling right after assignment (inside the grace peri
   assert.equal(data.cancelledBy, 'passenger');
   assert.equal(data.feeCharged, '0.00');
 
-  // Freed up, not stuck 'matched' forever — otherwise
-  // ux_one_active_request_per_passenger would lock this passenger out of
-  // ever booking again.
   const { rows } = await pool.query(`SELECT rr.status FROM ride_requests rr JOIN trips t ON t.request_id = rr.id WHERE t.trip_code = $1`, [tripCode]);
   assert.equal(rows[0].status, 'cancelled');
 });

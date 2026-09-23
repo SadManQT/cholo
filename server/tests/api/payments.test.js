@@ -8,22 +8,11 @@ import { pool } from '../../src/config/db.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Same reasoning as trips.test.js/dispatch.test.js: real pool, no
-// savepoint mocking, no cleanup — trip fixtures are permanently
-// undeletable (append-only trigger). fetch is mocked for OSRM (trip
-// completion needs a route) AND SSLCommerz (session + validation) so this
-// whole suite runs fast, deterministic, and offline — real-sandbox
-// verification happens separately, by hand, not in the automated suite.
 let server;
 let baseUrl;
 let seed = randomInt(10_000_000, 100_000_000);
 const realFetch = globalThis.fetch;
 
-// val_id -> what the Validation API should report for it. Each test
-// registers its own entries before firing a webhook, so the mock can
-// return a genuinely different (and controllable) answer per test instead
-// of one fixed canned response — the whole point of the validation step
-// is that it's independent of whatever the webhook POST body claims.
 const mockValidations = new Map();
 
 before(async () => {
@@ -86,10 +75,6 @@ function postWebhook(gateway, formFields) {
   });
 }
 
-// payments.gateway_txn_id is UNIQUE and these fixtures are never cleaned
-// up (same reasoning as trips.test.js) — a hardcoded val_id/bank_tran_id
-// collides with itself on the SECOND run of this file against the same
-// persistent dev DB. Every val_id this file registers goes through here.
 function uniqueValId(label) {
   seed += 1;
   return `${label}-${seed}`;
@@ -142,11 +127,8 @@ async function createOnlineDriver(t, { lat, lng }) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['DRIVER'], sessionId: userId }) };
 }
 
-// A third area of Dhaka, away from trips.test.js's Uttara and dispatch.
-// test.js's Gulshan/Dhanmondi coordinates — same cross-file collision
-// reasoning as both those files.
-const PICKUP = { lat: 23.7461, lng: 90.3742 }; // Dhanmondi 27 (dispatch.test.js uses Dhanmondi too, but 2km away)
-const DROPOFF = { lat: 23.7104, lng: 90.4074 }; // Jatrabari
+const PICKUP = { lat: 23.7461, lng: 90.3742 };
+const DROPOFF = { lat: 23.7104, lng: 90.4074 };
 
 async function createAssignedTrip(t, { paymentIntent = 'bkash' } = {}) {
   const passenger = await createPassenger();
@@ -178,9 +160,6 @@ async function completeAssignedTrip(tripCode, driverAccessToken) {
   return (await response.json()).data;
 }
 
-// ---------------------------------------------------------------------
-// POST /wallet/topup
-// ---------------------------------------------------------------------
 
 test('POST /wallet/topup creates an initiated payment and returns a redirect URL', async () => {
   const passenger = await createPassenger();
@@ -224,9 +203,6 @@ test('POST /wallet/topup requires a bearer token', async () => {
   assert.equal(response.status, 401);
 });
 
-// ---------------------------------------------------------------------
-// POST /trips/:tripCode/pay with a gateway method
-// ---------------------------------------------------------------------
 
 test('POST /trips/:tripCode/pay with method=bkash creates an initiated payment and returns pending_redirect', async (t) => {
   const { tripCode, passenger, driver } = await createAssignedTrip(t);
@@ -244,12 +220,9 @@ test('POST /trips/:tripCode/pay with method=bkash creates an initiated payment a
   assert.match(body.redirectUrl, /^https:\/\/sandbox\.sslcommerz\.com\/EasyCheckOut\/mock-/);
 
   const { rows: tripRows } = await pool.query(`SELECT payment_status FROM trips WHERE trip_code = $1`, [tripCode]);
-  assert.equal(tripRows[0].payment_status, 'unpaid'); // still unpaid — webhook hasn't fired
+  assert.equal(tripRows[0].payment_status, 'unpaid');
 });
 
-// ---------------------------------------------------------------------
-// Webhook: trip payment settlement + THE idempotency proof
-// ---------------------------------------------------------------------
 
 test('webhook settles a gateway trip payment: payment succeeded, trip paid, driver_earnings + commission debit', async (t) => {
   const { tripCode, passenger, driver } = await createAssignedTrip(t);
@@ -294,10 +267,6 @@ test('webhook settles a gateway trip payment: payment succeeded, trip paid, driv
   assert.equal(earningRows.length, 1);
   assert.equal(Number(earningRows[0].grossFare), totalFare);
 
-  // Gateway payments are platform-collected (the passenger paid SSLCommerz
-  // directly, not the driver) — the driver gets CREDITED their net share,
-  // unlike cash's commission debit (T2), which is the opposite direction
-  // for the opposite reason (there, the driver already holds the cash).
   const { rows: ledgerRows } = await pool.query(
     `SELECT wt.direction, wt.amount FROM wallet_transactions wt
      JOIN wallets w ON w.id = wt.wallet_id
@@ -327,13 +296,12 @@ test('THE IDEMPOTENCY PROOF: the same webhook delivered twice settles the paymen
 
   const first = await postWebhook('sslcommerz', webhookBody);
   assert.equal(first.status, 200);
-  const second = await postWebhook('sslcommerz', webhookBody); // gateways retry on timeouts — same delivery again
+  const second = await postWebhook('sslcommerz', webhookBody);
   assert.equal(second.status, 200);
-  assert.deepEqual(await second.json(), { received: true }); // still a clean 200, not an error
+  assert.deepEqual(await second.json(), { received: true });
 
-  // The real proof: query the DB, don't just trust two 200s.
   const { rows: paymentRows } = await pool.query(`SELECT status FROM payments WHERE public_id = $1`, [tranId]);
-  assert.equal(paymentRows[0].status, 'succeeded'); // not double-anything, just succeeded
+  assert.equal(paymentRows[0].status, 'succeeded');
 
   const { rows: tripRows } = await pool.query(`SELECT id, payment_status AS "paymentStatus" FROM trips WHERE trip_code = $1`, [tripCode]);
   assert.equal(tripRows[0].paymentStatus, 'paid');
@@ -386,13 +354,10 @@ test('webhook with an unrecognized val_id settles nothing (SSLCommerz\'s own ser
   await completeAssignedTrip(tripCode, driver.accessToken);
   await request('POST', `/trips/${tripCode}/pay`, { accessToken: passenger.accessToken, body: { method: 'card' } });
 
-  // Deliberately NOT registered in mockValidations — the mock's fetch
-  // handler falls through to INVALID_TRANSACTION, exactly like the real
-  // sandbox does for a made-up val_id (verified live).
   const response = await postWebhook('sslcommerz', {
     status: 'VALID', tran_id: 'whatever-the-body-claims', val_id: 'val-never-registered', amount: '999',
   });
-  assert.equal(response.status, 200); // still 200 — not the caller's fault, nothing to retry usefully
+  assert.equal(response.status, 200);
 
   const { rows: tripRows } = await pool.query(
     `SELECT payment_status AS "paymentStatus" FROM trips WHERE trip_code = $1`,
@@ -417,8 +382,6 @@ test('webhook rejects a verified transaction whose amount doesn\'t match the pay
   );
   const tranId = paymentLookup[0].publicId;
 
-  // Validation API "confirms" the val_id, but for the WRONG amount —
-  // real fare was completed.fare.total, this claims half of it.
   mockValidations.set('val-amount-mismatch', { tranId, amount: Number(completed.fare.total) / 2 });
 
   const response = await postWebhook('sslcommerz', {
@@ -428,12 +391,9 @@ test('webhook rejects a verified transaction whose amount doesn\'t match the pay
   assert.equal((await response.json()).error.code, 'BAD_SIGNATURE');
 
   const { rows: paymentRows } = await pool.query(`SELECT status FROM payments WHERE public_id = $1`, [tranId]);
-  assert.equal(paymentRows[0].status, 'initiated'); // untouched
+  assert.equal(paymentRows[0].status, 'initiated');
 });
 
-// ---------------------------------------------------------------------
-// GET /payments/:publicId
-// ---------------------------------------------------------------------
 
 test('GET /payments/:publicId returns the payer\'s own payment', async () => {
   const passenger = await createPassenger();

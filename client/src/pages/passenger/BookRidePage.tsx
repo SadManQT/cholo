@@ -1,10 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as geoApi from '../../api/geo.api';
+import * as meApi from '../../api/me.api';
 import * as referenceApi from '../../api/reference.api';
 import * as ridesApi from '../../api/rides.api';
+import { ClockIcon, GraduationIcon, HomeIcon, PinIcon } from '../../components/layout/icons';
 import { MapView } from '../../components/map/MapView';
 import { ConnectionPill } from '../../components/ride/ConnectionPill';
 import { FareEstimateCard } from '../../components/ride/FareEstimateCard';
@@ -14,6 +16,7 @@ import { useSocket } from '../../context/socket';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { usePlaceSuggestions } from '../../hooks/usePlaceSuggestions';
 import type { LatLng, Place } from '../../types/geo.types';
+import type { RecentPlace, SavedPlace } from '../../types/place.types';
 import type {
   City,
   PaymentIntent,
@@ -35,9 +38,6 @@ function locationLabel(field: LocationField) {
   return field === 'pickup' ? 'Pickup' : 'Dropoff';
 }
 
-// onMouseDown (not onClick) fires before the input's onBlur — picking a
-// suggestion this way beats the input's own delayed blur-clear (see the
-// forms below) instead of racing it.
 function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; onSelect: (place: Place) => void }) {
   if (suggestions.length === 0) return null;
 
@@ -58,6 +58,47 @@ function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; 
         </li>
       ))}
     </ul>
+  );
+}
+
+const PINNED_LABELS = ['Home', 'University'];
+
+function PlaceShortcuts({ saved, recent, target, onPick }: {
+  saved: SavedPlace[];
+  recent: RecentPlace[];
+  target: LocationField;
+  onPick: (place: Place) => void;
+}) {
+  const byLabel = new Map(saved.map((place) => [place.label.toLowerCase(), place]));
+  const missingPinned = PINNED_LABELS.filter((label) => !byLabel.has(label.toLowerCase()));
+  const savedAddresses = new Set(saved.map((place) => place.address));
+  const recentOnly = recent.filter((place) => !savedAddresses.has(place.address)).slice(0, 4);
+  const chip = 'flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-medium text-ink-900 transition-colors hover:border-cholo-700 hover:bg-cholo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700';
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium text-ink-500">Quick pick for {locationLabel(target).toLowerCase()}</p>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        {saved.map((place) => (
+          <button key={place.id} type="button" className={chip} onClick={() => onPick(place)} title={place.address}>
+            {place.label.toLowerCase() === 'home' ? <HomeIcon className="h-4 w-4 text-cholo-700" /> : place.label.toLowerCase() === 'university' ? <GraduationIcon className="h-4 w-4 text-cholo-700" /> : <PinIcon className="h-4 w-4 text-cholo-700" />}
+            {place.label}
+          </button>
+        ))}
+        {missingPinned.map((label) => (
+          <Link key={label} to={`/account/places?add=${label}`} className={`${chip} border-dashed text-ink-500`}>
+            + Set {label.toLowerCase()}
+          </Link>
+        ))}
+        {recentOnly.map((place) => (
+          <button key={`${place.lat},${place.lng}`} type="button" className={chip} onClick={() => onPick(place)} title={place.address}>
+            <ClockIcon className="h-4 w-4 text-ink-500" />
+            <span className="max-w-[10rem] truncate">{place.address}</span>
+          </button>
+        ))}
+        <Link to="/account/places" className={`${chip} text-cholo-700`}>Saved places</Link>
+      </div>
+    </div>
   );
 }
 
@@ -88,6 +129,11 @@ export function BookRidePage() {
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [snapPoint, setSnapPoint] = useState<SnapPoint>('half');
+  const [places, setPlaces] = useState<{ saved: SavedPlace[]; recent: RecentPlace[] }>({ saved: [], recent: [] });
+
+  useEffect(() => {
+    meApi.listPlaces().then(setPlaces).catch(() => {});
+  }, []);
 
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
   const selectedQuote = selectedCategoryId ? quotes[selectedCategoryId] : undefined;
@@ -159,8 +205,6 @@ export function BookRidePage() {
         }
       })
       .catch(() => {
-        // Permission guidance is rendered in the sheet; map pin selection
-        // remains available, so denial is not a dead end.
       });
   }, [geolocationState, pickup, requestCurrentLocation]);
 
@@ -189,7 +233,10 @@ export function BookRidePage() {
       setQuotes(nextQuotes);
       const firstAvailable = categories.find((category) => nextQuotes[category.id]);
       setSelectedCategoryId((current) => current && nextQuotes[current] ? current : firstAvailable?.id ?? null);
-      if (!firstAvailable) setQuoteError('No ride category is available for this route right now.');
+      const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (!firstAvailable) {
+        setQuoteError(getApiErrorMessage(firstFailure?.reason, 'No ride category is available for this route right now.'));
+      }
       setQuotesLoading(false);
       setSnapPoint('half');
     }
@@ -221,7 +268,6 @@ export function BookRidePage() {
         }
         setRideRequest(next);
       } catch {
-        // Socket may still deliver the match; next poll retries.
       }
     }
 
@@ -248,9 +294,6 @@ export function BookRidePage() {
 
   const stage = rideRequest ? 'searching' : pickup && dropoff ? 'choosing' : 'idle';
 
-  // enabled=false right after a place is picked (typed Find, tapped a
-  // suggestion, or the current-location autofill) — the query text now
-  // just IS that place's own address, not a fresh thing to search for.
   const pickupSuggestions = usePlaceSuggestions(pickupQuery, pickup?.address !== pickupQuery);
   const dropoffSuggestions = usePlaceSuggestions(dropoffQuery, dropoff?.address !== dropoffQuery);
 
@@ -369,7 +412,7 @@ export function BookRidePage() {
         open
         snapPoint={snapPoint}
         onSnapPointChange={setSnapPoint}
-        className="lg:!inset-y-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
+        className="lg:!top-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
       >
         {referenceLoading ? (
           <div className="space-y-3 py-2">
@@ -380,11 +423,6 @@ export function BookRidePage() {
         ) : referenceError ? (
           <EmptyState title="Ride options did not load" hint={referenceError} action={{ label: 'Retry', onClick: loadReferences }} />
         ) : (
-          // Cross-fade between the form/fare-list stage and the searching
-          // stage — they differ enough in layout (top-aligned form vs.
-          // centered radar) that a shared-element move would look wrong;
-          // a plain opacity swap is the "preventing a jarring change" fix
-          // (animate skill §2). mode="wait" avoids the two overlapping.
           <AnimatePresence mode="wait">
           {stage === 'searching' && rideRequest ? (
             <motion.div
@@ -395,8 +433,12 @@ export function BookRidePage() {
               transition={{ duration: 0.2, ease: EASE_OUT }}
               className="flex min-h-full flex-col items-center justify-center gap-4 py-6 text-center"
             >
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-marigold-500/15 motion-safe:animate-pulse">
-              <span className="text-3xl" aria-hidden="true">📡</span>
+            <div className="relative flex h-24 w-24 items-center justify-center" aria-hidden="true">
+              <span className="absolute inset-0 rounded-full bg-cholo-700/15 motion-safe:animate-ping" />
+              <span className="absolute inset-3 rounded-full bg-cholo-700/20" />
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-cholo-700 text-white shadow-lg">
+                <PinIcon className="h-5 w-5" />
+              </span>
             </div>
             <div>
               <h1 className="text-xl font-bold">Finding your driver…</h1>
@@ -448,6 +490,8 @@ export function BookRidePage() {
               <Button type="submit" variant="secondary" loading={resolvingField === 'dropoff'} aria-label="Find dropoff">Find</Button>
               <PlaceSuggestionList suggestions={dropoffSuggestions.suggestions} onSelect={(place) => selectSuggestion('dropoff', place)} />
             </form>
+
+            <PlaceShortcuts saved={places.saved} recent={places.recent} target={mapField} onPick={(place) => selectSuggestion(mapField, place)} />
 
             {geolocation.state === 'denied' && (
               <p className="rounded-xl bg-marigold-500/15 p-3 text-sm text-ink-900">

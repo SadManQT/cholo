@@ -2,23 +2,15 @@ import { useEffect, useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
 import { EASE_IN_OUT_CSS, EASE_OUT_CSS } from '../../utils/motion';
 
-// doc 11-12 §2.4: "OtpInput | 6 boxes, auto-advance, paste support |
-// registration, payout confirm." Controlled: the parent owns the full code
-// as one string (matches doc 11 §4's controlled-input rule) — this just
-// renders it as `length` boxes and handles the per-box focus choreography.
 interface OtpInputProps {
   value: string;
   onChange: (value: string) => void;
-  /** Fires once, exactly when the code reaches full length (doc 12 §4: "auto-submits on 6th digit"). */
   onComplete?: (value: string) => void;
   length?: number;
   error?: boolean;
   disabled?: boolean;
 }
 
-// One-off feedback pop on a filled digit — "occasional" tier (once per
-// registration/payout confirm, animate skill §1), WAAPI rather than a CSS
-// class since each box fills at most once per keystroke, nothing to fight.
 function pop(el: HTMLInputElement | null | undefined) {
   if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   el.animate(
@@ -31,8 +23,6 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
   const boxRefs = useRef<(HTMLInputElement | null)[]>([]);
   const groupRef = useRef<HTMLDivElement>(null);
 
-  // Shake on a wrong code — state indication, occasional (once per failed
-  // attempt), transform-only, gated by reduced motion.
   useEffect(() => {
     if (!error || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     groupRef.current?.animate(
@@ -56,7 +46,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
   }
 
   function handleBoxChange(index: number, rawInput: string) {
-    const digit = rawInput.replace(/\D/g, '').slice(-1); // last digit typed, in case of IME/overtype
+    const digit = rawInput.replace(/\D/g, '').slice(-1);
     const next = value.split('');
     next[index] = digit;
     const nextValue = next.join('').slice(0, length);
@@ -85,10 +75,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
     if (!digits) return;
     event.preventDefault();
     commit(digits);
-    // Focus the box right after the last pasted digit (or the last box if fully filled).
     boxRefs.current[Math.min(digits.length, length - 1)]?.focus();
-    // Stagger the pop across the pasted digits (animate skill RECIPES.md
-    // "stagger a group entrance") instead of every box popping at once.
     for (let i = 0; i < digits.length; i += 1) {
       window.setTimeout(() => pop(boxRefs.current[i]), i * 40);
     }

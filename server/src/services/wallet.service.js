@@ -5,10 +5,6 @@ import * as walletRepo from '../repositories/wallet.repository.js';
 import { AppError } from '../utils/AppError.js';
 import * as paymentGateway from './paymentGateway.service.js';
 
-// wallets is 1:1 with users (fn_create_user_wallet, schema.sql) — a miss
-// here means the trigger never ran, which should be impossible for any
-// authenticated user; 404 rather than a silent default is the honest
-// response to state that should never happen.
 async function requireWallet(userId) {
   const wallet = await walletRepo.getByUserId(userId);
   if (!wallet) throw new AppError(404, 'NOT_FOUND');
@@ -32,14 +28,8 @@ export async function listTransactions(userId, query) {
   };
 }
 
-// doc 08-09-10 §7: POST /wallet/topup — "amount, method → gateway
-// session." Unlike a trip payment there's no trip to guard against
-// double-paying; the only work here is starting the session. Settlement
-// (the wallet credit) happens later, entirely in the webhook — a topup
-// payment row is 'initiated' until SSLCommerz confirms it, same as a
-// gateway trip payment (trips.service.js's payTripByGateway).
 export async function initiateTopup(userId, { amount, method }) {
-  await requireWallet(userId); // same "should be impossible to miss" guard as getWallet
+  await requireWallet(userId);
 
   const payment = await paymentsRepo.insertPayment({
     purpose: 'wallet_topup',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as driverApi from '../../api/driver.api';
 import * as tripsApi from '../../api/trips.api';
 import { MapView } from '../../components/map/MapView';
@@ -28,7 +28,6 @@ export function DriverHomePage() {
     try {
       setOffers(await driverApi.listOffers());
     } catch {
-      // The main page status remains usable; socket/poll retries shortly.
     }
   }, []);
 
@@ -154,6 +153,11 @@ export function DriverHomePage() {
   if (error || !status) return <EmptyState title="Driver home did not load" hint={error ?? 'Driver profile not found.'} action={{ label: 'Retry', onClick: loadHome }} />;
 
   const online = status.availabilityStatus === 'online';
+  const setupSteps = [
+    { done: status.verificationStatus === 'approved', label: status.verificationStatus === 'rejected' ? 'Fix your documents' : 'Get your documents approved', to: '/driver/documents', note: status.verificationStatus === 'pending' ? 'Under review' : null },
+    { done: Boolean(status.activeVehicle && status.activeVehicle.verificationStatus === 'approved'), label: 'Put an approved vehicle on duty', to: '/driver/vehicles', note: null },
+  ];
+  const ready = setupSteps.every((step) => step.done);
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden">
@@ -175,13 +179,30 @@ export function DriverHomePage() {
               onClick={toggleOnline}
               className={`relative h-12 w-24 rounded-full p-1 text-xs font-bold transition-[background-color,color] duration-200 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 ${online ? 'bg-cholo-700 text-white' : 'bg-ink-500/20 text-ink-900'} disabled:opacity-60 disabled:active:scale-100`}
             >
-              <span className={`absolute top-1 h-10 w-10 rounded-full bg-surface shadow transition-transform duration-200 ease-cholo-in-out ${online ? 'translate-x-12' : 'translate-x-0'}`} />
-              <span className="relative">{switching ? '…' : online ? 'ON' : 'OFF'}</span>
+              <span className={`absolute left-1 top-1 h-10 w-10 rounded-full bg-surface shadow transition-transform duration-200 ease-cholo-in-out ${online ? 'translate-x-12' : 'translate-x-0'}`} />
+              <span className={`absolute inset-y-0 flex items-center ${online ? 'left-3' : 'right-3'}`}>{switching ? '…' : online ? 'ON' : 'OFF'}</span>
             </button>
           </div>
-          <p className="mt-3 border-t border-border pt-3 text-sm text-ink-500">
-            {status.activeVehicle ? `${status.activeVehicle.registrationNo} is active` : 'Activate an approved vehicle before going online.'}
-          </p>
+          {ready ? (
+            <p className="mt-3 border-t border-border pt-3 text-sm text-ink-500">
+              {status.activeVehicle?.registrationNo} is on duty · ★ {Number(status.ratingAvg).toFixed(2)} ({status.ratingCount} rating{status.ratingCount === 1 ? '' : 's'})
+            </p>
+          ) : (
+            <div className="mt-3 border-t border-border pt-3">
+              <p className="text-sm font-semibold text-ink-900">Finish setting up to go online</p>
+              <ul className="mt-2 space-y-1.5">
+                {setupSteps.map((step) => (
+                  <li key={step.to}>
+                    <Link to={step.to} className="flex items-center gap-2 text-sm">
+                      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${step.done ? 'bg-cholo-700 text-white' : 'border border-ink-500/40 text-transparent'}`} aria-hidden="true">✓</span>
+                      <span className={step.done ? 'text-ink-500 line-through' : 'font-medium text-cholo-700 hover:underline'}>{step.label}</span>
+                      {step.note && !step.done && <span className="text-xs text-marigold-500">{step.note}</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
 
         {activeTrip && (

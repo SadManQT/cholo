@@ -9,14 +9,9 @@ import { geocodeQuerySchema, reverseGeocodeQuerySchema, routeSchema } from '../v
 const router = Router();
 
 router.use(auth);
-// Both apps render trip directions. Address search remains passenger-only,
-// while this stateless route lookup is available to any authenticated trip
-// participant (ownership still gates the trip data that supplies its pins).
 router.post('/route', validate(routeSchema), geoController.route);
 router.use(requireRole('PASSENGER'));
 router.get('/geocode', validate(geocodeQuerySchema, 'query'), geoController.geocode);
-// Same shape as geocode's own query (min 3 chars) — search is just
-// geocode's as-you-type sibling, not a different contract.
 router.get('/search', geoSearchLimiter, validate(geocodeQuerySchema, 'query'), geoController.search);
 router.get('/reverse', validate(reverseGeocodeQuerySchema, 'query'), geoController.reverseGeocode);
 

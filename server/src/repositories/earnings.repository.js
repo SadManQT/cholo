@@ -1,8 +1,5 @@
 import { pool } from '../config/db.js';
 
-// driver_earnings — per-trip split of fare into platform cut + driver
-// income (schema.sql). chk_driver_earnings_identity enforces
-// net_earning = gross_fare - commission_amount at the DB level too.
 export async function insertEarning(
   { tripId, driverId, grossFare, commissionRuleId, commissionPct, commissionAmount, netEarning },
   client,
@@ -18,15 +15,8 @@ export async function insertEarning(
   return rows[0];
 }
 
-// doc 08-09-10 §6: GET /driver/earnings "daily aggregates" —
-// v_driver_daily_earnings IS the one canonical implementation of that
-// aggregation (schema.sql), never re-derived in application code.
 export async function listDailyForDriver(driverId, { from, to }, client = pool) {
   const { rows } = await client.query(
-    // earning_date::text — DATE columns come back as JS Date objects by
-    // default (pg's driver-level parsing), which JSON.stringify to a full
-    // datetime instant, not a clean "YYYY-MM-DD" — same reasoning as
-    // admin.repository.js's licenseExpiry::text cast.
     `SELECT earning_date::text AS "earningDate", trips_count AS "tripsCount",
             gross_total AS "grossTotal", commission_total AS "commissionTotal", net_total AS "netTotal"
      FROM v_driver_daily_earnings
@@ -38,8 +28,6 @@ export async function listDailyForDriver(driverId, { from, to }, client = pool) 
   return rows;
 }
 
-// doc 08-09-10 §6: GET /driver/earnings "... + per-trip rows" — the same
-// date window, itemized one row per trip rather than summed per day.
 export async function listTripsForDriver(driverId, { from, to }, client = pool) {
   const { rows } = await client.query(
     `SELECT de.id, t.trip_code AS "tripCode", de.gross_fare AS "grossFare",

@@ -17,9 +17,6 @@ before(async () => {
   await databaseClient.query('BEGIN');
 
   mock.method(pool, 'query', (sql, values) => databaseClient.query(sql, values));
-  // /auth/refresh (exercised by the change-password test below) manages its
-  // own real transaction via pool.connect() — see tests/api/auth.test.js
-  // for why this needs translating into nested SAVEPOINTs here too.
   mock.method(pool, 'connect', async () => {
     const savepointName = `me_refresh_sp_${savepointCounter += 1}`;
 
@@ -204,19 +201,15 @@ test('PATCH /me/password changes the password and revokes every other session, k
   });
   assert.equal(response.status, 204);
 
-  // the session that changed the password keeps working, for both its
-  // access token and its refresh token
   const stillWorks = await request('GET', '/me', { accessToken: first.accessToken });
   assert.equal(stillWorks.status, 200);
 
   const ownRefreshStillWorks = await request('POST', '/auth/refresh', { cookie: first.refreshCookie });
   assert.equal(ownRefreshStillWorks.status, 200);
 
-  // the OTHER session was killed
   const otherRefreshDead = await request('POST', '/auth/refresh', { cookie: secondRefreshCookie });
   assert.equal(otherRefreshDead.status, 401);
 
-  // old password no longer works, new one does
   const loginWithOldPassword = await request('POST', '/auth/login', { body: { phone, password: PASSWORD } });
   assert.equal(loginWithOldPassword.status, 401);
 

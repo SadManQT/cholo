@@ -1,0 +1,228 @@
+<title>Cholo Launch Roadmap</title>
+<meta name="description" content="Cholo launch status: bugs fixed, features built, and what still depends on outside providers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #F4F7F5;
+    --paper: #FFFFFF;
+    --ink: #0B1F2E;
+    --muted: #55677A;
+    --rule: #DDE5E1;
+    --accent: #0E7A5F;
+    --accent-soft: #E3F3EC;
+    --done: #0E7A5F;
+    --done-bg: #E3F3EC;
+    --build: #9A5B00;
+    --build-bg: #FDF1DC;
+    --later: #3D4F8C;
+    --later-bg: #E8ECF8;
+    --bug: #B42318;
+    --bug-bg: #FDECEA;
+    --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0C1512;
+      --paper: #121E1A;
+      --ink: #E6EFEB;
+      --muted: #97A9A2;
+      --rule: #22332D;
+      --accent: #4CC9A0;
+      --accent-soft: #15302A;
+      --done: #5FD3AC;
+      --done-bg: #153229;
+      --build: #F2B55C;
+      --build-bg: #33260F;
+      --later: #A8B6F0;
+      --later-bg: #1D2440;
+      --bug: #F59A90;
+      --bug-bg: #3A1B18;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0C1512;
+    --paper: #121E1A;
+    --ink: #E6EFEB;
+    --muted: #97A9A2;
+    --rule: #22332D;
+    --accent: #4CC9A0;
+    --accent-soft: #15302A;
+    --done: #5FD3AC;
+    --done-bg: #153229;
+    --build: #F2B55C;
+    --build-bg: #33260F;
+    --later: #A8B6F0;
+    --later-bg: #1D2440;
+    --bug: #F59A90;
+    --bug-bg: #3A1B18;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 16px/1.6 var(--body);
+    padding-inline: 16px;
+    padding-block: 40px 72px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 48px; }
+
+  header { display: grid; gap: 16px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font: 700 clamp(34px, 6vw, 52px)/1.05 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 62ch; margin: 0; font-size: 17px; }
+
+  .tally { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .tally span { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--paper); border: 1px solid var(--rule); font-size: 14px; color: var(--muted); }
+  .tally b { font: 700 20px/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  section { display: grid; gap: 16px; }
+  .section-head { display: grid; gap: 4px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  h2 { font: 600 24px/1.2 var(--display); margin: 0; letter-spacing: -.01em; }
+  .section-head p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  ul.items { list-style: none; margin: 0; padding: 0; display: grid; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .item h3 { font: 600 17px/1.35 var(--body); margin: 0; }
+  .item p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 15px; max-width: 70ch; }
+  .item .where { grid-column: 1 / -1; font: 400 12.5px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .ref { font: 500 12px/1 var(--mono); color: var(--muted); margin-right: 6px; }
+
+  .chip { align-self: start; justify-self: end; white-space: nowrap; font: 600 12px/1 var(--body); letter-spacing: .02em; padding: 6px 10px; border-radius: 999px; }
+  .chip.done { color: var(--done); background: var(--done-bg); }
+  .chip.build { color: var(--build); background: var(--build-bg); }
+  .chip.later { color: var(--later); background: var(--later-bg); }
+  .chip.bug { color: var(--bug); background: var(--bug-bg); }
+
+  .groups { display: grid; gap: 32px; }
+  h4 { font: 600 13px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 0 0; }
+
+  .note { background: var(--accent-soft); border-radius: 12px; padding: 16px 18px; font-size: 15px; }
+  .note strong { color: var(--accent); }
+
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 16px; }
+
+  @media (max-width: 520px) {
+    .item { grid-template-columns: 1fr; }
+    .chip { justify-self: start; grid-row: 1; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Cholo · ride-sharing for Bangladesh</span>
+    <h1>Launch roadmap</h1>
+    <p class="lede">What it took to get from the audit to a deploy-ready product: the bugs found and fixed, the features built, and the pieces that still need an outside provider before real riders arrive.</p>
+    <div class="tally" aria-label="Summary">
+      <span><b id="count-done">0</b> done</span>
+      <span><b id="count-later">0</b> need a provider</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="bugs">
+    <div class="section-head">
+      <h2 id="bugs">Bugs</h2>
+      <p>Found by running every screen as a passenger, driver and admin, and by reading the code behind them.</p>
+    </div>
+    <ul class="items">
+      <li class="item" data-status="done"><h3><span class="ref">3.1</span>Driver online toggle broke out of its track</h3><span class="chip done">Fixed</span><p>The knob had no left anchor, so switching to online pushed it outside the switch. The ON/OFF label also sat under the knob.</p><span class="where">client/src/pages/driver/DriverHomePage.tsx</span></li>
+      <li class="item" data-status="done"><h3><span class="ref">2.2</span>Booking panel cut off and covering the tab bar</h3><span class="chip done">Fixed</span><p>Every bottom sheet was drawn at 90% of the screen and slid down, so at the half and peek positions the confirm button sat below the visible area. Sheets now size themselves and end above the tab bar, on booking, live trip, driver trip, offers and chat.</p><span class="where">client/src/components/ui/BottomSheet.tsx</span></li>
+      <li class="item" data-status="done"><h3><span class="ref">2.3</span>Map markers were plain circles</h3><span class="chip done">Fixed</span><p>Pickup, drop-off, driver and SOS now use teardrop pins with a shadow, anchored at the tip so they point at the exact spot.</p><span class="where">client/src/components/map/MapView.tsx</span></li>
+      <li class="item" data-status="done"><h3><span class="ref">1.2</span>Sign-up showed one generic error</h3><span class="chip done">Fixed</span><p>Each field now shows its own reason under a red-bordered input ("Phone number is incomplete (7 of 11 digits)"), and a phone that's already registered is flagged on the phone field.</p><span class="where">client/src/pages/auth/RegisterPage.tsx · server/src/validators/auth.schema.js</span></li>
+      <li class="item" data-status="done"><h3><span class="ref">1.3</span>"Something went wrong on our side" everywhere</h3><span class="chip done">Fixed</span><p>Validation errors show the specific reason, an unreachable server or timeout says so, and a database outage returns a logged 503 with its own message. The generic text is now only the last resort.</p><span class="where">client/src/utils/apiError.ts · server/src/middlewares/errorHandler.js</span></li>
+      <li class="item" data-status="done"><h3><span class="ref">6.1</span>SOS board had no map, and short notes failed</h3><span class="chip done">Fixed</span><p>Each open alert shows a live map with where the SOS was sent and the trip's latest position. Notes shorter than the 3 characters the server requires are caught before sending, and each button has its own spinner.</p><span class="where">client/src/pages/admin/SosBoardPage.tsx · server/src/repositories/safety.repository.js</span></li>
+      <li class="item" data-status="done"><h3>"Drive with Cholo" leads to a 404</h3><span class="chip done">Fixed</span><p>After sign-up with the driver option, the app sends people to /driver/apply, which doesn't exist. There is also no screen to add a vehicle or upload documents, so nobody can become a driver from the app.</p><span class="where">client/src/pages/auth/OtpVerifyPage.tsx · client/src/App.tsx</span></li>
+      <li class="item" data-status="done"><h3>Toasts cover the mobile tab bar</h3><span class="chip done">Fixed</span><p>Messages appear over Book / Trips / Wallet / Account, blocking the tabs for a few seconds after every action.</p><span class="where">client/src/components/ui/Toast.tsx</span></li>
+      <li class="item" data-status="done"><h3>Menu items open "coming soon" screens</h3><span class="chip done">Fixed</span><p>Six links lead to placeholder pages: driver documents, driver vehicles, promos, payment methods, saved places and admin zones.</p><span class="where">client/src/App.tsx</span></li>
+      <li class="item" data-status="done"><h3>Sign-up can leave a half-created account</h3><span class="chip done">Fixed</span><p>Creating the user, giving it the passenger role and sending the code are separate steps with no transaction. If one fails, the phone number is taken but the account can't log in.</p><span class="where">server/src/services/auth.service.js</span></li>
+      <li class="item" data-status="done"><h3>Every page reload would sign users out in production</h3><span class="chip done">Fixed</span><p>The refresh cookie was <code>SameSite=strict</code>. With the site on Vercel and the API on Render, the browser never sends it, so sessions could not be restored after a reload.</p><span class="where">server/src/controllers/auth.controller.js</span></li>
+      <li class="item" data-status="done"><h3>All riders would share one login rate limit on Render</h3><span class="chip done">Fixed</span><p>The API did not trust the host's proxy, so every request looked like it came from the same IP. A few failed logins anywhere would lock everyone out.</p><span class="where">server/src/app.js</span></li>
+      <li class="item" data-status="done"><h3>Driver approvals and Document review failed to load</h3><span class="chip done">Fixed</span><p>The vehicle queue queried a column that did not exist, and both admin pages load that queue, so both showed "Queue did not load".</p><span class="where">database/migrations/0005_launch_features.sql</span></li>
+      <li class="item" data-status="done"><h3>Rejection reasons never reached drivers</h3><span class="chip done">Fixed</span><p>Reasons for rejecting a driver, a vehicle or a vehicle document were only written to the audit log. They are now stored, shown to the driver and sent as a notification.</p></li>
+      <li class="item" data-status="done"><h3>Drivers landed on the rider screen after logging in</h3><span class="chip done">Fixed</span><p>Every driver is also a passenger, and the home screen checked the passenger role first. The Account page now also switches between riding and driving.</p><span class="where">client/src/utils/roleHomePath.ts</span></li>
+      <li class="item" data-status="done"><h3>"Forgot password?" opened a placeholder</h3><span class="chip done">Fixed</span><p>The login link pointed at an unfinished screen; it now opens the real reset flow.</p></li>
+      <li class="item" data-status="done"><h3>Active users showed a red status pill</h3><span class="chip done">Fixed</span><p>The pill reused the SOS board's red for every "active" state, so healthy accounts looked like alerts in the Users list.</p><span class="where">client/src/components/ui/StatePill.tsx</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="features">
+    <div class="section-head">
+      <h2 id="features">Features built</h2>
+      <p>What riders, drivers and the ops team need for the product to feel finished.</p>
+    </div>
+    <div class="groups">
+      <div>
+        <h4>Accounts &amp; safety</h4>
+        <ul class="items">
+          <li class="item" data-status="done"><h3><span class="ref">1.1</span>Forgot password</h3><span class="chip done">Done</span><p>"Forgot password?" on login sends a 6-digit code to the phone, then lets the person set a new password. The code expires, attempts are limited, and every other session is signed out.</p></li>
+          <li class="item" data-status="done"><h3><span class="ref">5.4</span>Timed suspensions</h3><span class="chip done">Done</span><p>Admins choose Permanent, 1 week, 1 month or a custom end date. Accounts come back automatically when the time is up, and the person sees the reason and end date when they try to log in.</p></li>
+          <li class="item" data-status="done"><h3>Emergency contacts</h3><span class="chip done">Done</span><p>Riders add the people who should hear about an SOS. The SOS flow already reads this list; there was no way to fill it.</p></li>
+          <li class="item" data-status="done"><h3>Notifications</h3><span class="chip done">Done</span><p>A bell with unread count for every role: driver application decisions, document reviews, dispute outcomes, support replies and suspensions.</p></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Riders</h4>
+        <ul class="items">
+          <li class="item" data-status="done"><h3><span class="ref">2.1</span>Saved places and recent trips on the booking screen</h3><span class="chip done">Done</span><p>Home, University and custom places plus recent drop-offs appear as one-tap shortcuts under From / To, with a page to add, rename and remove places.</p></li>
+          <li class="item" data-status="done"><h3>Rate your trip</h3><span class="chip done">Done</span><p>After a completed trip both sides give 1–5 stars and an optional comment. Averages appear on driver cards and in admin.</p></li>
+          <li class="item" data-status="done"><h3>Promos page</h3><span class="chip done">Done</span><p>Shows the codes available in the rider's city, with terms and expiry.</p></li>
+          <li class="item" data-status="done"><h3><span class="ref">4.1</span>Dispute lifecycle and support threads</h3><span class="chip done">Done</span><p>Disputes move Opened → Under review → Resolved, with each step's time visible to the person who raised it. Only that person and admins can see a dispute; the other party on the trip can't.</p></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Drivers</h4>
+        <ul class="items">
+          <li class="item" data-status="done"><h3>Driver onboarding</h3><span class="chip done">Done</span><p>Apply with NID and license, add a vehicle, and upload the required documents, with a checklist showing what's approved, pending or rejected and why.</p></li>
+          <li class="item" data-status="done"><h3>Document and vehicle pages</h3><span class="chip done">Done</span><p>Replace the placeholders with real screens: upload or replace a document, see expiry dates, choose which approved vehicle is active.</p></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Operations</h4>
+        <ul class="items">
+          <li class="item" data-status="done"><h3><span class="ref">5.1 · 5.2</span>Approvals and document review</h3><span class="chip done">Done</span><p>The queues already exist. Adding in-page image and PDF previews, "expiring soon" and "expired" flags, a nightly job that expires old documents, and a notification to the driver on every decision.</p></li>
+          <li class="item" data-status="done"><h3><span class="ref">5.3</span>Zones</h3><span class="chip done">Done</span><p>Create, edit and delete zones by clicking points on the map. Restricted zones block pickups and drop-offs, and drivers are tagged with the zone they're in so the dashboard can count them.</p></li>
+          <li class="item" data-status="done"><h3>Admin shell</h3><span class="chip done">Done</span><p>Brand, icons, the signed-in admin and a sign-out button in the sidebar; notifications in the header.</p></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Deploy readiness</h4>
+        <ul class="items">
+          <li class="item" data-status="done"><h3>Health check and security headers</h3><span class="chip done">Done</span><p>A /health endpoint that checks the database for the host's uptime probe, standard security headers, correct client IPs behind the host's proxy (rate limits depend on it), and a clean shutdown.</p></li>
+          <li class="item" data-status="done"><h3>Crash screen</h3><span class="chip done">Done</span><p>If a screen throws, show a friendly "reload" page instead of a blank white screen.</p></li>
+          <li class="item" data-status="done"><h3>Document uploads</h3><span class="chip done">Done</span><p>Drivers upload photos or PDFs instead of pasting links. Files are stored by the API with type and size limits.</p></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="providers">
+    <div class="section-head">
+      <h2 id="providers">Needs an outside provider</h2>
+      <p>These need an account, keys or a contract before launch. The code has a clear place to plug each one in.</p>
+    </div>
+    <ul class="items">
+      <li class="item" data-status="later"><h3>Real SMS delivery</h3><span class="chip later">Needs a provider</span><p>Sign-up and password-reset codes are only written to the server log today. Connect an SMS gateway (e.g. SSL Wireless, Alpha SMS or Twilio).</p><span class="where">server/src/services/sms.service.js</span></li>
+      <li class="item" data-status="later"><h3>Permanent file storage</h3><span class="chip later">Needs a provider</span><p>Uploaded documents are saved on the API server's disk, which Render wipes on every deploy. Move them to object storage such as Cloudflare R2 or S3.</p></li>
+      <li class="item" data-status="later"><h3>Live payments</h3><span class="chip later">Needs a provider</span><p>SSLCommerz runs in sandbox mode. bKash and Nagad need merchant accounts and live credentials.</p></li>
+      <li class="item" data-status="later"><h3>Push notifications</h3><span class="chip later">Needs a provider</span><p>In-app notifications work while the app is open. Reaching people with it closed needs Firebase Cloud Messaging.</p></li>
+      <li class="item" data-status="later"><h3>Maps and routing at scale</h3><span class="chip later">Needs a provider</span><p>Routing and search use the free public OSRM and Photon servers, which rate-limit heavy traffic. Self-host them or pay for a plan before launch.</p></li>
+      <li class="item" data-status="later"><h3>Error monitoring and CI</h3><span class="chip later">Needs a provider</span><p>Send server and browser errors to a service like Sentry, and run the 340 server tests plus the client build on every pull request.</p></li>
+    </ul>
+  </section>
+
+  <p class="note"><strong>Later, once the basics ship:</strong> referrals, favourite drivers, automatic surge pricing, monthly invoices for drivers, and a full Bangla translation. The database already has tables for most of these.</p>
+
+  <footer>Updated September 2026 · <span id="stamp">348 server tests passing · client builds clean</span></footer>
+</div>
+
+<script>
+  for (const status of ['done', 'later']) {
+    document.getElementById('count-' + status).textContent = document.querySelectorAll('[data-status="' + status + '"]').length;
+  }
+</script>

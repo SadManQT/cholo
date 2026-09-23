@@ -5,10 +5,6 @@ import type { AnimationPlaybackControls } from 'motion';
 import type { PointerEvent, ReactNode } from 'react';
 import { EASE_DRAWER } from '../../utils/motion';
 
-// doc 11-12 §2.4: "BottomSheet | snap points: peek / half / full · drag
-// handle | booking flow, trip actions, confirmations." §1: "the map is the
-// canvas; the sheet is the conversation" — never bury the map under chrome,
-// which is why only the fullest snap point gets a backdrop.
 export type SnapPoint = 'peek' | 'half' | 'full';
 
 const SNAP_FRACTIONS: Record<SnapPoint, number> = {
@@ -17,15 +13,12 @@ const SNAP_FRACTIONS: Record<SnapPoint, number> = {
   full: 0.9,
 };
 const SNAP_ORDER: SnapPoint[] = ['peek', 'half', 'full'];
-const DISMISS_DRAG_PX = 80; // dragging this far below "peek" closes the sheet
-const FLICK_VELOCITY_PX_S = 500; // above this, honor the flick's direction over nearest-distance
-// 350ms rather than the animate skill drawer recipe's 500ms — sheets like the
-// driver Offer Sheet are a 15-second decision; a slower entrance eats into it.
+const DISMISS_DRAG_PX = 80;
+const FLICK_VELOCITY_PX_S = 500;
 const ENTRANCE_DURATION_S = 0.35;
+// Every sheet renders inside a layout with the fixed h-16 BottomTabs bar; the sheet sits above it.
+const TAB_BAR_PX = 64;
 
-// iOS-style rubber band: resistance rises the further a drag pushes past a
-// natural edge (animate skill "drag to dismiss" recipe — friction, not a
-// wall past the sheet's fully-open or fully-closed height).
 function rubberBand(overshoot: number, dimension = 220, factor = 0.55) {
   return (overshoot * dimension * factor) / (dimension + factor * overshoot);
 }
@@ -41,11 +34,6 @@ interface BottomSheetProps {
 
 export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, children, className = '' }: BottomSheetProps) {
   const reduceMotion = useReducedMotion();
-  // "visiblePx" — how much of the sheet pokes above the viewport bottom.
-  // The sheet's own box is always a fixed heightPxFor('full') tall (below,
-  // in the JSX); this state drives a `translateY` that pushes the box down
-  // by (full - visiblePx), never the box's actual `height` — animate skill
-  // §5: height/top/left are layout properties, transform is not.
   const [heightPx, setHeightPx] = useState(0);
   const controls = useRef<AnimationPlaybackControls | null>(null);
   const dragStart = useRef<{ y: number; heightPx: number } | null>(null);
@@ -55,14 +43,9 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
   const didMountSnap = useRef(false);
 
   function heightPxFor(point: SnapPoint) {
-    return SNAP_FRACTIONS[point] * window.innerHeight;
+    return SNAP_FRACTIONS[point] * (window.innerHeight - TAB_BAR_PX);
   }
 
-  // Entrance: slide up from 0 on every mount (a fresh dialog-like sheet —
-  // OfferSheet, ConfirmSheet, ChatSheet — mounts each time it opens; the
-  // always-open sheets on BookRidePage/DriverActiveTripPage play this once
-  // on page load). animate skill "drawer" recipe: a fixed ease, not a spring
-  // — this isn't a gesture, so there's no velocity to carry through.
   useEffect(() => {
     if (!open) return;
     const target = heightPxFor(snapPoint);
@@ -78,14 +61,8 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
       onUpdate: setHeightPx,
     });
     return () => controls.current?.stop();
-    // Intentionally [open] only — this is the mount transition, not a
-    // reaction to snapPoint changes (handled below) or dragging.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // A snapPoint change from *outside* a drag (e.g. BookRidePage moving the
-  // sheet to 'half' once fares load) — spring to the new height so it reads
-  // as the same continuous motion as a manual drag would.
   useEffect(() => {
     if (!didMountSnap.current) {
       didMountSnap.current = true;
@@ -109,7 +86,6 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
       onUpdate: setHeightPx,
     });
     return () => controls.current?.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapPoint]);
 
   useEffect(() => () => controls.current?.stop(), []);
@@ -126,7 +102,7 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     if (!dragStart.current) return;
-    const delta = dragStart.current.y - event.clientY; // dragging up = positive
+    const delta = dragStart.current.y - event.clientY;
     const raw = dragStart.current.heightPx + delta;
     const maxPx = heightPxFor('full');
     const damped = raw < 0 ? -rubberBand(-raw) : raw > maxPx ? maxPx + rubberBand(raw - maxPx) : raw;
@@ -196,8 +172,6 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
     onSnapPointChange(target);
   }
 
-  const fullPx = heightPxFor('full');
-
   return (
     <>
       <div
@@ -210,8 +184,9 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
       <div
         role="dialog"
         aria-modal={snapPoint === 'full'}
-        style={{ height: `${fullPx}px`, transform: `translateY(${fullPx - heightPx}px)` }}
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
+        // Size the box itself (not a translate) so content below the fold is never pushed off-screen.
+        style={{ height: `${Math.max(heightPx, 0)}px` }}
+        className={`fixed inset-x-0 bottom-16 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
       >
         <div
           onPointerDown={handlePointerDown}

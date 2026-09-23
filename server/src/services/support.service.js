@@ -3,6 +3,7 @@ import * as adminRepo from '../repositories/admin.repository.js';
 import * as auditRepo from '../repositories/audit.repository.js';
 import * as supportRepo from '../repositories/support.repository.js';
 import { AppError } from '../utils/AppError.js';
+import { notify } from './notifications.service.js';
 
 function paginate(rows, query) {
   const total = rows[0]?.totalCount ?? 0;
@@ -99,6 +100,14 @@ export async function addAdminMessage(adminId, ticketId, input, ipAddress) {
       entityType: 'support_tickets', entityId: ticketId,
       oldValue: null, newValue: { messageId: message.id },
     }, client);
+    if (!input.isInternalNote) {
+      await notify(ticket.userId, {
+        category: 'system',
+        title: `New reply on ${ticket.ticketNo}`,
+        body: input.body.slice(0, 200),
+        payload: { ticketId: String(ticket.id) },
+      }, client);
+    }
     return message;
   });
 }

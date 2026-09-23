@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 
-// doc 12 §3: passenger/driver bottom tabs, written once (doc 11 §8:
-// "navbars are written once, not per page") and reused by both role layouts.
 export interface TabItem {
   to: string;
   label: string;
   icon: ReactNode;
-  /** NavLink's `end` — true for the tab whose path is a prefix of others (e.g. "/driver"). */
   end?: boolean;
+  badge?: number;
 }
 
 export function BottomTabs({ items }: { items: TabItem[] }) {
@@ -28,7 +26,14 @@ export function BottomTabs({ items }: { items: TabItem[] }) {
              ${isActive ? 'text-cholo-700' : 'text-ink-500'}`
           }
         >
-          {item.icon}
+          <span className="relative">
+            {item.icon}
+            {item.badge ? (
+              <span className="absolute -right-2 -top-1.5 min-w-4 rounded-full bg-danger-600 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                {item.badge > 9 ? '9+' : item.badge}
+              </span>
+            ) : null}
+          </span>
           <span>{item.label}</span>
         </NavLink>
       ))}
