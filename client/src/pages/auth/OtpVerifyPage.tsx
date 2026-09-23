@@ -10,8 +10,6 @@ import { roleHomePath } from '../../utils/roleHomePath';
 const RESEND_COOLDOWN_SECONDS = 30;
 const OTP_LENGTH = 6;
 
-// doc 12 §4: "OTP Verify | /verify | 6-digit SMS code, resend countdown |
-// OtpInput, resend timer (30s) | auto-submits on 6th digit."
 export function OtpVerifyPage() {
   const { verifyOtp } = useAuth();
   const navigate = useNavigate();
@@ -26,28 +24,21 @@ export function OtpVerifyPage() {
 
   const { start: startResendCountdown } = resendCountdown;
   useEffect(() => {
-    // Once, on mount — register() already sent the first code server-side;
-    // this just starts the clock on when the Resend button becomes
-    // clickable again.
     startResendCountdown(RESEND_COOLDOWN_SECONDS);
   }, [startResendCountdown]);
 
-  // No phone to verify (direct nav, refresh after losing query state) —
-  // nothing this screen can do without it.
   if (!phone) {
     return <Navigate to="/register" replace />;
   }
 
   async function submit(otp: string) {
-    if (submitting) return; // onComplete + the manual button can both fire for the same code
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
 
     try {
       const user = await verifyOtp(phone!, otp);
       toast.success('Welcome to Cholo!');
-      // "Drive with Cholo" on the homepage set this — there's no driver
-      // role yet at this point, just the intent to apply for one.
       navigate(intent === 'driver' ? '/driver/apply' : roleHomePath(user.roles), { replace: true });
     } catch (thrown) {
       const message = getApiErrorMessage(thrown, 'Could not verify that code. Please try again.');

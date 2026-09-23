@@ -7,10 +7,6 @@ import express from 'express';
 import { errorHandler } from '../../src/middlewares/errorHandler.js';
 import { createRateLimiter } from '../../src/middlewares/rateLimit.js';
 
-// createRateLimiter is exercised against a small throwaway app with a low
-// limit, instead of the real /auth/* routes — those run with much higher
-// (NODE_ENV=test) thresholds so the rest of the suite's shared requests
-// from one test-client IP don't trip them (see rateLimit.js).
 let server;
 let baseUrl;
 

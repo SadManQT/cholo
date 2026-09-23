@@ -11,10 +11,6 @@ import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { staggerStyle } from '../../utils/stagger';
 
-// withdrawal_status (schema.sql) is its own enum, separate from ride/trip
-// status — doc 11-12 §2.1's shared StatusBadge is explicitly scoped to
-// "ride_request_status + trip_status" only, so this stays a small local
-// badge rather than stretching that component's documented scope.
 const STATUS_STYLES: Record<WithdrawalStatus, string> = {
   requested: 'bg-marigold-500/15 text-marigold-500',
   approved: 'bg-info-600/10 text-info-600',
@@ -179,10 +175,7 @@ export function WithdrawalsPage() {
                 ))}
               </select>
             </label>
-            {/* Input's `type` is deliberately excluded from its props (it
-                only offers text/phone/password variants) — inputMode is
-                enough to bring up a numeric keyboard on mobile without
-                needing a 4th variant just for this one field. */}
+            {}
             <Input
               label="Amount (৳)"
               inputMode="decimal"

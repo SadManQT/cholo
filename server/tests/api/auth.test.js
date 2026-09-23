@@ -18,13 +18,6 @@ before(async () => {
   await databaseClient.query('BEGIN');
 
   mock.method(pool, 'query', (sql, values) => databaseClient.query(sql, values));
-  // auth.service's refresh() checks out its own connection and runs its own
-  // BEGIN/COMMIT/ROLLBACK (it needs a real transaction for SELECT ... FOR
-  // UPDATE). The whole suite already lives inside one outer, never-committed
-  // transaction on `databaseClient`, so a second real connection wouldn't
-  // see any of this suite's uncommitted rows. Fake pool.connect() to hand
-  // back the same client, translating BEGIN/COMMIT/ROLLBACK into nested
-  // SAVEPOINTs instead of running them for real.
   mock.method(pool, 'connect', async () => {
     const savepointName = `refresh_sp_${savepointCounter += 1}`;
 
@@ -50,10 +43,6 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${address.port}`;
 });
 
-// A real constraint violation (e.g. the duplicate-phone test) aborts the
-// whole Postgres transaction, not just the failed statement — every query
-// after it would error with "current transaction is aborted" without a
-// savepoint boundary per test to roll back to.
 beforeEach(async () => {
   await databaseClient.query('SAVEPOINT test_savepoint');
 });
@@ -92,9 +81,6 @@ function rawTokenFromCookie(cookie) {
   return decodeURIComponent(cookie.split('=')[1]);
 }
 
-// The SMS gateway is mocked to logger.info (which prints to the console) —
-// pull the code back out of the mocked call so tests can complete the flow
-// without a real gateway.
 function otpSentTo(phone) {
   const call = infoLog.mock.calls.findLast((entry) => entry.arguments[1]?.phone === phone);
   return call?.arguments[1]?.message.match(/(\d{6})$/)?.[1];
@@ -130,8 +116,6 @@ test('POST /auth/register creates an unverified user with a bcrypt password hash
   assert.equal(body.success, true);
   assert.match(body.data.userId, /^[0-9a-f-]{36}$/);
   assert.match(otp, /^\d{6}$/);
-  // proves the real route is actually wired with a limiter, not just the
-  // standalone factory (see tests/unit/rateLimit.test.js for 429 behavior)
   assert.ok(response.headers.get('ratelimit-limit'));
 
   const { rows } = await databaseClient.query(
@@ -161,7 +145,7 @@ test('POST /auth/register creates an unverified user with a bcrypt password hash
   assert.notEqual(otpRows[0].otpHash, otp);
 });
 
-test('POST /auth/register rejects a phone already in use with 409 DUPLICATE', async () => {
+test('POST /auth/register rejects a phone already in use with 409 PHONE_TAKEN', async () => {
   const phone = '01711000002';
   await registerUser(phone);
 
@@ -173,7 +157,7 @@ test('POST /auth/register rejects a phone already in use with 409 DUPLICATE', as
   const body = await response.json();
 
   assert.equal(response.status, 409);
-  assert.equal(body.error.code, 'DUPLICATE');
+  assert.equal(body.error.code, 'PHONE_TAKEN');
 });
 
 test('POST /auth/register rejects an invalid phone with 422 VALIDATION_FAILED', async () => {
@@ -264,7 +248,6 @@ test('POST /auth/verify-otp with the right code verifies the phone and mints tok
   );
   assert.equal(sessionRows.length, 1);
 
-  // the same code cannot be replayed
   const replay = await postJson('/auth/verify-otp', { phone, otp, purpose: 'signup' });
   assert.equal(replay.status, 401);
 });
@@ -279,8 +262,6 @@ test('POST /auth/resend-otp sends a new code that verifies, and supersedes the o
   const secondOtp = otpSentTo(phone);
   assert.notEqual(secondOtp, firstOtp);
 
-  // findLatestActive (otp.repository.js) orders by created_at DESC — the
-  // new code is what verify-otp now checks against.
   const verifyWithNew = await postJson('/auth/verify-otp', { phone, otp: secondOtp, purpose: 'signup' });
   assert.equal(verifyWithNew.status, 200);
 });
@@ -382,7 +363,6 @@ test('POST /auth/refresh replaying a rotated (dead) token kills the whole sessio
   const rotatedCookie = extractCookie(rotated, 'refreshToken');
   assert.equal(rotated.status, 200);
 
-  // replay the now-dead original token
   const replay = await postJson('/auth/refresh', {}, { cookie: refreshCookie });
   const replayBody = await replay.json();
 
@@ -400,8 +380,6 @@ test('POST /auth/refresh replaying a rotated (dead) token kills the whole sessio
   assert.notEqual(sessionRows[0].loggedOutAt, null);
   assert.equal(sessionRows[0].isActive, false);
 
-  // the token minted by the rotation above is also dead now — the whole
-  // session was killed, not just the replayed token
   const afterKill = await postJson('/auth/refresh', {}, { cookie: rotatedCookie });
   assert.equal(afterKill.status, 401);
 });

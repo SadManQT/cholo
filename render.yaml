@@ -10,10 +10,19 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Supabase Postgres (free, doesn't expire). Use the Session pooler connection string — Render has no
+      # IPv6, and Supabase's direct connection is IPv6-only. Don't add ?sslmode=…; DATABASE_SSL handles TLS.
       - key: DATABASE_URL
-        fromDatabase:
-          name: cholo-postgres
-          property: connectionString
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      # Supabase Storage for driver documents and profile photos (Render's disk is wiped on every restart).
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: uploads
       - key: CLIENT_ORIGIN
         sync: false
       - key: PUBLIC_API_ORIGIN
@@ -38,11 +47,3 @@ services:
         sync: false
       - key: SSLCOMMERZ_STORE_PASSWORD
         sync: false
-
-databases:
-  - name: cholo-postgres
-    plan: free
-    region: singapore
-    postgresMajorVersion: "16"
-    databaseName: cholo
-    user: cholo

@@ -4,6 +4,7 @@ import * as disputesService from '../services/disputes.service.js';
 import * as safetyService from '../services/safety.service.js';
 import * as supportService from '../services/support.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import * as zonesService from '../services/zones.service.js';
 
 export const listDrivers = asyncHandler(async (request, response) => {
   const result = await adminService.listDrivers(request.query);
@@ -106,7 +107,7 @@ export const listUsers = asyncHandler(async (request, response) => {
 
 export const suspendUser = asyncHandler(async (request, response) => {
   const data = await adminService.decideUser(
-    request.user.id, request.params.id, 'suspended', request.body.reason, request.ip,
+    request.user.id, request.params.id, 'suspended', request.body.reason, request.ip, request.body,
   );
   response.json({ success: true, data });
 });
@@ -136,6 +137,11 @@ export const listVehicles = asyncHandler(async (request, response) => {
 export const listDisputes = asyncHandler(async (request, response) => {
   const result = await disputesService.listQueue(request.query);
   response.json({ success: true, ...result });
+});
+
+export const startDisputeReview = asyncHandler(async (request, response) => {
+  const data = await disputesService.startReview(request.user.id, request.params.id, request.ip);
+  response.json({ success: true, data });
 });
 
 export const resolveDispute = asyncHandler(async (request, response) => {
@@ -187,4 +193,21 @@ export const addSupportMessage = asyncHandler(async (request, response) => {
     request.user.id, request.params.id, request.body, request.ip,
   );
   response.status(201).json({ success: true, data });
+});
+
+export const listZones = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await zonesService.listZones(request.query) });
+});
+
+export const createZone = asyncHandler(async (request, response) => {
+  response.status(201).json({ success: true, data: await zonesService.createZone(request.user.id, request.body, request.ip) });
+});
+
+export const updateZone = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await zonesService.updateZone(request.user.id, request.params.id, request.body, request.ip) });
+});
+
+export const deleteZone = asyncHandler(async (request, response) => {
+  await zonesService.deleteZone(request.user.id, request.params.id, request.ip);
+  response.status(204).end();
 });

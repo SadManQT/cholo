@@ -8,10 +8,6 @@ export async function insertRequest(
   },
   client = pool,
 ) {
-  // expires_at is computed in the SAME now() as the requested_at DEFAULT,
-  // in one statement — not `Date.now() + 5min` in JS, which would drift
-  // from the DB's own clock/network latency and make the two timestamps
-  // not exactly 5 minutes apart.
   const { rows } = await client.query(
     `INSERT INTO ride_requests
        (passenger_id, city_id, category_id,
@@ -19,9 +15,9 @@ export async function insertRequest(
         dropoff_lat, dropoff_lng, dropoff_address,
         est_distance_km, est_duration_min, est_fare, surge_multiplier,
         payment_intent, promo_code_id, women_only, scheduled_for,
-        status, expires_at)
+        status, expires_at, pickup_zone_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-             'searching', now() + ($18 * INTERVAL '1 minute'))
+             'searching', now() + ($18 * INTERVAL '1 minute'), fn_zone_at($4, $5, $2))
      RETURNING id, public_id AS "publicId", status,
                requested_at AS "requestedAt", expires_at AS "expiresAt"`,
     [
@@ -37,17 +33,10 @@ export async function insertRequest(
   return rows[0];
 }
 
-// Serializes the two transactions that can hand ownership of a passenger's
-// active lifecycle from ride_requests to trips: booking and offer accept.
-// Both callers take this lock before inspecting either table, closing the
-// small cross-table race that a partial UNIQUE index alone cannot cover.
 export async function lockPassengerBooking(passengerId, client) {
   await client.query(`SELECT pg_advisory_xact_lock($1::bigint)`, [passengerId]);
 }
 
-// The T1 row lock (doc 02-03 §8): whoever gets here first holds this row
-// until COMMIT/ROLLBACK; the second concurrent caller blocks right here,
-// not at the INSERT — that's what makes the race impossible, not just handled.
 export async function findForUpdate(requestId, client) {
   const { rows } = await client.query(
     `SELECT id, passenger_id AS "passengerId", status,
@@ -111,13 +100,6 @@ export async function markMatched(requestId, client) {
   await client.query(`UPDATE ride_requests SET status = 'matched' WHERE id = $1`, [requestId]);
 }
 
-// Reuses cancelled_at (doc 04 documents it for the searching-stage cancel,
-// but it's the request's only "stopped being active" timestamp — a
-// post-match trip cancellation is the same phenomenon from the request's
-// point of view, not a second thing worth a new column) — WITHOUT this,
-// ux_one_active_request_per_passenger (schema.sql) would keep counting a
-// 'matched' request as the passenger's one active slot forever, since
-// nothing else ever moves it out of that status once its trip is cancelled.
 export async function markCancelled(requestId, client) {
   await client.query(
     `UPDATE ride_requests SET status = 'cancelled', cancelled_at = now() WHERE id = $1`,
@@ -135,11 +117,6 @@ export async function hasActiveTrip(passengerId, client = pool) {
   return rowCount > 0;
 }
 
-// jobs/expireRequests.job.js's sweep. No FOR UPDATE needed: a plain UPDATE
-// already takes its own row lock and re-checks WHERE after acquiring it, so
-// a request mid-accept (dispatch.service.js's FOR UPDATE) simply blocks this
-// statement until that transaction resolves, then this WHERE clause
-// correctly no longer matches it if it became 'matched'.
 export async function expireStaleRequests(client = pool) {
   const { rows } = await client.query(
     `UPDATE ride_requests

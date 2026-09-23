@@ -1,40 +1,4 @@
--- =============================================================================
--- Cholo (চলো) — Ride-Sharing Platform
--- database/schema.sql
---
--- GENERATED FROM THE PROJECT BLUEPRINT. Do not hand-edit structure here without
--- updating the source docs first:
---   docs/01-er-diagram-database-architecture.md      (51 entities, 7 domains,
---                                                      101 documented FK relationships)
---   docs/02-03-normalization-schema-transactions.md  (normalization proof,
---                                                      DDL mapping rules, constraint
---                                                      toolbox, transactions)
---
--- Target: PostgreSQL 16.
--- Scope of this file: every CREATE TABLE, constraint, index, trigger and view
--- described in the two docs above. Nothing here is invented beyond them — where
--- a doc gives a general rule ("every FK used in joins has one index", "every
--- natural key is UNIQUE") it is applied consistently; where a doc gives an
--- exact name (chk_fare_identity, ux_payment_one_success, idx_trips_driver, ...)
--- that exact name is used.
---
--- Tables are created in FK-dependency order, not domain order (a few columns
--- — e.g. passenger_profiles.default_city_id — reach into a later domain).
--- The one unavoidable cycle (driver_profiles.active_vehicle_id <-> vehicles)
--- is resolved the way doc 03 §1 describes: driver_profiles is created with
--- the column but no constraint, vehicles is created next, then the FK is
--- added with ALTER TABLE.
--- =============================================================================
 
-
--- =============================================================================
--- 0. ENUM TYPES
--- Closed vocabularies from every domain (doc 01), grouped by the domain that
--- introduces them. A VARCHAR status can hold 'complated'; an ENUM physically
--- cannot (doc 03 §3).
--- =============================================================================
-
--- Domain 1 — Identity & Access
 CREATE TYPE user_gender AS ENUM ('female', 'male', 'other');
 CREATE TYPE preferred_language AS ENUM ('bn', 'en');
 CREATE TYPE user_status AS ENUM ('active', 'suspended', 'deleted');

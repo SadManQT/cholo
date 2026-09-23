@@ -6,6 +6,8 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: env.DATABASE_URL,
+  // Supabase's pooler presents a certificate from its own CA, so encrypt without CA verification.
+  ssl: env.DATABASE_SSL ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on('error', (error) => {

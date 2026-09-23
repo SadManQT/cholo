@@ -27,11 +27,6 @@ function fakeSocket({ id, roles }) {
   };
 }
 
-// A minimal stand-in for the socket.io Server/BroadcastOperator chain this
-// module actually calls: io.in(room).socketsJoin(otherRoom) and
-// io.to(room).emit(event, payload). Real behavior is covered by the
-// socket.io-client integration test (tests/api/sockets.test.js) — this one
-// is about rooms.js's own logic (who gets joined/emitted to, and when).
 function fakeIo() {
   const socketsJoinCalls = [];
   const emitCalls = [];
@@ -48,7 +43,7 @@ function fakeIo() {
 }
 
 test('joinIdentityRooms always joins user:{id}, and driver:{id} only for a DRIVER', async () => {
-  mock.method(pool, 'query', async () => ({ rows: [] })); // no active trip
+  mock.method(pool, 'query', async () => ({ rows: [] }));
 
   const passengerSocket = fakeSocket({ id: 9, roles: ['PASSENGER'] });
   await joinIdentityRooms(passengerSocket);

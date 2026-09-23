@@ -9,9 +9,6 @@ import { env } from '../../src/config/env.js';
 import { computeDiscount } from '../../src/utils/promoMath.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Same reasoning as tests/api/trips.test.js: real pool, no savepoint
-// mocking (redemption/receipt rows only ever get written by a genuinely
-// completed trip), no cleanup — fixtures are left in the disposable dev DB.
 let server;
 let baseUrl;
 let seed = randomInt(10_000_000, 100_000_000);
@@ -96,11 +93,6 @@ async function createOnlineDriver(t, { lat, lng }) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['DRIVER'], sessionId: userId }) };
 }
 
-// Keraniganj — ~8km+ from every other test file's coordinate cluster
-// (Dhanmondi/Gulshan, Dhaka-center/Mirpur, Uttara, Jatrabari/Sayedabad),
-// so a driver briefly online here can't be "nearby" for another file's
-// concurrently-running dispatch (same reasoning as trips.test.js's own
-// comment on its Uttara coordinates).
 const PICKUP = { lat: 23.6850, lng: 90.3300 };
 const DROPOFF = { lat: 23.6700, lng: 90.3500 };
 
@@ -137,21 +129,6 @@ async function completeTrip(tripCode, driver) {
   return request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
 }
 
-// Books, dispatches, accepts, and completes one full trip in cash — the
-// shared setup every redemption/receipt test starts from.
-//
-// ux_one_active_request_per_passenger (schema.sql) blocks a second
-// ride_request while the first is still 'pending'/'searching'/'matched' —
-// and nothing in rides.repository.js ever moves a request OUT of 'matched'
-// except cancelTrip's explicit markCancelled. Completing a trip doesn't
-// touch its own ride_request at all, so a passenger's first ride_request
-// stays 'matched' forever and genuinely blocks booking a second one — a
-// real, pre-existing bug (tests/api/trips.test.js's own
-// "double-spend" test hit and documented this first; not something this
-// task is fixing). first_ride_only/usage_limit_per_user redemption tests
-// need the SAME passenger to complete more than one trip, so this frees
-// the slot directly after every completion, the same workaround
-// trips.test.js already uses.
 async function bookAndComplete(t, { promoCode, passenger } = {}) {
   const setup = await createAssignedTrip(t, { promoCode, passenger });
   const completed = await completeTrip(setup.tripCode, setup.driver);
@@ -197,9 +174,6 @@ async function dhakaCityId() {
   return rows[0].id;
 }
 
-// ---------------------------------------------------------------------------
-// POST /promos/validate
-// ---------------------------------------------------------------------------
 
 test('POST /promos/validate requires a bearer token', async () => {
   const response = await request('POST', '/promos/validate', {
@@ -242,10 +216,10 @@ test('POST /promos/validate: expired code (valid_until in the past) is 422 PROMO
 
 test('POST /promos/validate: scoped to a different category is 422 PROMO_NOT_APPLICABLE', async () => {
   const passenger = await createPassenger();
-  const promo = await createPromo({ categoryId: 1 }); // Bike-only
+  const promo = await createPromo({ categoryId: 1 });
   const response = await request('POST', '/promos/validate', {
     accessToken: passenger.accessToken,
-    body: { code: promo.code, cityId: await dhakaCityId(), categoryId: 3, estFare: 500 }, // Car
+    body: { code: promo.code, cityId: await dhakaCityId(), categoryId: 3, estFare: 500 },
   });
   assert.equal(response.status, 422);
   assert.equal((await response.json()).error.code, 'PROMO_NOT_APPLICABLE');
@@ -272,7 +246,6 @@ test('POST /promos/validate: valid code returns a discount preview matching comp
   assert.equal(response.status, 200);
   const { data } = await response.json();
   assert.equal(data.code, promo.code);
-  // 20% of 500 = 100, capped at maxDiscount 30.
   assert.equal(data.discount, 30);
   assert.equal(data.finalFare, 470);
   assert.equal(data.discount, computeDiscount({ promoType: 'percentage', value: 20, maxDiscount: 30 }, 500));
@@ -304,7 +277,7 @@ test('POST /promos/validate: usage_limit_per_user reached for this user is 409 P
 });
 
 test('POST /promos/validate: first_ride_only is 422 PROMO_NOT_APPLICABLE for a passenger who already completed a trip', async (t) => {
-  const { passenger } = await bookAndComplete(t, {}); // any completed trip, no promo
+  const { passenger } = await bookAndComplete(t, {});
   const promo = await createPromo({ firstRideOnly: true });
 
   const response = await request('POST', '/promos/validate', {
@@ -315,9 +288,6 @@ test('POST /promos/validate: first_ride_only is 422 PROMO_NOT_APPLICABLE for a p
   assert.equal((await response.json()).error.code, 'PROMO_NOT_APPLICABLE');
 });
 
-// ---------------------------------------------------------------------------
-// GET /promos/available
-// ---------------------------------------------------------------------------
 
 test('GET /promos/available requires a bearer token', async () => {
   const response = await request('GET', '/promos/available?cityId=1');
@@ -345,12 +315,9 @@ test('GET /promos/available lists active campaigns for the city, excluding inact
   assert.ok(codes.includes(active.code));
   assert.ok(!codes.includes(inactive.code));
   assert.ok(!codes.includes(expired.code));
-  assert.equal(codes.length, new Set(codes).size); // no duplicates from a bad JOIN
+  assert.equal(codes.length, new Set(codes).size);
 });
 
-// ---------------------------------------------------------------------------
-// Redemption at trip completion
-// ---------------------------------------------------------------------------
 
 test('a valid promo reduces the completed trip total and creates a promo_redemptions row', async (t) => {
   const promo = await createPromo({ promoType: 'fixed_amount', value: 50 });
@@ -378,13 +345,12 @@ test('a percentage promo is capped by maxDiscount at redemption, matching the pr
   const promo = await createPromo({ promoType: 'percentage', value: 50, maxDiscount: 10 });
   const { response } = await bookAndComplete(t, { promoCode: promo.code });
 
-  // 50% of any realistic fare here is well above 10 — the cap must bind.
   assert.equal(response.data.fare.discount, '10.00');
 });
 
 test('usage_limit_total: once reached, a further completion applies no discount and creates no redemption row', async (t) => {
   const promo = await createPromo({ usageLimitTotal: 1 });
-  await bookAndComplete(t, { promoCode: promo.code }); // consumes the only slot
+  await bookAndComplete(t, { promoCode: promo.code });
 
   const second = await bookAndComplete(t, { promoCode: promo.code });
   assert.equal(second.response.data.fare.discount, '0.00');
@@ -393,7 +359,7 @@ test('usage_limit_total: once reached, a further completion applies no discount 
     `SELECT count(*)::int AS n FROM promo_redemptions WHERE promo_code_id = $1`,
     [promo.id],
   );
-  assert.equal(rows[0].n, 1); // still just the first trip's row
+  assert.equal(rows[0].n, 1);
 });
 
 test('usage_limit_per_user: once reached for a user, their next completion applies no discount', async (t) => {
@@ -419,11 +385,10 @@ test('a promo that expires between booking and completion silently applies no di
   const promo = await createPromo({ validUntil: new Date(Date.now() + 60 * 60_000) });
   const setup = await createAssignedTrip(t, { promoCode: promo.code });
 
-  // Simulate the code expiring in the gap between booking and completion.
   await pool.query(`UPDATE promo_codes SET valid_until = now() - interval '1 minute' WHERE id = $1`, [promo.id]);
 
   const completed = await completeTrip(setup.tripCode, setup.driver);
-  assert.equal(completed.status, 200); // still succeeds — no PROMO_* error surfaced to the driver
+  assert.equal(completed.status, 200);
   const { data } = await completed.json();
   assert.equal(data.fare.discount, '0.00');
 
@@ -434,9 +399,6 @@ test('a promo that expires between booking and completion silently applies no di
   assert.equal(rows[0].n, 0);
 });
 
-// ---------------------------------------------------------------------------
-// Receipt row on completion
-// ---------------------------------------------------------------------------
 
 test('every completed trip gets a numbered receipt row matching the fare breakdown', async (t) => {
   const { tripCode, passenger, response } = await bookAndComplete(t, {});

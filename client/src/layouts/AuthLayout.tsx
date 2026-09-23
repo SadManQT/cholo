@@ -1,26 +1,18 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useLocation, useOutlet } from 'react-router-dom';
+import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { EASE_OUT } from '../utils/motion';
 
-// doc 12 §4: guest/auth screens — "full-screen, phone-first; desktop shows
-// centered card", "single column, one screen, no scroll."
 export function AuthLayout() {
   const location = useLocation();
-  // useOutlet() (not <Outlet/>) matters here: AnimatePresence keeps the
-  // *exiting* motion.div mounted a beat longer, but a literal <Outlet/>
-  // inside it would re-resolve against the router's already-current route
-  // and silently show the new page during what's supposed to be the old
-  // page's exit. useOutlet() captures this render's matched element as a
-  // fixed value instead, so the exiting copy stays the old page.
   const element = useOutlet();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-alt p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface-alt p-4">
+      <Link to="/welcome" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" aria-label="Cholo home">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cholo-700 text-base font-black text-white">C</span>
+        <span className="text-xl font-bold tracking-tight text-ink-900">Cholo</span>
+      </Link>
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-lg sm:p-8">
-        {/* Register -> OTP -> Login is a step progression across routes, not
-            state within one component — the crossfade lives here, once, so
-            every step of the funnel gets it for free (animate skill:
-            "preventing a jarring change"). */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}

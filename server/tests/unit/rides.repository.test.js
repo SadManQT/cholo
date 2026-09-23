@@ -50,14 +50,14 @@ test('insertRequest writes every snapshot field with a parameterized query, comp
   });
 
   assert.match(capturedSql, /INSERT INTO ride_requests/);
-  assert.match(capturedSql, /'searching'/); // status is hardcoded in the SQL, not a bound param
+  assert.match(capturedSql, /'searching'/);
   assert.match(capturedSql, /now\(\) \+ \(\$18 \* INTERVAL '1 minute'\)/);
   assert.deepEqual(capturedValues, [
     42, 1, 3,
     23.7925, 90.4078, 'Gulshan 2 Circle',
-    23.7461, 90.3742, null, // dropoff.address omitted -> null, not undefined
+    23.7461, 90.3742, null,
     9.21, 9, 295.12, 1,
-    'bkash', 7, false, null, // scheduledFor omitted -> null
+    'bkash', 7, false, null,
     5,
   ]);
   assert.equal(result.status, 'searching');

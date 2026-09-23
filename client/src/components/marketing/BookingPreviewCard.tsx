@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// Illustrative only — this is the logged-out marketing page, so there's no
-// real quote/booking API to wire up here (that's BookRidePage, behind
-// auth). Vehicle names + emoji match the real app's own convention
-// (FareEstimateCard's CATEGORY_ICONS) rather than inventing new iconography.
 const VEHICLES = [
   { key: 'bike', icon: '🏍️', name: 'Bike', eta: '3 min away', fare: '৳120' },
   { key: 'cng', icon: '🛺', name: 'CNG', eta: '5 min away', fare: '৳250' },

@@ -4,20 +4,9 @@ import { isRouteInsideBangladesh } from '../utils/bangladeshBoundary.js';
 import * as osmProvider from './providers/osm.provider.js';
 import * as photonProvider from './providers/photon.provider.js';
 
-// The Geo Abstraction (doc 05-06-07 §8): one interface, providers behind it.
-// Switching GEO_PROVIDER=osm|photon|google in env is meant to change zero
-// business code — every caller in this codebase imports THIS file, never a
-// provider module directly.
 const providers = {
   osm: osmProvider,
-  // Same OpenStreetMap data as osm, indexed through Elasticsearch instead
-  // of Nominatim's plain-text search — real fuzzy/typo tolerance ("Gulshsn"
-  // still finds "Gulshan") for free, no API key. Does not add coverage OSM
-  // itself lacks. The default: better typo tolerance is a strict upgrade
-  // over osm at zero cost, so there's no reason to default to the worse one.
   photon: photonProvider,
-  // google: not implemented — the documented future adapter for when the
-  // free OSM stack needs to be swapped for a billed one (doc 05-06-07 §8).
 };
 
 function currentProvider() {
@@ -30,10 +19,6 @@ function currentProvider() {
   return provider;
 }
 
-// Fast local guard used by every route/quote/request entrance. Nominatim's
-// country code remains the exact border authority for an address selected
-// through search or reverse-geocoding; this rectangle is also a cheap
-// server-side fence against arbitrary foreign coordinates bypassing the UI.
 export const BANGLADESH_BOUNDS = Object.freeze({
   south: 20.34,
   north: 26.64,
@@ -54,14 +39,11 @@ export function assertWithinServiceArea(...points) {
   }
 }
 
-// These are routing waypoints, not service cities. They sit well inside the
-// national boundary and give a global OSRM graph domestic alternatives when
-// its direct recommendation takes a shorter-looking shortcut through India.
 const DOMESTIC_ROUTING_HUBS = Object.freeze([
-  { lat: 23.8103, lng: 90.4125 }, // Dhaka
-  { lat: 24.8465, lng: 89.3773 }, // Bogura
-  { lat: 24.7471, lng: 90.4203 }, // Mymensingh
-  { lat: 23.4607, lng: 91.1809 }, // Cumilla
+  { lat: 23.8103, lng: 90.4125 },
+  { lat: 24.8465, lng: 89.3773 },
+  { lat: 24.7471, lng: 90.4203 },
+  { lat: 23.4607, lng: 91.1809 },
 ]);
 
 function routeOptions(result) {
@@ -92,11 +74,6 @@ export async function geocode(text) {
   return { lat: place.lat, lng: place.lng, address: place.address };
 }
 
-// As-you-type pickup/dropoff suggestions. Same service-area/country fence
-// as geocode(), but a result outside Bangladesh is silently dropped from
-// the list rather than failing the whole request — one bad candidate
-// (Nominatim's countrycodes filter is a soft hint, not absolute) shouldn't
-// hide the good ones while someone is still mid-search.
 export async function search(text) {
   const places = await currentProvider().search(text);
   return places.filter((place) => isWithinServiceArea(place) && place.countryCode?.toLowerCase() === 'bd')
@@ -117,13 +94,8 @@ export async function route(from, to) {
   const directOptions = routeOptions(direct);
   const directShortestIsDomestic = isRouteInsideBangladesh(directOptions[0].path);
 
-  // If the provider's own shortest route is domestic, no constrained route
-  // can be shorter. Keep its valid alternatives and avoid extra network work.
   if (directShortestIsDomestic) return selectShortestDomestic(directOptions);
 
-  // Otherwise ask for inland-via candidates. A global OSRM graph has no
-  // country exclusion flag, so the geometry validator—not provider ranking—
-  // is the final authority. Failed hubs do not hide a valid candidate.
   const fallbackResults = await Promise.allSettled(
     DOMESTIC_ROUTING_HUBS.map((hub) => provider.route(from, to, { via: [hub] })),
   );

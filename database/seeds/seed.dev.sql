@@ -1,6 +1,5 @@
--- Development/demo data only — never run this against production.
--- Idempotent: re-running repairs the three demo identities and only creates
--- missing showcase rows. Password for every demo account: DemoPass123
+
+-- : DemoPass123
 BEGIN;
 
 DO $$
@@ -20,9 +19,7 @@ DECLARE
   v_withdrawal bigint;
   v_ticket bigint;
 BEGIN
-  -- M8's first local draft used a phone that an older API test fixture also
-  -- uses. Move that same demo identity before the idempotent upsert so
-  -- existing developer volumes become test-safe too.
+
   UPDATE users SET phone = '01510009993'
   WHERE email = 'admin.demo@cholo.local' AND phone = '01910000003';
 

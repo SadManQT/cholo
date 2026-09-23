@@ -190,10 +190,6 @@ test('reverseGeocode() throws ADDRESS_NOT_FOUND when Nominatim reports an error'
   );
 });
 
-// A passenger doesn't need to see postcode/district/division/country on
-// every suggestion — this app only ever serves Bangladesh, so that part of
-// Nominatim's own display_name never actually distinguishes one result
-// from another.
 test('geocode() builds a compact address from name + suburb + city, dropping postcode/district/division/country', async () => {
   mock.method(globalThis, 'fetch', async () => jsonResponse([{
     lat: '23.7640558',
@@ -219,8 +215,6 @@ test('geocode() builds a compact address from name + suburb + city, dropping pos
   assert.equal(result.address, 'Bangladesh Military Museum, Tejgaon, Dhaka');
 });
 
-// A plain road result has no separate POI name — the road itself becomes
-// the primary label instead of duplicating it as both name and road.
 test('geocode() falls back to the road as the primary label when there is no named place', async () => {
   mock.method(globalThis, 'fetch', async () => jsonResponse([{
     lat: '23.7355069',
@@ -238,8 +232,6 @@ test('geocode() falls back to the road as the primary label when there is no nam
 
   const result = await geocode('Mirpur Road');
 
-  // "Mirpur Road" would otherwise appear twice (once as name, once as
-  // address.road) — the dedupe is what keeps it to one clean mention.
   assert.equal(result.address, 'Mirpur Road, Azimpur, Dhaka');
 });
 
@@ -269,10 +261,6 @@ test('search() returns every candidate with a compact address, not just the firs
   assert.equal(fetchMock.mock.callCount(), 1);
 });
 
-// Reverse-geocoding a residential road can come back with no city/town/
-// village tag at all (just a suburb) — the fallback to a cleaned county/
-// state_district is what stops the result from reading as just "Lalmatia"
-// with no city alongside it.
 test('reverseGeocode() falls back to a cleaned county/state_district when city is missing entirely', async () => {
   mock.method(globalThis, 'fetch', async () => jsonResponse({
     name: '',

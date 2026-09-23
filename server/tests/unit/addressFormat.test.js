@@ -9,8 +9,6 @@ test('formatCompactAddress joins primary/area/city with commas', () => {
 });
 
 test('formatCompactAddress drops a case-insensitive duplicate between primary/area/city', () => {
-  // primary falls back to the area's own value when there's no separate
-  // POI/road name — area would otherwise repeat it right after.
   const result = formatCompactAddress({ primary: 'Lalmatia', area: 'Lalmatia', city: 'Dhaka', fallback: 'unused' });
   assert.equal(result, 'Lalmatia, Dhaka');
 });

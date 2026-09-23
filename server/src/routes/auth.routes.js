@@ -10,18 +10,27 @@ import {
   verifyOtpLimiter,
 } from '../middlewares/rateLimit.js';
 import { validate } from '../middlewares/validate.js';
-import { loginSchema, registerSchema, resendOtpSchema, verifyOtpSchema } from '../validators/auth.schema.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resendOtpSchema,
+  resetPasswordSchema,
+  verifyOtpSchema,
+  verifyResetCodeSchema,
+} from '../validators/auth.schema.js';
 
 const router = Router();
 
-// Coarse per-route-file safety net first, then endpoint-specific limits
-// tuned to each one's actual abuse risk (doc 10 §11).
 router.use(authLimiter);
 
 router.post('/register', registerLimiter, validate(registerSchema), authController.register);
 router.post('/verify-otp', verifyOtpLimiter, validate(verifyOtpSchema), authController.verifyOtp);
 router.post('/resend-otp', resendOtpLimiter, validate(resendOtpSchema), authController.resendOtp);
 router.post('/login', loginLimiter, validate(loginSchema), authController.login);
+router.post('/forgot-password', resendOtpLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post('/forgot-password/verify', verifyOtpLimiter, validate(verifyResetCodeSchema), authController.verifyResetCode);
+router.post('/reset-password', verifyOtpLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.post('/refresh', authController.refresh);
 router.post('/logout', auth, authController.logout);
 router.post('/logout-all', auth, authController.logoutAll);

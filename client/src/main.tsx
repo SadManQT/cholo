@@ -5,11 +5,13 @@ import './index.css'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import App from './App.tsx'
+import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { SocketProvider } from './context/SocketContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <SocketProvider>
@@ -17,5 +19,6 @@ createRoot(document.getElementById('root')!).render(
         </SocketProvider>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 )

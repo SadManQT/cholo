@@ -1,8 +1,3 @@
-// The one loading state ProtectedRoute needs before it even knows who's
-// asking (doc 11 §8's own ProtectedRoute snippet references this by name).
-// Deliberately not part of the ui/ kit inventory (doc 12 §2.4's named
-// eight) — this is an app-shell boot state, not a reusable design-system
-// primitive.
 export function FullScreenSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-alt">
