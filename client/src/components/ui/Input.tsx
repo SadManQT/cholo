@@ -1,8 +1,6 @@
 import { forwardRef, useId, useState } from 'react';
 import type { ChangeEvent, InputHTMLAttributes } from 'react';
 
-// doc 11-12 §2.4: "Input | text / phone (numeric, 01… mask) / password
-// (visibility toggle) · error state with message | all forms."
 type InputVariant = 'text' | 'phone' | 'password';
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -22,9 +20,6 @@ function EyeIcon({ crossedOut }: { crossedOut: boolean }) {
   );
 }
 
-// BD mobile numbers: 11 digits, always starting "01" — the mask just keeps
-// stray letters/symbols out, it does not replace the backend's zod/regex
-// validation (doc 09), which is the real gate.
 function maskPhoneDigits(raw: string) {
   return raw.replace(/\D/g, '').slice(0, 11);
 }

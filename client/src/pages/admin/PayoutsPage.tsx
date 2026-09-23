@@ -10,13 +10,6 @@ import { staggerDelaySeconds } from '../../utils/stagger';
 
 const ACCOUNT_TYPE_LABELS = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank' } as const;
 
-// doc 11-12 §7: "/admin/payouts | finance queue | requested table, account
-// details (masked), Approve→gateway / Reject+reason | finance access
-// level only." The page itself is visible to any admin (matches GET
-// /admin/withdrawals having no access-level restriction); only the
-// approve/reject actions can come back 403 FORBIDDEN_ACCESS_LEVEL for a
-// non-finance admin, surfaced honestly rather than hidden — an ops/support
-// admin should be able to SEE the queue, just not act on it.
 export function PayoutsPage() {
   const [rows, setRows] = useState<WithdrawalQueueRow[]>([]);
   const [loading, setLoading] = useState(true);

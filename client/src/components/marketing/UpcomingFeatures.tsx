@@ -10,10 +10,6 @@ export interface UpcomingFeature {
 
 const ICONS = { clock: ClockIcon, route: RouteIcon, users: UsersIcon };
 
-// Deliberately separate from FeatureTour: these aren't built yet, so they
-// get a lighter static grid with an explicit "Coming soon" label — not the
-// same scrollytelling treatment as the real, shipped features, which would
-// blur the line between "this exists" and "this is on the roadmap".
 export function UpcomingFeatures({ features }: { features: UpcomingFeature[] }) {
   return (
     <div className="grid gap-5 sm:grid-cols-3">

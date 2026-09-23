@@ -1,3 +1,4 @@
+import * as placesRepo from '../repositories/places.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
@@ -31,8 +32,6 @@ export async function getMe(userId) {
 }
 
 export async function updateMe(userId, fields) {
-  // Unique violation on email becomes 409 DUPLICATE via the central
-  // errorHandler (doc 08 §9) — same pattern as register's phone check.
   await usersRepo.updateProfile(userId, fields);
   return getMe(userId);
 }
@@ -48,8 +47,49 @@ export async function changePassword(userId, sessionId, { currentPassword, newPa
   const newPasswordHash = await hashPassword(newPassword);
   await usersRepo.updatePasswordHash(userId, newPasswordHash);
 
-  // doc 10 §8: revoke every OTHER session — this one just proved it knows
-  // the current password, so it's allowed to keep running.
   await sessionsRepo.revokeActiveForUserExceptSession(userId, sessionId);
   await sessionsRepo.endAllSessionsForUserExceptSession(userId, sessionId);
+}
+
+const MAX_SAVED_PLACES = 10;
+const MAX_EMERGENCY_CONTACTS = 5;
+
+function uniqueViolation(code) {
+  return (error) => {
+    if (error.code === '23505') throw new AppError(409, code);
+    throw error;
+  };
+}
+
+export async function listPlaces(userId) {
+  const [saved, recent] = await Promise.all([placesRepo.listSaved(userId), placesRepo.listRecent(userId, 5)]);
+  return { saved, recent };
+}
+
+export async function addPlace(userId, input) {
+  if (await placesRepo.countSaved(userId) >= MAX_SAVED_PLACES) throw new AppError(409, 'PLACE_LIMIT_REACHED');
+  return placesRepo.insertSaved(userId, input).catch(uniqueViolation('PLACE_LABEL_TAKEN'));
+}
+
+export async function updatePlace(userId, id, input) {
+  const place = await placesRepo.updateSaved(userId, id, input).catch(uniqueViolation('PLACE_LABEL_TAKEN'));
+  if (!place) throw new AppError(404, 'PLACE_NOT_FOUND');
+  return place;
+}
+
+export async function removePlace(userId, id) {
+  if (!await placesRepo.deleteSaved(userId, id)) throw new AppError(404, 'PLACE_NOT_FOUND');
+}
+
+export const listContacts = (userId) => placesRepo.listContacts(userId);
+
+export async function addContact(userId, input) {
+  if ((await placesRepo.listContacts(userId)).length >= MAX_EMERGENCY_CONTACTS) {
+    throw new AppError(409, 'CONTACT_LIMIT_REACHED');
+  }
+  return placesRepo.insertContact(userId, input).catch(uniqueViolation('CONTACT_EXISTS'));
+}
+
+export async function removeContact(userId, id) {
+  if (!await placesRepo.deleteContact(userId, id)) throw new AppError(404, 'CONTACT_NOT_FOUND');
 }

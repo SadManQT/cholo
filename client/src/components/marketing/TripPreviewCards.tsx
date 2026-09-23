@@ -1,14 +1,5 @@
 import { ScrollReveal } from './ScrollReveal';
 
-// Illustrative product screenshots, not live data — same honesty bar as
-// BookingPreviewCard. Reuses established app patterns rather than
-// inventing new ones: initials-avatar fallback (ProfilePage), receipt rows
-// (TripDetailPage's fare breakdown), the searching radar's motion-safe
-// pulse convention for the "on trip" live dot.
-//
-// `layout="stack"` renders single-column instead of the 3-up grid — used
-// when this sits inside the hero's narrower text column (alongside the
-// sticky booking card) rather than as its own full-width section.
 export function TripPreviewCards({ layout = 'grid' }: { layout?: 'grid' | 'stack' }) {
   return (
     <div className={layout === 'grid' ? 'grid gap-6 md:grid-cols-3' : 'space-y-4'}>

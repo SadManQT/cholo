@@ -4,8 +4,6 @@ import * as vehicleCategoriesController from '../controllers/vehicleCategories.c
 
 const router = Router();
 
-// Public reference data, like /cities. A guest can render the product
-// catalog without receiving any private marketplace state.
 router.get('/', vehicleCategoriesController.list);
 
 export default router;

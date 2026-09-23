@@ -12,11 +12,6 @@ import { env } from '../../src/config/env.js';
 import { attachSocketServer } from '../../src/sockets/index.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Real pool + real OSRM, no cleanup of trip-anchored fixtures — same
-// reasoning as tests/api/dispatch.test.js and tests/api/trips.test.js:
-// trip_status_history's append-only trigger makes a created trip
-// permanently undeletable, so these fixtures are meant to be left in the
-// disposable dev DB.
 let server;
 let baseUrl;
 let wsUrl;
@@ -31,7 +26,7 @@ before(async () => {
     return realFetch(url, options);
   });
   server = http.createServer(app);
-  attachSocketServer(server); // same wiring as server.js, minus the cron job and process signal handlers
+  attachSocketServer(server);
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -84,7 +79,6 @@ function waitForEvent(socket, event, timeoutMs = 4000) {
   });
 }
 
-// Never resolves with a payload — used to assert an event does NOT arrive.
 function assertNoEvent(socket, event, withinMs = 1500) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(resolve, withinMs);
@@ -142,16 +136,8 @@ async function createOnlineDriver(t, { lat, lng }) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['DRIVER'], sessionId: userId }) };
 }
 
-// Jatrabari — a third, distinct area of Dhaka from dispatch.test.js's
-// Gulshan (23.7925, 90.4078) and trips.test.js's Uttara points, verified via
-// haversineDistanceKm to be >8km from every one of them (an earlier Mirpur
-// candidate looked "obviously far" by neighborhood name but was actually
-// only 4.19km from dispatch.test.js's pickup — well inside its 5km radius —
-// and caused real cross-file offer pollution; same class of bug fixed for
-// trips.test.js earlier this session, this time caught before merging by
-// actually computing the distance instead of eyeballing it).
-const PICKUP = { lat: 23.7104, lng: 90.4335 }; // Jatrabari
-const DROPOFF = { lat: 23.7180, lng: 90.4270 }; // Sayedabad
+const PICKUP = { lat: 23.7104, lng: 90.4335 };
+const DROPOFF = { lat: 23.7180, lng: 90.4270 };
 
 async function bookRide(passenger) {
   const { rows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
@@ -209,9 +195,6 @@ test('rooms: a passenger who connects AFTER being matched auto-joins trip:{id} a
   assert.equal(accepted.status, 200);
   const tripCode = (await accepted.json()).data.trip.publicCode;
 
-  // Connects only NOW, well after the trip already exists — proves
-  // joinIdentityRooms' connect-time DB membership check, not a room joined
-  // in response to the accept itself.
   const passengerSocket = connectSocket(t, passenger.accessToken);
   await waitForConnect(passengerSocket);
 
@@ -228,8 +211,6 @@ test('rooms: a passenger who connects AFTER being matched auto-joins trip:{id} a
 
 test('rooms: a driver connected BEFORE a trip exists still gets pulled into trip:{id} once accept creates one (retroactive join)', async (t) => {
   const driver = await createOnlineDriver(t, PICKUP);
-  // Connects while merely "online" — no trip exists yet at connect time,
-  // so joinIdentityRooms' connect-time lookup finds nothing to join.
   const driverSocket = connectSocket(t, driver.accessToken);
   await waitForConnect(driverSocket);
 
@@ -272,7 +253,7 @@ test('rooms: an unrelated passenger never receives trip:status for a trip they a
   const arrived = await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
   assert.equal(arrived.status, 200);
 
-  await noEvent; // resolves only if trip:status never arrived within the window
+  await noEvent;
 });
 
 test('location:update: a driver\'s GPS ping is stored and broadcast to the passenger, but never echoed back to the driver itself', async (t) => {

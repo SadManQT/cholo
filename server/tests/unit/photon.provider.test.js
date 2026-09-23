@@ -62,9 +62,6 @@ test('geocode() builds a compact address from Photon\'s field names (street/dist
   assert.equal(result.address, 'Bangladesh Military Museum, Tejgaon, Dhaka');
 });
 
-// The exact edge case that motivated switching providers in the first
-// place — Nominatim returns nothing at all for a misspelled query, Photon's
-// Elasticsearch-backed fuzzy matching still finds it.
 test('geocode() resolves a misspelled query via fuzzy matching', async () => {
   mock.method(globalThis, 'fetch', async () => jsonResponse({
     features: [feature({
@@ -73,7 +70,7 @@ test('geocode() resolves a misspelled query via fuzzy matching', async () => {
     })],
   }));
 
-  const result = await geocode('Gulshsn'); // typo, missing the second 'a'
+  const result = await geocode('Gulshsn');
 
   assert.equal(result.address, 'Gulshan, Dhaka');
 });

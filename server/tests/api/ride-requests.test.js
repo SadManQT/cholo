@@ -13,10 +13,7 @@ let databaseClient;
 let savepointCounter = 0;
 let phoneCounter = 0;
 
-// Gulshan 2 -> Dhanmondi 27 — fixed and mocked at the fetch boundary (see
-// tests/api/rides.test.js for why mock.method can't patch geo.service.js's
-// named export directly).
-const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 }; // 9.21 km, 9 min
+const DEFAULT_ROUTE = { distanceMeters: 9210, durationSeconds: 540 };
 let routeResponse = DEFAULT_ROUTE;
 const realFetch = globalThis.fetch;
 
@@ -87,10 +84,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// Direct SQL, not the real /auth/register flow — same convention
-// tests/api/driver-onboarding.test.js uses for admin_profiles. This is
-// exactly the row auth.service.js's register() now creates for every
-// passenger (see the passengers.repository.js fix in this same change).
 async function createUser({ roles = ['PASSENGER'] } = {}) {
   phoneCounter += 1;
   const phone = `019${String(30000000 + phoneCounter).slice(-8)}`;
@@ -190,13 +183,12 @@ test('POST /ride-requests creates a searching request and snapshots the quote in
   const { data } = await response.json();
 
   assert.equal(data.status, 'searching');
-  assert.equal(data.quote.estFare, 295.12); // seeded Dhaka/Car tariff (doc 01 §6.1) at 9.21km/9min
+  assert.equal(data.quote.estFare, 295.12);
   assert.equal(data.quote.estDiscount, 0);
   assert.equal(data.quote.estPayable, 295.12);
   assert.equal(data.quote.estDistanceKm, 9.21);
   assert.equal(data.quote.estDurationMin, 9);
 
-  // expiresAt is exactly 5 minutes after requestedAt (doc 08-09-10 §10.1 worked example)
   const requestedAt = new Date(data.requestedAt).getTime();
   const expiresAt = new Date(data.expiresAt).getTime();
   assert.equal(expiresAt - requestedAt, 5 * 60_000);
@@ -213,7 +205,7 @@ test('POST /ride-requests creates a searching request and snapshots the quote in
 
 test('POST /ride-requests leaves expiresAt null for a scheduled ride instead of the 5-minute immediate-ride window', async () => {
   const passenger = await createUser();
-  const scheduledFor = new Date(Date.now() + 60 * 60_000).toISOString(); // +1 hour
+  const scheduledFor = new Date(Date.now() + 60 * 60_000).toISOString();
 
   const response = await bookRide(passenger, { scheduledFor });
 
@@ -242,7 +234,7 @@ test('POST /ride-requests snapshots est_fare — a later pricing_rules change do
     [data.publicId],
   );
 
-  assert.equal(Number(rows[0].estFare), 295.12); // unchanged, despite the live tariff now saying otherwise
+  assert.equal(Number(rows[0].estFare), 295.12);
 });
 
 test('POST /ride-requests returns 409 ACTIVE_REQUEST_EXISTS for a second open request from the same passenger', async () => {
@@ -263,7 +255,7 @@ test('POST /ride-requests: an existing scheduled ride does not block booking an 
   assert.equal(scheduled.status, 201);
 
   const immediate = await bookRide(passenger);
-  assert.equal(immediate.status, 201); // not 409 — scheduled_for IS NULL scopes the one-active-request guard
+  assert.equal(immediate.status, 201);
 
   const { rows } = await databaseClient.query(
     `SELECT count(*)::int AS count FROM ride_requests WHERE passenger_id = $1 AND status = 'searching'`,
@@ -289,7 +281,7 @@ test('POST /ride-requests applies a fixed_amount promo, capped so the payable am
   await insertPromo({ code: 'WELCOME50', promoType: 'fixed_amount', value: 50, minFare: 100 });
   const passenger = await createUser();
 
-  const response = await bookRide(passenger, { promoCode: 'welcome50' }); // lowercase on purpose
+  const response = await bookRide(passenger, { promoCode: 'welcome50' });
 
   assert.equal(response.status, 201);
   const { data } = await response.json();

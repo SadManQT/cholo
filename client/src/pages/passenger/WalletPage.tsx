@@ -24,15 +24,10 @@ export function WalletPage() {
     else setLoadingMore(true);
     setError(null);
     try {
-      // Balance only needs fetching on the initial (replace) load — a
-      // "load more" page of the ledger doesn't change it, so there's
-      // nothing to refetch or overwrite existing wallet state with.
       const [nextWallet, result] = await Promise.all([
         replace ? walletApi.getWallet() : null,
         walletApi.listTransactions({ page: nextPage, limit: 20 }),
       ]);
-      // A retry click can overlap the request it's retrying; don't let the
-      // older one clobber a newer response that already landed.
       if (requestId !== requestIdRef.current) return;
       if (replace) setWallet(nextWallet);
       setTransactions((current) => replace ? result.data : [...current, ...result.data]);
@@ -79,11 +74,7 @@ export function WalletPage() {
         <EmptyState title="Wallet did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(1, true) }} />
       ) : (
         <>
-          {/* Not <Card>: its own shared classes (bg-surface, p-4) sit at
-              equal CSS specificity with an override className and can win
-              depending on Tailwind's generated stylesheet order rather
-              than className string order — a plain div sidesteps that
-              entirely for this one colored-hero case. */}
+          {}
           <div className="mb-5 rounded-xl bg-cholo-700 p-5 text-white">
             <p className="text-sm text-white/80">Available balance</p>
             <p className="mt-1 text-4xl font-bold tabular-nums">{formatBDT(wallet?.balance)}</p>

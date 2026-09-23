@@ -12,7 +12,10 @@ const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) throw new Error('DATABASE_URL is required for db:init');
 
-const client = new pg.Client({ connectionString });
+const client = new pg.Client({
+  connectionString,
+  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+});
 await client.connect();
 
 try {
@@ -34,9 +37,6 @@ try {
     const applied = await client.query(`SELECT 1 FROM schema_migrations WHERE filename = $1`, [filename]);
     if (applied.rowCount) continue;
 
-    // Databases born from the current schema already contain the changes
-    // described by historical migrations. Record those as a baseline
-    // instead of replaying CREATE FUNCTION statements into a fresh schema.
     if (filename === '0003_fn_current_commission.sql') {
       const exists = await client.query(
         `SELECT to_regprocedure('fn_current_commission(smallint,smallint,timestamp with time zone)') AS fn`,

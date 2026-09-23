@@ -47,10 +47,6 @@ test('findApplicable returns undefined when no row matches (inactive, expired, o
 
 test('findByCode queries by code only — no active/date/scope filtering', async () => {
   const query = mock.method(pool, 'query', async (sql, values) => {
-    // The WHERE clause is just the code lookup — no is_active/valid_from/
-    // valid_until/city_id/category_id filtering (those columns are still
-    // legitimately SELECTed so the caller can inspect them, just not
-    // filtered on).
     assert.match(sql, /FROM promo_codes WHERE code = \$1\s*$/);
     assert.deepEqual(values, ['WELCOME50']);
     return { rows: [{ id: 7, code: 'WELCOME50', isActive: false }] };
@@ -58,7 +54,7 @@ test('findByCode queries by code only — no active/date/scope filtering', async
 
   const promo = await findByCode('WELCOME50');
 
-  assert.equal(promo.isActive, false); // returned even though inactive
+  assert.equal(promo.isActive, false);
   assert.equal(query.mock.callCount(), 1);
 });
 

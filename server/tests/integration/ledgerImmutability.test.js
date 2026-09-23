@@ -3,14 +3,6 @@ import { after, test } from 'node:test';
 
 import { pool } from '../../src/config/db.js';
 
-// M7's own "Done when" checklist (docs/13-14 §9): "Ledger UPDATE rejected
-// (trigger)" — fn_block_mutation (schema.sql) is what makes wallet_
-// transactions append-only BY MECHANISM, not by promise (doc 01 §13.8),
-// but nothing elsewhere in the suite actually fires an UPDATE/DELETE
-// against it and checks the trigger rejects it — every other reference to
-// this trigger is incidental (e.g. dispatch.test.js explaining why a trip
-// fixture can't be cleaned up). This is the direct proof, same rigor as
-// walletLock.test.js's controlled DB-level checks for T3's FOR UPDATE lock.
 
 async function createFundedUser(balance) {
   const phone = `019${String(Date.now() % 100_000_000).padStart(8, '0')}`;
@@ -39,16 +31,12 @@ test('UPDATE on wallet_transactions is rejected by fn_block_mutation, not silent
   await assert.rejects(
     pool.query(`UPDATE wallet_transactions SET amount = 999 WHERE id = $1`, [txnId]),
     (error) => {
-      assert.equal(error.code, 'P0001'); // plain RAISE EXCEPTION, no SQLSTATE given — defaults to P0001
+      assert.equal(error.code, 'P0001');
       assert.match(error.message, /wallet_transactions is append-only/);
       return true;
     },
   );
 
-  // The real proof: the row itself is untouched, not just that the
-  // UPDATE statement errored (a trigger could theoretically error AFTER
-  // partially applying the change without RETURNING/COMMIT semantics
-  // saving it — this confirms the value never actually moved).
   const { rows } = await pool.query(`SELECT amount FROM wallet_transactions WHERE id = $1`, [txnId]);
   assert.equal(Number(rows[0].amount), 100);
 });
@@ -66,5 +54,5 @@ test('DELETE on wallet_transactions is rejected by the same trigger', async () =
   );
 
   const { rows } = await pool.query(`SELECT id FROM wallet_transactions WHERE id = $1`, [txnId]);
-  assert.equal(rows.length, 1); // still there
+  assert.equal(rows.length, 1);
 });

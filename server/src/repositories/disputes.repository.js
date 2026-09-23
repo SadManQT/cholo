@@ -35,7 +35,7 @@ export async function listForUser(userId, { page, limit }, client = pool) {
     `SELECT d.id, d.dispute_no AS "disputeNo", t.trip_code AS "tripCode",
             d.dispute_type AS "disputeType", d.description, d.disputed_amount AS "disputedAmount",
             d.status, d.resolution_note AS "resolutionNote", d.created_at AS "createdAt",
-            d.resolved_at AS "resolvedAt", count(*) OVER()::int AS "totalCount"
+            d.review_started_at AS "reviewStartedAt", d.resolved_at AS "resolvedAt", count(*) OVER()::int AS "totalCount"
      FROM disputes d JOIN trips t ON t.id = d.trip_id
      WHERE d.raised_by = $1 ORDER BY d.created_at DESC, d.id DESC LIMIT $2 OFFSET $3`,
     [userId, limit, offset],
@@ -49,7 +49,8 @@ export async function listQueue({ status, page, limit }, client = pool) {
     `SELECT d.id, d.dispute_no AS "disputeNo", t.trip_code AS "tripCode",
             d.dispute_type AS "disputeType", d.description, d.disputed_amount AS "disputedAmount",
             d.status, d.resolution_note AS "resolutionNote", d.created_at AS "createdAt",
-            d.resolved_at AS "resolvedAt", u.full_name AS "raisedByName", u.phone AS "raisedByPhone",
+            d.review_started_at AS "reviewStartedAt", d.resolved_at AS "resolvedAt",
+            u.full_name AS "raisedByName", u.phone AS "raisedByPhone",
             t.total_fare AS "tripTotal", t.payment_status AS "paymentStatus",
             count(*) OVER()::int AS "totalCount"
      FROM disputes d JOIN trips t ON t.id = d.trip_id JOIN users u ON u.id = d.raised_by
@@ -101,6 +102,15 @@ export async function resolve(disputeId, { status, resolutionNote, adminId, refu
      RETURNING id, dispute_no AS "disputeNo", status, resolution_note AS "resolutionNote",
                refund_payment_id AS "refundPaymentId", resolved_at AS "resolvedAt"`,
     [disputeId, status, resolutionNote, adminId, refundPaymentId ?? null],
+  );
+  return rows[0];
+}
+
+export async function startReview(disputeId, client) {
+  const { rows } = await client.query(
+    `UPDATE disputes SET status = 'under_review', review_started_at = now()
+     WHERE id = $1 RETURNING id, dispute_no AS "disputeNo", status, review_started_at AS "reviewStartedAt"`,
+    [disputeId],
   );
   return rows[0];
 }

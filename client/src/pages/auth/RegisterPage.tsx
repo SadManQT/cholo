@@ -3,24 +3,36 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as authApi from '../../api/auth.api';
 import { Button, Input, toast } from '../../components/ui';
-import { getApiErrorMessage } from '../../utils/apiError';
+import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
 
-// doc 12 §4: "Register | /register | name + phone + password (+ referral) |
-// Input(phone), password strength hint | single column, one screen, no
-// scroll." Referral is in the doc's own field list but the real API
-// (server/src/validators/auth.schema.js's registerSchema) doesn't accept
-// one yet — "no mock data" means this form only collects what the backend
-// actually does something with.
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 72;
+
+type Field = 'fullName' | 'phone' | 'password';
+type FieldErrors = Partial<Record<Field, string>>;
+
+// Mirrors server/src/validators/auth.schema.js so users see the real reason before submitting.
+function validateField(field: Field, value: string): string | undefined {
+  if (field === 'fullName') {
+    if (!value.trim()) return 'Enter your full name';
+    if (value.trim().length > 120) return 'Name must be 120 characters or fewer';
+  }
+  if (field === 'phone') {
+    if (!value) return 'Enter your phone number';
+    if (!value.startsWith('01')) return 'Phone number must start with 01';
+    if (value.length >= 3 && !/[3-9]/.test(value[2])) return 'Phone number format is invalid (third digit must be 3–9)';
+    if (value.length < 11) return `Phone number is incomplete (${value.length} of 11 digits)`;
+  }
+  if (field === 'password') {
+    if (value.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    if (value.length > MAX_PASSWORD_LENGTH) return `Password must be ${MAX_PASSWORD_LENGTH} characters or fewer`;
+  }
+  return undefined;
+}
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Set by the homepage's "Drive with Cholo" CTA — there's no one-step
-  // driver signup (doc 08-09-10 §6: becoming a driver is the separate
-  // /driver/apply review flow), so this just carries the intent through
-  // registration + OTP to redirect there once verification succeeds,
-  // instead of the usual roleHomePath().
   const intent = searchParams.get('intent');
   const isDriverIntent = intent === 'driver';
   const [fullName, setFullName] = useState('');
@@ -28,22 +40,41 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+
+  const values: Record<Field, string> = { fullName, phone, password };
+  const fieldError = (field: Field) => serverErrors[field] ?? (touched[field] ? validateField(field, values[field]) : undefined);
+  const touch = (field: Field) => setTouched((current) => ({ ...current, [field]: true }));
+  const edit = (field: Field, setter: (value: string) => void) => (event: { target: { value: string } }) => {
+    setter(event.target.value);
+    setServerErrors(({ [field]: _cleared, ...rest }) => rest);
+  };
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    setTouched({ fullName: true, phone: true, password: true });
+    const firstInvalid = (['fullName', 'phone', 'password'] as Field[]).find((field) => validateField(field, values[field]));
+    if (firstInvalid) {
+      document.getElementById(`register-${firstInvalid}`)?.focus();
+      return;
+    }
     setSubmitting(true);
     setError(null);
+    setServerErrors({});
 
     try {
-      // Register doesn't mint a session (server/src/services/auth.service.js
-      // returns only {userId} and sends an OTP) — nothing for AuthContext
-      // to hold yet, so this calls the api/ layer directly rather than
-      // routing through useAuth().
       await authApi.register({ fullName, phone, password });
       const verifyParams = new URLSearchParams({ phone });
       if (intent) verifyParams.set('intent', intent);
       navigate(`/verify?${verifyParams.toString()}`);
     } catch (thrown) {
+      const fields: FieldErrors = getApiFieldErrors(thrown);
+      if (getApiErrorCode(thrown) === 'PHONE_TAKEN') fields.phone = getApiErrorMessage(thrown);
+      if (Object.keys(fields).length > 0) {
+        setServerErrors(fields);
+        return;
+      }
       const message = getApiErrorMessage(thrown, 'Could not create your account. Please try again.');
       setError(message);
       toast.error(message);
@@ -55,7 +86,7 @@ export function RegisterPage() {
   const passwordLongEnough = password.length >= MIN_PASSWORD_LENGTH;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Create your account</h1>
         <p className="mt-1 text-sm text-ink-500">
@@ -65,32 +96,39 @@ export function RegisterPage() {
 
       <div className="flex flex-col gap-4">
         <Input
+          id="register-fullName"
           label="Full name"
           value={fullName}
-          onChange={(event) => setFullName(event.target.value)}
-          required
+          onChange={edit('fullName', setFullName)}
+          onBlur={() => touch('fullName')}
+          error={fieldError('fullName')}
           maxLength={120}
           autoFocus
         />
         <Input
           variant="phone"
+          id="register-phone"
           label="Phone"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          required
+          onChange={edit('phone', setPhone)}
+          onBlur={() => touch('phone')}
+          error={fieldError('phone')}
         />
         <div>
           <Input
             variant="password"
+            id="register-password"
             label="Password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={MIN_PASSWORD_LENGTH}
+            onChange={edit('password', setPassword)}
+            onBlur={() => touch('password')}
+            error={fieldError('password')}
           />
-          <p className={`mt-1.5 text-xs ${passwordLongEnough ? 'text-cholo-700' : 'text-ink-500'}`}>
-            {passwordLongEnough ? '✓ ' : ''}At least {MIN_PASSWORD_LENGTH} characters
-          </p>
+          {!fieldError('password') && (
+            <p className={`mt-1.5 text-xs ${passwordLongEnough ? 'text-cholo-700' : 'text-ink-500'}`}>
+              {passwordLongEnough ? '✓ ' : ''}At least {MIN_PASSWORD_LENGTH} characters
+            </p>
+          )}
         </div>
       </div>
 

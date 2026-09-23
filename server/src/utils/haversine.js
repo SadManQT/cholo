@@ -4,9 +4,6 @@ function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
 }
 
-// Great-circle distance between two WGS-84 points — plain math, no PostGIS
-// (doc 01 §13.14: "radius searches upgrade cleanly to PostGIS later", not
-// needed yet at this scale). Pure function, deliberately not a DB query.
 export function haversineDistanceKm(lat1, lng1, lat2, lng2) {
   const dLat = toRadians(lat2 - lat1);
   const dLng = toRadians(lng2 - lng1);

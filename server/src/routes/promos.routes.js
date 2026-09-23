@@ -7,9 +7,6 @@ import { availablePromosQuerySchema, validatePromoSchema } from '../validators/p
 
 const router = Router();
 
-// doc 08-09-10 §7: both routes are "bearer" only, not role-restricted —
-// unlike /rides/quote (PASSENGER-only), a promo preview has no side
-// effects worth gating by role.
 router.use(auth);
 
 router.post('/validate', validate(validatePromoSchema), promosController.validate);

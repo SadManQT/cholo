@@ -2,8 +2,6 @@ import { Card } from '../ui';
 import type { WalletTransaction, WalletTxnType } from '../../types/wallet.types';
 import { formatBDT, formatDateTime } from '../../utils/format';
 
-// doc 04's own business-meaning list for wallet_txn_type — plain English
-// for a ledger row, not the enum value.
 const TXN_LABELS: Record<WalletTxnType, string> = {
   topup: 'Wallet top-up',
   trip_payment: 'Trip payment',

@@ -8,22 +8,10 @@ import { pool } from '../../src/config/db.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Deliberately NOT the savepoint-mocked-single-connection pattern the other
-// API test files use (see tests/api/ride-requests.test.js). That pattern
-// routes every "connection" through one real underlying client, which would
-// make two "concurrent" transactions actually run sequentially — exactly
-// wrong for this file, whose entire point is proving a FOR UPDATE lock
-// blocks a second REAL concurrent connection. This uses the real pool and
-// cleans up afterwards instead of rolling back a wrapping transaction.
 let server;
 let baseUrl;
 const createdUserIds = [];
 let phoneCounter = 0;
-// The RACE test's fixtures are intentionally never cleaned up (a trip
-// anchors them permanently — see skipCleanup below), so their phone numbers
-// must stay unique ACROSS runs too, not just within one process. A random
-// eight-digit seed plus file-specific operator prefixes avoids collisions
-// between parallel files and previously-persisted disposable fixtures.
 const RUN_SEED = randomInt(10_000_000, 100_000_000);
 const realFetch = globalThis.fetch;
 
@@ -44,13 +32,11 @@ after(async () => {
   await once(server, 'close');
 
   if (createdUserIds.length > 0) {
-    // Dependency order: RESTRICT fks (trips/ride_requests/vehicles) must go
-    // before the users row, or the CASCADE from users would be blocked.
     await pool.query(`DELETE FROM trips WHERE driver_id = ANY($1) OR passenger_id = ANY($1)`, [createdUserIds]);
     await pool.query(`DELETE FROM ride_offers WHERE driver_id = ANY($1)`, [createdUserIds]);
     await pool.query(`DELETE FROM ride_requests WHERE passenger_id = ANY($1)`, [createdUserIds]);
     await pool.query(`DELETE FROM vehicles WHERE driver_id = ANY($1)`, [createdUserIds]);
-    await pool.query(`DELETE FROM users WHERE id = ANY($1)`, [createdUserIds]); // cascades the rest
+    await pool.query(`DELETE FROM users WHERE id = ANY($1)`, [createdUserIds]);
   }
   mock.restoreAll();
   await pool.end();
@@ -68,12 +54,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// skipCleanup: a trip anchors its passenger/driver/vehicle/request rows
-// permanently — trip_status_history's fn_block_mutation trigger blocks even
-// the CASCADE delete a `DELETE FROM trips` would trigger, by design (doc03:
-// "financial truth is append-only"). The one test that actually accepts an
-// offer (creating a trip) opts its fixtures out of cleanup instead of
-// fighting that guarantee; every other test cleans up normally.
 async function createPassenger({ skipCleanup = false } = {}) {
   phoneCounter += 1;
   const phone = `013${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
@@ -95,19 +75,6 @@ async function createPassenger({ skipCleanup = false } = {}) {
   return { userId, accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }) };
 }
 
-// Fully-approved, online, with an active Car — built directly, the same way
-// tests/api/driver-onboarding.test.js builds admin fixtures. The onboarding
-// flow itself (apply -> documents -> admin review) is that file's job, not
-// this one's.
-//
-// t (node:test's TestContext) is required, not optional: every test in
-// this file dispatches to drivers at overlapping coordinates, so a driver
-// left 'online' after ITS test would still look "nearby and eligible" to
-// every later test's booking in the same run — even skipCleanup fixtures,
-// whose PROFILE rows must stay (trip-anchored) but whose STATUS doesn't
-// need to. t.after() runs right after this specific test, not at the end
-// of the file, and driver_availability isn't append-only, so resetting it
-// is always safe.
 async function createOnlineDriver(t, { lat, lng, categoryName = 'Car', gender, skipCleanup = false } = {}) {
   phoneCounter += 1;
   const phone = `014${String(RUN_SEED + phoneCounter).padStart(8, '0').slice(-8)}`;
@@ -127,11 +94,6 @@ async function createOnlineDriver(t, { lat, lng, categoryName = 'Car', gender, s
   await pool.query(
     `INSERT INTO driver_profiles (user_id, nid_number, license_number, license_expiry, verification_status)
      VALUES ($1, $2, $3, '2035-12-31', 'approved')`,
-    // userId comes back from pg as a STRING (bigint columns aren't
-    // auto-converted, to avoid precision loss) — `1_000_000_000 + userId`
-    // would string-concatenate, not add, producing a variable-length
-    // result. padStart keeps this a clean, always-valid 10-digit NID
-    // (chk_driver_nid_format: 10, 13, or 17 digits) regardless of id width.
     [userId, String(userId).padStart(10, '0'), `DL-DISPATCH-${userId}`],
   );
   const { rows: vehicleRows } = await pool.query(
@@ -166,8 +128,8 @@ async function bookRide(passenger, overrides = {}) {
 
 test('booking a ride fans out an offer to every eligible online driver, and only those drivers', async (t) => {
   const passenger = await createPassenger();
-  const nearby = await createOnlineDriver(t, { lat: 23.7925, lng: 90.4078 }); // right at pickup
-  const farAway = await createOnlineDriver(t, { lat: 23.9, lng: 90.5 }); // ~15km+ away, outside the dispatch radius
+  const nearby = await createOnlineDriver(t, { lat: 23.7925, lng: 90.4078 });
+  const farAway = await createOnlineDriver(t, { lat: 23.9, lng: 90.5 });
   const offlineDriver = await createOnlineDriver(t, { lat: 23.7925, lng: 90.4078 });
   await pool.query(`UPDATE driver_availability SET status = 'offline' WHERE driver_id = $1`, [offlineDriver.userId]);
 
@@ -239,7 +201,6 @@ test('rejecting an offer leaves the request searching and the offer cannot be re
 });
 
 test('THE RACE: two drivers accept the same request within the same instant — exactly one 200, one 409, one trip', async (t) => {
-  // skipCleanup: this is the one test that actually creates a trip.
   const passenger = await createPassenger({ skipCleanup: true });
   const driverA = await createOnlineDriver(t, { lat: 23.7925, lng: 90.4078, skipCleanup: true });
   const driverB = await createOnlineDriver(t, { lat: 23.7930, lng: 90.4085, skipCleanup: true });
@@ -257,8 +218,6 @@ test('THE RACE: two drivers accept the same request within the same instant — 
     body: { response: 'accepted' },
   });
 
-  // Real concurrent HTTP requests against the real pool — Promise.all, not
-  // sequential awaits, so both accept attempts genuinely overlap.
   const [responseA, responseB] = await Promise.all([
     respond(driverA, offersA[0].id),
     respond(driverB, offersB[0].id),
@@ -292,7 +251,7 @@ test('THE RACE: two drivers accept the same request within the same instant — 
   const winnerAvailability = availabilityRows.find((r) => r.driver_id === winnerId);
   const loserAvailability = availabilityRows.find((r) => r.driver_id === loserId);
   assert.equal(winnerAvailability.status, 'on_trip');
-  assert.equal(loserAvailability.status, 'online'); // untouched — they never actually took the ride
+  assert.equal(loserAvailability.status, 'online');
 
   const { rows: requestRows } = await pool.query(`SELECT status FROM ride_requests WHERE public_id = $1`, [bookedData.publicId]);
   assert.equal(requestRows[0].status, 'matched');
@@ -305,7 +264,7 @@ test('an expired offer cannot be accepted and is lazily marked timed_out', { tim
 
   const { data: [offer] } = await (await request('GET', '/driver/offers', { accessToken: driver.accessToken })).json();
 
-  await new Promise((resolve) => setTimeout(resolve, 16_000)); // doc 11-12 §6.1: 15s window
+  await new Promise((resolve) => setTimeout(resolve, 16_000));
 
   const afterExpiry = await request('GET', '/driver/offers', { accessToken: driver.accessToken });
   assert.deepEqual((await afterExpiry.json()).data, []);

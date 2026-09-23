@@ -39,9 +39,6 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
         status,
         role: driverMode ? 'driver' : 'passenger',
       });
-      // Switching the filter chip fires a new loadPage(1, true) while an
-      // older filter's request may still be in flight; if that older one
-      // resolves second it must not overwrite the newer filter's results.
       if (requestId !== requestIdRef.current) return;
       setTrips((current) => replace ? result.data : [
         ...current,

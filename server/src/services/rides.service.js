@@ -8,30 +8,19 @@ import { quote as computeFare } from '../utils/fareMath.js';
 import { computeDiscount } from '../utils/promoMath.js';
 import * as dispatchService from './dispatch.service.js';
 import * as geoService from './geo.service.js';
+import * as zonesService from './zones.service.js';
 
-// Surge is intentionally NOT looked up here. doc 01 domain 3 scopes
-// surge_pricing by zone_id, and resolving pickup{lat,lng} to a zone means a
-// point-in-polygon test against zones.boundary_geojson — real GIS work
-// (doc 01 §13.14 flags the PostGIS upgrade as a later step) that nothing in
-// this codebase does yet. Rather than fake a "nearest zone" guess and quote
-// a misleading fare, this defaults to 1.00 (no surge) until zone resolution
-// exists; ride_requests.surge_multiplier carries the same default for the
-// same reason.
 const NO_SURGE = 1.0;
 
-// doc 08-09-10 §10.1 worked example: requestedAt 06:02:11Z, expiresAt
-// 06:07:11Z — exactly 5 minutes.
 const REQUEST_EXPIRY_MINUTES = 5;
 
 function round2(amount) {
   return Math.round(amount * 100) / 100;
 }
 
-// Shared by quote() and createRequest() — booking must snapshot the exact
-// same computation a passenger was shown, not a second independent one
-// (doc 01 §13.7: rules explain "what would this cost now?").
 async function buildQuote({ cityId, categoryId, pickup, dropoff }) {
   geoService.assertWithinServiceArea(pickup, dropoff);
+  await zonesService.assertBookable(cityId, pickup, dropoff);
   const tariff = await pricingRepo.getCurrentTariff(cityId, categoryId);
   if (!tariff) throw new AppError(422, 'NO_TARIFF_FOR_MARKET');
 
@@ -63,11 +52,6 @@ export async function createRequest(passengerId, dto) {
     }
   }
 
-  // A percentage/fixed-amount ESTIMATE only, shown to the passenger before
-  // booking. This does NOT create a promo_redemptions row and does NOT count
-  // against usage_limit_total/usage_limit_per_user/first_ride_only — that
-  // enforcement is redemption, which happens at trip completion (doc 01
-  // relationship #37 "reserved on" vs #58 "redeemed as").
   const estDiscount = promo ? computeDiscount(promo, estFare) : 0;
   const estPayable = round2(estFare - estDiscount);
 
@@ -75,9 +59,6 @@ export async function createRequest(passengerId, dto) {
   let newOffers = [];
   try {
     request = await withTransaction(async (client) => {
-      // This lock is also taken by offer acceptance before it moves the
-      // passenger from a searching request into an active trip. The
-      // cross-table handoff is therefore atomic from a new booking's view.
       await ridesRepo.lockPassengerBooking(passengerId, client);
       if (await ridesRepo.hasActiveTrip(passengerId, client)) {
         throw new AppError(409, 'ACTIVE_REQUEST_EXISTS');
@@ -97,16 +78,9 @@ export async function createRequest(passengerId, dto) {
         promoCodeId: promo?.id,
         womenOnly,
         scheduledFor,
-        // The 5-minute search window is for an immediate ride. A scheduled
-        // ride has no dispatch/expiry semantics yet (that's real design work
-        // for whoever builds scheduled dispatch, doc 13 §11 lists it COULD/
-        // cut-first) — NULL is "not applicable yet", not a guess.
         expiryMinutes: scheduledFor ? null : REQUEST_EXPIRY_MINUTES,
       }, client);
 
-      // Scheduled rides don't dispatch now — same reasoning as the NULL
-      // expiry above, there's no "who's nearby" question worth asking for
-      // a ride that's days away.
       if (!scheduledFor) {
         newOffers = await dispatchService.fanOutOffers({
           requestId: inserted.id,
@@ -120,18 +94,12 @@ export async function createRequest(passengerId, dto) {
       return inserted;
     });
   } catch (error) {
-    // ux_one_active_request_per_passenger (schema.sql) is the real backstop;
-    // this just translates its violation into the documented error code.
     if (error.code === '23505' && error.constraint === 'ux_one_active_request_per_passenger') {
       throw new AppError(409, 'ACTIVE_REQUEST_EXISTS');
     }
     throw error;
   }
 
-  // Only after the transaction above has committed — otherwise a driver
-  // could be pushed offer:new for an offer a later statement in that same
-  // transaction still rolls back, or poll GET /driver/offers before the
-  // insert is even visible to that separate connection.
   dispatchService.broadcastNewOffers(newOffers, request.publicId);
 
   return {
@@ -201,10 +169,6 @@ export async function cancelRequest(passengerId, publicId) {
   });
 }
 
-// jobs/expireRequests.job.js's cron entry point. Scheduled requests are
-// never touched — ridesRepo.expireStaleRequests only matches rows with a
-// non-NULL expires_at, and createRequest never sets one for scheduled_for
-// requests (they have no dispatch/expiry semantics yet, see above).
 export async function expireStaleRequests() {
   return withTransaction(async (client) => {
     const expired = await ridesRepo.expireStaleRequests(client);

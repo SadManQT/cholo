@@ -39,6 +39,7 @@ export async function findStatusByUserId(userId, client = pool) {
             dp.license_expiry::text AS "licenseExpiry",
             dp.verification_status AS "verificationStatus",
             dp.verified_by AS "verifiedBy", dp.verified_at AS "verifiedAt",
+            dp.rejection_reason AS "rejectionReason", dp.rating_avg AS "ratingAvg", dp.rating_count AS "ratingCount",
             dp.created_at AS "createdAt", dp.updated_at AS "updatedAt",
             da.status AS "availabilityStatus", da.current_lat AS "currentLat",
             da.current_lng AS "currentLng", da.heading,
@@ -73,21 +74,22 @@ export async function findProfileForUpdate(userId, client) {
 
 export async function setVerificationStatus(
   userId,
-  { status, verifiedBy },
+  { status, verifiedBy, reason },
   client = pool,
 ) {
   const { rows } = await client.query(
     `UPDATE driver_profiles
      SET verification_status = $2,
          verified_by = $3,
-         verified_at = now()
+         verified_at = now(),
+         rejection_reason = $4
      WHERE user_id = $1
      RETURNING user_id AS "userId", nid_number AS "nidNumber",
                license_number AS "licenseNumber",
                license_expiry::text AS "licenseExpiry",
                verification_status AS "verificationStatus",
                verified_by AS "verifiedBy", verified_at AS "verifiedAt"`,
-    [userId, status, verifiedBy],
+    [userId, status, verifiedBy, status === 'rejected' ? reason ?? null : null],
   );
 
   return rows[0];
@@ -96,7 +98,7 @@ export async function setVerificationStatus(
 export async function resetRejectedToPending(userId, client = pool) {
   await client.query(
     `UPDATE driver_profiles
-     SET verification_status = 'pending', verified_by = NULL, verified_at = NULL
+     SET verification_status = 'pending', verified_by = NULL, verified_at = NULL, rejection_reason = NULL
      WHERE user_id = $1 AND verification_status = 'rejected'`,
     [userId],
   );
@@ -121,16 +123,11 @@ export async function findAvailabilityForUpdate(userId, client) {
   return rows[0];
 }
 
-// location.handler.js's per-ping "where is this driver right now" cache —
-// deliberately separate from updateAvailability: a GPS ping never changes
-// status (a driver stays 'on_trip' through every ping), and forcing every
-// caller through updateAvailability's CASE-guarded status param for a
-// column it isn't touching would be the wrong shape for a ~4s-interval hot
-// path.
 export async function updateLocation(driverId, { lat, lng, heading }, client = pool) {
   await client.query(
     `UPDATE driver_availability
-     SET current_lat = $2, current_lng = $3, heading = $4, last_ping_at = now()
+     SET current_lat = $2, current_lng = $3, heading = $4, last_ping_at = now(),
+         current_zone_id = fn_zone_at($2, $3)
      WHERE driver_id = $1`,
     [driverId, lat, lng, heading ?? null],
   );
@@ -148,7 +145,8 @@ export async function updateAvailability(
          current_lat = CASE WHEN $3::boolean THEN $4 ELSE current_lat END,
          current_lng = CASE WHEN $3::boolean THEN $5 ELSE current_lng END,
          heading = CASE WHEN $6::boolean THEN $7 ELSE heading END,
-         last_ping_at = CASE WHEN $3::boolean THEN now() ELSE last_ping_at END
+         last_ping_at = CASE WHEN $3::boolean THEN now() ELSE last_ping_at END,
+         current_zone_id = CASE WHEN $3::boolean THEN fn_zone_at($4, $5) ELSE current_zone_id END
      WHERE driver_id = $1
      RETURNING status, current_lat AS "currentLat", current_lng AS "currentLng",
                heading, current_zone_id AS "currentZoneId",

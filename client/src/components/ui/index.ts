@@ -11,3 +11,4 @@ export { Toaster } from './Toast';
 export { toast } from './toastStore';
 export { EmptyState } from './EmptyState';
 export { OtpInput } from './OtpInput';
+export { Dialog } from './Dialog';

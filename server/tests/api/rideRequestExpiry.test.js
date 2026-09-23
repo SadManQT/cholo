@@ -8,9 +8,6 @@ import { env } from '../../src/config/env.js';
 import * as ridesService from '../../src/services/rides.service.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
-// Same savepoint-mocked pool as tests/api/ride-requests.test.js: expiry
-// never creates a trip (no append-only trigger in the way), so nothing here
-// needs to be left behind in the dev DB — every test rolls itself back.
 let server;
 let baseUrl;
 let databaseClient;
@@ -214,9 +211,6 @@ test('expireStaleRequests never touches a scheduled request (expires_at is NULL,
   const expired = await ridesService.expireStaleRequests();
   assert.ok(!expired.some((row) => row.publicId === data.publicId));
 
-  // insertRequest (rides.repository.js) always writes 'searching' regardless
-  // of scheduled_for — expires_at IS NULL is what actually makes a
-  // scheduled request immune to this sweep, not its status.
   const { rows } = await databaseClient.query(`SELECT status FROM ride_requests WHERE public_id = $1`, [data.publicId]);
   assert.equal(rows[0].status, 'searching');
 });
