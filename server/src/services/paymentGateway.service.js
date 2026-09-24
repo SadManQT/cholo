@@ -26,3 +26,14 @@ export function createSession(params) {
 export function verifyTransaction(params) {
   return currentProvider().verifyTransaction(params);
 }
+
+/** Where the gateway sends the customer's browser back to (GET or POST, depending on the gateway). */
+export function gatewayReturnUrls(publicId) {
+  const base = `${env.PUBLIC_API_ORIGIN}/api/v1/payments/${publicId}/return`;
+  return {
+    successUrl: `${base}?result=success`,
+    failUrl: `${base}?result=fail`,
+    cancelUrl: `${base}?result=cancel`,
+    ipnUrl: `${env.PUBLIC_API_ORIGIN}/api/v1/webhooks/payments/${activeGateway()}`,
+  };
+}

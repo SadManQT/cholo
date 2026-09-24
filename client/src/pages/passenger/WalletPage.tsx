@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as walletApi from '../../api/wallet.api';
+import { TopUpCard } from '../../components/payment/TopUpCard';
 import { WalletTxnRow } from '../../components/wallet/WalletTxnRow';
 import { EmptyState, Skeleton } from '../../components/ui';
 import type { Wallet, WalletTransaction } from '../../types/wallet.types';
@@ -74,12 +75,13 @@ export function WalletPage() {
         <EmptyState title="Wallet did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(1, true) }} />
       ) : (
         <>
-          {}
           <div className="mb-5 rounded-xl bg-cholo-700 p-5 text-white">
             <p className="text-sm text-white/80">Available balance</p>
             <p className="mt-1 text-4xl font-bold tabular-nums">{formatBDT(wallet?.balance)}</p>
             <p className="mt-2 text-xs text-white/70">{wallet?.currency}{wallet?.status === 'frozen' ? ' · Frozen' : ''}</p>
           </div>
+
+          {wallet?.status !== 'frozen' && <TopUpCard />}
 
           <h2 className="mb-3 font-semibold">Transactions</h2>
           {transactions.length === 0 ? (

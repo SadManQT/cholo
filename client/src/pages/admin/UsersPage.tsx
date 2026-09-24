@@ -4,7 +4,7 @@ import type { SuspensionDuration } from '../../api/admin.api';
 import { Button, Card, Dialog, EmptyState, Input, Skeleton, StatePill, toast } from '../../components/ui';
 import type { AdminUserRow } from '../../types/admin.types';
 import { getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
-import { formatBDT, formatDate, formatDateTime } from '../../utils/format';
+import { dhakaDate, formatBDT, formatDate, formatDateTime } from '../../utils/format';
 import { staggerStyle } from '../../utils/stagger';
 
 const DURATIONS: { value: SuspensionDuration; label: string }[] = [
@@ -69,7 +69,7 @@ function DecisionDialog({ user, onClose, onDone }: { user: AdminUserRow; onClose
           </div>
           {duration === 'custom' && (
             <label className="mt-3 flex flex-col gap-1.5 text-sm font-medium">Suspended through
-              <input type="date" value={until} min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)} onChange={(event) => setUntil(event.target.value)} className={`h-11 rounded-xl border bg-surface px-3.5 ${errors.until ? 'border-danger-600' : 'border-border'}`} />
+              <input type="date" value={until} min={dhakaDate(1)} onChange={(event) => setUntil(event.target.value)} className={`h-11 rounded-xl border bg-surface px-3.5 ${errors.until ? 'border-danger-600' : 'border-border'}`} />
               {errors.until && <span className="font-normal text-danger-600">{errors.until}</span>}
             </label>
           )}

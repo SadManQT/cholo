@@ -33,3 +33,10 @@ export function formatDistance(value: number | null | undefined) {
   if (value == null) return '—';
   return `${value.toFixed(value < 10 ? 1 : 0)} km`;
 }
+
+const dhakaDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
+
+/** YYYY-MM-DD in Bangladesh time (not UTC), optionally shifted by whole days. */
+export function dhakaDate(offsetDays = 0) {
+  return dhakaDateFormatter.format(new Date(Date.now() + offsetDays * 86_400_000));
+}

@@ -401,7 +401,7 @@ export function BookRidePage() {
         className="h-full"
       />
 
-      {!rideRequest && (
+      {!rideRequest && !(pickup && dropoff) && (
         <div className="pointer-events-none absolute left-3 top-3 z-[500] rounded-xl bg-surface/95 px-3 py-2 text-sm shadow-lg">
           <span className="font-semibold">Map pin: {locationLabel(mapField)}</span>
           <span className="ml-2 text-ink-500">Tap the map to set</span>

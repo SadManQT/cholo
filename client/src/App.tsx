@@ -40,6 +40,7 @@ const PromosPage = lazy(() => import('./pages/passenger/PromosPage').then((modul
 const DriverApplyPage = lazy(() => import('./pages/driver/DriverApplyPage').then((module) => ({ default: module.DriverApplyPage })));
 const DriverDocumentsPage = lazy(() => import('./pages/driver/DriverDocumentsPage').then((module) => ({ default: module.DriverDocumentsPage })));
 const DriverVehiclesPage = lazy(() => import('./pages/driver/DriverVehiclesPage').then((module) => ({ default: module.DriverVehiclesPage })));
+const PaymentResultPage = lazy(() => import('./pages/passenger/PaymentResultPage').then((module) => ({ default: module.PaymentResultPage })));
 const ZonesPage = lazy(() => import('./pages/admin/ZonesPage').then((module) => ({ default: module.ZonesPage })));
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
           <Route path="/trips" element={<TripHistoryPage />} />
           <Route path="/trips/:code" element={<TripDetailPage />} />
           <Route path="/wallet" element={<WalletPage />} />
+          <Route path="/payments/:publicId" element={<PaymentResultPage />} />
           <Route path="/promos" element={<PromosPage />} />
           <Route path="/account/places" element={<SavedPlacesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />

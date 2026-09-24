@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import * as tripsApi from '../../api/trips.api';
 import { MapView } from '../../components/map/MapView';
+import { PayTripCard } from '../../components/payment/PayTripCard';
 import { RateTripCard } from '../../components/ride/RateTripCard';
 import { TripStatusStepper } from '../../components/ride/TripStatusStepper';
 import { Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../components/ui';
@@ -94,6 +95,9 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         </div>
       </Card>
 
+      {trip.status === 'completed' && trip.participantRole === 'passenger' && trip.fare.paymentStatus === 'unpaid' && (
+        <PayTripCard tripCode={trip.publicCode} total={trip.fare.total} preferred={trip.estimate.paymentIntent} onPaid={() => void loadTrip()} />
+      )}
       {trip.status === 'completed' && <RateTripCard tripCode={trip.publicCode} counterpartyName={counterparty.name} existing={trip.myRating} />}
 
       <Card className="mb-4 space-y-3">

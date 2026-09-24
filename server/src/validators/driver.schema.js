@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
+import { dhakaDate } from '../utils/dhakaDate.js';
+
 const isoDate = z.string().date();
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => dhakaDate();
 
 export const applyDriverSchema = z.object({
   nidNumber: z.string().regex(/^(?:[0-9]{10}|[0-9]{13}|[0-9]{17})$/, 'NID must contain 10, 13, or 17 digits'),
@@ -72,7 +74,7 @@ export const respondToOfferSchema = z.object({
 });
 
 export const earningsQuerySchema = z.object({
-  from: isoDate.default(() => new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)),
+  from: isoDate.default(() => dhakaDate(-29)),
   to: isoDate.default(today),
 });
 

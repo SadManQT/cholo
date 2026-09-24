@@ -7,6 +7,7 @@ import { BadgeCheckIcon, CarIcon, FileIcon } from '../../components/layout/icons
 import { Button, Input, toast } from '../../components/ui';
 import { useAuth } from '../../context/auth';
 import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
+import { dhakaDate } from '../../utils/format';
 
 const STEPS = [
   { icon: <BadgeCheckIcon />, title: 'Apply', hint: 'Your NID and driving license numbers' },
@@ -28,7 +29,7 @@ export function DriverApplyPage() {
     if (![10, 13, 17].includes(form.nidNumber.length)) next.nidNumber = 'NID must have 10, 13 or 17 digits';
     if (!form.licenseNumber.trim()) next.licenseNumber = 'Enter your driving license number';
     if (!form.licenseExpiry) next.licenseExpiry = 'Enter the expiry date on your license';
-    else if (form.licenseExpiry <= new Date().toISOString().slice(0, 10)) next.licenseExpiry = 'Your driving license must not be expired';
+    else if (form.licenseExpiry <= dhakaDate()) next.licenseExpiry = 'Your driving license must not be expired';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -105,7 +106,7 @@ export function DriverApplyPage() {
             <input
               type="date"
               value={form.licenseExpiry}
-              min={new Date().toISOString().slice(0, 10)}
+              min={dhakaDate(1)}
               onChange={(event) => setForm({ ...form, licenseExpiry: event.target.value })}
               aria-invalid={Boolean(errors.licenseExpiry) || undefined}
               className={`h-11 rounded-xl border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 ${errors.licenseExpiry ? 'border-danger-600 focus-visible:ring-danger-600' : 'border-border focus-visible:ring-cholo-700'}`}
