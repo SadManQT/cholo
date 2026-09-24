@@ -3,7 +3,7 @@ import * as driverApi from '../../api/driver.api';
 import { Card, EmptyState, Skeleton } from '../../components/ui';
 import type { DailyEarning, EarningTripRow } from '../../types/earnings.types';
 import { getApiErrorMessage } from '../../utils/apiError';
-import { formatBDT, formatDate, formatDateTime } from '../../utils/format';
+import { dhakaDate, formatBDT, formatDate, formatDateTime } from '../../utils/format';
 import { staggerStyle } from '../../utils/stagger';
 
 const RANGE_OPTIONS = [
@@ -11,10 +11,6 @@ const RANGE_OPTIONS = [
   { label: '30 days', days: 30 },
   { label: '90 days', days: 90 },
 ];
-
-function isoDaysAgo(days: number) {
-  return new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
 
 export function EarningsPage() {
   const [rangeDays, setRangeDays] = useState(30);
@@ -29,7 +25,7 @@ export function EarningsPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await driverApi.getEarnings({ from: isoDaysAgo(days), to: new Date().toISOString().slice(0, 10) });
+      const result = await driverApi.getEarnings({ from: dhakaDate(1 - days), to: dhakaDate() });
       if (requestId !== requestIdRef.current) return;
       setDaily(result.daily);
       setTrips(result.trips);

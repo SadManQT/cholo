@@ -7,6 +7,7 @@ import * as vehiclesRepo from '../repositories/vehicles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
 import { notify } from './notifications.service.js';
 import { AppError } from '../utils/AppError.js';
+import { dhakaDate } from '../utils/dhakaDate.js';
 
 const REQUIRED_DRIVER_DOCUMENTS = Object.freeze(['license', 'nid', 'photo', 'police_clearance']);
 const REQUIRED_VEHICLE_DOCUMENTS = Object.freeze(['registration', 'fitness', 'insurance', 'tax_token']);
@@ -21,7 +22,7 @@ function docDecisionNotice(document, decision) {
 }
 
 function isExpired(expiryDate) {
-  return expiryDate != null && expiryDate < new Date().toISOString().slice(0, 10);
+  return expiryDate != null && expiryDate < dhakaDate();
 }
 
 function hasApprovedRequiredDocuments(documents, requiredTypes) {

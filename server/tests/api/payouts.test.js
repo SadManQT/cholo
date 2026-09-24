@@ -5,6 +5,7 @@ import { after, before, mock, test } from 'node:test';
 
 import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
+import { dhakaDate } from '../../src/utils/dhakaDate.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
 
@@ -192,7 +193,7 @@ test('GET /driver/earnings returns daily aggregates (v_driver_daily_earnings) an
   assert.equal(response.status, 200);
   const { daily, trips } = (await response.json()).data;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dhakaDate();
   const todayRow = daily.find((row) => row.earningDate === today);
   assert.ok(todayRow, 'today should have a daily aggregate row');
   assert.ok(todayRow.tripsCount >= 1);

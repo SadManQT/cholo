@@ -4,6 +4,7 @@ import type { DocumentInput } from '../../api/driver.api';
 import type { DriverDocument } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { expiryFlag } from '../../utils/documents';
+import { dhakaDate } from '../../utils/format';
 import { FileIcon } from '../layout/icons';
 import { Button, Input, StatePill, toast } from '../ui';
 
@@ -93,7 +94,7 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
               {askNumber && <Input label="Document number" value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
               {askExpiry && (
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">Expiry date
-                  <input type="date" value={expiryDate} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
+                  <input type="date" value={expiryDate} min={dhakaDate(1)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
                 </label>
               )}
             </div>

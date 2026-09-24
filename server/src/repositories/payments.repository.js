@@ -19,6 +19,8 @@ export async function findActiveForTrip(tripId, client) {
   const { rows } = await client.query(
     `SELECT id FROM payments
      WHERE trip_id = $1 AND purpose = 'trip' AND status = 'initiated'
+       -- an attempt abandoned at the gateway must not block paying forever
+       AND initiated_at > now() - interval '30 minutes'
      LIMIT 1`,
     [tripId],
   );
@@ -30,7 +32,8 @@ export async function findByPublicId(publicId, client = pool) {
   const { rows } = await client.query(
     `SELECT id, public_id AS "publicId", purpose, trip_id AS "tripId", payer_id AS "payerId",
             method_type AS "methodType", gateway, amount, status,
-            initiated_at AS "initiatedAt", completed_at AS "completedAt"
+            initiated_at AS "initiatedAt", completed_at AS "completedAt",
+            (SELECT trip_code FROM trips WHERE trips.id = payments.trip_id) AS "tripCode"
      FROM payments
      WHERE public_id = $1`,
     [publicId],
@@ -61,4 +64,11 @@ export async function markSucceeded(paymentId, gatewayTxnId, client) {
   );
 
   return rows[0];
+}
+
+export async function markFailedIfInitiated(publicId, client = pool) {
+  await client.query(
+    `UPDATE payments SET status = 'failed', completed_at = now() WHERE public_id = $1 AND status = 'initiated'`,
+    [publicId],
+  );
 }

@@ -17,7 +17,7 @@ export async function insertEarning(
 
 export async function listDailyForDriver(driverId, { from, to }, client = pool) {
   const { rows } = await client.query(
-    `SELECT earning_date::text AS "earningDate", trips_count AS "tripsCount",
+    `SELECT earning_date::text AS "earningDate", trips_count::int AS "tripsCount",
             gross_total AS "grossTotal", commission_total AS "commissionTotal", net_total AS "netTotal"
      FROM v_driver_daily_earnings
      WHERE driver_id = $1 AND earning_date BETWEEN $2 AND $3

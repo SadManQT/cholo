@@ -1,4 +1,3 @@
-import { env } from '../config/env.js';
 import * as paymentsRepo from '../repositories/payments.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
@@ -47,10 +46,7 @@ export async function initiateTopup(userId, { amount, method }) {
     amount,
     customerName: payer.fullName,
     customerEmail: payer.email ?? 'no-email@cholo.app',
-    successUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=success`,
-    failUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=fail`,
-    cancelUrl: `${env.CLIENT_ORIGIN}/payments/${payment.publicId}?result=cancel`,
-    ipnUrl: `${env.PUBLIC_API_ORIGIN}/api/v1/webhooks/payments/${paymentGateway.activeGateway()}`,
+    ...paymentGateway.gatewayReturnUrls(payment.publicId),
   });
 
   return {

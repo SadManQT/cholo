@@ -338,3 +338,45 @@ test('admin approval queues load (the vehicle queue reads vehicle document rejec
   assert.equal((await call('GET', '/admin/drivers', { token: admin.token })).status, 200);
   assert.equal((await call('GET', '/admin/vehicles', { token: admin.token })).status, 200);
 });
+
+test('gateway return: a cancelled payment is marked failed, redirects to the client, and unblocks paying again', async () => {
+  const rider = await createUser();
+  const trip = await createCompletedTrip(rider);
+  await db.query(`UPDATE trips SET payment_status = 'unpaid' WHERE id = $1`, [trip.id]);
+  await db.query(`UPDATE wallets SET balance = 1000 WHERE user_id = $1`, [rider.userId]);
+  const { rows } = await db.query(
+    `INSERT INTO payments (purpose, trip_id, payer_id, method_type, gateway, amount, status)
+     VALUES ('trip', $1, $2, 'bkash', 'sslcommerz', 100, 'initiated') RETURNING public_id AS "publicId"`,
+    [trip.id, rider.userId],
+  );
+
+  const blocked = await call('POST', `/trips/${trip.tripCode}/pay`, { token: rider.token, body: { method: 'wallet' } });
+  assert.equal(blocked.status, 409);
+
+  const returned = await fetch(`${baseUrl}/api/v1/payments/${rows[0].publicId}/return?result=cancel`, {
+    method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'tran_id=x',
+  });
+  assert.equal(returned.status, 303);
+  assert.equal(returned.headers.get('location'), `${env.CLIENT_ORIGIN[0]}/payments/${rows[0].publicId}?result=cancel`);
+  const { rows: after } = await db.query(`SELECT status FROM payments WHERE public_id = $1`, [rows[0].publicId]);
+  assert.equal(after[0].status, 'failed');
+
+  const paid = await call('POST', `/trips/${trip.tripCode}/pay`, { token: rider.token, body: { method: 'wallet' } });
+  assert.equal(paid.status, 201);
+
+  const detail = await (await call('GET', `/payments/${rows[0].publicId}`, { token: rider.token })).json();
+  assert.equal(detail.data.tripCode, trip.tripCode);
+});
+
+test('an abandoned gateway attempt older than 30 minutes no longer blocks paying the trip', async () => {
+  const rider = await createUser();
+  const trip = await createCompletedTrip(rider);
+  await db.query(`UPDATE trips SET payment_status = 'unpaid' WHERE id = $1`, [trip.id]);
+  await db.query(`UPDATE wallets SET balance = 1000 WHERE user_id = $1`, [rider.userId]);
+  await db.query(
+    `INSERT INTO payments (purpose, trip_id, payer_id, method_type, gateway, amount, status, initiated_at)
+     VALUES ('trip', $1, $2, 'card', 'sslcommerz', 100, 'initiated', now() - interval '40 minutes')`,
+    [trip.id, rider.userId],
+  );
+  assert.equal((await call('POST', `/trips/${trip.tripCode}/pay`, { token: rider.token, body: { method: 'wallet' } })).status, 201);
+});

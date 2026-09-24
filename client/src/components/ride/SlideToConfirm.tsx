@@ -74,8 +74,14 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
           setValue(Number(event.target.value));
         }}
         onPointerUp={finish}
-        onKeyUp={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') finish();
+        onKeyDown={(event) => {
+          // The slide guards against accidental taps; a deliberate Enter/Space from a keyboard confirms directly.
+          if ((event.key === 'Enter' || event.key === ' ') && !loading) {
+            event.preventDefault();
+            stopSpring();
+            onConfirm();
+            setValue(0);
+          }
         }}
         aria-label={`Slide to ${label}`}
         className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0 disabled:cursor-not-allowed"
