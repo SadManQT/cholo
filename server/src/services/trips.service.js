@@ -1,4 +1,5 @@
 import { withTransaction } from '../config/db.js';
+import * as auditRepo from '../repositories/audit.repository.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
 import * as earningsRepo from '../repositories/earnings.repository.js';
 import * as paymentsRepo from '../repositories/payments.repository.js';
@@ -23,6 +24,7 @@ import { haversineDistanceKm } from '../utils/haversine.js';
 import { quote as computeFare, round2 } from '../utils/fareMath.js';
 import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
 import * as geoService from './geo.service.js';
+import * as notificationsService from './notifications.service.js';
 import * as paymentGateway from './paymentGateway.service.js';
 import { rewardReferralOnFirstTrip } from './referrals.service.js';
 
@@ -169,24 +171,42 @@ async function redeemPromoIfApplicable(trip, preDiscountTotal, client) {
   return { promoId: promo.id, discountAmount: computeDiscount(promo, preDiscountTotal) };
 }
 
-export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, lng } = {}) {
+/** Where the driver is now: the position sent with the request, else a ping under two minutes old. */
+async function currentPosition(driverId, reported, client) {
+  if (reported) {
+    await driversRepo.updateLocation(driverId, reported, client);
+    return reported;
+  }
+  return driversRepo.findFreshLocation(driverId, FRESH_LOCATION_SECONDS, client);
+}
+
+export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, lng, endEarly = false } = {}) {
+  const reported = lat != null && lng != null ? { lat, lng } : undefined;
   const result = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
     const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
     assertTransition(trip, 'in_progress');
-    await assertNear(
-      driverId,
-      { lat: trip.dropoffLat, lng: trip.dropoffLng },
-      lat != null && lng != null ? { lat, lng } : undefined,
-      'TOO_FAR_FROM_DROPOFF',
-      client,
-    );
+    const dropoff = { lat: trip.dropoffLat, lng: trip.dropoffLng };
 
-    const { distanceKm, durationMin } = await geoService.route(
-      { lat: trip.pickupLat, lng: trip.pickupLng },
-      { lat: trip.dropoffLat, lng: trip.dropoffLng },
-      (trip.stops ?? []).map(({ lat, lng }) => ({ lat, lng })),
-    );
+    // "End trip here": the rider got out before the drop-off. Charge the route actually driven, pickup →
+    // stops already reached → here, and record it for admins. At the drop-off it is a normal completion.
+    let endedAt = null;
+    if (endEarly) {
+      const here = await currentPosition(driverId, reported, client);
+      if (!here) throw new AppError(422, 'LOCATION_NEEDED_TO_ARRIVE');
+      const metersToDropoff = haversineDistanceKm(here.lat, here.lng, dropoff.lat, dropoff.lng) * 1000;
+      if (metersToDropoff > (env.ARRIVAL_RADIUS_METERS || 0)) endedAt = here;
+    } else {
+      await assertNear(driverId, dropoff, reported, 'TOO_FAR_FROM_DROPOFF', client);
+    }
+
+    const { distanceKm, durationMin } = endedAt
+      ? await geoService.route({ lat: trip.pickupLat, lng: trip.pickupLng }, endedAt, await tripsRepo.listReachedStops(trip.id, client))
+      : await geoService.route(
+        { lat: trip.pickupLat, lng: trip.pickupLng },
+        dropoff,
+        (trip.stops ?? []).map(({ lat: stopLat, lng: stopLng }) => ({ lat: stopLat, lng: stopLng })),
+      );
 
     const tariff = await pricingRepo.getCurrentTariff(trip.cityId, trip.categoryId, client);
     if (!tariff) throw new AppError(422, 'NO_TARIFF_FOR_MARKET');
@@ -242,6 +262,21 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
 
     await rewardReferralOnFirstTrip(trip, client);
 
+    if (endedAt) {
+      await tripsRepo.markEndedEarly(trip.id, endedAt, client);
+      await auditRepo.insert({
+        actorId: driverId, actorRole: 'DRIVER', action: 'TRIP_ENDED_EARLY', entityType: 'trips', entityId: trip.id,
+        oldValue: { plannedDropoff: dropoff },
+        newValue: { endedAt, distanceKm, totalFare: fare.totalFare },
+      }, client);
+      await notificationsService.notify(trip.passengerId, {
+        category: 'ride',
+        title: 'Your trip ended before the planned drop-off',
+        body: `Your driver ended trip ${trip.tripCode} early. You were charged for the ${distanceKm} km driven. If you didn't ask to get out, report it from the receipt.`,
+        payload: { tripCode: trip.tripCode },
+      }, client);
+    }
+
     const receipt = await receiptsRepo.insert({
       tripId: trip.id,
       issuedTo: trip.passengerId,
@@ -250,7 +285,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       total: fare.totalFare,
     }, client);
 
-    return { trip, updated, receipt };
+    return { trip, updated, receipt, endedAt };
   });
 
   const { trip, updated, receipt } = result;
@@ -272,6 +307,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       status: updated.paymentStatus,
     },
     receiptNo: receipt.receiptNo,
+    endedEarly: Boolean(result.endedAt),
   };
 
   await notifyTripStatus(trip, { status: updated.status, completedAt: updated.completedAt, fare: response.fare });
@@ -518,6 +554,7 @@ function toTripDetail(trip, history) {
     receipt: trip.receiptNo ? { receiptNo: trip.receiptNo, issuedAt: trip.receiptIssuedAt } : null,
     myRating: trip.myRating ?? null,
     arrivalRadiusMeters: env.ARRIVAL_RADIUS_METERS,
+    endedEarly: trip.endedEarlyAt ? { at: trip.endedEarlyAt, lat: trip.endLat, lng: trip.endLng } : null,
     stops: trip.stops ?? [],
     driverIsFavorite: trip.driverIsFavorite ?? false,
     reportedByMe: trip.reportedByMe ?? false,

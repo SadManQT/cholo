@@ -38,6 +38,7 @@ export function DriverActiveTripPage() {
   const [mutating, setMutating] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [endEarlyOpen, setEndEarlyOpen] = useState(false);
   const [snapPoint, setSnapPoint] = useState<SnapPoint>('half');
   const lastSentAt = useRef(0);
   const tracking = useRideTracking(trip?.publicCode, trip?.status ?? 'assigned');
@@ -124,6 +125,22 @@ export function DriverActiveTripPage() {
     }
   }
 
+  // The rider asked to get out before the drop-off: they pay for the route actually driven.
+  async function endTripHere() {
+    if (!trip) return;
+    setMutating(true);
+    try {
+      const result = await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position, { endEarly: true });
+      toast.success(result.endedEarly ? t('Trip ended here. The rider pays for the distance driven.') : t('Trip completed.'));
+      navigate(`/driver/trips/${trip.publicCode}`, { replace: true });
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, t('Trip status could not be updated.')));
+    } finally {
+      setMutating(false);
+      setEndEarlyOpen(false);
+    }
+  }
+
   async function cancelTrip() {
     if (!trip) return;
     setMutating(true);
@@ -202,6 +219,9 @@ export function DriverActiveTripPage() {
           {nextStop
             ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} lockedReason={lockedReason} onConfirm={() => void reachStop(nextStop.order)} />
             : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} lockedReason={trip.status === 'arrived' ? null : lockedReason} onConfirm={advanceTrip} />}
+          {trip.status === 'in_progress' && (nextStop || lockedReason) && (
+            <Button variant="ghost" onClick={() => setEndEarlyOpen(true)} className="w-full">{t('Rider getting out here? End trip here')}</Button>
+          )}
           {(trip.status === 'assigned' || trip.status === 'arrived') && (
             <Button variant="ghost" onClick={() => setCancelOpen(true)} className="w-full text-danger-600">{t('Cancel trip')}</Button>
           )}
@@ -209,6 +229,15 @@ export function DriverActiveTripPage() {
       </BottomSheet>
 
       {user && <ChatSheet open={chatOpen} tripCode={trip.publicCode} currentUserId={user.id} onClose={() => setChatOpen(false)} />}
+      <ConfirmSheet
+        open={endEarlyOpen}
+        title={t('End the trip here?')}
+        hint={t('Only do this if the rider asked to get out. They pay for the distance driven so far, any stops not reached are dropped, and the rider and Cholo are told the trip ended early.')}
+        confirmLabel={t('End trip here')}
+        loading={mutating}
+        onConfirm={endTripHere}
+        onClose={() => setEndEarlyOpen(false)}
+      />
       <ConfirmSheet
         open={cancelOpen}
         title={t('Cancel this trip?')}

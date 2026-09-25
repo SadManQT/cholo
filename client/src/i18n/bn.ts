@@ -870,4 +870,11 @@ export const bn: Record<string, string> = {
   "{0} to the pickup": "পিকআপ আরও {0}",
   "{0} to stop {1}": "স্টপ {1} আরও {0}",
   "{0} to the drop-off": "গন্তব্য আরও {0}",
+  "Trip ended here. The rider pays for the distance driven.": "ট্রিপ এখানে শেষ হয়েছে। যাত্রী যতটুকু পথ গেছেন ততটুকুর ভাড়া দেবেন।",
+  "Rider getting out here? End trip here": "যাত্রী এখানে নামছেন? ট্রিপ এখানে শেষ করুন",
+  "End the trip here?": "ট্রিপ এখানে শেষ করবেন?",
+  "Only do this if the rider asked to get out. They pay for the distance driven so far, any stops not reached are dropped, and the rider and Cholo are told the trip ended early.": "শুধু যাত্রী নামতে চাইলে এটি করুন। এ পর্যন্ত যতটুকু পথ গেছেন ততটুকুর ভাড়া হবে, বাকি স্টপ বাদ যাবে, এবং যাত্রী ও Cholo জানবে যে ট্রিপ আগে শেষ হয়েছে।",
+  "End trip here": "এখানে শেষ করুন",
+  "Ended before the planned drop-off": "নির্ধারিত গন্তব্যের আগেই শেষ হয়েছে",
+  "The trip ended at {0}. The fare covers the distance driven. If you did not ask to get out, report it below.": "ট্রিপটি {0}-এ শেষ হয়েছে। ভাড়া শুধু যতটুকু পথ গেছেন তার জন্য। আপনি নামতে না চাইলে নিচে রিপোর্ট করুন।",
 };

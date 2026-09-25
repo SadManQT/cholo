@@ -43,10 +43,10 @@ export async function startTrip(tripCode: string) {
   return response.data.data;
 }
 
-export async function completeTrip(tripCode: string, waitingMin = 0, position?: Position) {
-  const response = await apiClient.post<ApiSuccess<{ status: TripStatus }>>(
+export async function completeTrip(tripCode: string, waitingMin = 0, position?: Position, { endEarly = false } = {}) {
+  const response = await apiClient.post<ApiSuccess<{ status: TripStatus; endedEarly: boolean }>>(
     `/trips/${encodeURIComponent(tripCode)}/complete`,
-    { waitingMin, ...positionBody(position) },
+    { waitingMin, ...positionBody(position), ...(endEarly ? { endEarly: true } : {}) },
   );
   return response.data.data;
 }

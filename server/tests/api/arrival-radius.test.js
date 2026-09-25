@@ -217,3 +217,44 @@ test('drivers can only mark arrival, reach a stop and complete within 300 m of t
   const detail = await (await call('GET', `/trips/${code}`, { token: driver.token })).json();
   assert.equal(detail.data.arrivalRadiusMeters, 300);
 });
+
+test('"End trip here": charges the route actually driven, records the spot, tells the rider', async () => {
+  const rider = await createUser();
+  const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
+  const { body: booked } = await book(rider);
+  const planned = booked.data.quote.estFare;
+  const offer = (await pendingOffersFor(driver.userId))[0];
+  const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
+  const code = accepted.data.trip.publicCode;
+  await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await call('POST', `/trips/${code}/start`, { token: driver.token });
+
+  const midway = { lat: 23.7700, lng: 90.3900 };
+  osrmUrls.length = 0;
+  const ended = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, ...midway } });
+  assert.equal(ended.status, 200);
+  const endedBody = (await ended.json()).data;
+  assert.equal(endedBody.endedEarly, true);
+  assert.ok(osrmUrls[0].includes(`${midway.lng},${midway.lat}`), 'priced to where the rider got out');
+
+  const detail = (await (await call('GET', `/trips/${code}`, { token: rider.token })).json()).data;
+  assert.equal(detail.endedEarly.lat, midway.lat);
+  assert.ok(Number(detail.fare.total) <= planned);
+  const { rows: inbox } = await db.query(`SELECT title FROM notifications WHERE user_id = $1`, [rider.userId]);
+  assert.ok(inbox.some((row) => row.title === 'Your trip ended before the planned drop-off'));
+  const { rows: audit } = await db.query(`SELECT action FROM audit_logs WHERE action = 'TRIP_ENDED_EARLY' AND actor_id = $1`, [driver.userId]);
+  assert.equal(audit.length, 1);
+});
+
+test('"End trip here" at the drop-off is just a normal completion', async () => {
+  const rider = await createUser();
+  const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
+  await book(rider);
+  const offer = (await pendingOffersFor(driver.userId))[0];
+  const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
+  const code = accepted.data.trip.publicCode;
+  await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await call('POST', `/trips/${code}/start`, { token: driver.token });
+  const ended = await (await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, lat: DROPOFF.lat, lng: DROPOFF.lng } })).json();
+  assert.equal(ended.data.endedEarly, false);
+});
