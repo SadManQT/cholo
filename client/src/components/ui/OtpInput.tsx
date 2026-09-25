@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
 import { EASE_IN_OUT_CSS, EASE_OUT_CSS } from '../../utils/motion';
+import { t } from '../../i18n';
 
 interface OtpInputProps {
   value: string;
@@ -82,7 +83,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
   }
 
   return (
-    <div ref={groupRef} className="flex justify-between gap-2" role="group" aria-label="Verification code">
+    <div ref={groupRef} className="flex justify-between gap-2" role="group" aria-label={t('Verification code')}>
       {Array.from({ length }, (_, index) => (
         <input
           key={index}
@@ -96,7 +97,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, error = fals
           disabled={disabled}
           inputMode="numeric"
           autoComplete={index === 0 ? 'one-time-code' : 'off'}
-          aria-label={`Digit ${index + 1} of ${length}`}
+          aria-label={t('Digit {0} of {1}', index + 1, length)}
           className={`h-14 w-11 rounded-xl border text-center text-xl font-semibold text-ink-900 tabular-nums
                       transition-colors duration-150 ease-cholo-out
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2

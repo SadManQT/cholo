@@ -8,6 +8,7 @@ import type { AppNotification, NotificationCategory } from '../../types/notifica
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
 import { staggerStyle } from '../../utils/stagger';
+import { t } from '../../i18n';
 
 const CATEGORY_ICON: Record<NotificationCategory, (props: { className?: string }) => React.ReactNode> = {
   ride: BellIcon, payment: BanknoteIcon, promo: TagIcon, document: FileIcon, safety: SirenIcon, system: BellIcon,
@@ -26,7 +27,7 @@ export function NotificationsPage() {
       setItems(result.data);
       setUnread(result.unread);
     } catch (thrown) {
-      setError(getApiErrorMessage(thrown, 'Could not load notifications.'));
+      setError(getApiErrorMessage(thrown, t('Could not load notifications.')));
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ export function NotificationsPage() {
       setUnread(0);
       window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not mark notifications as read.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not mark notifications as read.')));
     }
   }
 
@@ -49,18 +50,18 @@ export function NotificationsPage() {
     <main className="mx-auto max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink-900">Notifications</h1>
-          <p className="text-sm text-ink-500">{unread > 0 ? `${unread} unread` : 'You’re all caught up.'}</p>
+          <h1 className="text-2xl font-bold text-ink-900">{t('Notifications')}</h1>
+          <p className="text-sm text-ink-500">{unread > 0 ? t('{0} unread', unread) : t('You’re all caught up.')}</p>
         </div>
-        {unread > 0 && <Button variant="secondary" onClick={() => void markAllRead()}>Mark all read</Button>}
+        {unread > 0 && <Button variant="secondary" onClick={() => void markAllRead()}>{t('Mark all read')}</Button>}
       </div>
 
       {loading ? (
         <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : error ? (
-        <EmptyState title="Notifications did not load" hint={error} action={{ label: 'Retry', onClick: () => void load() }} />
+        <EmptyState title={t('Notifications did not load')} hint={error} action={{ label: t('Retry'), onClick: () => void load() }} />
       ) : items.length === 0 ? (
-        <EmptyState icon={<BellIcon className="h-10 w-10" />} title="No notifications yet" hint="Updates about your trips, documents and support requests will appear here." />
+        <EmptyState icon={<BellIcon className="h-10 w-10" />} title={t('No notifications yet')} hint={t('Updates about your trips, documents and support requests will appear here.')} />
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
           {items.map((item, index) => {
@@ -73,7 +74,7 @@ export function NotificationsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-sm ${item.readAt ? 'text-ink-900' : 'font-semibold text-ink-900'}`}>{item.title}</p>
-                    {!item.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cholo-700" aria-label="Unread" />}
+                    {!item.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cholo-700" aria-label={t('Unread')} />}
                   </div>
                   {item.body && <p className="mt-0.5 text-sm text-ink-500">{item.body}</p>}
                   <p className="mt-1 text-xs text-ink-500">{formatDateTime(item.createdAt)}</p>

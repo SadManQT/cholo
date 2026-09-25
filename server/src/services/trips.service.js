@@ -617,6 +617,7 @@ export async function getSharedTrip(token) {
     vehicle: { registrationNo: view.registrationNo, brand: view.brand, model: view.model, color: view.color },
     pickup: { lat: view.pickupLat, lng: view.pickupLng, address: view.pickupAddress },
     dropoff: { lat: view.dropoffLat, lng: view.dropoffLng, address: view.dropoffAddress },
+    stops: view.stops,
     location: view.lat != null && view.lng != null ? { lat: view.lat, lng: view.lng, at: view.locationAt } : null,
   };
 }

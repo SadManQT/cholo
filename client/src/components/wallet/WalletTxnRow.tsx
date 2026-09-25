@@ -1,6 +1,7 @@
 import { Card } from '../ui';
 import type { WalletTransaction, WalletTxnType } from '../../types/wallet.types';
 import { formatBDT, formatDateTime } from '../../utils/format';
+import { t } from '../../i18n';
 
 const TXN_LABELS: Record<WalletTxnType, string> = {
   topup: 'Wallet top-up',
@@ -21,7 +22,7 @@ export function WalletTxnRow({ txn }: { txn: WalletTransaction }) {
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-ink-900">{TXN_LABELS[txn.txnType]}</p>
+          <p className="font-semibold text-ink-900">{t(TXN_LABELS[txn.txnType])}</p>
           <p className="mt-1 text-sm text-ink-500">{formatDateTime(txn.createdAt)}</p>
           {txn.note && <p className="mt-1 truncate text-sm text-ink-500">{txn.note}</p>}
         </div>
@@ -29,7 +30,7 @@ export function WalletTxnRow({ txn }: { txn: WalletTransaction }) {
           <p className={`font-bold tabular-nums ${isCredit ? 'text-cholo-700' : 'text-ink-900'}`}>
             {isCredit ? '+' : '−'}{formatBDT(txn.amount)}
           </p>
-          <p className="mt-1 text-xs text-ink-500">Balance {formatBDT(txn.balanceAfter)}</p>
+          <p className="mt-1 text-xs text-ink-500">{t('Balance {0}', formatBDT(txn.balanceAfter))}</p>
         </div>
       </div>
     </Card>

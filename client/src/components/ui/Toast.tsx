@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { EASE_OUT } from '../../utils/motion';
 import { dismissToast, getToastSnapshot, subscribeToToasts } from './toastStore';
 import type { ToastItem, ToastVariant } from './toastStore';
+import { t } from '../../i18n';
 
 const VARIANT_CONFIG: Record<ToastVariant, { classes: string; icon: string }> = {
   success: { classes: 'border-cholo-700/30 text-cholo-700', icon: '✓' },
@@ -32,7 +33,7 @@ function ToastRow({ item }: { item: ToastItem }) {
       <button
         type="button"
         onClick={() => dismissToast(item.id)}
-        aria-label="Dismiss"
+        aria-label={t('Dismiss')}
         className="text-ink-500 hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 rounded"
       >
         ✕

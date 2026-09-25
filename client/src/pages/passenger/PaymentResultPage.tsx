@@ -5,6 +5,7 @@ import type { PaymentSummary } from '../../api/payments.api';
 import { Skeleton } from '../../components/ui';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
+import { t } from '../../i18n';
 
 const POLL_MS = 2_000;
 const MAX_POLLS = 15;
@@ -23,7 +24,7 @@ export function PaymentResultPage() {
     let cancelled = false;
     paymentsApi.getPayment(publicId)
       .then((next) => { if (!cancelled) setPayment(next); })
-      .catch((thrown) => { if (!cancelled) setError(getApiErrorMessage(thrown, 'Could not check this payment.')); });
+      .catch((thrown) => { if (!cancelled) setError(getApiErrorMessage(thrown, t('Could not check this payment.'))); });
     return () => { cancelled = true; };
   }, [publicId, polls]);
 
@@ -35,8 +36,8 @@ export function PaymentResultPage() {
   }, [settling, polls]);
 
   const backTo = payment?.purpose === 'trip' && payment.tripCode
-    ? { to: `/trips/${payment.tripCode}`, label: 'Back to your trip' }
-    : { to: '/wallet', label: 'Back to wallet' };
+    ? { to: `/trips/${payment.tripCode}`, label: t('Back to your trip') }
+    : { to: '/wallet', label: t('Back to wallet') };
 
   let tone = 'bg-surface-alt text-ink-500';
   let title = 'Checking your payment…';

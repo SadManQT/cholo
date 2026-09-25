@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { env } from '../config/env';
+import { language } from '../i18n';
 import type { ApiSuccess } from '../types/api.types';
 
 let accessToken: string | null = null;
@@ -22,6 +23,8 @@ export function setUnauthorizedHandler(handler: () => void) {
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
   withCredentials: true,
+  // The API answers errors in the rider's chosen language.
+  headers: { 'Accept-Language': language },
 });
 
 apiClient.interceptors.request.use((config) => {

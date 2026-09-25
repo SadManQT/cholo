@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { t } from '../../i18n';
 
 interface State {
   error: Error | null;
@@ -23,12 +24,12 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface-alt p-6">
         <div className="max-w-sm rounded-2xl border border-border bg-surface p-6 text-center shadow-lg">
-          <p className="text-lg font-bold text-ink-900">{staleBuild ? 'Cholo was updated' : 'This screen hit a problem'}</p>
+          <p className="text-lg font-bold text-ink-900">{staleBuild ? t('Cholo was updated') : t('This screen hit a problem')}</p>
           <p className="mt-2 text-sm text-ink-500">
-            {staleBuild ? 'Reload to get the latest version.' : 'Reload to try again. If it keeps happening, contact support from your account page.'}
+            {staleBuild ? t('Reload to get the latest version.') : t('Reload to try again. If it keeps happening, contact support from your account page.')}
           </p>
           <button type="button" onClick={() => window.location.reload()} className="mt-5 h-11 w-full rounded-xl bg-cholo-700 font-semibold text-white hover:bg-cholo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2">
-            Reload
+            {t('Reload')}
           </button>
         </div>
       </main>

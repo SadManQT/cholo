@@ -1,5 +1,6 @@
 import { ClockIcon, RouteIcon, UsersIcon } from './FeatureIcons';
 import { ScrollReveal } from './ScrollReveal';
+import { t } from '../../i18n';
 
 export interface UpcomingFeature {
   icon: 'clock' | 'route' | 'users';
@@ -22,7 +23,7 @@ export function UpcomingFeatures({ features }: { features: UpcomingFeature[] }) 
                 <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${feature.accent}`}>
                   <Icon className="h-5 w-5" />
                 </span>
-                <span className="rounded-full bg-marigold-500/15 px-2.5 py-1 text-xs font-semibold text-marigold-500">Coming soon</span>
+                <span className="rounded-full bg-marigold-500/15 px-2.5 py-1 text-xs font-semibold text-marigold-500">{t('Coming soon')}</span>
               </div>
               <h3 className="mt-4 font-semibold text-ink-900">{feature.title}</h3>
               <p className="mt-1.5 text-sm text-ink-500">{feature.body}</p>

@@ -9,6 +9,8 @@ import { TripPreviewCards } from '../../components/marketing/TripPreviewCards';
 import { UpcomingFeatures } from '../../components/marketing/UpcomingFeatures';
 import type { UpcomingFeature } from '../../components/marketing/UpcomingFeatures';
 import { EASE_IN_OUT } from '../../utils/motion';
+import { t } from '../../i18n';
+import { LanguageSwitch } from '../../components/layout/LanguageSwitch';
 
 const CTA_BASE = 'inline-flex h-12 items-center justify-center rounded-xl px-6 text-base font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2';
 const CTA_PRIMARY = `${CTA_BASE} bg-cholo-700 text-white hover:bg-cholo-800`;
@@ -19,38 +21,38 @@ const FEATURES: TourFeature[] = [
   {
     icon: 'location',
     accent: 'bg-info-600',
-    title: 'Watch it happen, live',
-    body: "Your driver's exact position, updating in real time from the moment they accept — the same view they see. No refreshing, no guessing, no \"where are you?\" texts.",
+    title: t('Watch it happen, live'),
+    body: t('Your driver\'s exact position, updating in real time from the moment they accept — the same view they see. No refreshing, no guessing, no "where are you?" texts.'),
   },
   {
     icon: 'route',
     accent: 'bg-cholo-700',
-    title: 'Routes that actually make sense',
-    body: "Real road-accurate routing, built for Bangladesh's streets — never a straight line through a building, a river, or across a border.",
+    title: t('Routes that actually make sense'),
+    body: t('Real road-accurate routing, built for Bangladesh\'s streets — never a straight line through a building, a river, or across a border.'),
   },
   {
     icon: 'wallet',
     accent: 'bg-marigold-500',
-    title: 'Pay however works for you',
-    body: 'Cash, wallet, bKash, or Nagad — your call. Every fare is broken down before you confirm, and every taka is logged, permanently, so nothing goes missing.',
+    title: t('Pay however works for you'),
+    body: t('Cash, wallet, bKash, or Nagad — your call. Every fare is broken down before you confirm, and every taka is logged, permanently, so nothing goes missing.'),
   },
   {
     icon: 'shield',
     accent: 'bg-danger-600',
-    title: 'Ride with total peace of mind',
-    body: "Every driver is ID-verified before they can go online. One tap sends an SOS straight to our safety team, and you can request a women-only driver whenever you'd like.",
+    title: t('Ride with total peace of mind'),
+    body: t('Every driver is ID-verified before they can go online. One tap sends an SOS straight to our safety team, and you can request a women-only driver whenever you\'d like.'),
   },
   {
     icon: 'globe',
     accent: 'bg-ink-900',
-    title: 'Speaks your language',
-    body: 'বাংলা or English, your choice, everywhere — every screen, every notification, every receipt. Switch anytime, no settings hunt required.',
+    title: t('Speaks your language'),
+    body: t('বাংলা or English, your choice, everywhere — every screen, every notification, every receipt. Switch anytime, no settings hunt required.'),
   },
   {
     icon: 'coin',
     accent: 'bg-cholo-800',
-    title: 'Earn on your terms',
-    body: 'See exactly what you make on every trip — gross, commission, net, no fine print — then cash out to bKash or Nagad whenever you need it.',
+    title: t('Earn on your terms'),
+    body: t('See exactly what you make on every trip — gross, commission, net, no fine print — then cash out to bKash or Nagad whenever you need it.'),
   },
 ];
 
@@ -58,34 +60,34 @@ const UPCOMING: UpcomingFeature[] = [
   {
     icon: 'clock',
     accent: 'bg-info-600',
-    title: 'Book ahead',
-    body: "Got a flight or an early meeting? Lock in your ride a day, or a week, in advance — no need to book the moment you walk out the door.",
+    title: t('Book ahead'),
+    body: t('Got a flight or an early meeting? Lock in your ride a day, or a week, in advance — no need to book the moment you walk out the door.'),
   },
   {
     icon: 'users',
     accent: 'bg-marigold-500',
-    title: 'Split the ride, split the fare',
-    body: 'Heading the same way as someone else? Share the trip and the cost, automatically split down the middle.',
+    title: t('Split the ride, split the fare'),
+    body: t('Heading the same way as someone else? Share the trip and the cost, automatically split down the middle.'),
   },
   {
     icon: 'route',
     accent: 'bg-cholo-700',
-    title: 'More than one stop',
-    body: 'Need to grab something on the way, or drop a friend off first? Add extra stops to a single trip instead of booking twice.',
+    title: t('More than one stop'),
+    body: t('Need to grab something on the way, or drop a friend off first? Add extra stops to a single trip instead of booking twice.'),
   },
 ];
 
 const FACTS: Array<{ value: string; label: string }> = [
-  { value: '3', label: 'ride types — bike, CNG, car' },
-  { value: '2', label: 'languages — বাংলা & English' },
-  { value: '24/7', label: 'SOS safety monitoring' },
+  { value: '3', label: t('ride types — bike, CNG, car') },
+  { value: '2', label: t('languages — বাংলা & English') },
+  { value: '24/7', label: t('SOS safety monitoring') },
 ];
 
 const STEPS: Array<{ title: string; body: string }> = [
-  { title: 'Tell us where to', body: 'Set your pickup and destination — see your fare before you book.' },
-  { title: 'Get matched', body: 'A nearby driver accepts your ride in seconds.' },
-  { title: 'Track the ride', body: 'Watch your driver approach, live, on the map.' },
-  { title: 'Arrive, pay, rate', body: 'Cash or wallet — then rate your trip.' },
+  { title: t('Tell us where to'), body: t('Set your pickup and destination — see your fare before you book.') },
+  { title: t('Get matched'), body: t('A nearby driver accepts your ride in seconds.') },
+  { title: t('Track the ride'), body: t('Watch your driver approach, live, on the map.') },
+  { title: t('Arrive, pay, rate'), body: t('Cash or wallet — then rate your trip.') },
 ];
 
 function FloatingCard({ children }: { children: ReactNode }) {
@@ -106,8 +108,9 @@ export function HomePage() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6">
         <span className="text-xl font-bold text-cholo-700">Cholo</span>
         <div className="flex items-center gap-4">
-          <Link to="/login" className="text-sm font-semibold text-ink-900 hover:text-cholo-700">Log in</Link>
-          <Link to="/register" className={`${CTA_PRIMARY} hidden h-10 px-4 text-sm sm:inline-flex`}>Sign up</Link>
+          <LanguageSwitch />
+          <Link to="/login" className="text-sm font-semibold text-ink-900 hover:text-cholo-700">{t('Log in')}</Link>
+          <Link to="/register" className={`${CTA_PRIMARY} hidden h-10 px-4 text-sm sm:inline-flex`}>{t('Sign up')}</Link>
         </div>
       </header>
 
@@ -116,15 +119,14 @@ export function HomePage() {
         <section className="relative grid gap-10 py-10 md:py-16 lg:grid-cols-2">
           <div>
             <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
-              Dhaka's ride,<br />done right.
+              {t('Dhaka\'s ride,')}<br />{t('done right.')}
             </h1>
             <p className="mt-4 max-w-md text-lg text-ink-500">
-              Book a bike, CNG, or car in seconds. Track it live. Pay however you like.
-              Cholo is Bangladesh-first, built for real roads and real riders.
+              {t('Book a bike, CNG, or car in seconds. Track it live. Pay however you like. Cholo is Bangladesh-first, built for real roads and real riders.')}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={CTA_PRIMARY}>Ride with Cholo</Link>
-              <Link to="/register?intent=driver" className={CTA_SECONDARY}>Drive with Cholo</Link>
+              <Link to="/register" className={CTA_PRIMARY}>{t('Ride with Cholo')}</Link>
+              <Link to="/register?intent=driver" className={CTA_SECONDARY}>{t('Drive with Cholo')}</Link>
             </div>
 
             <div className="mt-16 grid grid-cols-3 divide-x divide-border border-y border-border py-6">
@@ -138,8 +140,8 @@ export function HomePage() {
 
             <div className="mt-16">
               <ScrollReveal>
-                <h2 className="text-2xl font-bold sm:text-3xl">Your ride, at a glance</h2>
-                <p className="mt-2 text-ink-500">A preview of the real screens — from match to receipt.</p>
+                <h2 className="text-2xl font-bold sm:text-3xl">{t('Your ride, at a glance')}</h2>
+                <p className="mt-2 text-ink-500">{t('A preview of the real screens — from match to receipt.')}</p>
               </ScrollReveal>
               <div className="mt-6">
                 <TripPreviewCards layout="stack" />
@@ -156,7 +158,7 @@ export function HomePage() {
 
         <section className="pt-12 md:pt-20">
           <ScrollReveal>
-            <h2 className="text-center text-2xl font-bold sm:text-3xl">Everything you need for the ride</h2>
+            <h2 className="text-center text-2xl font-bold sm:text-3xl">{t('Everything you need for the ride')}</h2>
           </ScrollReveal>
         </section>
         <FeatureTour features={FEATURES} />
@@ -164,8 +166,8 @@ export function HomePage() {
         <section className="py-12 md:py-20">
           <ScrollReveal>
             <div className="mb-10 text-center">
-              <h2 className="text-2xl font-bold sm:text-3xl">What's coming next</h2>
-              <p className="mt-2 text-ink-500">On the roadmap — not live yet, but on the way.</p>
+              <h2 className="text-2xl font-bold sm:text-3xl">{t('What\'s coming next')}</h2>
+              <p className="mt-2 text-ink-500">{t('On the roadmap — not live yet, but on the way.')}</p>
             </div>
           </ScrollReveal>
           <UpcomingFeatures features={UPCOMING} />
@@ -173,7 +175,7 @@ export function HomePage() {
 
         <section className="py-12 md:py-20">
           <ScrollReveal>
-            <h2 className="text-center text-2xl font-bold sm:text-3xl">How it works</h2>
+            <h2 className="text-center text-2xl font-bold sm:text-3xl">{t('How it works')}</h2>
           </ScrollReveal>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, index) => (
@@ -190,22 +192,22 @@ export function HomePage() {
 
         <ScrollReveal className="py-12 md:py-20">
           <div className="rounded-3xl bg-cholo-700 px-6 py-12 text-center text-white sm:px-12">
-            <h2 className="text-2xl font-bold sm:text-3xl">Ready when you are</h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">{t('Ready when you are')}</h2>
             <p className="mx-auto mt-2 max-w-md text-white/85">
-              Join as a rider or start earning as a driver — it takes less than two minutes.
+              {t('Join as a rider or start earning as a driver — it takes less than two minutes.')}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link to="/register" className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-6 text-base font-semibold text-cholo-700 transition-[color,background-color,transform] duration-150 ease-cholo-out active:scale-[0.97] hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-cholo-700">
-                Ride with Cholo
+                {t('Ride with Cholo')}
               </Link>
-              <Link to="/register?intent=driver" className={CTA_ON_DARK}>Drive with Cholo</Link>
+              <Link to="/register?intent=driver" className={CTA_ON_DARK}>{t('Drive with Cholo')}</Link>
             </div>
           </div>
         </ScrollReveal>
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-ink-500">
-        © {new Date().getFullYear()} Cholo. Built in Bangladesh.
+        © {new Date().getFullYear()} {t('Cholo. Built in Bangladesh.')}
       </footer>
     </div>
   );

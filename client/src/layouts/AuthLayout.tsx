@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { EASE_OUT } from '../utils/motion';
+import { t } from '../i18n';
+import { LanguageSwitch } from '../components/layout/LanguageSwitch';
 
 export function AuthLayout() {
   const location = useLocation();
@@ -8,7 +10,7 @@ export function AuthLayout() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface-alt p-4">
-      <Link to="/welcome" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" aria-label="Cholo home">
+      <Link to="/welcome" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" aria-label={t('Cholo home')}>
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cholo-700 text-base font-black text-white">C</span>
         <span className="text-xl font-bold tracking-tight text-ink-900">Cholo</span>
       </Link>
@@ -25,6 +27,7 @@ export function AuthLayout() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <LanguageSwitch />
     </div>
   );
 }

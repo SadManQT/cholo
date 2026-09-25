@@ -6,14 +6,15 @@ import { Button, EmptyState, Skeleton } from '../../components/ui';
 import type { TripStatus, TripSummary } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { staggerStyle } from '../../utils/stagger';
+import { t } from '../../i18n';
 
 type HistoryFilter = 'all' | 'active' | 'completed' | 'cancelled';
 
 const FILTERS: Array<{ value: HistoryFilter; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'all', label: t('All') },
+  { value: 'active', label: t('Active') },
+  { value: 'completed', label: t('Completed') },
+  { value: 'cancelled', label: t('Cancelled') },
 ];
 
 export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }) {
@@ -49,7 +50,7 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
       setTotal(result.meta?.total ?? result.data.length);
     } catch (thrown) {
       if (requestId !== requestIdRef.current) return;
-      setError(getApiErrorMessage(thrown, 'Could not load your trips.'));
+      setError(getApiErrorMessage(thrown, t('Could not load your trips.')));
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);
@@ -79,13 +80,13 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
   return (
     <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold">Your trips</h1>
-        <p className="text-sm text-ink-500">Active rides and past receipts in one place.</p>
+        <h1 className="text-2xl font-bold">{t('Your trips')}</h1>
+        <p className="text-sm text-ink-500">{t('Active rides and past receipts in one place.')}</p>
       </div>
 
       {!driverMode && <UpcomingRides />}
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter trips">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('Filter trips')}>
         {FILTERS.map((item) => (
           <Button
             key={item.value}
@@ -101,11 +102,11 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
       {loading ? (
         <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : error && trips.length === 0 ? (
-        <EmptyState title="Trips did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(1, true) }} />
+        <EmptyState title={t('Trips did not load')} hint={error} action={{ label: t('Retry'), onClick: () => loadPage(1, true) }} />
       ) : trips.length === 0 ? (
         <EmptyState
-          title={filter === 'all' ? 'No trips yet' : `No ${filter} trips`}
-          hint={driverMode ? 'Completed jobs will appear here.' : 'Book your first ride from the Book tab.'}
+          title={filter === 'all' ? t('No trips yet') : t('No {0} trips', filter)}
+          hint={driverMode ? t('Completed jobs will appear here.') : t('Book your first ride from the Book tab.')}
         />
       ) : (
         <div className="space-y-3">
@@ -115,7 +116,7 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
             </div>
           ))}
           {error && (
-            <EmptyState title="More trips did not load" hint={error} action={{ label: 'Retry', onClick: () => loadPage(page + 1) }} className="py-6" />
+            <EmptyState title={t('More trips did not load')} hint={error} action={{ label: t('Retry'), onClick: () => loadPage(page + 1) }} className="py-6" />
           )}
           {loadingMore && <><Skeleton variant="card" /><Skeleton variant="card" /></>}
           <div ref={sentinelRef} className="h-1" aria-hidden="true" />

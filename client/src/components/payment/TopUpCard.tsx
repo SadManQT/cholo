@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
 import { Button, Card, Input, toast } from '../ui';
 import { MethodPicker } from './MethodPicker';
+import { t } from '../../i18n';
 
 const PRESETS = [100, 200, 500, 1000];
 const MIN = 10;
@@ -19,7 +20,7 @@ export function TopUpCard() {
   async function start() {
     const value = Number(amount);
     if (!Number.isFinite(value) || value < MIN || value > MAX) {
-      setError(`Enter an amount between ${formatBDT(MIN)} and ${formatBDT(MAX)}`);
+      setError(t('Enter an amount between {0} and {1}', formatBDT(MIN), formatBDT(MAX)));
       return;
     }
     setError(null);
@@ -28,14 +29,14 @@ export function TopUpCard() {
       const { redirectUrl } = await paymentsApi.topup(value, method);
       window.location.assign(redirectUrl);
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not start the top-up.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not start the top-up.')));
       setBusy(false);
     }
   }
 
   return (
     <Card className="mb-5">
-      <h2 className="font-semibold">Add money</h2>
+      <h2 className="font-semibold">{t('Add money')}</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {PRESETS.map((preset) => (
           <button
@@ -48,12 +49,12 @@ export function TopUpCard() {
           </button>
         ))}
       </div>
-      <Input containerClassName="mt-3" label="Amount (৳)" inputMode="numeric" value={amount} error={error ?? undefined} onChange={(event) => { setAmount(event.target.value.replace(/[^\d]/g, '').slice(0, 5)); setError(null); }} />
+      <Input containerClassName="mt-3" label={t('Amount (৳)')} inputMode="numeric" value={amount} error={error ?? undefined} onChange={(event) => { setAmount(event.target.value.replace(/[^\d]/g, '').slice(0, 5)); setError(null); }} />
       <div className="mt-3">
         <MethodPicker methods={['bkash', 'nagad', 'card']} value={method} onChange={(next) => setMethod(next as GatewayMethod)} />
       </div>
-      <Button className="mt-4 w-full" loading={busy} onClick={() => void start()}>Add {amount ? formatBDT(Number(amount)) : 'money'}</Button>
-      <p className="mt-2 text-center text-xs text-ink-500">You’ll finish the payment on SSLCommerz’s secure page, then come back here.</p>
+      <Button className="mt-4 w-full" loading={busy} onClick={() => void start()}>{amount ? t('Add {0}', formatBDT(Number(amount))) : t('Add money')}</Button>
+      <p className="mt-2 text-center text-xs text-ink-500">{t('You’ll finish the payment on SSLCommerz’s secure page, then come back here.')}</p>
     </Card>
   );
 }

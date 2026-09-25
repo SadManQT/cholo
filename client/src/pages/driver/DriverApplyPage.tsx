@@ -8,11 +8,12 @@ import { Button, Input, toast } from '../../components/ui';
 import { useAuth } from '../../context/auth';
 import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
 import { dhakaDate } from '../../utils/format';
+import { t } from '../../i18n';
 
 const STEPS = [
-  { icon: <BadgeCheckIcon />, title: 'Apply', hint: 'Your NID and driving license numbers' },
-  { icon: <FileIcon />, title: 'Upload documents', hint: 'License, NID, photo and police clearance' },
-  { icon: <CarIcon />, title: 'Add your vehicle', hint: 'Registration, fitness, insurance and tax token' },
+  { icon: <BadgeCheckIcon />, title: t('Apply'), hint: t('Your NID and driving license numbers') },
+  { icon: <FileIcon />, title: t('Upload documents'), hint: t('License, NID, photo and police clearance') },
+  { icon: <CarIcon />, title: t('Add your vehicle'), hint: t('Registration, fitness, insurance and tax token') },
 ];
 
 export function DriverApplyPage() {
@@ -26,10 +27,10 @@ export function DriverApplyPage() {
 
   function validate() {
     const next: Record<string, string> = {};
-    if (![10, 13, 17].includes(form.nidNumber.length)) next.nidNumber = 'NID must have 10, 13 or 17 digits';
-    if (!form.licenseNumber.trim()) next.licenseNumber = 'Enter your driving license number';
-    if (!form.licenseExpiry) next.licenseExpiry = 'Enter the expiry date on your license';
-    else if (form.licenseExpiry <= dhakaDate()) next.licenseExpiry = 'Your driving license must not be expired';
+    if (![10, 13, 17].includes(form.nidNumber.length)) next.nidNumber = t('NID must have 10, 13 or 17 digits');
+    if (!form.licenseNumber.trim()) next.licenseNumber = t('Enter your driving license number');
+    if (!form.licenseExpiry) next.licenseExpiry = t('Enter the expiry date on your license');
+    else if (form.licenseExpiry <= dhakaDate()) next.licenseExpiry = t('Your driving license must not be expired');
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -42,7 +43,7 @@ export function DriverApplyPage() {
       await driverApi.apply({ ...form, licenseNumber: form.licenseNumber.trim() });
       await refreshAccessToken();
       await refreshUser();
-      toast.success('Application started. Next, upload your documents.');
+      toast.success(t('Application started. Next, upload your documents.'));
       navigate('/driver/documents', { replace: true });
     } catch (thrown) {
       if (getApiErrorCode(thrown) === 'ALREADY_DRIVER') {
@@ -54,7 +55,7 @@ export function DriverApplyPage() {
       const fields = getApiFieldErrors(thrown);
       if (Object.keys(fields).length) setErrors(fields);
       else if (getApiErrorCode(thrown) === 'DUPLICATE') setErrors({ nidNumber: 'This NID or license is already registered to another driver.' });
-      else toast.error(getApiErrorMessage(thrown, 'Could not submit your application.'));
+      else toast.error(getApiErrorMessage(thrown, t('Could not submit your application.')));
     } finally {
       setSubmitting(false);
     }
@@ -64,10 +65,10 @@ export function DriverApplyPage() {
     <div className="min-h-screen bg-surface-alt px-4 py-8">
       <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1fr_1.1fr] md:items-start">
         <section className="space-y-5">
-          <Link to="/" className="text-sm font-medium text-cholo-700 hover:underline">← Back to riding</Link>
+          <Link to="/" className="text-sm font-medium text-cholo-700 hover:underline">{t('← Back to riding')}</Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Drive with Cholo</h1>
-            <p className="mt-2 text-ink-500">Earn on your own schedule. Most drivers are reviewed within 48 hours of uploading their documents.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('Drive with Cholo')}</h1>
+            <p className="mt-2 text-ink-500">{t('Earn on your own schedule. Most drivers are reviewed within 48 hours of uploading their documents.')}</p>
           </div>
           <ol className="space-y-3">
             {STEPS.map((step, index) => (
@@ -84,11 +85,11 @@ export function DriverApplyPage() {
 
         <form onSubmit={submit} noValidate className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
           <div>
-            <h2 className="text-xl font-bold">Your details</h2>
-            <p className="text-sm text-ink-500">Use the numbers exactly as printed on your cards.</p>
+            <h2 className="text-xl font-bold">{t('Your details')}</h2>
+            <p className="text-sm text-ink-500">{t('Use the numbers exactly as printed on your cards.')}</p>
           </div>
           <Input
-            label="National ID (NID) number"
+            label={t('National ID (NID) number')}
             inputMode="numeric"
             value={form.nidNumber}
             error={errors.nidNumber}
@@ -96,13 +97,13 @@ export function DriverApplyPage() {
             autoFocus
           />
           <Input
-            label="Driving license number"
+            label={t('Driving license number')}
             value={form.licenseNumber}
             error={errors.licenseNumber}
             maxLength={30}
             onChange={(event) => setForm({ ...form, licenseNumber: event.target.value.toUpperCase() })}
           />
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">License expiry date
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">{t('License expiry date')}
             <input
               type="date"
               value={form.licenseExpiry}
@@ -113,8 +114,8 @@ export function DriverApplyPage() {
             />
             {errors.licenseExpiry && <span className="text-sm font-normal text-danger-600">{errors.licenseExpiry}</span>}
           </label>
-          <Button type="submit" loading={submitting} className="w-full">Start application</Button>
-          <p className="text-center text-xs text-ink-500">You can keep booking rides as a passenger while we review you.</p>
+          <Button type="submit" loading={submitting} className="w-full">{t('Start application')}</Button>
+          <p className="text-center text-xs text-ink-500">{t('You can keep booking rides as a passenger while we review you.')}</p>
         </form>
       </div>
     </div>

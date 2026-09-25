@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 const TONES: Record<string, string> = {
   active: 'bg-cholo-50 text-cholo-700',
   expired: 'bg-danger-600/10 text-danger-600',
@@ -33,7 +34,7 @@ const URGENT = 'bg-danger-600/10 text-danger-600';
 export function StatePill({ state, urgent = false }: { state: string; urgent?: boolean }) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${urgent ? URGENT : TONES[state] ?? 'bg-ink-500/10 text-ink-500'}`}>
-      {LABELS[state] ?? state.replaceAll('_', ' ')}
+      {t(LABELS[state] ?? state.replaceAll('_', ' '))}
     </span>
   );
 }

@@ -7,6 +7,7 @@ import { expiryFlag } from '../../utils/documents';
 import { dhakaDate } from '../../utils/format';
 import { FileIcon } from '../layout/icons';
 import { Button, Input, StatePill, toast } from '../ui';
+import { t } from '../../i18n';
 
 const TONE = { danger: 'text-danger-600', warn: 'text-marigold-500', muted: 'text-ink-500' };
 
@@ -31,15 +32,15 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
 
   function pick(next: File | undefined) {
     if (!next) return;
-    if (!ACCEPTED_UPLOAD_TYPES.includes(next.type)) return setError('Upload a JPG, PNG, WebP or PDF file.');
-    if (next.size > MAX_UPLOAD_BYTES) return setError('That file is larger than 5 MB.');
+    if (!ACCEPTED_UPLOAD_TYPES.includes(next.type)) return setError(t('Upload a JPG, PNG, WebP or PDF file.'));
+    if (next.size > MAX_UPLOAD_BYTES) return setError(t('That file is larger than 5 MB.'));
     setError(null);
     setFile(next);
   }
 
   async function submit() {
-    if (!file) return setError('Choose a photo or PDF of the document.');
-    if (askExpiry && !expiryDate) return setError('Enter the expiry date printed on the document.');
+    if (!file) return setError(t('Choose a photo or PDF of the document.'));
+    if (askExpiry && !expiryDate) return setError(t('Enter the expiry date printed on the document.'));
     setBusy(true);
     setError(null);
     try {
@@ -52,9 +53,9 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
       setFile(null);
       setDocNumber('');
       setExpiryDate('');
-      toast.success(`${label} submitted for review.`);
+      toast.success(t('{0} submitted for review.', label));
     } catch (thrown) {
-      setError(getApiErrorMessage(thrown, 'Could not submit this document.'));
+      setError(getApiErrorMessage(thrown, t('Could not submit this document.')));
     } finally {
       setBusy(false);
     }
@@ -72,12 +73,12 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
           <p className="text-sm text-ink-500">{hint}</p>
           {latest && (
             <p className="mt-1 text-xs">
-              <a href={latest.fileUrl} target="_blank" rel="noreferrer" className="font-medium text-cholo-700 hover:underline">View uploaded file</a>
+              <a href={latest.fileUrl} target="_blank" rel="noreferrer" className="font-medium text-cholo-700 hover:underline">{t('View uploaded file')}</a>
               {flag && <span className={`ml-2 ${TONE[flag.tone]}`}>{flag.text}</span>}
             </p>
           )}
           {latest?.status === 'rejected' && latest.rejectionReason && (
-            <p className="mt-2 rounded-lg bg-danger-600/5 px-3 py-2 text-sm text-danger-600">Rejected: {latest.rejectionReason}</p>
+            <p className="mt-2 rounded-lg bg-danger-600/5 px-3 py-2 text-sm text-danger-600">{t('Rejected:')} {latest.rejectionReason}</p>
           )}
         </div>
       </div>
@@ -85,22 +86,22 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
       {canReplace && (
         <div className="mt-3 space-y-3 border-t border-border pt-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" onClick={() => fileInput.current?.click()}>{file ? 'Choose another file' : latest ? 'Upload a new copy' : 'Choose file'}</Button>
+            <Button variant="secondary" onClick={() => fileInput.current?.click()}>{file ? t('Choose another file') : latest ? t('Upload a new copy') : t('Choose file')}</Button>
             {file && <span className="min-w-0 truncate text-sm text-ink-500">{file.name}</span>}
             <input ref={fileInput} type="file" accept={ACCEPTED_UPLOAD_TYPES.join(',')} className="hidden" onChange={(event) => { pick(event.target.files?.[0]); event.target.value = ''; }} />
           </div>
           {file && (askNumber || askExpiry) && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {askNumber && <Input label="Document number" value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
+              {askNumber && <Input label={t('Document number')} value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
               {askExpiry && (
-                <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">Expiry date
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">{t('Expiry date')}
                   <input type="date" value={expiryDate} min={dhakaDate(1)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
                 </label>
               )}
             </div>
           )}
           {error && <p className="text-sm text-danger-600">{error}</p>}
-          {file && <Button loading={busy} onClick={() => void submit()}>Submit for review</Button>}
+          {file && <Button loading={busy} onClick={() => void submit()}>{t('Submit for review')}</Button>}
         </div>
       )}
     </div>

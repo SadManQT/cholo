@@ -2,6 +2,7 @@ import { animate } from 'motion';
 import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { AnimationPlaybackControls } from 'motion';
+import { t } from '../../i18n';
 
 interface SlideToConfirmProps {
   label: string;
@@ -57,7 +58,7 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
   return (
     <div ref={trackRef} className="relative h-14 overflow-hidden rounded-2xl bg-cholo-700 shadow-lg">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-16 text-center font-bold text-white">
-        {loading ? 'Working…' : `Slide to ${label}`}
+        {loading ? t('Working…') : t('Slide to {0}', label)}
       </div>
       <div
         className="pointer-events-none absolute inset-0 origin-left bg-cholo-800"
@@ -83,7 +84,7 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
             setValue(0);
           }
         }}
-        aria-label={`Slide to ${label}`}
+        aria-label={t('Slide to {0}', label)}
         className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0 disabled:cursor-not-allowed"
       />
       <div
