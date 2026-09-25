@@ -1,6 +1,8 @@
 import * as tripsService from '../services/trips.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+const positionFrom = (body) => (body?.lat != null && body?.lng != null ? { lat: body.lat, lng: body.lng } : undefined);
+
 export const list = asyncHandler(async (request, response) => {
   const result = await tripsService.listTrips(request.user.id, request.query);
   response.json({ success: true, data: result.data, meta: result.meta });
@@ -32,7 +34,7 @@ export const triggerSos = asyncHandler(async (request, response) => {
 });
 
 export const markArrived = asyncHandler(async (request, response) => {
-  const data = await tripsService.markArrived(request.user.id, request.params.tripCode);
+  const data = await tripsService.markArrived(request.user.id, request.params.tripCode, positionFrom(request.body));
   response.json({ success: true, data });
 });
 
@@ -62,7 +64,7 @@ export const rate = asyncHandler(async (request, response) => {
 });
 
 export const arriveAtStop = asyncHandler(async (request, response) => {
-  const data = await tripsService.arriveAtStop(request.user.id, request.params.tripCode, request.params.stopOrder);
+  const data = await tripsService.arriveAtStop(request.user.id, request.params.tripCode, request.params.stopOrder, positionFrom(request.body));
   response.json({ success: true, data });
 });
 

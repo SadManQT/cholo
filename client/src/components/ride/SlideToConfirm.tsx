@@ -7,13 +7,15 @@ import { t } from '../../i18n';
 interface SlideToConfirmProps {
   label: string;
   loading?: boolean;
+  /** Locks the slider and shows this text instead of the label (e.g. "450 m to the pickup"). */
+  lockedReason?: string | null;
   onConfirm: () => void;
 }
 
 const THUMB_SIZE_PX = 48;
 const THUMB_MARGIN_PX = 4;
 
-export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToConfirmProps) {
+export function SlideToConfirm({ label, loading = false, lockedReason = null, onConfirm }: SlideToConfirmProps) {
   const [value, setValue] = useState(0);
   const reduceMotion = useReducedMotion();
   const springRef = useRef<AnimationPlaybackControls | null>(null);
@@ -56,9 +58,9 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
   const thumbTravelPx = Math.max(0, trackWidth - THUMB_SIZE_PX - THUMB_MARGIN_PX * 2);
 
   return (
-    <div ref={trackRef} className="relative h-14 overflow-hidden rounded-2xl bg-cholo-700 shadow-lg">
+    <div ref={trackRef} className={`relative h-14 overflow-hidden rounded-2xl shadow-lg ${lockedReason ? 'bg-ink-500' : 'bg-cholo-700'}`}>
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-16 text-center font-bold text-white">
-        {loading ? t('Working…') : t('Slide to {0}', label)}
+        {loading ? t('Working…') : lockedReason ?? t('Slide to {0}', label)}
       </div>
       <div
         className="pointer-events-none absolute inset-0 origin-left bg-cholo-800"
@@ -69,7 +71,7 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
         min="0"
         max="100"
         value={value}
-        disabled={loading}
+        disabled={loading || Boolean(lockedReason)}
         onChange={(event) => {
           stopSpring();
           setValue(Number(event.target.value));
@@ -77,7 +79,7 @@ export function SlideToConfirm({ label, loading = false, onConfirm }: SlideToCon
         onPointerUp={finish}
         onKeyDown={(event) => {
           // The slide guards against accidental taps; a deliberate Enter/Space from a keyboard confirms directly.
-          if ((event.key === 'Enter' || event.key === ' ') && !loading) {
+          if ((event.key === 'Enter' || event.key === ' ') && !loading && !lockedReason) {
             event.preventDefault();
             stopSpring();
             onConfirm();

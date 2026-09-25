@@ -237,6 +237,7 @@ export interface TripDetail {
   } | null;
   receipt: { receiptNo: string; issuedAt: string } | null;
   stops: TripStop[];
+  arrivalRadiusMeters: number;
   driverIsFavorite: boolean;
   reportedByMe: boolean;
   history: Array<{

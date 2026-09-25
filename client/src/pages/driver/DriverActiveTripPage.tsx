@@ -17,6 +17,7 @@ import { useRideTracking } from '../../hooks/useRideTracking';
 import type { TripDetail, TripStatus } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { EASE_OUT } from '../../utils/motion';
+import { distanceKm, formatMeters } from '../../utils/geo';
 import { t } from '../../i18n';
 
 function actionFor(status: TripStatus) {
@@ -90,9 +91,9 @@ export function DriverActiveTripPage() {
     if (!action) return;
     setMutating(true);
     try {
-      if (trip.status === 'assigned') await tripsApi.markArrived(trip.publicCode);
+      if (trip.status === 'assigned') await tripsApi.markArrived(trip.publicCode, geolocation.position);
       else if (trip.status === 'arrived') await tripsApi.startTrip(trip.publicCode);
-      else await tripsApi.completeTrip(trip.publicCode);
+      else await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position);
 
       toast.success(action.next === 'completed' ? t('Trip completed.') : t('Trip is now {0}.', action.next.replace('_', ' ')));
       if (action.next === 'completed') {
@@ -112,7 +113,7 @@ export function DriverActiveTripPage() {
     if (!trip) return;
     setMutating(true);
     try {
-      const reached = await tripsApi.markStopReached(trip.publicCode, order);
+      const reached = await tripsApi.markStopReached(trip.publicCode, order, geolocation.position);
       setTrip({ ...trip, stops: trip.stops.map((stop) => (stop.order === order ? { ...stop, arrivedAt: reached.arrivedAt } : stop)) });
       toast.success(t('Stop {0} reached.', order));
     } catch (thrown) {
@@ -147,6 +148,16 @@ export function DriverActiveTripPage() {
   const nextStop = trip.status === 'in_progress' ? trip.stops.find((stop) => !stop.arrivedAt) : undefined;
   const heading = trip.status !== 'in_progress' ? t('Head to pickup') : nextStop ? t('Drive to stop {0}', nextStop.order) : t('Drive to dropoff');
   const destination = trip.status !== 'in_progress' ? trip.pickup.address : nextStop ? nextStop.address : trip.dropoff.address;
+
+  // The server refuses arrival/stop/complete outside the radius; lock the slider here too so the driver sees
+  // how far is left. Starting the trip happens at the pickup, so it is never locked.
+  const target = trip.status === 'assigned' ? trip.pickup : trip.status === 'in_progress' ? (nextStop ?? trip.dropoff) : null;
+  const metersLeft = target && geolocation.position && trip.arrivalRadiusMeters
+    ? Math.round(distanceKm(geolocation.position, target) * 1000)
+    : null;
+  const lockedReason = metersLeft != null && metersLeft > trip.arrivalRadiusMeters
+    ? t(trip.status === 'assigned' ? '{0} to the pickup' : nextStop ? '{0} to stop {1}' : '{0} to the drop-off', formatMeters(metersLeft), nextStop?.order)
+    : null;
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
@@ -189,8 +200,8 @@ export function DriverActiveTripPage() {
             </ol>
           )}
           {nextStop
-            ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} onConfirm={() => void reachStop(nextStop.order)} />
-            : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} onConfirm={advanceTrip} />}
+            ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} lockedReason={lockedReason} onConfirm={() => void reachStop(nextStop.order)} />
+            : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} lockedReason={trip.status === 'arrived' ? null : lockedReason} onConfirm={advanceTrip} />}
           {(trip.status === 'assigned' || trip.status === 'arrived') && (
             <Button variant="ghost" onClick={() => setCancelOpen(true)} className="w-full text-danger-600">{t('Cancel trip')}</Button>
           )}

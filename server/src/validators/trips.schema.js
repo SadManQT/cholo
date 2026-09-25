@@ -8,8 +8,16 @@ export const tripStopParamsSchema = tripCodeParamsSchema.extend({
   stopOrder: z.coerce.number().int().min(1).max(2),
 });
 
+const reportedPosition = {
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+};
+
+export const arrivalSchema = z.object(reportedPosition).default({});
+
 export const completeTripSchema = z.object({
   waitingMin: z.number().int().min(0).optional(),
+  ...reportedPosition,
 });
 
 export const cancelTripSchema = z.object({

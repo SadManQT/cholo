@@ -25,9 +25,13 @@ export async function trackTrip(tripCode: string) {
   return response.data.data;
 }
 
-export async function markArrived(tripCode: string) {
+type Position = { lat: number; lng: number } | null | undefined;
+const positionBody = (position: Position) => (position ? { lat: position.lat, lng: position.lng } : {});
+
+export async function markArrived(tripCode: string, position?: Position) {
   const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus }>>(
     `/trips/${encodeURIComponent(tripCode)}/arrived`,
+    positionBody(position),
   );
   return response.data.data;
 }
@@ -39,10 +43,10 @@ export async function startTrip(tripCode: string) {
   return response.data.data;
 }
 
-export async function completeTrip(tripCode: string, waitingMin = 0) {
+export async function completeTrip(tripCode: string, waitingMin = 0, position?: Position) {
   const response = await apiClient.post<ApiSuccess<{ status: TripStatus }>>(
     `/trips/${encodeURIComponent(tripCode)}/complete`,
-    { waitingMin },
+    { waitingMin, ...positionBody(position) },
   );
   return response.data.data;
 }
@@ -90,9 +94,10 @@ export async function rateTrip(tripCode: string, score: number, comment?: string
   return response.data.data;
 }
 
-export async function markStopReached(tripCode: string, stopOrder: number) {
+export async function markStopReached(tripCode: string, stopOrder: number, position?: Position) {
   const response = await apiClient.post<ApiSuccess<{ order: number; arrivedAt: string }>>(
     `/trips/${encodeURIComponent(tripCode)}/stops/${stopOrder}/arrived`,
+    positionBody(position),
   );
   return response.data.data;
 }

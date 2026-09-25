@@ -867,4 +867,7 @@ export const bn: Record<string, string> = {
   "Your device could not find its location. On a Mac, turn on Location Services for your browser in System Settings → Privacy & Security → Location Services, then try again.": "আপনার ডিভাইস লোকেশন খুঁজে পায়নি। Mac-এ System Settings → Privacy & Security → Location Services থেকে আপনার ব্রাউজারের জন্য লোকেশন চালু করে আবার চেষ্টা করুন।",
   "This browser cannot share its location. Try Chrome or Safari on your phone.": "এই ব্রাউজার লোকেশন দিতে পারে না। ফোনে Chrome বা Safari ব্যবহার করে দেখুন।",
   "Location is off, so offers use your last known position. Turn location on to stay accurate.": "লোকেশন বন্ধ, তাই অফারগুলো আপনার সর্বশেষ জানা অবস্থান ধরে আসবে। সঠিক রাখতে লোকেশন চালু করুন।",
+  "{0} to the pickup": "পিকআপ আরও {0}",
+  "{0} to stop {1}": "স্টপ {1} আরও {0}",
+  "{0} to the drop-off": "গন্তব্য আরও {0}",
 };
