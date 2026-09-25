@@ -4,11 +4,15 @@ import { formatCompactAddress, stripAdminSuffix } from '../../utils/addressForma
 
 const USER_AGENT = 'Cholo/0.1 (learning project; docs/05-06-07 §8 geo adapter)';
 
+export function upstreamHeaders(headers = {}) {
+  return env.GEO_UPSTREAM_TOKEN ? { ...headers, Authorization: `Bearer ${env.GEO_UPSTREAM_TOKEN}` } : headers;
+}
+
 async function fetchJson(url, { headers } = {}) {
   let response;
 
   try {
-    response = await fetch(url, { headers });
+    response = await fetch(url, { headers: upstreamHeaders(headers) });
   } catch {
     throw new AppError(503, 'GEO_PROVIDER_UNAVAILABLE');
   }
