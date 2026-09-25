@@ -4,6 +4,25 @@ import { isRouteInsideBangladesh } from '../utils/bangladeshBoundary.js';
 import * as osmProvider from './providers/osm.provider.js';
 import * as photonProvider from './providers/photon.provider.js';
 
+// ponytail: per-process memory cache (one Render instance). Popular searches and repeated quotes for the
+// same trip stop hitting the map servers; move to Redis/Postgres if you run several API instances.
+const CACHE_TTL_MS = 10 * 60_000;
+const CACHE_MAX_ENTRIES = 1_000;
+const cache = new Map();
+
+async function cached(key, load) {
+  if (env.NODE_ENV === 'test') return load();
+  const hit = cache.get(key);
+  if (hit && hit.expiresAt > Date.now()) return hit.value;
+  const value = await load();
+  cache.delete(key);
+  cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+  if (cache.size > CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value);
+  return value;
+}
+
+const pointKey = ({ lat, lng }) => `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
+
 const providers = {
   osm: osmProvider,
   photon: photonProvider,
@@ -68,27 +87,31 @@ function assertBangladeshCountry(countryCode) {
 }
 
 export async function geocode(text) {
-  const place = await currentProvider().geocode(text);
+  const place = await cached(`geocode:${text.trim().toLowerCase()}`, () => currentProvider().geocode(text));
   assertWithinServiceArea(place);
   assertBangladeshCountry(place.countryCode);
   return { lat: place.lat, lng: place.lng, address: place.address };
 }
 
 export async function search(text) {
-  const places = await currentProvider().search(text);
+  const places = await cached(`search:${text.trim().toLowerCase()}`, () => currentProvider().search(text));
   return places.filter((place) => isWithinServiceArea(place) && place.countryCode?.toLowerCase() === 'bd')
     .map((place) => ({ lat: place.lat, lng: place.lng, address: place.address }));
 }
 
 export async function reverseGeocode(lat, lng) {
   assertWithinServiceArea({ lat, lng });
-  const place = await currentProvider().reverseGeocode(lat, lng);
+  const place = await cached(`reverse:${pointKey({ lat, lng })}`, () => currentProvider().reverseGeocode(lat, lng));
   assertBangladeshCountry(place.countryCode);
   return { address: place.address };
 }
 
 export async function route(from, to, stops = []) {
   assertWithinServiceArea(from, to, ...stops);
+  return cached(`route:${[from, ...stops, to].map(pointKey).join(';')}`, () => computeRoute(from, to, stops));
+}
+
+async function computeRoute(from, to, stops) {
   const provider = currentProvider();
   if (stops.length > 0) {
     // Multi-stop trips follow the rider's order; OSRM returns no alternatives with waypoints.

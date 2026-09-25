@@ -33,12 +33,18 @@ services:
         value: 15m
       - key: REFRESH_TTL_DAYS
         value: 30
+      # Photon allows search-as-you-type; the public Nominatim server's usage policy forbids it.
       - key: GEO_PROVIDER
-        value: osm
+        value: photon
       - key: OSRM_BASE_URL
         value: https://router.project-osrm.org
+      - key: PHOTON_BASE_URL
+        value: https://photon.komoot.io
       - key: NOMINATIM_BASE_URL
         value: https://nominatim.openstreetmap.org
+      # Only when OSRM_BASE_URL / PHOTON_BASE_URL point at your own servers (see docs/maps-scaling-tutorial.html).
+      - key: GEO_UPSTREAM_TOKEN
+        sync: false
       - key: PAYMENT_GATEWAY
         value: sslcommerz
       - key: SSLCOMMERZ_BASE_URL

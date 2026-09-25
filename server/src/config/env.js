@@ -27,6 +27,9 @@ const envSchema = z.object({
   OSRM_BASE_URL: z.string().url().default('https://router.project-osrm.org'),
   NOMINATIM_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
   PHOTON_BASE_URL: z.string().url().default('https://photon.komoot.io'),
+  // Only for your own routing/geocoding servers: sent as "Authorization: Bearer …" so they can reject
+  // everyone else. Leave unset with the public servers, or the token would leak to them.
+  GEO_UPSTREAM_TOKEN: z.preprocess(emptyToUndefined, z.string().min(16).optional()),
 
   PAYMENT_GATEWAY: z.enum(['sslcommerz']).default('sslcommerz'),
   SSLCOMMERZ_BASE_URL: z.string().url().default('https://sandbox.sslcommerz.com'),

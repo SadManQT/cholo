@@ -79,6 +79,8 @@
   .tag.ready { color: var(--ready); background: var(--ready-bg); }
   .tag.new { color: var(--new); background: var(--new-bg); }
   .tag.crit { color: var(--crit); background: var(--crit-bg); }
+  .tag.done { color: var(--ground); background: var(--accent); }
+  .built-note { margin: 8px 0 0; font-size: 14px; color: var(--accent); font-weight: 500; }
   .tag.effort { color: var(--muted); background: transparent; border: 1px solid var(--rule); }
   .steps { margin: 0; padding-left: 20px; display: grid; gap: 7px; font-size: 15px; }
   .steps li::marker { color: var(--muted); font: 500 13px var(--mono); }
@@ -97,7 +99,7 @@
   <header>
     <span class="eyebrow">Cholo · after launch</span>
     <h1>Feature guide</h1>
-    <p class="lede">Everything Cholo can still add, why each one matters, what already exists in the code or database, and the concrete steps to build it here. File paths are relative to the repo root.</p>
+    <p class="lede">Every feature on Cholo’s list after launch: what was built in the September 2026 update, what still needs a provider or your input, and the concrete steps for each. File paths are relative to the repo root.</p>
     <div class="legend" aria-label="Tag meanings">
       <span><span class="tag crit">Before real users</span> blocks a public launch</span>
       <span><span class="tag prov">Needs a provider</span> requires an account or keys</span>
@@ -119,6 +121,8 @@
 
   <nav class="filters" aria-label="Filter features">
     <button type="button" data-filter="all" aria-pressed="true">All</button>
+    <button type="button" data-filter="done" aria-pressed="false">Built</button>
+    <button type="button" data-filter="todo" aria-pressed="false">Still to do</button>
     <button type="button" data-filter="crit" aria-pressed="false">Before real users</button>
     <button type="button" data-filter="prov" aria-pressed="false">Needs a provider</button>
     <button type="button" data-filter="ready" aria-pressed="false">Database ready</button>
@@ -167,14 +171,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="crit new">
+    <article class="feature" data-tags="crit new done">
       <div>
         <h3>Private storage for driver documents</h3>
         <p class="why">NID, license and police-clearance files sit in a public bucket under unguessable names. Anyone who has a link can open it.</p>
-        <div class="tags"><span class="tag crit">Before real users</span><span class="tag new">New build</span><span class="tag effort">M</span></div>
+        <p class="built-note">Documents upload to a private “documents” bucket the API creates itself, and are shown only through 10-minute signed links.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag crit">Before real users</span><span class="tag new">New build</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>In Supabase Storage, make the <code>uploads</code> bucket private.</li>
           <li>In <code>server/src/routes/uploads.routes.js</code>, store and return the object path (e.g. <code>storage:uploads/ab12….png</code>) instead of a public URL.</li>
@@ -202,14 +207,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="crit new">
+    <article class="feature" data-tags="crit new done">
       <div>
         <h3>Automated tests on every push, and nightly backups</h3>
         <p class="why">351 server tests exist but only run by hand. Supabase's free plan has limited backups, so a bad migration or accidental delete is hard to undo.</p>
-        <div class="tags"><span class="tag crit">Before real users</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">CI runs on every push. The nightly backup workflow is in place; add the BACKUP_DATABASE_URL repository secret to switch it on.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag crit">Before real users</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>.github/workflows/ci.yml</code> with a <code>postgres:16</code> service, then run <code>npm ci</code>, <code>node server/scripts/db-init.js</code>, <code>npm --prefix server test</code>, and <code>npm --prefix client run lint &amp;&amp; npm --prefix client run build</code>.</li>
           <li>In GitHub → Settings → Branches, require that check before merging into <code>main</code> (Render and Vercel deploy from <code>main</code>).</li>
@@ -226,14 +232,15 @@
       <p>Matching, booking and in-trip features.</p>
     </div>
 
-    <article class="feature" data-tags="ready crit">
+    <article class="feature" data-tags="ready crit done">
       <div>
         <h3>Re-offer a ride when a driver doesn't answer</h3>
         <p class="why">Found in this check: if the only nearby driver lets an offer time out, the request is never offered again and the rider waits five minutes for "no driver found". The offer also stays "pending" on the server after the driver's countdown ends.</p>
-        <div class="tags"><span class="tag crit">Before real users</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">Unanswered offers time out after 15 s and the ride goes to the next drivers, with the radius widening from 5 to 10 km.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag crit">Before real users</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li><code>ride_offers.round</code> already exists. Add an <code>OFFER_TTL_SECONDS</code> (e.g. 20) that matches the countdown in <code>OfferSheet.tsx</code>.</li>
           <li>Add <code>server/src/jobs/redispatch.job.js</code> (every 10 s, like <code>expireRequests.job.js</code>): mark pending offers older than the TTL <code>timed_out</code>, then for each request still <code>searching</code>, call <code>dispatchService.fanOutOffers</code> with <code>round + 1</code>, a wider radius, and excluding drivers already offered this request.</li>
@@ -243,14 +250,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Schedule a ride for later</h3>
         <p class="why">Airport runs and early classes. The server already accepts <code>scheduledFor</code> and skips instant dispatch; only the screen and a dispatcher job are missing.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">“Schedule” on the booking sheet, 20 minutes to 7 days ahead, a reminder 30 minutes before, and the search starts 10 minutes before.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>In <code>BookRidePage.tsx</code>, add "Now / Later" with a date-time input (limit to the next 7 days) and send <code>scheduledFor</code> in <code>ridesApi.createRequest</code>.</li>
           <li>Add a job that runs each minute and dispatches requests whose <code>scheduled_for</code> is within 10 minutes, reusing <code>fanOutOffers</code>.</li>
@@ -259,14 +267,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Surge pricing</h3>
         <p class="why">Match supply and demand at rush hour and in rain. <code>rides.service.js</code> hard-codes <code>NO_SURGE = 1.0</code> today.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">Admin → Surge starts a time-boxed multiplier for a zone (capped at 3×). Riders pay the multiplier they were quoted.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Use the existing <code>surge_pricing</code> table (zone, multiplier, reason, window).</li>
           <li>In <code>buildQuote</code>, look up the active row for the pickup zone (<code>fn_zone_at</code>) and time, cap it (e.g. 2.0×), and pass it to <code>computeFare</code>.</li>
@@ -276,14 +285,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Extra stops on a trip</h3>
         <p class="why">Pick up a friend or stop at a shop on the way.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">L</span></div>
+        <p class="built-note">Up to two stops, priced on the full route, with a “reached stop” slider for drivers.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">L</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Use the existing <code>trip_stops</code> table. Allow up to two stops in the booking sheet.</li>
           <li>Route through waypoints: OSRM accepts several coordinates; extend <code>geo.service.route</code> to take an array.</li>
@@ -292,14 +302,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Favourite drivers</h3>
         <p class="why">Riders who liked a driver get matched with them first when they're nearby.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">S</span></div>
+        <p class="built-note">Heart a driver on the receipt; favourites get the first round of offers when nearby.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>POST/DELETE /me/favorite-drivers/:driverPublicId</code> over the existing <code>favorite_drivers</code> table.</li>
           <li>Add a heart next to the driver on the trip receipt (<code>TripDetailPage.tsx</code>).</li>
@@ -308,14 +319,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Share my trip with family</h3>
         <p class="why">A link that shows the driver, car and live position without logging in. Especially valued by women riders at night.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">M</span></div>
+        <p class="built-note">“Share trip” on the live trip opens a public page with driver first name, car and live position, valid until an hour after the trip.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>POST /trips/:code/share</code> that returns a signed, expiring token (JWT with the trip id, valid until the trip ends plus 1 hour).</li>
           <li>Add a public <code>GET /share/:token</code> returning driver first name, vehicle, status and latest position only.</li>
@@ -325,14 +337,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Round fares to whole taka</h3>
         <p class="why">Quotes show paisa (৳307.46). Riders and drivers expect whole taka, especially for cash.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">Quotes, final fares and discounts are whole taka.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>In <code>server/src/utils/fareMath.js</code>, round <code>totalFare</code> to the nearest taka (and the discount, so totals still add up).</li>
           <li>Update <code>fareMath.test.js</code> expectations. Commission math keeps two decimals, so driver earnings stay exact.</li>
@@ -347,14 +360,15 @@
       <p>Payments, payouts and promotions.</p>
     </div>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Promo code management for admins</h3>
         <p class="why">Promo codes work at booking, but the only way to create one is SQL. Marketing needs a screen.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">S</span></div>
+        <p class="built-note">Admin → Promo codes creates, pauses and resumes codes, optionally telling every rider.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>GET/POST/PATCH /admin/promos</code> over <code>promo_codes</code> (code, percent or fixed, cap, minimum fare, city, window, usage limit), with audit rows like pricing rules.</li>
           <li>Add a Promos page under Marketplace in <code>AdminLayout.tsx</code>, with redemption counts from <code>promo_redemptions</code>.</li>
@@ -363,14 +377,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Referrals</h3>
         <p class="why">Cheapest growth channel for a ride app: "Give ৳50, get ৳50".</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">Every account has a code; both people get ৳50 after the new rider’s first completed trip.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Generate <code>users.referral_code</code> during sign-up in <code>auth.service.register</code>.</li>
           <li>Accept an optional referral code on the register form and record a <code>referrals</code> row (<code>pending</code>).</li>
@@ -412,14 +427,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Monthly statements for drivers</h3>
         <p class="why">Drivers need a document of what they earned and what commission was taken, for their own records.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">Earnings → Monthly statements, printable, computed from the earnings ledger.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>On the 1st of each month (Dhaka time), a job totals the previous month's <code>driver_earnings</code> per driver into <code>invoices</code>.</li>
           <li>Add <code>GET /driver/statements</code> and a printable statement page linked from Earnings.</li>
@@ -433,14 +449,15 @@
       <h2 id="trust">Trust, safety and operations</h2>
     </div>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Report a rider or driver</h3>
         <p class="why">Disputes cover fares; there's no way to report behaviour, and repeated reports should surface to admins.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
+        <p class="built-note">“Report” on the trip receipt; Admin → User reports to triage.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>POST /trips/:code/report</code> writing to <code>user_reports</code> (category, description; the other party is the reported user).</li>
           <li>Add a "Report" link on the trip receipt for both sides.</li>
@@ -449,14 +466,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Instant notifications</h3>
         <p class="why">The inbox badge checks once a minute. Riders and drivers should see updates immediately.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">The inbox badge updates the moment a notification is saved, with a toast.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>In <code>notifications.service.notify</code>, after the transaction commits, emit <code>notification:new</code> to the user's socket room (<code>user:&lt;id&gt;</code> already exists).</li>
           <li>In <code>useUnreadNotifications.ts</code>, listen for that event through <code>useSocket()</code> and keep the minute poll as a fallback.</li>
@@ -481,14 +499,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Delete my account</h3>
         <p class="why">Expected by users and app stores. The <code>deleted</code> status already exists.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">Account → Delete account, with the password; the phone number is freed.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>DELETE /me</code> requiring the current password; block it during an active trip or with a pending withdrawal.</li>
           <li>Set status <code>deleted</code> and <code>deleted_at</code>, anonymise name, email and photo, keep trips and payments for accounting, and end all sessions.</li>
@@ -497,14 +516,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Two-step login for admins</h3>
         <p class="why">Admin accounts can refund money and suspend users; a stolen password shouldn't be enough.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">M</span></div>
+        <p class="built-note">Admin → Account & security sets up an authenticator app with a QR code.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">M</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add TOTP (authenticator app) secrets to <code>admin_profiles</code>, with a setup screen showing a QR code.</li>
           <li>After password login, admins get a short-lived "second factor needed" token and must submit a 6-digit code before a full session is issued.</li>
@@ -528,14 +548,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Admin exports</h3>
         <p class="why">Finance and university reporting need trips, payments and payouts in a spreadsheet.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">Dashboard → Export to spreadsheet for trips, payments and withdrawals (super and finance admins).</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>GET /admin/exports/:kind.csv?from=&amp;to=</code> for <code>trips</code>, <code>payments</code> and <code>withdrawals</code>, restricted to <code>super</code> and <code>finance</code>.</li>
           <li>Add an Export button to the dashboard with a date range.</li>
@@ -565,14 +586,15 @@
       <h2 id="polish">Product polish</h2>
     </div>
 
-    <article class="feature" data-tags="ready">
+    <article class="feature" data-tags="ready done">
       <div>
         <h3>Full Bangla interface</h3>
         <p class="why">Users can already pick Bangla in Account; the setting is stored but the interface stays in English.</p>
-        <div class="tags"><span class="tag ready">Database ready</span><span class="tag effort">L</span></div>
+        <p class="built-note">Rider, driver and sign-in screens, numbers, dates and error messages switch to Bangla. The admin area stays mostly English.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag ready">Database ready</span><span class="tag effort">L</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Move all interface text into <code>client/src/i18n/en.ts</code> and <code>bn.ts</code> with the same keys, and add a small <code>t()</code> hook that reads <code>user.preferredLanguage</code>.</li>
           <li>Translate server error messages in <code>errorMessages.js</code> the same way, choosing by the request's <code>Accept-Language</code>.</li>
@@ -581,14 +603,15 @@
       </div>
     </article>
 
-    <article class="feature" data-tags="new">
+    <article class="feature" data-tags="new done">
       <div>
         <h3>Install on the home screen</h3>
         <p class="why">Makes Cholo feel like an app on Android without the Play Store, and loads faster on repeat visits.</p>
-        <div class="tags"><span class="tag new">New build</span><span class="tag effort">S</span></div>
+        <p class="built-note">Manifest, icons and a service worker; “Install Cholo” appears in Account on supported browsers.</p>
+        <div class="tags"><span class="tag done">Built</span><span class="tag new">New build</span><span class="tag effort">S</span></div>
       </div>
       <div>
-        <p class="steps-label">How to add</p>
+        <p class="steps-label">How it was built</p>
         <ol class="steps">
           <li>Add <code>client/public/manifest.webmanifest</code> (name, icons 192/512, theme color <code>#0E7A5F</code>, <code>display: standalone</code>) and link it in <code>index.html</code>.</li>
           <li>Add <code>vite-plugin-pwa</code> to cache the app shell; never cache API responses.</li>
@@ -601,6 +624,7 @@
       <div>
         <h3>Maps and routing that scale</h3>
         <p class="why">Routing and address search use free public servers that limit heavy traffic and can go down.</p>
+        <p class="built-note">Photon switch, 10-minute cache and private-server key are built. Setting up your own server needs you: <a href="https://claude.ai/artifact/VF79mgqDaiCiRzTfX92zHV" target="_blank" rel="noopener">step-by-step tutorial</a>.</p>
         <div class="tags"><span class="tag prov">Needs a provider</span><span class="tag effort">M</span></div>
       </div>
       <div>
@@ -625,7 +649,8 @@
   function apply(filter) {
     let shown = 0;
     features.forEach((feature) => {
-      const match = filter === 'all' || feature.dataset.tags.split(' ').includes(filter);
+      const tags = feature.dataset.tags.split(' ');
+    const match = filter === 'all' || (filter === 'todo' ? !tags.includes('done') : tags.includes(filter));
       feature.hidden = !match;
       if (match) shown += 1;
     });

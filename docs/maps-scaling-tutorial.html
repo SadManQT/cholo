@@ -1,0 +1,500 @@
+<title>Cholo Maps at Scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #F3F6F4;
+    --paper: #FFFFFF;
+    --ink: #10222E;
+    --muted: #566875;
+    --rule: #D9E2DD;
+    --accent: #0E7A5F;
+    --accent-soft: #E2F2EB;
+    --road: #C46A12;
+    --road-soft: #FBEEDF;
+    --warn: #A33A1F;
+    --warn-soft: #FBE8E2;
+    --code-bg: #0F1D26;
+    --code-ink: #DCE8E3;
+    --code-dim: #8FA59C;
+    --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0B1418; --paper: #111D22; --ink: #E4EDEA; --muted: #98ABA5; --rule: #223238;
+      --accent: #4CC9A0; --accent-soft: #143028; --road: #F0A04B; --road-soft: #33240F;
+      --warn: #F29A83; --warn-soft: #3A1C15; --code-bg: #070E12; --code-ink: #DCE8E3; --code-dim: #7F958D;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0B1418; --paper: #111D22; --ink: #E4EDEA; --muted: #98ABA5; --rule: #223238;
+    --accent: #4CC9A0; --accent-soft: #143028; --road: #F0A04B; --road-soft: #33240F;
+    --warn: #F29A83; --warn-soft: #3A1C15; --code-bg: #070E12; --code-ink: #DCE8E3; --code-dim: #7F958D;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--ink); font: 400 16px/1.65 var(--body); padding-inline: 16px; padding-block: 40px 96px; }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 48px; }
+  header { display: grid; gap: 16px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--road); }
+  h1 { font: 800 clamp(34px, 6vw, 54px)/1.02 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+  .lede { margin: 0; color: var(--muted); font-size: 18px; max-width: 62ch; }
+  h2 { font: 700 26px/1.2 var(--display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  h3 { font: 700 18px/1.3 var(--display); margin: 0; }
+  p { margin: 0; max-width: 68ch; }
+  section { display: grid; gap: 16px; }
+  .section-head { display: grid; gap: 6px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  .section-head p { color: var(--muted); }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code { font: 400 .88em/1.4 var(--mono); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 68ch; }
+  .toc { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; display: grid; gap: 10px; }
+  .toc h2 { font-size: 15px; font-family: var(--mono); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .toc ol { gap: 4px; }
+  .status { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .service { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .service .what { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .service .host { font: 500 14px/1.3 var(--mono); overflow-wrap: anywhere; }
+  .pill { justify-self: start; font: 600 12px/1 var(--body); padding: 5px 9px; border-radius: 999px; }
+  .pill.risk { background: var(--warn-soft); color: var(--warn); }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); }
+  .pill.done { background: var(--road-soft); color: var(--road); }
+  .service p { font-size: 14px; color: var(--muted); }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 600 12px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--ground); }
+  tr:last-child td { border-bottom: 0; }
+  td strong { font-weight: 600; }
+  .pick { background: var(--accent-soft); }
+  .steps { display: grid; gap: 28px; counter-reset: step; }
+  .step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 16px; }
+  .step::before { counter-increment: step; content: counter(step); grid-row: span 3; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--ground); display: grid; place-items: center; font: 700 16px/1 var(--display); }
+  .step > * { grid-column: 2; }
+  .step > div { display: grid; gap: 10px; }
+  .code { position: relative; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 16px 16px 16px 16px; overflow-x: auto; font: 400 13.5px/1.6 var(--mono); }
+  pre .c { color: var(--code-dim); }
+  .copy { position: absolute; top: 8px; right: 8px; font: 500 12px/1 var(--body); padding: 6px 10px; border-radius: 6px; border: 1px solid #2E4450; background: #18303B; color: #DCE8E3; cursor: pointer; }
+  .copy:hover { background: #21404D; }
+  .note { border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; font-size: 15px; }
+  .note.warn { background: var(--warn-soft); }
+  .note.warn strong { color: var(--warn); }
+  .note.tip { background: var(--accent-soft); }
+  .note.tip strong { color: var(--accent); }
+  .diagram { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; overflow-x: auto; }
+  .flow { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 12px; min-width: 560px; align-items: center; }
+  .box { border: 1.5px solid var(--ink); border-radius: 10px; padding: 12px; background: var(--ground); display: grid; gap: 4px; }
+  .box b { font-family: var(--display); }
+  .box span { font: 400 12.5px/1.4 var(--mono); color: var(--muted); }
+  .box.road { border-color: var(--road); }
+  .arrow { font: 500 12px/1.3 var(--mono); color: var(--muted); text-align: center; }
+  .cols { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+  footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--rule); padding-top: 16px; }
+  @media (max-width: 560px) {
+    .step { grid-template-columns: 1fr; }
+    .step::before { grid-row: auto; }
+    .step > * { grid-column: 1; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Cholo · operations guide</span>
+    <h1>Maps and routing that scale</h1>
+    <p class="lede">Every fare quote, address suggestion and route line in Cholo comes from outside map services. Today those are free public servers run by volunteers. This guide explains what that means for a real launch, what is already in place, and how to move to servers you control, step by step.</p>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#today">What Cholo uses today</a></li>
+      <li><a href="#done">Already done in the code</a></li>
+      <li><a href="#choose">Choose a path</a></li>
+      <li><a href="#selfhost">Self-host routing and search (recommended)</a></li>
+      <li><a href="#connect">Connect Cholo to your servers</a></li>
+      <li><a href="#updates">Keep the map data fresh</a></li>
+      <li><a href="#paid">Alternative: a paid map API</a></li>
+      <li><a href="#tiles">The map picture itself (tiles)</a></li>
+      <li><a href="#trouble">Troubleshooting and rollback</a></li>
+    </ol>
+  </nav>
+
+  <section id="today">
+    <div class="section-head">
+      <h2>What Cholo uses today</h2>
+      <p>Three kinds of map work, each from a different free service.</p>
+    </div>
+    <div class="status">
+      <div class="service">
+        <span class="what">Routing · distance and time</span>
+        <span class="host">router.project-osrm.org</span>
+        <span class="pill risk">Not for production</span>
+        <p>OSRM's demo server. Its policy allows about one request per second, with no uptime promise. Every quote, booking and trip completion calls it.</p>
+      </div>
+      <div class="service">
+        <span class="what">Address search and reverse</span>
+        <span class="host">photon.komoot.io</span>
+        <span class="pill risk">Fair use only</span>
+        <p>Komoot's public Photon. Heavy use gets throttled. It powers the pickup and dropoff suggestions and “current location” names.</p>
+      </div>
+      <div class="service">
+        <span class="what">Map tiles · the picture</span>
+        <span class="host">tiles.openfreemap.org</span>
+        <span class="pill ok">Fine for launch</span>
+        <p>OpenFreeMap serves tiles free with no key. The browser loads them directly, so they never touch your API.</p>
+      </div>
+    </div>
+    <p>You will know you have outgrown the public servers when Render's logs show <code>GEO_PROVIDER_UNAVAILABLE</code>, riders see “The mapping service is temporarily unavailable”, suggestions arrive slowly, or quotes fail at busy times. A few hundred riders a day is roughly where that starts.</p>
+    <div class="note warn">
+      <strong>Changed in this update: search now uses Photon in production</strong>
+      <p>The Render blueprint had address search on the public Nominatim server. Nominatim's usage policy forbids search-as-you-type, which is exactly what the booking suggestions do, so the blueprint now sets <code>GEO_PROVIDER=photon</code>. If Render doesn't sync blueprint changes automatically, set it yourself: Render → cholo-api → Environment → <code>GEO_PROVIDER</code> = <code>photon</code>.</p>
+    </div>
+  </section>
+
+  <section id="done">
+    <div class="section-head">
+      <h2>Already done in the code</h2>
+      <p>You don't need to build these; they shipped with this update.</p>
+    </div>
+    <ul>
+      <li><strong>One switch per service.</strong> <code>OSRM_BASE_URL</code> and <code>PHOTON_BASE_URL</code> decide which servers the API calls. Pointing them at your own servers needs no code change.</li>
+      <li><strong>A short memory cache.</strong> <code>server/src/services/geo.service.js</code> keeps route, search and reverse results for 10 minutes (up to 1,000 entries). Quoting four categories for the same trip, or two riders searching “Dhanmondi 27”, now costs one outside call instead of several.</li>
+      <li><strong>A private-server key.</strong> Set <code>GEO_UPSTREAM_TOKEN</code> and the API sends <code>Authorization: Bearer &lt;token&gt;</code> with every map request, so your own servers can refuse anyone else. Only set it when the URLs point at your servers, or the token would be sent to the public ones.</li>
+      <li><strong>Bangladesh-only results.</strong> Search is limited to Bangladesh's bounding box, and routes that cross the border are rejected or rerouted, whichever server you use.</li>
+    </ul>
+  </section>
+
+  <section id="choose">
+    <div class="section-head">
+      <h2>Choose a path</h2>
+      <p>Prices change; check each provider's current pricing page before deciding.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Option</th><th>Monthly cost</th><th>Code changes</th><th>Limits</th><th>Best when</th></tr></thead>
+        <tbody>
+          <tr class="pick"><td><strong>A. Self-host OSRM + Photon</strong> with Bangladesh data on one small server</td><td>One 8 GB server, typically US$8–15 (e.g. Hetzner)</td><td>None. Set three environment variables.</td><td>Only your server's capacity, which handles thousands of requests a minute for one country</td><td>You want predictable cost and no per-request billing. <strong>Recommended.</strong></td></tr>
+          <tr><td><strong>B. Paid map API</strong> (Geoapify, Stadia Maps, MapTiler, Google)</td><td>Free tier, then per request</td><td>A new provider file (outline below)</td><td>Your plan's quota</td><td>You'd rather not run a server at all.</td></tr>
+          <tr><td><strong>C. Stay on public servers</strong></td><td>Free</td><td>None</td><td>About 1 request per second, no guarantee</td><td>Testing and demos only.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="diagram" role="img" aria-label="Rider's phone calls the Cholo API on Render, which calls your map server running OSRM and Photon behind Caddy">
+      <div class="flow">
+        <div class="box"><b>Rider's phone</b><span>Vercel web app</span><span>tiles ← OpenFreeMap</span></div>
+        <div class="box"><b>Cholo API</b><span>Render</span><span>cache · 10 min</span></div>
+        <div class="box road"><b>Your map server</b><span>Caddy (HTTPS + key)</span><span>OSRM :5000 · Photon :2322</span></div>
+        <div class="arrow">quotes, search, routes →</div>
+        <div class="arrow">→ Bearer GEO_UPSTREAM_TOKEN</div>
+        <div class="arrow">Bangladesh data from Geofabrik</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="selfhost">
+    <div class="section-head">
+      <h2>Self-host routing and search</h2>
+      <p>About an hour the first time. You need a credit card for the server and, ideally, a domain name.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Rent a server</h3>
+        <div>
+          <p>Create an Ubuntu 24.04 server with <strong>4 vCPU, 8 GB RAM and 40 GB disk</strong>. Building the Bangladesh route data needs several GB of memory; running it afterwards needs much less. Choose a location close to Bangladesh or to Render's region (Singapore if your Render service is there).</p>
+          <p>Note its public IP address, then log in with <code>ssh root@YOUR_SERVER_IP</code>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Install Docker, Java and Caddy, and open the firewall</h3>
+        <div>
+          <div class="code"><pre><span class="c"># Docker (runs OSRM), Java 21 (runs Photon), Caddy (HTTPS in front of both)</span>
+apt update && apt install -y docker.io openjdk-21-jre-headless debian-keyring debian-archive-keyring apt-transport-https curl ufw pbzip2
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install -y caddy
+
+<span class="c"># Only SSH and HTTPS from outside; OSRM and Photon stay on localhost</span>
+ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable</pre><button class="copy" type="button">Copy</button></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Download Bangladesh's map data</h3>
+        <div>
+          <p>Geofabrik publishes a daily OpenStreetMap extract for Bangladesh.</p>
+          <div class="code"><pre>mkdir -p /srv/osrm && cd /srv/osrm
+curl -LO https://download.geofabrik.de/asia/bangladesh-latest.osm.pbf</pre><button class="copy" type="button">Copy</button></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Build and start the routing server (OSRM)</h3>
+        <div>
+          <p>These three commands turn the map into a routing graph with the car profile. It takes 5–20 minutes. The car profile also gives sensible distances and times for bikes and CNGs.</p>
+          <div class="code"><pre>cd /srv/osrm
+docker run --rm -t -v /srv/osrm:/data ghcr.io/project-osrm/osrm-backend osrm-extract -p /opt/car.lua /data/bangladesh-latest.osm.pbf
+docker run --rm -t -v /srv/osrm:/data ghcr.io/project-osrm/osrm-backend osrm-partition /data/bangladesh-latest.osrm
+docker run --rm -t -v /srv/osrm:/data ghcr.io/project-osrm/osrm-backend osrm-customize /data/bangladesh-latest.osrm
+
+<span class="c"># Run it on localhost:5000, restarting automatically after reboots</span>
+docker run -d --name osrm --restart unless-stopped -p 127.0.0.1:5000:5000 -v /srv/osrm:/data \
+  ghcr.io/project-osrm/osrm-backend osrm-routed --algorithm mld /data/bangladesh-latest.osrm
+
+<span class="c"># Test: Gulshan 2 → Dhanmondi 27. Expect "code":"Ok" and a distance around 9,000 m</span>
+curl -s "http://127.0.0.1:5000/route/v1/driving/90.4078,23.7925;90.3742,23.7461?overview=false" | head -c 300</pre><button class="copy" type="button">Copy</button></div>
+          <div class="note warn"><strong>If osrm-extract stops with “Killed”</strong><p>The server ran out of memory. Add swap (<code>fallocate -l 8G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile</code>) and run the extract again, or use a larger server just for the build.</p></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Set up address search (Photon)</h3>
+        <div>
+          <p>Photon publishes ready-made search indexes per country. Open the <a href="https://download1.graphhopper.com/public/extracts/by-country-code/bd/" target="_blank" rel="noopener">Bangladesh extracts folder</a>, copy the link of the newest file, and download the matching Photon release from <a href="https://github.com/komoot/photon/releases" target="_blank" rel="noopener">github.com/komoot/photon/releases</a>. The index and the jar must come from the same Photon version; the <a href="https://github.com/komoot/photon#installation" target="_blank" rel="noopener">Photon README</a> lists which goes with which.</p>
+          <div class="code"><pre>mkdir -p /srv/photon && cd /srv/photon
+<span class="c"># Paste the two links you copied</span>
+curl -L -o photon.jar "PASTE_PHOTON_JAR_LINK"
+curl -L "PASTE_BD_EXTRACT_LINK" | pbzip2 -d | tar x    <span class="c"># creates /srv/photon/photon_data</span>
+
+<span class="c"># Run as a service on localhost:2322</span>
+cat > /etc/systemd/system/photon.service &lt;&lt;'EOF'
+[Unit]
+Description=Photon geocoder (Bangladesh)
+After=network.target
+
+[Service]
+WorkingDirectory=/srv/photon
+ExecStart=/usr/bin/java -Xmx2g -jar /srv/photon/photon.jar -data-dir /srv/photon -listen-ip 127.0.0.1 -listen-port 2322
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload && systemctl enable --now photon
+
+<span class="c"># Test (give it half a minute to start). Expect a list of Dhanmondi places</span>
+curl -s "http://127.0.0.1:2322/api/?q=Dhanmondi%2027&limit=3" | head -c 400</pre><button class="copy" type="button">Copy</button></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>Put HTTPS and a key in front (Caddy)</h3>
+        <div>
+          <p>Point two DNS names at your server's IP with A records, for example <code>route.yourdomain.com</code> and <code>geo.yourdomain.com</code>. No domain yet? <code>route.203-0-113-5.sslip.io</code> (your IP with dashes) resolves to your server automatically and works for HTTPS too.</p>
+          <p>Make a long random key; the API will send it and Caddy will refuse requests without it.</p>
+          <div class="code"><pre><span class="c"># 1. Generate the key and keep it for step 7</span>
+openssl rand -hex 32
+
+<span class="c"># 2. Give it to Caddy</span>
+mkdir -p /etc/systemd/system/caddy.service.d
+printf '[Service]\nEnvironment=GEO_TOKEN=PASTE_THE_KEY\n' > /etc/systemd/system/caddy.service.d/token.conf
+
+<span class="c"># 3. Replace the domains with yours</span>
+cat > /etc/caddy/Caddyfile &lt;&lt;'EOF'
+route.yourdomain.com {
+	@denied not header Authorization "Bearer {$GEO_TOKEN}"
+	respond @denied 401
+	reverse_proxy 127.0.0.1:5000
+}
+
+geo.yourdomain.com {
+	@denied not header Authorization "Bearer {$GEO_TOKEN}"
+	respond @denied 401
+	reverse_proxy 127.0.0.1:2322
+}
+EOF
+systemctl daemon-reload && systemctl restart caddy
+
+<span class="c"># 4. From your laptop: without the key → 401, with it → "code":"Ok"</span>
+curl -s -o /dev/null -w "%{http_code}\n" "https://route.yourdomain.com/route/v1/driving/90.4078,23.7925;90.3742,23.7461"
+curl -s -H "Authorization: Bearer PASTE_THE_KEY" "https://route.yourdomain.com/route/v1/driving/90.4078,23.7925;90.3742,23.7461?overview=false" | head -c 200</pre><button class="copy" type="button">Copy</button></div>
+          <p>Caddy gets the HTTPS certificates by itself on first request. If it can't, check that both DNS names point at this IP and that ports 80 and 443 are open.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="connect">
+    <div class="section-head">
+      <h2>Connect Cholo to your servers</h2>
+      <p>Render → cholo-api → Environment. Save, and Render redeploys in about a minute.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>GEO_PROVIDER</code></td><td><code>photon</code></td></tr>
+          <tr><td><code>OSRM_BASE_URL</code></td><td><code>https://route.yourdomain.com</code> (no trailing slash)</td></tr>
+          <tr><td><code>PHOTON_BASE_URL</code></td><td><code>https://geo.yourdomain.com</code></td></tr>
+          <tr><td><code>GEO_UPSTREAM_TOKEN</code></td><td>the key from the Caddy step</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Then check it end to end:</p>
+    <ol>
+      <li>Open Cholo, type an address in Pickup, and confirm suggestions appear quickly.</li>
+      <li>Pick a dropoff and confirm fares and the green route line appear.</li>
+      <li>In Render → Logs, confirm there are no <code>GEO_PROVIDER_UNAVAILABLE</code> errors.</li>
+      <li>On the map server, <code>journalctl -u caddy -n 20</code> shows the requests arriving from Render.</li>
+    </ol>
+    <div class="note tip"><strong>Nothing else changes</strong><p>The web app never calls these servers directly. It asks the Cholo API, which applies the Bangladesh checks and the cache, so riders need no update.</p></div>
+  </section>
+
+  <section id="updates">
+    <div class="section-head">
+      <h2>Keep the map data fresh</h2>
+      <p>New roads and places reach OpenStreetMap every day. Rebuilding once a month is plenty.</p>
+    </div>
+    <p>This script builds new route data in a separate folder and only swaps it in when the build succeeds, so routing keeps working during the rebuild.</p>
+    <div class="code"><pre>cat > /usr/local/bin/refresh-osrm &lt;&lt;'EOF'
+#!/bin/sh
+set -e
+NEW=/srv/osrm-next
+rm -rf "$NEW" && mkdir -p "$NEW" && cd "$NEW"
+curl -sLO https://download.geofabrik.de/asia/bangladesh-latest.osm.pbf
+IMG=ghcr.io/project-osrm/osrm-backend
+docker run --rm -v "$NEW":/data $IMG osrm-extract -p /opt/car.lua /data/bangladesh-latest.osm.pbf
+docker run --rm -v "$NEW":/data $IMG osrm-partition /data/bangladesh-latest.osrm
+docker run --rm -v "$NEW":/data $IMG osrm-customize /data/bangladesh-latest.osrm
+docker stop osrm && docker rm osrm
+rm -rf /srv/osrm-old && mv /srv/osrm /srv/osrm-old && mv "$NEW" /srv/osrm
+docker run -d --name osrm --restart unless-stopped -p 127.0.0.1:5000:5000 -v /srv/osrm:/data $IMG osrm-routed --algorithm mld /data/bangladesh-latest.osrm
+EOF
+chmod +x /usr/local/bin/refresh-osrm
+
+<span class="c"># 03:00 on the 1st of every month (server time)</span>
+echo "0 3 1 * * root /usr/local/bin/refresh-osrm >> /var/log/refresh-osrm.log 2>&1" > /etc/cron.d/refresh-osrm</pre><button class="copy" type="button">Copy</button></div>
+    <p>Routing pauses for a few seconds during the swap. For Photon, repeat the download from the address-search step every few months, then run <code>systemctl restart photon</code>.</p>
+  </section>
+
+  <section id="paid">
+    <div class="section-head">
+      <h2>Alternative: a paid map API</h2>
+      <p>No server to run, but you pay per request above the free tier and need one new file.</p>
+    </div>
+    <p>Paid APIs don't speak OSRM's and Photon's formats, so add a provider next to the existing ones. Every provider exports the same four functions, and <code>geo.service.js</code> picks one by <code>GEO_PROVIDER</code>.</p>
+    <div class="cols">
+      <div class="card"><h3>What each function returns</h3>
+        <ul>
+          <li><code>route(from, to, { via })</code> → <code>{ distanceKm, durationMin, path: [{ lat, lng }], alternatives: [] }</code></li>
+          <li><code>search(text)</code> → up to 5 <code>{ lat, lng, address, countryCode }</code></li>
+          <li><code>geocode(text)</code> → one of those</li>
+          <li><code>reverseGeocode(lat, lng)</code> → <code>{ address, countryCode }</code></li>
+        </ul>
+      </div>
+      <div class="card"><h3>Where to add it</h3>
+        <ol>
+          <li>Create <code>server/src/services/providers/geoapify.provider.js</code>.</li>
+          <li>Add it to the <code>providers</code> map in <code>geo.service.js</code>.</li>
+          <li>Add <code>'geoapify'</code> to the <code>GEO_PROVIDER</code> list and a <code>GEOAPIFY_API_KEY</code> in <code>server/src/config/env.js</code>.</li>
+          <li>Copy <code>tests/unit/photon.provider.test.js</code> and adapt it.</li>
+        </ol>
+      </div>
+    </div>
+    <p>A starting point using Geoapify's routing and autocomplete endpoints (check their documentation for the current response fields):</p>
+    <div class="code"><pre>import { env } from '../../config/env.js';
+import { AppError } from '../../utils/AppError.js';
+
+const BASE = 'https://api.geoapify.com/v1';
+const key = () => `apiKey=${env.GEOAPIFY_API_KEY}`;
+
+async function get(url) {
+  const response = await fetch(url).catch(() => null);
+  if (!response?.ok) throw new AppError(503, 'GEO_PROVIDER_UNAVAILABLE');
+  return response.json();
+}
+
+export async function route(from, to, { via = [] } = {}) {
+  const waypoints = [from, ...via, to].map((p) => `${p.lat},${p.lng}`).join('|');
+  const data = await get(`${BASE}/routing?waypoints=${waypoints}&mode=drive&${key()}`);
+  const feature = data.features?.[0];
+  if (!feature) throw new AppError(422, 'ROUTE_NOT_FOUND');
+  const lines = feature.geometry.type === 'MultiLineString' ? feature.geometry.coordinates.flat() : feature.geometry.coordinates;
+  return {
+    distanceKm: Math.round(feature.properties.distance / 10) / 100,
+    durationMin: Math.max(1, Math.round(feature.properties.time / 60)),
+    path: lines.map(([lng, lat]) => ({ lat, lng })),
+    alternatives: [],
+  };
+}
+
+const toPlace = (p) => ({ lat: p.lat, lng: p.lon, address: p.formatted, countryCode: p.country_code });
+
+export async function search(text) {
+  const data = await get(`${BASE}/geocode/autocomplete?text=${encodeURIComponent(text)}&filter=countrycode:bd&limit=5&format=json&${key()}`);
+  return (data.results ?? []).map(toPlace);
+}
+
+export async function geocode(text) {
+  const [first] = await search(text);
+  if (!first) throw new AppError(422, 'ADDRESS_NOT_FOUND');
+  return first;
+}
+
+export async function reverseGeocode(lat, lng) {
+  const data = await get(`${BASE}/geocode/reverse?lat=${lat}&lon=${lng}&format=json&${key()}`);
+  const place = data.results?.[0];
+  if (!place) throw new AppError(422, 'ADDRESS_NOT_FOUND');
+  return { address: place.formatted, countryCode: place.country_code };
+}</pre><button class="copy" type="button">Copy</button></div>
+    <p>With the cache in place, a quote costs one routing request per trip rather than one per category, and repeated searches are free for 10 minutes. That keeps a small app within most free tiers for a while.</p>
+  </section>
+
+  <section id="tiles">
+    <div class="section-head">
+      <h2>The map picture itself (tiles)</h2>
+      <p>No action needed at launch.</p>
+    </div>
+    <p>The map background comes from OpenFreeMap, set as <code>VECTOR_STYLE_URL</code> in <code>client/src/components/map/MapView.tsx</code>. It is free, needs no key and serves tiles from a CDN, so riders' phones load it directly without touching your API or your map server.</p>
+    <p>If you ever want to stop depending on it, the simplest route is a single Bangladesh file in the <a href="https://docs.protomaps.com/" target="_blank" rel="noopener">Protomaps PMTiles</a> format hosted on any static file host, with MapView's style pointed at it. A paid tile plan (MapTiler, Stadia Maps) also only needs that one style URL changed.</p>
+  </section>
+
+  <section id="trouble">
+    <div class="section-head">
+      <h2>Troubleshooting and rollback</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What you see</th><th>Likely cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>“The mapping service is temporarily unavailable”</td><td>The API can't reach your server, or Caddy returns 401</td><td>Check <code>GEO_UPSTREAM_TOKEN</code> on Render matches the Caddy key exactly; run the curl tests from the Caddy step.</td></tr>
+          <tr><td>No address suggestions, but routes work</td><td>Photon is down or still starting</td><td><code>systemctl status photon</code>; <code>journalctl -u photon -n 50</code>. A version mismatch between jar and index shows up here.</td></tr>
+          <tr><td>“No route could be found”</td><td>The OSRM data is missing or an old build is running</td><td><code>docker logs osrm --tail 50</code>; run the curl test in the OSRM step on the server.</td></tr>
+          <tr><td>New roads missing</td><td>Data not refreshed</td><td>Run <code>/usr/local/bin/refresh-osrm</code>; check <code>/var/log/refresh-osrm.log</code>.</td></tr>
+          <tr><td>Server disk full</td><td>Old builds piling up</td><td><code>rm -rf /srv/osrm-old</code> and <code>docker system prune</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note tip"><strong>Rolling back takes one minute</strong><p>In Render, set <code>OSRM_BASE_URL</code> back to <code>https://router.project-osrm.org</code>, <code>PHOTON_BASE_URL</code> to <code>https://photon.komoot.io</code>, and delete <code>GEO_UPSTREAM_TOKEN</code>. Cholo goes straight back to the public servers.</p></div>
+  </section>
+
+  <footer>Written September 2026 for the Cholo codebase: server/src/services/geo.service.js and server/src/services/providers/. Companion to the Cholo Feature Guide.</footer>
+</div>
+
+<script>
+  document.querySelectorAll('.copy').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const pre = button.previousElementSibling;
+      const text = pre.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'Copied';
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        button.textContent = 'Selected';
+      }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+    });
+  });
+</script>

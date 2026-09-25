@@ -1,7 +1,7 @@
 import { env } from '../../config/env.js';
 import { AppError } from '../../utils/AppError.js';
 import { formatCompactAddress, stripAdminSuffix } from '../../utils/addressFormat.js';
-import { route } from './osm.provider.js';
+import { route, upstreamHeaders } from './osm.provider.js';
 
 const USER_AGENT = 'Cholo/0.1 (learning project; docs/05-06-07 §8 geo adapter)';
 
@@ -11,7 +11,7 @@ async function fetchJson(url) {
   let response;
 
   try {
-    response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    response = await fetch(url, { headers: upstreamHeaders({ 'User-Agent': USER_AGENT }) });
   } catch {
     throw new AppError(503, 'GEO_PROVIDER_UNAVAILABLE');
   }
