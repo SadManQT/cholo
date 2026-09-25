@@ -1,0 +1,35 @@
+name: Nightly database backup
+
+# Dumps the production database every night and keeps the file as a private workflow artifact for 30 days.
+# Turn it on by adding a repository secret named BACKUP_DATABASE_URL: the Supabase session-pooler URI,
+# with the real password (GitHub → Settings → Secrets and variables → Actions → New repository secret).
+# Without that secret the job just prints a notice.
+on:
+  schedule:
+    - cron: '30 20 * * *' # 02:30 in Dhaka
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container: postgres:17
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+    steps:
+      - name: Dump
+        id: dump
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::BACKUP_DATABASE_URL is not set; skipping the backup."
+            exit 0
+          fi
+          file="cholo-$(date -u +%Y-%m-%d).dump"
+          pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --schema=public --file="$file"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+      - name: Keep the dump
+        if: steps.dump.outputs.file != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dump.outputs.file }}
+          path: ${{ steps.dump.outputs.file }}
+          retention-days: 30

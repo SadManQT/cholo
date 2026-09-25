@@ -40,3 +40,8 @@ const dhakaDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dh
 export function dhakaDate(offsetDays = 0) {
   return dhakaDateFormatter.format(new Date(Date.now() + offsetDays * 86_400_000));
 }
+
+/** "2026-09" → "September 2026". */
+export function formatMonth(month: string) {
+  return new Date(`${month}-01T00:00:00+06:00`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'Asia/Dhaka' });
+}

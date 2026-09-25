@@ -43,7 +43,7 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
     setBusy(true);
     setError(null);
     try {
-      const fileUrl = await uploadFile(file);
+      const fileUrl = await uploadFile(file, { isPrivate: true });
       await onSubmit({
         fileUrl,
         ...(docNumber.trim() ? { docNumber: docNumber.trim() } : {}),

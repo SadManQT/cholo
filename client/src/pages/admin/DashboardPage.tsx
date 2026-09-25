@@ -1,11 +1,57 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as adminApi from '../../api/admin.api';
 import * as referenceApi from '../../api/reference.api';
-import { Card, EmptyState, Skeleton } from '../../components/ui';
+import type { ExportKind } from '../../api/admin.api';
+import { DownloadIcon } from '../../components/layout/icons';
+import { Button, Card, EmptyState, Skeleton, toast } from '../../components/ui';
 import type { DashboardStats } from '../../types/admin.types';
 import type { City } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
-import { formatBDT, formatDate } from '../../utils/format';
+import { dhakaDate, formatBDT, formatDate } from '../../utils/format';
+
+const EXPORTS: Array<{ kind: ExportKind; label: string }> = [
+  { kind: 'trips', label: 'Trips' },
+  { kind: 'payments', label: 'Payments' },
+  { kind: 'withdrawals', label: 'Withdrawals' },
+];
+
+/** CSV downloads for finance and university reporting. The API allows super and finance admins only. */
+function ExportsCard() {
+  const [from, setFrom] = useState(dhakaDate(-29));
+  const [to, setTo] = useState(dhakaDate());
+  const [busy, setBusy] = useState<ExportKind | null>(null);
+
+  async function download(kind: ExportKind) {
+    setBusy(kind);
+    try {
+      await adminApi.downloadExport(kind, from, to);
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, 'Could not export. Finance or super admin access is required.'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Card>
+      <h2 className="font-semibold">Export to spreadsheet</h2>
+      <p className="text-sm text-ink-500">CSV files open in Excel and Google Sheets. Dates are Dhaka days, up to one year at a time.</p>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="text-sm font-medium">From
+          <input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
+        </label>
+        <label className="text-sm font-medium">To
+          <input type="date" value={to} min={from} max={dhakaDate()} onChange={(event) => setTo(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
+        </label>
+        {EXPORTS.map((item) => (
+          <Button key={item.kind} variant="secondary" loading={busy === item.kind} onClick={() => void download(item.kind)}>
+            <DownloadIcon className="h-4 w-4" /> {item.label}
+          </Button>
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -82,6 +128,7 @@ export function DashboardPage() {
           ))}
         </div>
       </Card>
+      <ExportsCard />
     </main>
   );
 }

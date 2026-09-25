@@ -18,6 +18,13 @@ const TONES: Record<string, string> = {
   suspended: 'bg-danger-600/10 text-danger-600',
   deleted: 'bg-ink-500/10 text-ink-500',
   false_alarm: 'bg-ink-500/10 text-ink-500',
+  paused: 'bg-ink-500/10 text-ink-500',
+  live: 'bg-marigold-500/15 text-marigold-500',
+  scheduled: 'bg-info-600/10 text-info-600',
+  ended: 'bg-ink-500/10 text-ink-500',
+  investigating: 'bg-info-600/10 text-info-600',
+  action_taken: 'bg-cholo-50 text-cholo-700',
+  dismissed: 'bg-ink-500/10 text-ink-500',
 };
 
 const LABELS: Record<string, string> = { missing: 'not uploaded' };

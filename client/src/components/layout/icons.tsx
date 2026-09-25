@@ -88,3 +88,8 @@ export const StarIcon = ({ className = base, filled = false }: IconProps & { fil
 );
 export const GraduationIcon = (props: IconProps) => <Stroke {...props}><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3 2 9 2 12 0v-5M22 9v6" /></Stroke>;
 export const ClockIcon = (props: IconProps) => <Stroke {...props}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Stroke>;
+export const BoltIcon = (props: IconProps) => <Stroke {...props}><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></Stroke>;
+export const FlagIcon = (props: IconProps) => <Stroke {...props}><path d="M4 21V4M4 4h12l-2 4 2 4H4" /></Stroke>;
+export const ShieldIcon = (props: IconProps) => <Stroke {...props}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" /><path d="M12 8v4M12 16h.01" /></Stroke>;
+export const GiftIcon = (props: IconProps) => <Stroke {...props}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v9h14v-9M12 8S10.5 3 8 3a2.5 2.5 0 0 0 0 5h4ZM12 8s1.5-5 4-5a2.5 2.5 0 0 1 0 5h-4Z" /></Stroke>;
+export const DownloadIcon = (props: IconProps) => <Stroke {...props}><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Stroke>;

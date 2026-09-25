@@ -17,7 +17,9 @@ export async function reverseGeocode(lat: number, lng: number) {
   return { lat, lng, address: response.data.data.address } satisfies Place;
 }
 
-export async function getRoute(pickup: LatLng, dropoff: LatLng) {
-  const response = await apiClient.post<ApiSuccess<RouteResult>>('/geo/route', { pickup, dropoff });
+export async function getRoute(pickup: LatLng, dropoff: LatLng, stops: LatLng[] = []) {
+  const response = await apiClient.post<ApiSuccess<RouteResult>>('/geo/route', {
+    pickup, dropoff, ...(stops.length ? { stops: stops.map(({ lat, lng }) => ({ lat, lng })) } : {}),
+  });
   return response.data.data;
 }

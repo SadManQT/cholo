@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import * as meApi from '../../api/me.api';
 import { ACCEPTED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, uploadFile } from '../../api/uploads.api';
 import { BanknoteIcon, CarIcon, FileIcon, LifebuoyIcon, PinIcon, SirenIcon, TagIcon } from '../../components/layout/icons';
+import {
+  DeleteAccountCard, FavoriteDriversCard, InstallAppCard, InviteFriendsCard, TwoFactorCard,
+} from '../../components/account/AccountCards';
 import { Button, Card, Input, StatePill, toast } from '../../components/ui';
 import { useAuth } from '../../context/auth';
 import type { EmergencyContact } from '../../types/place.types';
@@ -122,7 +125,7 @@ function EmergencyContacts() {
   );
 }
 
-export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
+export function ProfilePage({ driverMode = false, adminMode = false }: { driverMode?: boolean; adminMode?: boolean }) {
   const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
   const photoInput = useRef<HTMLInputElement>(null);
@@ -227,7 +230,7 @@ export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
       : !driverMode
         ? { to: '/driver/apply', label: 'Drive with Cholo', hint: 'Earn on your own schedule', icon: <CarIcon /> }
         : null;
-  const menu = [...(driverMode ? DRIVER_MENU : PASSENGER_MENU), ...(switchRow ? [switchRow] : [])];
+  const menu = adminMode ? [] : [...(driverMode ? DRIVER_MENU : PASSENGER_MENU), ...(switchRow ? [switchRow] : [])];
 
   return (
     <main className="mx-auto max-w-3xl space-y-5 p-4 md:p-6">
@@ -261,7 +264,7 @@ export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
         </div>
       </Card>
 
-      <nav aria-label="Account" className="overflow-hidden rounded-2xl border border-border bg-surface">
+      {menu.length > 0 && <nav aria-label="Account" className="overflow-hidden rounded-2xl border border-border bg-surface">
         {menu.map((row) => (
           <Link key={row.to} to={row.to} className="flex items-center gap-3 border-b border-border px-4 py-3.5 last:border-b-0 hover:bg-surface-alt focus-visible:bg-surface-alt focus-visible:outline-none">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cholo-50 text-cholo-700">{row.icon}</span>
@@ -272,9 +275,13 @@ export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
             <ChevronRight />
           </Link>
         ))}
-      </nav>
+      </nav>}
 
-      <EmergencyContacts />
+      {adminMode && <TwoFactorCard />}
+      {!adminMode && <InviteFriendsCard />}
+      {!adminMode && <EmergencyContacts />}
+      {!adminMode && !driverMode && <FavoriteDriversCard />}
+      <InstallAppCard />
 
       <Card>
         <h2 className="font-semibold">Profile details</h2>
@@ -302,6 +309,8 @@ export function ProfilePage({ driverMode = false }: { driverMode?: boolean }) {
       </Card>
 
       <Button variant="danger" className="w-full md:w-auto" onClick={() => void signOut()}>Sign out</Button>
+
+      {!adminMode && <DeleteAccountCard />}
     </main>
   );
 }

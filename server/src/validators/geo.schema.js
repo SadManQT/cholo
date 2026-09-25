@@ -17,4 +17,5 @@ export const reverseGeocodeQuerySchema = z.object({
 export const routeSchema = z.object({
   pickup: coordinateSchema,
   dropoff: coordinateSchema,
+  stops: z.array(coordinateSchema).max(2).default([]),
 });

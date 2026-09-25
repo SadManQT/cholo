@@ -10,9 +10,10 @@ import { TripStatusStepper } from '../../components/ride/TripStatusStepper';
 import { BottomSheet, Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../components/ui';
 import type { SnapPoint } from '../../components/ui/BottomSheet';
 import { useAuth } from '../../context/auth';
+import { useSocket } from '../../context/socket';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useRideTracking } from '../../hooks/useRideTracking';
-import type { TripDetail } from '../../types/ride.types';
+import type { SocketTripStatus, TripDetail } from '../../types/ride.types';
 import type { LatLng } from '../../types/geo.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
@@ -22,6 +23,7 @@ export function LiveTripPage() {
   const { code } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { socket } = useSocket();
   const geolocation = useGeolocation();
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,7 @@ export function LiveTripPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<'cancel' | 'sos' | null>(null);
   const [mutating, setMutating] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const tracking = useRideTracking(code, trip?.status ?? 'assigned');
 
   const loadTrip = useCallback(async () => {
@@ -48,6 +51,22 @@ export function LiveTripPage() {
   useEffect(() => {
     void loadTrip();
   }, [loadTrip]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onStatus = (payload: SocketTripStatus) => {
+      if (!payload.stopReached) return;
+      const reachedAt = new Date().toISOString();
+      setTrip((current) => current && {
+        ...current,
+        stops: current.stops.map((stop) => (stop.order === payload.stopReached ? { ...stop, arrivedAt: reachedAt } : stop)),
+      });
+    };
+    socket.on('trip:status', onStatus);
+    return () => {
+      socket.off('trip:status', onStatus);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!trip) return;
@@ -75,6 +94,26 @@ export function LiveTripPage() {
       toast.error(getApiErrorMessage(thrown, 'Could not cancel this trip.'));
     } finally {
       setMutating(false);
+    }
+  }
+
+  // Family can follow the trip without an account. The share sheet on phones, the clipboard elsewhere.
+  async function shareTrip() {
+    if (!code || !trip) return;
+    setSharing(true);
+    try {
+      const { url } = await tripsApi.createShareLink(code);
+      const text = `I'm on a Cholo ride with ${trip.driver.name} (${trip.vehicle.registrationNo}). Follow it live:`;
+      if (navigator.share) {
+        await navigator.share({ title: 'Follow my Cholo ride', text, url }).catch(() => {});
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        toast.success('Trip link copied. Send it to someone you trust.');
+      }
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, 'Could not create a share link.'));
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -115,7 +154,7 @@ export function LiveTripPage() {
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
       <ConnectionPill state={tracking.connectionState} />
-      <MapView pickup={trip.pickup} dropoff={trip.dropoff} driver={driverPosition} className="h-full" />
+      <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} driver={driverPosition} className="h-full" />
 
       <Button
         variant="danger"
@@ -179,12 +218,18 @@ export function LiveTripPage() {
 
           <div className="rounded-xl bg-surface-alt p-3 text-sm">
             <p><span className="font-semibold">A</span> {trip.pickup.address || 'Pickup'}</p>
+            {trip.stops.map((stop) => (
+              <p key={stop.order} className={`mt-2 ${stop.arrivedAt ? 'text-ink-500 line-through' : ''}`}>
+                <span className="font-semibold">{stop.order}</span> {stop.address || `Stop ${stop.order}`}
+              </p>
+            ))}
             <p className="mt-2"><span className="font-semibold">B</span> {trip.dropoff.address || 'Dropoff'}</p>
             <p className="mt-3 border-t border-border pt-3 font-semibold">Estimated {formatBDT(trip.estimate.fare)}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Button variant="secondary" onClick={() => setChatOpen(true)}>Chat</Button>
+            <Button variant="secondary" loading={sharing} onClick={() => void shareTrip()}>Share trip</Button>
             {canCancel ? (
               <Button variant="danger" onClick={() => setConfirmation('cancel')}>Cancel trip</Button>
             ) : (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import * as adminApi from '../../api/admin.api';
 import type { SuspensionDuration } from '../../api/admin.api';
 import { Button, Card, Dialog, EmptyState, Input, Skeleton, StatePill, toast } from '../../components/ui';
@@ -87,7 +88,8 @@ export function UsersPage() {
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [status, setStatus] = useState('');
   const [deciding, setDeciding] = useState<AdminUserRow | null>(null);
 

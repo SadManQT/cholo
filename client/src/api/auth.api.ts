@@ -10,13 +10,21 @@ interface SessionUser {
   roles: Role[];
 }
 
-export async function login(phone: string, password: string): Promise<SessionUser> {
-  const { data } = await apiClient.post<ApiSuccess<{ accessToken: string; user: SessionUser }>>(
-    '/auth/login',
-    { phone, password },
-  );
+type LoginResult =
+  | { accessToken: string; user: SessionUser; twoFactorRequired?: undefined }
+  | { twoFactorRequired: true; challengeToken: string };
+
+/** Returns a challenge token when the account needs an authenticator code, otherwise signs in. */
+export async function login(phone: string, password: string): Promise<{ challengeToken: string } | null> {
+  const { data } = await apiClient.post<ApiSuccess<LoginResult>>('/auth/login', { phone, password });
+  if (data.data.twoFactorRequired) return { challengeToken: data.data.challengeToken };
   setAccessToken(data.data.accessToken);
-  return data.data.user;
+  return null;
+}
+
+export async function loginTwoFactor(challengeToken: string, code: string): Promise<void> {
+  const { data } = await apiClient.post<ApiSuccess<{ accessToken: string }>>('/auth/login/2fa', { challengeToken, code });
+  setAccessToken(data.data.accessToken);
 }
 
 export async function logout(): Promise<void> {
@@ -29,6 +37,7 @@ interface RegisterInput {
   phone: string;
   password: string;
   gender?: Gender;
+  referralCode?: string;
 }
 
 export async function register(input: RegisterInput): Promise<{ userId: string }> {

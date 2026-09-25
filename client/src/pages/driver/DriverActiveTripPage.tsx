@@ -105,6 +105,21 @@ export function DriverActiveTripPage() {
     }
   }
 
+  async function reachStop(order: number) {
+    if (!trip) return;
+    setMutating(true);
+    try {
+      const reached = await tripsApi.markStopReached(trip.publicCode, order);
+      setTrip({ ...trip, stops: trip.stops.map((stop) => (stop.order === order ? { ...stop, arrivedAt: reached.arrivedAt } : stop)) });
+      toast.success(`Stop ${order} reached.`);
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, 'Could not mark this stop.'));
+      void loadTrip();
+    } finally {
+      setMutating(false);
+    }
+  }
+
   async function cancelTrip() {
     if (!trip) return;
     setMutating(true);
@@ -126,11 +141,14 @@ export function DriverActiveTripPage() {
 
   const action = actionFor(trip.status);
   const driverPosition = geolocation.position ?? trip.pickup;
+  const nextStop = trip.status === 'in_progress' ? trip.stops.find((stop) => !stop.arrivedAt) : undefined;
+  const heading = trip.status !== 'in_progress' ? 'Head to pickup' : nextStop ? `Drive to stop ${nextStop.order}` : 'Drive to dropoff';
+  const destination = trip.status !== 'in_progress' ? trip.pickup.address : nextStop ? nextStop.address : trip.dropoff.address;
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
       <ConnectionPill state={tracking.connectionState} />
-      <MapView pickup={trip.pickup} dropoff={trip.dropoff} driver={driverPosition} className="h-full" />
+      <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} driver={driverPosition} className="h-full" />
 
       <BottomSheet
         open
@@ -140,7 +158,7 @@ export function DriverActiveTripPage() {
       >
         <div className="space-y-4 pb-2">
           <div className="flex items-start justify-between gap-3">
-            <div><p className="text-sm text-ink-500">{trip.publicCode}</p><AnimatePresence mode="wait"><motion.h1 key={trip.status} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: EASE_OUT }} className="text-xl font-bold">{trip.status === 'in_progress' ? 'Drive to dropoff' : 'Head to pickup'}</motion.h1></AnimatePresence></div>
+            <div><p className="text-sm text-ink-500">{trip.publicCode}</p><AnimatePresence mode="wait"><motion.h1 key={trip.status} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: EASE_OUT }} className="text-xl font-bold">{heading}</motion.h1></AnimatePresence></div>
             <StatusBadge status={trip.status} />
           </div>
           <TripStatusStepper status={trip.status} />
@@ -148,7 +166,7 @@ export function DriverActiveTripPage() {
           <Card>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cholo-50 text-lg font-bold text-cholo-700">{trip.passenger.name.charAt(0)}</div>
-              <div className="min-w-0 flex-1"><p className="font-semibold">{trip.passenger.name} · ★ {trip.passenger.rating}</p><p className="truncate text-sm text-ink-500">{trip.status === 'in_progress' ? trip.dropoff.address : trip.pickup.address}</p></div>
+              <div className="min-w-0 flex-1"><p className="font-semibold">{trip.passenger.name} · ★ {trip.passenger.rating}</p><p className="truncate text-sm text-ink-500">{destination}</p></div>
               <a href={`tel:${trip.passenger.phone}`} className="flex h-11 items-center rounded-xl border border-border px-3 font-semibold text-cholo-700">Call</a>
             </div>
           </Card>
@@ -158,7 +176,18 @@ export function DriverActiveTripPage() {
           )}
 
           <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full">Chat with passenger</Button>
-          {action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} onConfirm={advanceTrip} />}
+          {trip.stops.length > 0 && (
+            <ol className="space-y-1 rounded-xl bg-surface-alt p-3 text-sm">
+              {trip.stops.map((stop) => (
+                <li key={stop.order} className={stop.arrivedAt ? 'text-ink-500 line-through' : ''}>
+                  <span className="font-semibold">Stop {stop.order}</span> · {stop.address || 'Pinned on the map'}
+                </li>
+              ))}
+            </ol>
+          )}
+          {nextStop
+            ? <SlideToConfirm key={`stop-${nextStop.order}`} label={`reached stop ${nextStop.order}`} loading={mutating} onConfirm={() => void reachStop(nextStop.order)} />
+            : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} onConfirm={advanceTrip} />}
           {(trip.status === 'assigned' || trip.status === 'arrived') && (
             <Button variant="ghost" onClick={() => setCancelOpen(true)} className="w-full text-danger-600">Cancel trip</Button>
           )}

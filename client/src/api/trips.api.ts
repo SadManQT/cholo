@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import type { ApiSuccess } from '../types/api.types';
 import type { TrackedLocation } from '../types/geo.types';
-import type { ParticipantRole, TripDetail, TripMessage, TripStatus, TripSummary } from '../types/ride.types';
+import type { ParticipantRole, ReportCategory, SharedTrip, TripDetail, TripMessage, TripStatus, TripSummary } from '../types/ride.types';
 
 export async function listTrips(params: {
   page?: number;
@@ -86,6 +86,33 @@ export async function rateTrip(tripCode: string, score: number, comment?: string
   const response = await apiClient.post<ApiSuccess<{ score: number; comment: string | null }>>(
     `/trips/${encodeURIComponent(tripCode)}/rating`,
     { score, ...(comment ? { comment } : {}) },
+  );
+  return response.data.data;
+}
+
+export async function markStopReached(tripCode: string, stopOrder: number) {
+  const response = await apiClient.post<ApiSuccess<{ order: number; arrivedAt: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/stops/${stopOrder}/arrived`,
+  );
+  return response.data.data;
+}
+
+export async function createShareLink(tripCode: string) {
+  const response = await apiClient.post<ApiSuccess<{ url: string; token: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/share`,
+  );
+  return response.data.data;
+}
+
+export async function getSharedTrip(token: string) {
+  const response = await apiClient.get<ApiSuccess<SharedTrip>>(`/share/${encodeURIComponent(token)}`);
+  return response.data.data;
+}
+
+export async function reportTrip(tripCode: string, category: ReportCategory, description?: string) {
+  const response = await apiClient.post<ApiSuccess<{ id: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/report`,
+    { category, ...(description ? { description } : {}) },
   );
   return response.data.data;
 }

@@ -8,6 +8,7 @@ export async function getQuote(input: {
   categoryId: number;
   pickup: LatLng;
   dropoff: LatLng;
+  stops?: LatLng[];
 }) {
   const response = await apiClient.post<ApiSuccess<RideQuote>>('/rides/quote', input);
   return response.data.data;
@@ -27,5 +28,11 @@ export async function cancelRequest(publicId: string) {
   const response = await apiClient.delete<ApiSuccess<Pick<RideRequest, 'publicId' | 'status'>>>(
     `/ride-requests/${encodeURIComponent(publicId)}`,
   );
+  return response.data.data;
+}
+
+/** The rider's live search (if any) and upcoming scheduled rides. */
+export async function listActiveRequests() {
+  const response = await apiClient.get<ApiSuccess<RideRequest[]>>('/ride-requests');
   return response.data.data;
 }

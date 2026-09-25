@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as tripsApi from '../../api/trips.api';
 import { TripRow } from '../../components/ride/TripRow';
+import { UpcomingRides } from '../../components/ride/UpcomingRides';
 import { Button, EmptyState, Skeleton } from '../../components/ui';
 import type { TripStatus, TripSummary } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -81,6 +82,8 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
         <h1 className="text-2xl font-bold">Your trips</h1>
         <p className="text-sm text-ink-500">Active rides and past receipts in one place.</p>
       </div>
+
+      {!driverMode && <UpcomingRides />}
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter trips">
         {FILTERS.map((item) => (

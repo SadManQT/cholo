@@ -35,6 +35,10 @@
     @apply text-danger-600;
   }
 
+  .cholo-map-marker--stop {
+    @apply text-marigold-500;
+  }
+
   .cholo-map-marker--sos {
     @apply text-danger-600;
   }

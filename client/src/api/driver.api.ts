@@ -116,3 +116,38 @@ export async function addVehicleDocument(vehicleId: string, docType: VehicleDocT
   const response = await apiClient.post<ApiSuccess<DriverDocument>>(`/driver/vehicles/${vehicleId}/documents`, { docType, ...input });
   return response.data.data;
 }
+
+export interface StatementMonth {
+  month: string;
+  tripsCount: number;
+  grossTotal: number;
+  commissionTotal: number;
+  netTotal: number;
+}
+
+export interface Statement {
+  statementNo: string;
+  month: string;
+  driver: { name: string; phone: string; licenseNumber: string };
+  totals: Omit<StatementMonth, 'month'>;
+  trips: Array<{
+    tripCode: string;
+    earnedAt: string;
+    grossFare: number;
+    commissionPct: number;
+    commissionAmount: number;
+    netEarning: number;
+    paymentMethod: string;
+  }>;
+  generatedAt: string;
+}
+
+export async function listStatements() {
+  const response = await apiClient.get<ApiSuccess<StatementMonth[]>>('/driver/statements');
+  return response.data.data;
+}
+
+export async function getStatement(month: string) {
+  const response = await apiClient.get<ApiSuccess<Statement>>(`/driver/statements/${month}`);
+  return response.data.data;
+}
