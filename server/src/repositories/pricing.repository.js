@@ -25,3 +25,21 @@ export async function getCurrentCommission(categoryId, cityId, client = pool) {
 
   return rows[0];
 }
+
+// The highest live surge for the pickup's zone (and category, when the row names one).
+export async function getActiveSurgeMultiplier(cityId, categoryId, pickup, client = pool) {
+  const { rows } = await client.query(
+    `SELECT multiplier::float8 AS multiplier
+     FROM surge_pricing
+     WHERE is_active
+       AND zone_id = fn_zone_at($1, $2, $3)
+       AND (category_id IS NULL OR category_id = $4)
+       AND starts_at <= now()
+       AND (ends_at IS NULL OR ends_at > now())
+     ORDER BY multiplier DESC
+     LIMIT 1`,
+    [pickup.lat, pickup.lng, cityId, categoryId],
+  );
+
+  return rows[0]?.multiplier ?? 1;
+}

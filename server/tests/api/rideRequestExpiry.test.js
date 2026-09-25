@@ -194,7 +194,7 @@ test('expireStaleRequests flips a stale searching request to expired and times o
   assert.equal(offerRows[0].response, 'timed_out');
 });
 
-test('expireStaleRequests never touches a scheduled request (expires_at is NULL, not just far away)', async () => {
+test('expireStaleRequests leaves a scheduled request pending until well after its pickup time', async () => {
   const passenger = await createPassenger();
   const cityId = await dhakaCityId();
   const categoryId = await carCategoryId();
@@ -212,5 +212,5 @@ test('expireStaleRequests never touches a scheduled request (expires_at is NULL,
   assert.ok(!expired.some((row) => row.publicId === data.publicId));
 
   const { rows } = await databaseClient.query(`SELECT status FROM ride_requests WHERE public_id = $1`, [data.publicId]);
-  assert.equal(rows[0].status, 'searching');
+  assert.equal(rows[0].status, 'pending');
 });

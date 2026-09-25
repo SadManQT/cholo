@@ -25,18 +25,29 @@ export async function checkDatabaseConnection() {
   client.release();
 }
 
+// Side effects that must only happen once the data is visible (socket pushes) register here.
+export function afterCommit(client, callback) {
+  if (client?.afterCommitCallbacks) client.afterCommitCallbacks.push(callback);
+  else callback();
+}
+
 export async function withTransaction(work) {
   const client = await pool.connect();
+  client.afterCommitCallbacks = [];
 
   try {
     await client.query('BEGIN');
     const result = await work(client);
     await client.query('COMMIT');
+    for (const callback of client.afterCommitCallbacks) {
+      try { callback(); } catch (error) { console.error('afterCommit callback failed:', error); }
+    }
     return result;
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     throw error;
   } finally {
+    client.afterCommitCallbacks = undefined;
     client.release();
   }
 }

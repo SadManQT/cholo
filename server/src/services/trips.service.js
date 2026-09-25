@@ -13,21 +13,23 @@ import * as usersRepo from '../repositories/users.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
 import { getIO } from '../sockets/index.js';
 import { broadcastTripStatus } from '../sockets/rooms.js';
+import { env } from '../config/env.js';
+import * as socialRepo from '../repositories/social.repository.js';
 import { AppError } from '../utils/AppError.js';
+import { signScoped, verifyScoped } from '../utils/scopedTokens.js';
 import { logger } from '../utils/logger.js';
 import { computeCommission } from '../utils/commissionMath.js';
 import { quote as computeFare, round2 } from '../utils/fareMath.js';
 import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
 import * as geoService from './geo.service.js';
 import * as paymentGateway from './paymentGateway.service.js';
+import { rewardReferralOnFirstTrip } from './referrals.service.js';
 
 async function notifyTripStatus(trip, payload) {
   const io = getIO();
   if (!io) return;
   await broadcastTripStatus(io, trip, payload);
 }
-
-const NO_SURGE = 1.0;
 
 async function attributeTo(userId, client) {
   await client.query(`SELECT set_config('app.user_id', $1, true)`, [String(userId)]);
@@ -69,6 +71,21 @@ export async function markStarted(driverId, tripCode) {
 
   await notifyTripStatus(updated.trip, { status: updated.updated.status, startedAt: updated.updated.startedAt });
   return updated.updated;
+}
+
+export async function arriveAtStop(driverId, tripCode, stopOrder) {
+  const result = await withTransaction(async (client) => {
+    await attributeTo(driverId, client);
+    const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
+    assertTransition(trip, 'in_progress');
+    if (stopOrder > (trip.stops?.length ?? 0)) throw new AppError(404, 'STOP_NOT_FOUND');
+    const stop = await tripsRepo.markStopArrived(trip.id, stopOrder, client);
+    if (!stop) throw new AppError(409, 'STOP_ALREADY_REACHED');
+    return { trip, stop };
+  });
+
+  await notifyTripStatus(result.trip, { status: result.trip.status, stopReached: result.stop.order });
+  return result.stop;
 }
 
 export async function settleDriverEarnings(trip, grossFare, client, { platformCollected = false } = {}) {
@@ -142,6 +159,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) 
     const { distanceKm, durationMin } = await geoService.route(
       { lat: trip.pickupLat, lng: trip.pickupLng },
       { lat: trip.dropoffLat, lng: trip.dropoffLng },
+      (trip.stops ?? []).map(({ lat, lng }) => ({ lat, lng })),
     );
 
     const tariff = await pricingRepo.getCurrentTariff(trip.cityId, trip.categoryId, client);
@@ -152,7 +170,8 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) 
       distanceKm,
       durationMin,
       waitingMinutes: waitingMin,
-      surgeMultiplier: NO_SURGE,
+      // The surge the rider agreed to at booking, not whatever is live at drop-off.
+      surgeMultiplier: trip.surgeMultiplier ?? 1,
     });
 
     const preDiscountTotal = fare.totalFare;
@@ -194,6 +213,8 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) 
       }, client);
       await settleDriverEarnings(trip, fare.totalFare, client);
     }
+
+    await rewardReferralOnFirstTrip(trip, client);
 
     const receipt = await receiptsRepo.insert({
       tripId: trip.id,
@@ -470,6 +491,9 @@ function toTripDetail(trip, history) {
     } : null,
     receipt: trip.receiptNo ? { receiptNo: trip.receiptNo, issuedAt: trip.receiptIssuedAt } : null,
     myRating: trip.myRating ?? null,
+    stops: trip.stops ?? [],
+    driverIsFavorite: trip.driverIsFavorite ?? false,
+    reportedByMe: trip.reportedByMe ?? false,
     history,
   };
 }
@@ -540,4 +564,59 @@ export async function rateTrip(userId, tripCode, { score, comment }) {
     await ratingsRepo.refreshAverage(rateeId, raterRole, client);
     return rating;
   });
+}
+
+export async function reportTrip(userId, tripCode, { category, description }) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip) throw new AppError(404, 'TRIP_NOT_FOUND');
+  if (await socialRepo.hasReportedTrip(userId, trip.id)) throw new AppError(409, 'ALREADY_REPORTED');
+
+  const reportedId = Number(trip.passengerId) === userId ? trip.driverId : trip.passengerId;
+  return withTransaction(async (client) => {
+    const report = await socialRepo.insertReport({ reporterId: userId, reportedId, tripId: trip.id, category, description }, client);
+    if (['safety', 'harassment'].includes(category)) {
+      await client.query(
+        `INSERT INTO notifications (user_id, category, title, body, payload)
+         SELECT ur.user_id, 'safety', 'New safety report', $2, jsonb_build_object('reportId', $1::bigint)
+         FROM user_roles ur JOIN roles r ON r.id = ur.role_id JOIN users u ON u.id = ur.user_id
+         WHERE r.name = 'ADMIN' AND u.status = 'active'`,
+        [report.id, `A ${category} report was filed on trip ${trip.tripCode}.`],
+      );
+    }
+    return report;
+  });
+}
+
+const SHARE_PURPOSE = 'trip-share';
+const SHARE_VISIBLE_AFTER_END_MS = 60 * 60_000;
+
+export async function createShareLink(userId, tripCode) {
+  const trip = await tripsRepo.findParticipantTrip(tripCode, userId);
+  if (!trip || Number(trip.passengerId) !== userId) throw new AppError(404, 'TRIP_NOT_FOUND');
+  if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) throw new AppError(409, 'TRIP_CLOSED');
+
+  // The token outlives any realistic trip; the view itself stops an hour after the trip ends.
+  const token = signScoped(SHARE_PURPOSE, { tid: Number(trip.id) }, '24h');
+  return { url: `${env.CLIENT_ORIGIN[0]}/share/${token}`, token };
+}
+
+export async function getSharedTrip(token) {
+  const claims = verifyScoped(SHARE_PURPOSE, token);
+  const view = claims && await tripsRepo.findSharedView(claims.tid);
+  if (!view) throw new AppError(404, 'SHARE_LINK_INVALID');
+  if (view.endedAt && Date.now() - new Date(view.endedAt).getTime() > SHARE_VISIBLE_AFTER_END_MS) {
+    throw new AppError(410, 'SHARE_LINK_INVALID');
+  }
+
+  return {
+    tripCode: view.tripCode,
+    status: view.status,
+    startedAt: view.startedAt,
+    endedAt: view.endedAt,
+    driver: { firstName: view.driverFirstName, photoUrl: view.driverPhotoUrl, rating: view.driverRating },
+    vehicle: { registrationNo: view.registrationNo, brand: view.brand, model: view.model, color: view.color },
+    pickup: { lat: view.pickupLat, lng: view.pickupLng, address: view.pickupAddress },
+    dropoff: { lat: view.dropoffLat, lng: view.dropoffLng, address: view.dropoffAddress },
+    location: view.lat != null && view.lng != null ? { lat: view.lat, lng: view.lng, at: view.locationAt } : null,
+  };
 }

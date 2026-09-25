@@ -4,6 +4,10 @@ export const tripCodeParamsSchema = z.object({
   tripCode: z.string().regex(/^JT-\d{4}-\d{6}$/, 'Invalid trip code'),
 });
 
+export const tripStopParamsSchema = tripCodeParamsSchema.extend({
+  stopOrder: z.coerce.number().int().min(1).max(2),
+});
+
 export const completeTripSchema = z.object({
   waitingMin: z.number().int().min(0).optional(),
 });
@@ -38,3 +42,10 @@ export const rateTripSchema = z.object({
   score: z.number().int().min(1, 'Choose 1 to 5 stars').max(5, 'Choose 1 to 5 stars'),
   comment: z.string().trim().max(500, 'Keep the comment under 500 characters').optional(),
 });
+
+export const reportTripSchema = z.object({
+  category: z.enum(['safety', 'harassment', 'fraud', 'behavior', 'other']),
+  description: z.string().trim().max(1000, 'Keep it under 1000 characters').optional(),
+});
+
+export const shareTokenParamsSchema = z.object({ token: z.string().min(20).max(1000) });

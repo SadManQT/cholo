@@ -8,7 +8,8 @@ export function computeDiscount(promo, fareAmount) {
   if (promo.maxDiscount != null) discount = Math.min(discount, promo.maxDiscount);
   discount = Math.min(discount, fareAmount);
 
-  return round2(discount);
+  // Whole taka, rounded down so a cap is never exceeded and fares stay whole after the discount.
+  return Math.floor(round2(discount));
 }
 
 export function isPromoApplicable(promo, { cityId, categoryId, fareAmount, isFirstRide }) {

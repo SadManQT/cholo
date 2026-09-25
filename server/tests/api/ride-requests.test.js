@@ -183,9 +183,9 @@ test('POST /ride-requests creates a searching request and snapshots the quote in
   const { data } = await response.json();
 
   assert.equal(data.status, 'searching');
-  assert.equal(data.quote.estFare, 295.12);
+  assert.equal(data.quote.estFare, 295);
   assert.equal(data.quote.estDiscount, 0);
-  assert.equal(data.quote.estPayable, 295.12);
+  assert.equal(data.quote.estPayable, 295);
   assert.equal(data.quote.estDistanceKm, 9.21);
   assert.equal(data.quote.estDurationMin, 9);
 
@@ -198,12 +198,12 @@ test('POST /ride-requests creates a searching request and snapshots the quote in
      FROM ride_requests WHERE public_id = $1`,
     [data.publicId],
   );
-  assert.equal(Number(rows[0].estFare), 295.12);
+  assert.equal(Number(rows[0].estFare), 295);
   assert.equal(rows[0].pickupAddress, 'Gulshan 2 Circle');
   assert.equal(rows[0].status, 'searching');
 });
 
-test('POST /ride-requests leaves expiresAt null for a scheduled ride instead of the 5-minute immediate-ride window', async () => {
+test('POST /ride-requests books a scheduled ride as pending, expiring 15 minutes after the pickup time', async () => {
   const passenger = await createUser();
   const scheduledFor = new Date(Date.now() + 60 * 60_000).toISOString();
 
@@ -211,13 +211,14 @@ test('POST /ride-requests leaves expiresAt null for a scheduled ride instead of 
 
   assert.equal(response.status, 201);
   const { data } = await response.json();
-  assert.equal(data.expiresAt, null);
+  assert.equal(data.status, 'pending');
+  assert.equal(new Date(data.expiresAt).getTime() - new Date(scheduledFor).getTime(), 15 * 60_000);
 
   const { rows } = await databaseClient.query(
-    `SELECT expires_at AS "expiresAt", scheduled_for AS "scheduledFor" FROM ride_requests WHERE public_id = $1`,
+    `SELECT status, scheduled_for AS "scheduledFor" FROM ride_requests WHERE public_id = $1`,
     [data.publicId],
   );
-  assert.equal(rows[0].expiresAt, null);
+  assert.equal(rows[0].status, 'pending');
   assert.ok(rows[0].scheduledFor);
 });
 
@@ -234,7 +235,7 @@ test('POST /ride-requests snapshots est_fare — a later pricing_rules change do
     [data.publicId],
   );
 
-  assert.equal(Number(rows[0].estFare), 295.12);
+  assert.equal(Number(rows[0].estFare), 295);
 });
 
 test('POST /ride-requests returns 409 ACTIVE_REQUEST_EXISTS for a second open request from the same passenger', async () => {
@@ -258,10 +259,10 @@ test('POST /ride-requests: an existing scheduled ride does not block booking an 
   assert.equal(immediate.status, 201);
 
   const { rows } = await databaseClient.query(
-    `SELECT count(*)::int AS count FROM ride_requests WHERE passenger_id = $1 AND status = 'searching'`,
+    `SELECT status, count(*)::int AS count FROM ride_requests WHERE passenger_id = $1 GROUP BY status ORDER BY status`,
     [passenger.userId],
   );
-  assert.equal(rows[0].count, 2);
+  assert.deepEqual(rows, [{ status: 'pending', count: 1 }, { status: 'searching', count: 1 }]);
 });
 
 test('POST /ride-requests: a second immediate request is still blocked while a scheduled one is also open', async () => {
@@ -286,7 +287,7 @@ test('POST /ride-requests applies a fixed_amount promo, capped so the payable am
   assert.equal(response.status, 201);
   const { data } = await response.json();
   assert.equal(data.quote.estDiscount, 50);
-  assert.equal(data.quote.estPayable, 245.12);
+  assert.equal(data.quote.estPayable, 245);
 
   const { rows } = await databaseClient.query(
     `SELECT promo_code_id AS "promoCodeId" FROM ride_requests WHERE public_id = $1`,

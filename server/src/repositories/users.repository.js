@@ -7,6 +7,11 @@ export async function insert({ fullName, phone, passwordHash, gender }, client =
      RETURNING id, public_id AS "publicId"`,
     [fullName, phone, passwordHash, gender ?? null],
   );
+  // ponytail: 8 hex chars of the UUID; a clash (unique violation) is ~1 in 4 billion per pair of users.
+  await client.query(
+    `UPDATE users SET referral_code = upper(substr(replace(public_id::text, '-', ''), 1, 8)) WHERE id = $1`,
+    [rows[0].id],
+  );
 
   return rows[0];
 }
@@ -89,4 +94,19 @@ export async function updatePasswordHash(userId, passwordHash, client = pool) {
     `UPDATE users SET password_hash = $1 WHERE id = $2`,
     [passwordHash, userId],
   );
+}
+
+// Keeps the row (trips, payments and ratings reference it) but removes personal data and frees the phone.
+export async function anonymise(userId, client) {
+  await client.query(
+    `UPDATE users
+     SET status = 'deleted', deleted_at = now(), full_name = 'Deleted user', phone = 'deleted-' || id,
+         email = NULL, photo_url = NULL, date_of_birth = NULL, referral_code = NULL,
+         password_hash = 'deleted'
+     WHERE id = $1`,
+    [userId],
+  );
+  await client.query(`DELETE FROM saved_places WHERE user_id = $1`, [userId]);
+  await client.query(`DELETE FROM emergency_contacts WHERE user_id = $1`, [userId]);
+  await client.query(`DELETE FROM favorite_drivers WHERE passenger_id = $1 OR driver_id = $1`, [userId]);
 }

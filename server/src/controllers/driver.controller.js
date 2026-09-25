@@ -112,3 +112,11 @@ export const listWithdrawals = asyncHandler(async (request, response) => {
   const result = await withdrawalsService.listWithdrawals(request.user.id, request.query);
   response.json({ success: true, data: result.data, meta: result.meta });
 });
+
+export const listStatements = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await earningsService.listStatements(request.user.id) });
+});
+
+export const getStatement = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await earningsService.getStatement(request.user.id, request.params.month) });
+});

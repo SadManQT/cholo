@@ -309,7 +309,7 @@ test('POST /rides/quote returns a fare breakdown that satisfies the same identit
   assert.equal(data.durationMin, 9);
   assert.equal(data.currency, 'BDT');
   assert.equal(data.baseFare, 60);
-  assert.equal(data.distanceFare, 202.62);
+  assert.equal(data.distanceFare, 202.5);
   assert.equal(data.timeFare, 22.5);
   assert.equal(data.bookingFee, 10);
 

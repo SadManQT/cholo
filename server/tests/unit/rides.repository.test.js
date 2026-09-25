@@ -58,7 +58,7 @@ test('insertRequest writes every snapshot field with a parameterized query, comp
     23.7461, 90.3742, null,
     9.21, 9, 295.12, 1,
     'bkash', 7, false, null,
-    5,
+    5, null,
   ]);
   assert.equal(result.status, 'searching');
 });

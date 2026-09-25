@@ -59,7 +59,18 @@ export const resendOtp = asyncHandler(async (request, response) => {
 });
 
 export const login = asyncHandler(async (request, response) => {
-  const { accessToken, refreshToken, user } = await authService.login(
+  const result = await authService.login(request.body, deviceFromRequest(request));
+  if (result.twoFactorRequired) {
+    response.json({ success: true, data: result });
+    return;
+  }
+
+  setRefreshCookie(response, result.refreshToken);
+  response.json({ success: true, data: { accessToken: result.accessToken, user: result.user } });
+});
+
+export const loginTwoFactor = asyncHandler(async (request, response) => {
+  const { accessToken, refreshToken, user } = await authService.completeTwoFactorLogin(
     request.body,
     deviceFromRequest(request),
   );

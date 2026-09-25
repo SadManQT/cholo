@@ -45,3 +45,43 @@ export const removeContact = asyncHandler(async (request, response) => {
   await meService.removeContact(request.user.id, request.params.id);
   response.status(204).end();
 });
+
+export const listFavoriteDrivers = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.listFavoriteDrivers(request.user.id) });
+});
+
+export const addFavoriteDriver = asyncHandler(async (request, response) => {
+  await meService.addFavoriteDriver(request.user.id, request.params.driverId);
+  response.status(204).end();
+});
+
+export const removeFavoriteDriver = asyncHandler(async (request, response) => {
+  await meService.removeFavoriteDriver(request.user.id, request.params.driverId);
+  response.status(204).end();
+});
+
+export const getReferral = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.getReferral(request.user.id) });
+});
+
+export const deleteAccount = asyncHandler(async (request, response) => {
+  // The refresh token is revoked, so the leftover cookie can no longer mint a session.
+  await meService.deleteAccount(request.user.id, request.body);
+  response.status(204).end();
+});
+
+export const getTwoFactor = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.getTwoFactorStatus(request.user.id) });
+});
+
+export const startTwoFactorSetup = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.startTwoFactorSetup(request.user.id) });
+});
+
+export const enableTwoFactor = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.enableTwoFactor(request.user.id, request.body) });
+});
+
+export const disableTwoFactor = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await meService.disableTwoFactor(request.user.id, request.body) });
+});

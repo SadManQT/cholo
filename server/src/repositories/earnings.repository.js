@@ -43,3 +43,40 @@ export async function listTripsForDriver(driverId, { from, to }, client = pool) 
 
   return rows;
 }
+
+// Monthly statements are computed from the earnings ledger (Dhaka months, via the session time zone).
+export async function listMonthlyForDriver(driverId, months, client = pool) {
+  const { rows } = await client.query(
+    `SELECT to_char(date_trunc('month', earned_at), 'YYYY-MM') AS month,
+            count(*)::int AS "tripsCount",
+            sum(gross_fare)::float8 AS "grossTotal",
+            sum(commission_amount)::float8 AS "commissionTotal",
+            sum(net_earning)::float8 AS "netTotal"
+     FROM driver_earnings
+     WHERE driver_id = $1 AND earned_at >= date_trunc('month', now()) - ($2 - 1) * INTERVAL '1 month'
+     GROUP BY 1
+     ORDER BY 1 DESC`,
+    [driverId, months],
+  );
+  return rows;
+}
+
+export async function getStatementForMonth(driverId, month, client = pool) {
+  const { rows } = await client.query(
+    `SELECT u.full_name AS "driverName", u.phone AS "driverPhone", dp.license_number AS "licenseNumber",
+            (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                      'tripCode', t.trip_code, 'earnedAt', de.earned_at, 'grossFare', de.gross_fare::float8,
+                      'commissionPct', de.commission_pct::float8, 'commissionAmount', de.commission_amount::float8,
+                      'netEarning', de.net_earning::float8, 'paymentMethod', rr.payment_intent)
+                    ORDER BY de.earned_at), '[]'::jsonb)
+             FROM driver_earnings de
+             JOIN trips t ON t.id = de.trip_id
+             JOIN ride_requests rr ON rr.id = t.request_id
+             WHERE de.driver_id = $1 AND date_trunc('month', de.earned_at) = to_date($2, 'YYYY-MM')::timestamptz
+            ) AS trips
+     FROM users u JOIN driver_profiles dp ON dp.user_id = u.id
+     WHERE u.id = $1`,
+    [driverId, month],
+  );
+  return rows[0];
+}

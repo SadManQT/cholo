@@ -16,6 +16,7 @@ import {
   registerSchema,
   resendOtpSchema,
   resetPasswordSchema,
+  twoFactorLoginSchema,
   verifyOtpSchema,
   verifyResetCodeSchema,
 } from '../validators/auth.schema.js';
@@ -28,6 +29,7 @@ router.post('/register', registerLimiter, validate(registerSchema), authControll
 router.post('/verify-otp', verifyOtpLimiter, validate(verifyOtpSchema), authController.verifyOtp);
 router.post('/resend-otp', resendOtpLimiter, validate(resendOtpSchema), authController.resendOtp);
 router.post('/login', loginLimiter, validate(loginSchema), authController.login);
+router.post('/login/2fa', verifyOtpLimiter, validate(twoFactorLoginSchema), authController.loginTwoFactor);
 router.post('/forgot-password', resendOtpLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
 router.post('/forgot-password/verify', verifyOtpLimiter, validate(verifyResetCodeSchema), authController.verifyResetCode);
 router.post('/reset-password', verifyOtpLimiter, validate(resetPasswordSchema), authController.resetPassword);

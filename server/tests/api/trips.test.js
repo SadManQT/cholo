@@ -205,7 +205,8 @@ test('the full happy path: arrived -> start -> complete, with a fare breakdown s
 
   assert.equal(data.status, 'completed');
   assert.equal(data.fare.base, '60.00');
-  assert.equal(data.fare.distance, '227.48');
+  assert.equal(Number(data.fare.total), Math.round(Number(data.fare.total)));
+  assert.ok(Math.abs(Number(data.fare.distance) - 227.48) <= 0.5);
   assert.equal(data.fare.currency, 'BDT');
   assert.equal(data.payment.method, 'cash');
   assert.equal(data.payment.status, 'paid');

@@ -154,7 +154,7 @@ test('GET /driver/offers shape carries what the OfferSheet needs (doc 11-12 §6.
   const [offer] = (await response.json()).data;
 
   assert.equal(offer.categoryName, 'Car');
-  assert.equal(offer.estFare, 295.12);
+  assert.equal(offer.estFare, 295);
   assert.equal(offer.estDistanceKm, 9.21);
   assert.equal(offer.driverDistanceKm, 0);
   assert.equal(offer.passengerRating, '5.00');

@@ -5,10 +5,13 @@ import * as passengersRepo from '../repositories/passengers.repository.js';
 import * as passwordResetsRepo from '../repositories/passwordResets.repository.js';
 import * as rolesRepo from '../repositories/roles.repository.js';
 import * as sessionsRepo from '../repositories/sessions.repository.js';
+import * as socialRepo from '../repositories/social.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { OTP_MAX_ATTEMPTS, generateOtp, hashOtp, otpExpiresAt } from '../utils/otp.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
+import { signScoped, verifyScoped } from '../utils/scopedTokens.js';
+import { verifyTotp } from '../utils/totp.js';
 import {
   generateRefreshToken,
   hashRefreshToken,
@@ -60,7 +63,7 @@ async function mintSession(userId, device) {
   return { accessToken, refreshToken, user: toPublicUser(user, roles) };
 }
 
-export async function register({ fullName, phone, password, gender }) {
+export async function register({ fullName, phone, password, gender, referralCode }) {
   const passwordHash = await hashPassword(password);
   const otp = generateOtp();
 
@@ -77,6 +80,11 @@ export async function register({ fullName, phone, password, gender }) {
     }
     await rolesRepo.assignRole(created.id, passengerRoleId, client);
     await passengersRepo.insertProfile(created.id, client);
+    if (referralCode) {
+      const referrerId = await socialRepo.findUserIdByReferralCode(referralCode, client);
+      if (!referrerId) throw new AppError(422, 'REFERRAL_CODE_INVALID');
+      await socialRepo.insertReferral({ referrerId, refereeId: created.id, code: referralCode }, client);
+    }
     await otpRepo.insert({
       userId: created.id,
       phone,
@@ -163,7 +171,29 @@ export async function login({ phone, password }, device) {
     throw new AppError(401, 'BAD_CREDENTIALS');
   }
 
+  // Admins with an authenticator app get a 5-minute challenge instead of a session.
+  const twoFactor = await adminRepo.getTwoFactor(user.id);
+  if (twoFactor?.enabledAt) {
+    return {
+      twoFactorRequired: true,
+      challengeToken: signScoped(TWO_FACTOR_PURPOSE, { sub: String(user.id) }, '5m'),
+    };
+  }
+
   return mintSession(user.id, device);
+}
+
+const TWO_FACTOR_PURPOSE = 'admin-2fa-challenge';
+
+export async function completeTwoFactorLogin({ challengeToken, code }, device) {
+  const claims = verifyScoped(TWO_FACTOR_PURPOSE, challengeToken);
+  if (!claims) throw new AppError(401, 'TOTP_CHALLENGE_EXPIRED');
+  const userId = Number(claims.sub);
+  const twoFactor = await adminRepo.getTwoFactor(userId);
+  if (!twoFactor?.enabledAt || !verifyTotp(twoFactor.secret, code)) throw new AppError(401, 'TOTP_INVALID');
+  const user = await usersRepo.findById(userId);
+  if (user?.status !== 'active') throw new AppError(401, 'BAD_CREDENTIALS');
+  return mintSession(userId, device);
 }
 
 export async function refresh(rawRefreshToken) {

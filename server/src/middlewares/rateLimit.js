@@ -87,3 +87,8 @@ export const geoSearchLimiter = createRateLimiter({
   windowMs: MINUTE,
   limit: isTest ? 1000 : 30,
 });
+
+export const shareViewLimiter = createRateLimiter({
+  windowMs: MINUTE,
+  limit: isTest ? 1000 : 60,
+});

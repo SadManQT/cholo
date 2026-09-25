@@ -10,6 +10,7 @@ const router = Router();
 
 router.use(auth, requireRole('PASSENGER'));
 router.post('/', bookingLimiter, validate(createRideRequestSchema), ridesController.createRequest);
+router.get('/', ridesController.listActiveRequests);
 router.get(
   '/:publicId',
   validate(rideRequestParamsSchema, 'params'),

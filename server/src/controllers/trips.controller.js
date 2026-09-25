@@ -60,3 +60,24 @@ export const rate = asyncHandler(async (request, response) => {
   const data = await tripsService.rateTrip(request.user.id, request.params.tripCode, request.body);
   response.status(201).json({ success: true, data });
 });
+
+export const arriveAtStop = asyncHandler(async (request, response) => {
+  const data = await tripsService.arriveAtStop(request.user.id, request.params.tripCode, request.params.stopOrder);
+  response.json({ success: true, data });
+});
+
+export const report = asyncHandler(async (request, response) => {
+  const data = await tripsService.reportTrip(request.user.id, request.params.tripCode, request.body);
+  response.status(201).json({ success: true, data });
+});
+
+export const share = asyncHandler(async (request, response) => {
+  const data = await tripsService.createShareLink(request.user.id, request.params.tripCode);
+  response.status(201).json({ success: true, data });
+});
+
+export const viewShared = asyncHandler(async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  const data = await tripsService.getSharedTrip(request.params.token);
+  response.json({ success: true, data });
+});

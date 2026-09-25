@@ -1,14 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 import express, { Router } from 'express';
 
-import { env } from '../config/env.js';
 import { auth } from '../middlewares/auth.js';
 import { supportMutationLimiter } from '../middlewares/rateLimit.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { readPrivateFile, storeFile } from '../services/storage.service.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -19,32 +17,6 @@ const SIGNATURES = {
   'image/webp': { ext: 'webp', matches: (b) => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP' },
   'application/pdf': { ext: 'pdf', matches: (b) => b.subarray(0, 4).toString() === '%PDF' },
 };
-
-// Files are stored under unguessable names. Supabase Storage in production (a public bucket), local disk in dev.
-// ponytail: capability URLs; switch the bucket to private + signed URLs if documents need access control.
-async function storeFile(name, body, contentType) {
-  if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
-    const base = env.SUPABASE_URL.replace(/\/$/, '');
-    const response = await fetch(`${base}/storage/v1/object/${env.SUPABASE_BUCKET}/${name}`, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        'content-type': contentType,
-        'cache-control': 'max-age=31536000',
-      },
-      body,
-    });
-    if (!response.ok) {
-      throw new Error(`Supabase Storage upload failed: ${response.status} ${await response.text()}`);
-    }
-    return `${base}/storage/v1/object/public/${env.SUPABASE_BUCKET}/${name}`;
-  }
-
-  await mkdir(env.UPLOAD_DIR, { recursive: true });
-  await writeFile(join(env.UPLOAD_DIR, name), body);
-  return `${env.PUBLIC_API_ORIGIN}/uploads/${name}`;
-}
 
 const router = Router();
 
@@ -60,9 +32,26 @@ router.post(
     }
     if (!kind.matches(request.body)) throw new AppError(415, 'UNSUPPORTED_FILE');
 
+    // ?private=true for identity and vehicle documents: stored privately, viewable only via signed links.
+    const isPrivate = request.query.private === 'true';
     const name = `${randomBytes(16).toString('hex')}.${kind.ext}`;
-    const url = await storeFile(name, request.body, request.headers['content-type'].split(';')[0]);
+    const url = await storeFile(name, request.body, request.headers['content-type'].split(';')[0], { isPrivate });
     response.status(201).json({ success: true, data: { url } });
+  }),
+);
+
+// The signature is the credential (it expires after 10 minutes), so this is reachable from <img> and new tabs.
+router.get(
+  '/private/:name',
+  asyncHandler(async (request, response) => {
+    const file = await readPrivateFile(request.params.name, request.query);
+    response.set({
+      'Content-Type': file.contentType,
+      'Cache-Control': 'private, max-age=600',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+      'Content-Disposition': 'inline',
+    });
+    response.send(file.body);
   }),
 );
 

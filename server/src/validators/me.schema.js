@@ -37,3 +37,9 @@ export const createContactSchema = z.object({
 });
 
 export const idParamsSchema = z.object({ id: z.coerce.number().int().positive() });
+
+export const driverPublicIdParamsSchema = z.object({ driverId: z.string().uuid() });
+
+export const deleteAccountSchema = z.object({ password: z.string().min(1, 'Enter your password').max(72) });
+
+export const totpCodeSchema = z.object({ code: z.string().regex(/^[0-9]{6}$/, 'Enter the 6-digit code') });

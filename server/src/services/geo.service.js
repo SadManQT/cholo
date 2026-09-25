@@ -87,9 +87,15 @@ export async function reverseGeocode(lat, lng) {
   return { address: place.address };
 }
 
-export async function route(from, to) {
-  assertWithinServiceArea(from, to);
+export async function route(from, to, stops = []) {
+  assertWithinServiceArea(from, to, ...stops);
   const provider = currentProvider();
+  if (stops.length > 0) {
+    // Multi-stop trips follow the rider's order; OSRM returns no alternatives with waypoints.
+    const routed = await provider.route(from, to, { via: stops });
+    if (!isRouteInsideBangladesh(routed.path)) throw new AppError(422, 'DOMESTIC_ROUTE_NOT_FOUND');
+    return { distanceKm: routed.distanceKm, durationMin: routed.durationMin, path: routed.path, alternatives: [] };
+  }
   const direct = await provider.route(from, to);
   const directOptions = routeOptions(direct);
   const directShortestIsDomestic = isRouteInsideBangladesh(directOptions[0].path);
