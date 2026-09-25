@@ -120,4 +120,8 @@ export const ERROR_MESSAGES = Object.freeze({
   STATEMENT_NOT_FOUND: 'That statement was not found.',
   FILE_LINK_EXPIRED: 'This file link has expired. Reload the page to get a fresh one.',
   FILE_NOT_FOUND: 'That file was not found.',
+  TOO_FAR_FROM_PICKUP: 'You are not at the pickup yet. Get within the pickup area to mark arrival.',
+  TOO_FAR_FROM_STOP: 'You are not at this stop yet.',
+  TOO_FAR_FROM_DROPOFF: 'You are not at the drop-off yet. The trip can be completed once you arrive.',
+  LOCATION_NEEDED_TO_ARRIVE: 'Turn on location so Cholo can confirm you have arrived.',
 });

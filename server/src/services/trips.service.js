@@ -19,6 +19,7 @@ import { AppError } from '../utils/AppError.js';
 import { signScoped, verifyScoped } from '../utils/scopedTokens.js';
 import { logger } from '../utils/logger.js';
 import { computeCommission } from '../utils/commissionMath.js';
+import { haversineDistanceKm } from '../utils/haversine.js';
 import { quote as computeFare, round2 } from '../utils/fareMath.js';
 import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
 import * as geoService from './geo.service.js';
@@ -49,11 +50,28 @@ function assertTransition(trip, expectedStatus) {
   }
 }
 
-export async function markArrived(driverId, tripCode) {
+const FRESH_LOCATION_SECONDS = 120;
+
+/**
+ * Refuses an arrival-type action unless the driver is within ARRIVAL_RADIUS_METERS of the place. Uses the
+ * position sent with the request, else the last socket ping if it is under two minutes old.
+ */
+async function assertNear(driverId, place, reported, code, client) {
+  const radius = env.ARRIVAL_RADIUS_METERS;
+  if (!radius) return;
+  if (reported) await driversRepo.updateLocation(driverId, reported, client);
+  const here = reported ?? await driversRepo.findFreshLocation(driverId, FRESH_LOCATION_SECONDS, client);
+  if (!here) throw new AppError(422, 'LOCATION_NEEDED_TO_ARRIVE');
+  const distanceMeters = Math.round(haversineDistanceKm(here.lat, here.lng, place.lat, place.lng) * 1000);
+  if (distanceMeters > radius) throw new AppError(422, code, { distanceMeters, radiusMeters: radius });
+}
+
+export async function markArrived(driverId, tripCode, location) {
   const updated = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
     const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
     assertTransition(trip, 'assigned');
+    await assertNear(driverId, { lat: trip.pickupLat, lng: trip.pickupLng }, location, 'TOO_FAR_FROM_PICKUP', client);
     return { trip, updated: await tripsRepo.markArrived(trip.id, client) };
   });
 
@@ -73,12 +91,13 @@ export async function markStarted(driverId, tripCode) {
   return updated.updated;
 }
 
-export async function arriveAtStop(driverId, tripCode, stopOrder) {
+export async function arriveAtStop(driverId, tripCode, stopOrder, location) {
   const result = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
     const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
     assertTransition(trip, 'in_progress');
     if (stopOrder > (trip.stops?.length ?? 0)) throw new AppError(404, 'STOP_NOT_FOUND');
+    await assertNear(driverId, trip.stops[stopOrder - 1], location, 'TOO_FAR_FROM_STOP', client);
     const stop = await tripsRepo.markStopArrived(trip.id, stopOrder, client);
     if (!stop) throw new AppError(409, 'STOP_ALREADY_REACHED');
     return { trip, stop };
@@ -150,11 +169,18 @@ async function redeemPromoIfApplicable(trip, preDiscountTotal, client) {
   return { promoId: promo.id, discountAmount: computeDiscount(promo, preDiscountTotal) };
 }
 
-export async function completeTrip(driverId, tripCode, { waitingMin = 0 } = {}) {
+export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, lng } = {}) {
   const result = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
     const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
     assertTransition(trip, 'in_progress');
+    await assertNear(
+      driverId,
+      { lat: trip.dropoffLat, lng: trip.dropoffLng },
+      lat != null && lng != null ? { lat, lng } : undefined,
+      'TOO_FAR_FROM_DROPOFF',
+      client,
+    );
 
     const { distanceKm, durationMin } = await geoService.route(
       { lat: trip.pickupLat, lng: trip.pickupLng },
@@ -491,6 +517,7 @@ function toTripDetail(trip, history) {
     } : null,
     receipt: trip.receiptNo ? { receiptNo: trip.receiptNo, issuedAt: trip.receiptIssuedAt } : null,
     myRating: trip.myRating ?? null,
+    arrivalRadiusMeters: env.ARRIVAL_RADIUS_METERS,
     stops: trip.stops ?? [],
     driverIsFavorite: trip.driverIsFavorite ?? false,
     reportedByMe: trip.reportedByMe ?? false,

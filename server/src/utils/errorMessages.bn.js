@@ -121,4 +121,8 @@ export const ERROR_MESSAGES_BN = Object.freeze({
   STATEMENT_NOT_FOUND: 'স্টেটমেন্টটি পাওয়া যায়নি।',
   FILE_LINK_EXPIRED: 'এই ফাইল লিংকের মেয়াদ শেষ। নতুন লিংক পেতে পেজ রিলোড করুন।',
   FILE_NOT_FOUND: 'ফাইলটি পাওয়া যায়নি।',
+  TOO_FAR_FROM_PICKUP: 'আপনি এখনো পিকআপে পৌঁছাননি। পৌঁছানো নিশ্চিত করতে পিকআপ এলাকার ভেতরে আসুন।',
+  TOO_FAR_FROM_STOP: 'আপনি এখনো এই স্টপে পৌঁছাননি।',
+  TOO_FAR_FROM_DROPOFF: 'আপনি এখনো গন্তব্যে পৌঁছাননি। পৌঁছালে ট্রিপ শেষ করতে পারবেন।',
+  LOCATION_NEEDED_TO_ARRIVE: 'পৌঁছানো নিশ্চিত করতে লোকেশন চালু করুন।',
 });

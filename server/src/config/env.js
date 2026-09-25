@@ -43,6 +43,9 @@ const envSchema = z.object({
   SUPABASE_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   SUPABASE_SERVICE_ROLE_KEY: z.preprocess(emptyToUndefined, z.string().min(20).optional()),
   SUPABASE_BUCKET: z.string().default('uploads'),
+  // Drivers can only mark arrival, reach a stop or complete a trip within this distance of the place.
+  // 0 turns the check off. ponytail: one radius for all three; tune per place type if GPS in dense areas fights it.
+  ARRIVAL_RADIUS_METERS: z.coerce.number().int().min(0).max(5_000).default(300),
 });
 
 function formatIssues(issues) {

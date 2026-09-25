@@ -5,6 +5,7 @@ import { auth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
 import { paymentMutationLimiter, supportMutationLimiter } from '../middlewares/rateLimit.js';
 import {
+  arrivalSchema,
   cancelTripSchema,
   completeTripSchema,
   payTripSchema,
@@ -73,6 +74,7 @@ router.post(
   '/:tripCode/arrived',
   requireRole('DRIVER'),
   validate(tripCodeParamsSchema, 'params'),
+  validate(arrivalSchema),
   tripsController.markArrived,
 );
 router.post(
@@ -85,6 +87,7 @@ router.post(
   '/:tripCode/stops/:stopOrder/arrived',
   requireRole('DRIVER'),
   validate(tripStopParamsSchema, 'params'),
+  validate(arrivalSchema),
   tripsController.arriveAtStop,
 );
 router.post(

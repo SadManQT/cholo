@@ -45,6 +45,9 @@ services:
       # Only when OSRM_BASE_URL / PHOTON_BASE_URL point at your own servers (see docs/maps-scaling-tutorial.html).
       - key: GEO_UPSTREAM_TOKEN
         sync: false
+      # Drivers must be this close to the pickup, a stop or the drop-off to slide. 0 turns it off.
+      - key: ARRIVAL_RADIUS_METERS
+        value: "300"
       - key: PAYMENT_GATEWAY
         value: sslcommerz
       - key: SSLCOMMERZ_BASE_URL
