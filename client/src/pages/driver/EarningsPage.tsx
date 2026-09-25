@@ -6,11 +6,12 @@ import type { DailyEarning, EarningTripRow } from '../../types/earnings.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { dhakaDate, formatBDT, formatDate, formatDateTime } from '../../utils/format';
 import { staggerStyle } from '../../utils/stagger';
+import { t } from '../../i18n';
 
 const RANGE_OPTIONS = [
-  { label: '7 days', days: 7 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
+  { label: t('7 days'), days: 7 },
+  { label: t('30 days'), days: 30 },
+  { label: t('90 days'), days: 90 },
 ];
 
 export function EarningsPage() {
@@ -32,7 +33,7 @@ export function EarningsPage() {
       setTrips(result.trips);
     } catch (thrown) {
       if (requestId !== requestIdRef.current) return;
-      setError(getApiErrorMessage(thrown, 'Could not load your earnings.'));
+      setError(getApiErrorMessage(thrown, t('Could not load your earnings.')));
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
@@ -56,15 +57,15 @@ export function EarningsPage() {
     <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Earnings</h1>
-          <p className="text-sm text-ink-500">What you've made, by day and by trip.</p>
+          <h1 className="text-2xl font-bold">{t('Earnings')}</h1>
+          <p className="text-sm text-ink-500">{t('What you\'ve made, by day and by trip.')}</p>
         </div>
         <Link to="/driver/statements" className="flex min-h-11 items-center rounded-xl border border-border px-3 text-sm font-semibold text-cholo-700 hover:border-cholo-700">
-          Monthly statements
+          {t('Monthly statements')}
         </Link>
       </div>
 
-      <div className="mb-5 flex gap-2" role="group" aria-label="Date range">
+      <div className="mb-5 flex gap-2" role="group" aria-label={t('Date range')}>
         {RANGE_OPTIONS.map((option) => (
           <button
             key={option.days}
@@ -89,34 +90,34 @@ export function EarningsPage() {
           <Skeleton variant="card" /><Skeleton variant="card" />
         </div>
       ) : error && trips.length === 0 && daily.length === 0 ? (
-        <EmptyState title="Earnings did not load" hint={error} action={{ label: 'Retry', onClick: () => load(rangeDays) }} />
+        <EmptyState title={t('Earnings did not load')} hint={error} action={{ label: t('Retry'), onClick: () => load(rangeDays) }} />
       ) : (
         <>
           <div className="mb-5 grid grid-cols-3 gap-3">
             <Card className="p-4">
-              <p className="text-xs text-ink-500">Gross</p>
+              <p className="text-xs text-ink-500">{t('Gross')}</p>
               <p className="mt-1 text-xl font-bold tabular-nums">{formatBDT(totals.gross)}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-xs text-ink-500">Commission</p>
+              <p className="text-xs text-ink-500">{t('Commission')}</p>
               <p className="mt-1 text-xl font-bold tabular-nums text-danger-600">−{formatBDT(totals.commission)}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-xs text-ink-500">Net</p>
+              <p className="text-xs text-ink-500">{t('Net')}</p>
               <p className="mt-1 text-xl font-bold tabular-nums text-cholo-700">{formatBDT(totals.net)}</p>
             </Card>
           </div>
 
-          <h2 className="mb-3 font-semibold">By day</h2>
+          <h2 className="mb-3 font-semibold">{t('By day')}</h2>
           {daily.length === 0 ? (
-            <EmptyState title="No earnings in this range" hint="Completed, paid trips will show up here." />
+            <EmptyState title={t('No earnings in this range')} hint={t('Completed, paid trips will show up here.')} />
           ) : (
             <div className="mb-6 space-y-2">
               {daily.map((row, index) => (
                 <Card key={row.earningDate} className="flex items-center justify-between p-3 animate-stagger-in" style={staggerStyle(index)}>
                   <div>
                     <p className="text-sm font-medium">{formatDate(row.earningDate)}</p>
-                    <p className="text-xs text-ink-500">{row.tripsCount} trip{row.tripsCount === 1 ? '' : 's'}</p>
+                    <p className="text-xs text-ink-500">{t(row.tripsCount === 1 ? '{0} trip' : '{0} trips', row.tripsCount)}</p>
                   </div>
                   <p className="font-semibold tabular-nums">{formatBDT(row.netTotal)}</p>
                 </Card>
@@ -124,9 +125,9 @@ export function EarningsPage() {
             </div>
           )}
 
-          <h2 className="mb-3 font-semibold">Per trip</h2>
+          <h2 className="mb-3 font-semibold">{t('Per trip')}</h2>
           {trips.length === 0 ? (
-            <EmptyState title="No trips in this range" />
+            <EmptyState title={t('No trips in this range')} />
           ) : (
             <div className="space-y-2">
               {trips.map((row, index) => (
@@ -136,7 +137,7 @@ export function EarningsPage() {
                     <p className="font-semibold tabular-nums">{formatBDT(row.netEarning)}</p>
                   </div>
                   <p className="mt-1 text-xs text-ink-500">
-                    {formatDateTime(row.earnedAt)} · gross {formatBDT(row.grossFare)} · commission {row.commissionPct}%
+                    {t('{0} · gross {1} · commission {2}%', formatDateTime(row.earnedAt), formatBDT(row.grossFare), row.commissionPct)}
                   </p>
                 </Card>
               ))}

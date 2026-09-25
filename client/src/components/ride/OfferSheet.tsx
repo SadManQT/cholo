@@ -3,6 +3,7 @@ import type { RideOffer } from '../../types/ride.types';
 import { formatBDT, formatDistance } from '../../utils/format';
 import { useCountdown } from '../../hooks/useCountdown';
 import { BottomSheet, Button } from '../ui';
+import { t } from '../../i18n';
 
 interface OfferSheetProps {
   offer: RideOffer | null;
@@ -59,7 +60,7 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
       <div className="space-y-4 pb-2">
         <div>
           <div className="mb-1 flex items-center justify-between text-sm font-semibold">
-            <span className={urgent ? 'text-danger-600' : 'text-marigold-500'}>New ride</span>
+            <span className={urgent ? 'text-danger-600' : 'text-marigold-500'}>{t('New ride')}</span>
             <span className={`tabular-nums ${urgent ? 'text-danger-600' : 'text-ink-900'}`}>0:{String(remaining).padStart(2, '0')}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-border">
@@ -72,18 +73,18 @@ export function OfferSheet({ offer, accepting, rejecting, onAccept, onReject, on
 
         <div className="flex items-end justify-between gap-4">
           <div><p className="text-sm font-semibold uppercase tracking-wide text-ink-500">{offer.categoryName}</p><p className="text-4xl font-bold tabular-nums">{formatBDT(offer.estFare)}</p></div>
-          <p className="text-right text-sm text-ink-500">{formatDistance(offer.estDistanceKm)} trip<br />{offer.estDurationMin} min</p>
+          <p className="text-right text-sm text-ink-500">{t('{0} trip', formatDistance(offer.estDistanceKm))}<br />{t('{0} min', offer.estDurationMin)}</p>
         </div>
 
         <div className="rounded-xl bg-surface-alt p-3 text-sm">
-          <p><span className="font-semibold text-cholo-700">Pickup · {formatDistance(offer.driverDistanceKm)} away</span><br />{offer.pickupAddress ?? 'Pickup pin'}</p>
-          <p className="mt-3"><span className="font-semibold text-danger-600">Dropoff</span><br />{offer.dropoffAddress ?? 'Dropoff pin'}</p>
-          <p className="mt-3 border-t border-border pt-3">★ {offer.passengerRating} passenger</p>
+          <p><span className="font-semibold text-cholo-700">{t('Pickup · {0} away', formatDistance(offer.driverDistanceKm))}</span><br />{offer.pickupAddress ?? t('Pickup pin')}</p>
+          <p className="mt-3"><span className="font-semibold text-danger-600">{t('Dropoff')}</span><br />{offer.dropoffAddress ?? t('Dropoff pin')}</p>
+          <p className="mt-3 border-t border-border pt-3">{t('★ {0} passenger', offer.passengerRating)}</p>
         </div>
 
         <div className="grid grid-cols-[1fr_2fr] gap-3">
-          <Button variant="secondary" loading={rejecting} disabled={accepting || remaining === 0} onClick={onReject}>Reject</Button>
-          <Button loading={accepting} disabled={rejecting || remaining === 0} onClick={onAccept}>✓ Accept</Button>
+          <Button variant="secondary" loading={rejecting} disabled={accepting || remaining === 0} onClick={onReject}>{t('Reject')}</Button>
+          <Button loading={accepting} disabled={rejecting || remaining === 0} onClick={onAccept}>{t('✓ Accept')}</Button>
         </div>
       </div>
     </BottomSheet>

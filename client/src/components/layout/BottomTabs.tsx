@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
+import { t } from '../../i18n';
 
 export interface TabItem {
   to: string;
@@ -12,7 +13,7 @@ export interface TabItem {
 export function BottomTabs({ items }: { items: TabItem[] }) {
   return (
     <nav
-      aria-label="Primary"
+      aria-label={t('Primary')}
       className="fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-border bg-surface"
     >
       {items.map((item) => (

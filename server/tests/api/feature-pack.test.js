@@ -575,3 +575,13 @@ test('private documents: stored outside the public folder, shown only through ex
 
   await rm(`${env.UPLOAD_DIR}-private/${name}`);
 });
+
+test('errors come back in Bangla when the app asks for it, English otherwise', async () => {
+  const body = JSON.stringify({ phone: '01799999999', password: 'WrongPassword1' });
+  const english = await realFetch(`${baseUrl}/api/v1/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+  assert.equal((await english.json()).error.message, 'Phone or password is incorrect.');
+  const bangla = await realFetch(`${baseUrl}/api/v1/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', 'accept-language': 'bn' }, body });
+  const error = (await bangla.json()).error;
+  assert.equal(error.code, 'BAD_CREDENTIALS');
+  assert.equal(error.message, 'ফোন নম্বর বা পাসওয়ার্ড সঠিক নয়।');
+});

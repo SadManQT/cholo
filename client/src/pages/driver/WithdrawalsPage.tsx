@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { staggerStyle } from '../../utils/stagger';
+import { t } from '../../i18n';
 
 const STATUS_STYLES: Record<WithdrawalStatus, string> = {
   requested: 'bg-marigold-500/15 text-marigold-500',
@@ -23,7 +24,7 @@ const STATUS_STYLES: Record<WithdrawalStatus, string> = {
 function WithdrawalStatusBadge({ status }: { status: WithdrawalStatus }) {
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[status]}`}>
-      {status}
+      {t(status)}
     </span>
   );
 }
@@ -62,7 +63,7 @@ export function WithdrawalsPage() {
       setWithdrawals(nextWithdrawals.data);
       setPayoutAccountId((current) => current || nextAccounts[0]?.id || '');
     } catch (thrown) {
-      setError(getApiErrorMessage(thrown, 'Could not load your withdrawals.'));
+      setError(getApiErrorMessage(thrown, t('Could not load your withdrawals.')));
     } finally {
       setLoading(false);
     }
@@ -88,9 +89,9 @@ export function WithdrawalsPage() {
       setAccountNo('');
       setBankName('');
       setShowAddAccount(false);
-      toast.success('Payout account added.');
+      toast.success(t('Payout account added.'));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not add that account.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not add that account.')));
     } finally {
       setSavingAccount(false);
     }
@@ -101,9 +102,9 @@ export function WithdrawalsPage() {
       await driverApi.removePayoutAccount(accountId);
       setAccounts((current) => current.filter((account) => account.id !== accountId));
       if (payoutAccountId === accountId) setPayoutAccountId('');
-      toast.success('Payout account removed.');
+      toast.success(t('Payout account removed.'));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not remove that account.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not remove that account.')));
     }
   }
 
@@ -117,9 +118,9 @@ export function WithdrawalsPage() {
       setAmount('');
       const nextWallet = await walletApi.getWallet();
       setWallet(nextWallet);
-      toast.success('Withdrawal requested — a finance admin will review it.');
+      toast.success(t('Withdrawal requested — a finance admin will review it.'));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not request that withdrawal.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not request that withdrawal.')));
     } finally {
       setSubmitting(false);
     }
@@ -137,7 +138,7 @@ export function WithdrawalsPage() {
   if (error && !wallet) {
     return (
       <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
-        <EmptyState title="Withdrawals did not load" hint={error} action={{ label: 'Retry', onClick: load }} />
+        <EmptyState title={t('Withdrawals did not load')} hint={error} action={{ label: t('Retry'), onClick: load }} />
       </main>
     );
   }
@@ -145,23 +146,23 @@ export function WithdrawalsPage() {
   return (
     <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold">Withdrawals</h1>
-        <p className="text-sm text-ink-500">Cash out to bKash, Nagad, or your bank.</p>
+        <h1 className="text-2xl font-bold">{t('Withdrawals')}</h1>
+        <p className="text-sm text-ink-500">{t('Cash out to bKash, Nagad, or your bank.')}</p>
       </div>
 
       <div className="mb-5 rounded-xl bg-cholo-700 p-5 text-white">
-        <p className="text-sm text-white/80">Available balance</p>
+        <p className="text-sm text-white/80">{t('Available balance')}</p>
         <p className="mt-1 text-4xl font-bold tabular-nums">{formatBDT(wallet?.balance)}</p>
       </div>
 
       <Card className="mb-5">
-        <h2 className="mb-3 font-semibold">Request a withdrawal</h2>
+        <h2 className="mb-3 font-semibold">{t('Request a withdrawal')}</h2>
         {accounts.length === 0 ? (
-          <p className="text-sm text-ink-500">Add a payout account below before requesting a withdrawal.</p>
+          <p className="text-sm text-ink-500">{t('Add a payout account below before requesting a withdrawal.')}</p>
         ) : (
           <form onSubmit={handleRequestWithdrawal} className="space-y-3">
             <label className="block text-sm font-medium text-ink-900">
-              Payout account
+              {t('Payout account')}
               <select
                 value={payoutAccountId}
                 onChange={(event) => setPayoutAccountId(event.target.value)}
@@ -170,31 +171,31 @@ export function WithdrawalsPage() {
               >
                 {accounts.map((account) => (
                   <option key={account.id} value={account.id}>
-                    {ACCOUNT_TYPE_LABELS[account.accountType]} · {account.accountNoMasked}
+                    {t(ACCOUNT_TYPE_LABELS[account.accountType])} · {account.accountNoMasked}
                   </option>
                 ))}
               </select>
             </label>
             {}
             <Input
-              label="Amount (৳)"
+              label={t('Amount (৳)')}
               inputMode="decimal"
               value={amount}
               onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder="Minimum ৳50"
+              placeholder={t('Minimum ৳50')}
               required
             />
-            <p className="text-xs text-ink-500">Fee: ৳0.00 — you'll receive the full amount.</p>
-            <Button type="submit" loading={submitting} className="w-full">Request withdrawal</Button>
+            <p className="text-xs text-ink-500">{t('Fee: ৳0.00 — you\'ll receive the full amount.')}</p>
+            <Button type="submit" loading={submitting} className="w-full">{t('Request withdrawal')}</Button>
           </form>
         )}
       </Card>
 
       <Card className="mb-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Payout accounts</h2>
+          <h2 className="font-semibold">{t('Payout accounts')}</h2>
           <Button type="button" variant="secondary" onClick={() => setShowAddAccount((current) => !current)}>
-            {showAddAccount ? 'Cancel' : '+ Add account'}
+            {showAddAccount ? t('Cancel') : t('+ Add account')}
           </Button>
         </div>
 
@@ -210,53 +211,53 @@ export function WithdrawalsPage() {
               className="mb-4 space-y-3 border-b border-border pb-4"
             >
               <label className="block text-sm font-medium text-ink-900">
-                Type
+                {t('Type')}
                 <select
                   value={accountType}
                   onChange={(event) => setAccountType(event.target.value as PayoutAccountType)}
                   className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
                 >
-                  <option value="bkash">bKash</option>
-                  <option value="nagad">Nagad</option>
-                  <option value="bank">Bank</option>
+                  <option value="bkash">{t('bKash')}</option>
+                  <option value="nagad">{t('Nagad')}</option>
+                  <option value="bank">{t('Bank')}</option>
                 </select>
               </label>
-              <Input label="Account holder name" value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+              <Input label={t('Account holder name')} value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
               <Input
-                label={accountType === 'bank' ? 'Account number' : 'Mobile number'}
+                label={accountType === 'bank' ? t('Account number') : t('Mobile number')}
                 variant={accountType === 'bank' ? 'text' : 'phone'}
                 value={accountNo}
                 onChange={(event) => setAccountNo(event.target.value)}
                 required
               />
               {accountType === 'bank' && (
-                <Input label="Bank name" value={bankName} onChange={(event) => setBankName(event.target.value)} required />
+                <Input label={t('Bank name')} value={bankName} onChange={(event) => setBankName(event.target.value)} required />
               )}
-              <Button type="submit" loading={savingAccount} className="w-full">Save account</Button>
+              <Button type="submit" loading={savingAccount} className="w-full">{t('Save account')}</Button>
             </motion.form>
           )}
         </AnimatePresence>
 
         {accounts.length === 0 ? (
-          <p className="text-sm text-ink-500">No payout accounts yet.</p>
+          <p className="text-sm text-ink-500">{t('No payout accounts yet.')}</p>
         ) : (
           <div className="space-y-2">
             {accounts.map((account, index) => (
               <div key={account.id} className="flex items-center justify-between rounded-xl border border-border p-3 animate-stagger-in" style={staggerStyle(index)}>
                 <div>
-                  <p className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[account.accountType]} · {account.accountNoMasked}</p>
+                  <p className="text-sm font-medium">{t(ACCOUNT_TYPE_LABELS[account.accountType])} · {account.accountNoMasked}</p>
                   <p className="text-xs text-ink-500">{account.accountName}{account.bankName ? ` · ${account.bankName}` : ''}</p>
                 </div>
-                <Button type="button" variant="secondary" onClick={() => handleRemoveAccount(account.id)}>Remove</Button>
+                <Button type="button" variant="secondary" onClick={() => handleRemoveAccount(account.id)}>{t('Remove')}</Button>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <h2 className="mb-3 font-semibold">History</h2>
+      <h2 className="mb-3 font-semibold">{t('History')}</h2>
       {withdrawals.length === 0 ? (
-        <EmptyState title="No withdrawals yet" hint="Requests you make will show up here with their review status." />
+        <EmptyState title={t('No withdrawals yet')} hint={t('Requests you make will show up here with their review status.')} />
       ) : (
         <div className="space-y-2">
           {withdrawals.map((withdrawal, index) => (
@@ -265,14 +266,14 @@ export function WithdrawalsPage() {
                 <div>
                   <p className="font-semibold tabular-nums">{formatBDT(withdrawal.amount)}</p>
                   <p className="text-xs text-ink-500">
-                    {ACCOUNT_TYPE_LABELS[withdrawal.accountType]} · {withdrawal.accountNoMasked}
+                    {t(ACCOUNT_TYPE_LABELS[withdrawal.accountType])} · {withdrawal.accountNoMasked}
                   </p>
                   <p className="text-xs text-ink-500">{formatDateTime(withdrawal.requestedAt)}</p>
                 </div>
                 <WithdrawalStatusBadge status={withdrawal.status} />
               </div>
               {withdrawal.rejectionReason && (
-                <p className="mt-2 text-sm text-danger-600">Reason: {withdrawal.rejectionReason}</p>
+                <p className="mt-2 text-sm text-danger-600">{t('Reason:')} {withdrawal.rejectionReason}</p>
               )}
             </Card>
           ))}

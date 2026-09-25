@@ -1,5 +1,6 @@
 import { forwardRef, useId, useState } from 'react';
 import type { ChangeEvent, InputHTMLAttributes } from 'react';
+import { t } from '../../i18n';
 
 type InputVariant = 'text' | 'phone' | 'password';
 
@@ -75,7 +76,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           <button
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? t('Hide password') : t('Show password')}
             className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-500
                        hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 rounded-r-xl"
           >

@@ -1,21 +1,22 @@
 import type { TripStatus } from '../../types/ride.types';
+import { t } from '../../i18n';
 
 const STEPS: Array<{ status: Exclude<TripStatus, 'cancelled'>; label: string }> = [
-  { status: 'assigned', label: 'Assigned' },
-  { status: 'arrived', label: 'Arrived' },
-  { status: 'in_progress', label: 'Riding' },
-  { status: 'completed', label: 'Done' },
+  { status: 'assigned', label: t('Assigned') },
+  { status: 'arrived', label: t('Arrived') },
+  { status: 'in_progress', label: t('Riding') },
+  { status: 'completed', label: t('Done') },
 ];
 
 export function TripStatusStepper({ status }: { status: TripStatus }) {
   if (status === 'cancelled') {
-    return <p className="rounded-xl bg-danger-600/10 p-3 text-center font-semibold text-danger-600">Trip cancelled</p>;
+    return <p className="rounded-xl bg-danger-600/10 p-3 text-center font-semibold text-danger-600">{t('Trip cancelled')}</p>;
   }
 
   const currentIndex = STEPS.findIndex((step) => step.status === status);
 
   return (
-    <ol className="flex items-start" aria-label={`Trip status: ${status.replace('_', ' ')}`}>
+    <ol className="flex items-start" aria-label={t('Trip status: {0}', t(status.replace('_', ' ')))}>
       {STEPS.map((step, index) => {
         const complete = index <= currentIndex;
         return (

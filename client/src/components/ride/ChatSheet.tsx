@@ -7,6 +7,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { BottomSheet, Button, EmptyState, Input, Skeleton, toast } from '../ui';
+import { t } from '../../i18n';
 
 const QUICK_REPLIES = ['I am here', 'Coming in 2 minutes', 'Please call me'];
 
@@ -32,7 +33,7 @@ export function ChatSheet({ open, tripCode, currentUserId, onClose }: ChatSheetP
       setMessages(nextMessages);
       setError(null);
     } catch (thrown) {
-      if (!silent) setError(getApiErrorMessage(thrown, 'Could not load trip messages.'));
+      if (!silent) setError(getApiErrorMessage(thrown, t('Could not load trip messages.')));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -59,7 +60,7 @@ export function ChatSheet({ open, tripCode, currentUserId, onClose }: ChatSheetP
       setMessages((current) => current.some((item) => item.id === sent.id) ? current : [...current, sent]);
       setBody('');
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Message could not be sent.'));
+      toast.error(getApiErrorMessage(thrown, t('Message could not be sent.')));
     } finally {
       setSending(false);
     }
@@ -70,19 +71,19 @@ export function ChatSheet({ open, tripCode, currentUserId, onClose }: ChatSheetP
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
-            <h2 className="text-lg font-bold">Trip chat</h2>
-            <p className="text-xs text-ink-500">Messages are kept for safety.</p>
+            <h2 className="text-lg font-bold">{t('Trip chat')}</h2>
+            <p className="text-xs text-ink-500">{t('Messages are kept for safety.')}</p>
           </div>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={onClose}>{t('Close')}</Button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto py-4">
           {loading ? (
             <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
           ) : error ? (
-            <EmptyState title="Messages did not load" hint={error} action={{ label: 'Retry', onClick: loadMessages }} />
+            <EmptyState title={t('Messages did not load')} hint={error} action={{ label: t('Retry'), onClick: loadMessages }} />
           ) : messages.length === 0 ? (
-            <EmptyState title="No messages yet" hint="Send a quick update to the other rider." />
+            <EmptyState title={t('No messages yet')} hint={t('Send a quick update to the other rider.')} />
           ) : (
             <div className="space-y-3">
               {messages.map((message) => {
@@ -118,14 +119,14 @@ export function ChatSheet({ open, tripCode, currentUserId, onClose }: ChatSheetP
           </div>
           <form onSubmit={submitMessage} className="flex items-end gap-2">
             <Input
-              aria-label="Message"
+              aria-label={t('Message')}
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="Type a message"
+              placeholder={t('Type a message')}
               maxLength={1000}
               containerClassName="min-w-0 flex-1"
             />
-            <Button type="submit" loading={sending} disabled={!body.trim()}>Send</Button>
+            <Button type="submit" loading={sending} disabled={!body.trim()}>{t('Send')}</Button>
           </form>
         </div>
       </div>

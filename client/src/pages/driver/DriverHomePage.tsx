@@ -10,6 +10,7 @@ import { useSocket } from '../../context/socket';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import type { DriverStatus, RideOffer, SocketTripStatus, TripSummary } from '../../types/ride.types';
 import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
+import { t } from '../../i18n';
 
 export function DriverHomePage() {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ export function DriverHomePage() {
       setActiveTrip(trips.data[0] ?? null);
       await refreshOffers();
     } catch (thrown) {
-      setError(getApiErrorMessage(thrown, 'Could not load driver home.'));
+      setError(getApiErrorMessage(thrown, t('Could not load driver home.')));
     } finally {
       setLoading(false);
     }
@@ -81,16 +82,16 @@ export function DriverHomePage() {
         const updated = await driverApi.setAvailability('offline');
         setStatus((current) => current ? { ...current, ...updated, availabilityStatus: 'offline' } : current);
         setOffers([]);
-        toast.info('You are offline.');
+        toast.info(t('You are offline.'));
       } else {
         const location = await geolocation.request();
         const updated = await driverApi.setAvailability('online', location);
         setStatus((current) => current ? { ...current, ...updated, availabilityStatus: 'online' } : current);
-        toast.success('You are online and ready for offers.');
+        toast.success(t('You are online and ready for offers.'));
         void refreshOffers();
       }
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Availability could not be changed.'));
+      toast.error(getApiErrorMessage(thrown, t('Availability could not be changed.')));
     } finally {
       setSwitching(false);
     }
@@ -111,16 +112,16 @@ export function DriverHomePage() {
       const result = await driverApi.respondToOffer(currentOffer.id, 'accepted');
       if ('trip' in result) {
         setOffers([]);
-        toast.success('Ride accepted. Head to the pickup.');
+        toast.success(t('Ride accepted. Head to the pickup.'));
         navigate('/driver/trip');
       }
     } catch (thrown) {
       const code = getApiErrorCode(thrown);
       if (code === 'ALREADY_TAKEN' || code === 'OFFER_EXPIRED') {
-        toast.info(code === 'ALREADY_TAKEN' ? 'Too late — another driver accepted it.' : 'This offer expired.');
+        toast.info(code === 'ALREADY_TAKEN' ? t('Too late — another driver accepted it.') : t('This offer expired.'));
         dismissCurrentOffer();
       } else {
-        toast.error(getApiErrorMessage(thrown, 'Could not accept this ride.'));
+        toast.error(getApiErrorMessage(thrown, t('Could not accept this ride.')));
       }
     } finally {
       setAccepting(false);
@@ -133,9 +134,9 @@ export function DriverHomePage() {
     try {
       await driverApi.respondToOffer(currentOffer.id, 'rejected');
       dismissCurrentOffer();
-      toast.info('Offer declined.');
+      toast.info(t('Offer declined.'));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not decline this offer.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not decline this offer.')));
     } finally {
       setRejecting(false);
     }
@@ -150,12 +151,12 @@ export function DriverHomePage() {
   }, [geolocation.position, status]);
 
   if (loading) return <div className="h-[calc(100dvh-4rem)]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={2} /></div></div>;
-  if (error || !status) return <EmptyState title="Driver home did not load" hint={error ?? 'Driver profile not found.'} action={{ label: 'Retry', onClick: loadHome }} />;
+  if (error || !status) return <EmptyState title={t('Driver home did not load')} hint={error ?? t('Driver profile not found.')} action={{ label: t('Retry'), onClick: loadHome }} />;
 
   const online = status.availabilityStatus === 'online';
   const setupSteps = [
-    { done: status.verificationStatus === 'approved', label: status.verificationStatus === 'rejected' ? 'Fix your documents' : 'Get your documents approved', to: '/driver/documents', note: status.verificationStatus === 'pending' ? 'Under review' : null },
-    { done: Boolean(status.activeVehicle && status.activeVehicle.verificationStatus === 'approved'), label: 'Put an approved vehicle on duty', to: '/driver/vehicles', note: null },
+    { done: status.verificationStatus === 'approved', label: status.verificationStatus === 'rejected' ? t('Fix your documents') : t('Get your documents approved'), to: '/driver/documents', note: status.verificationStatus === 'pending' ? t('Under review') : null },
+    { done: Boolean(status.activeVehicle && status.activeVehicle.verificationStatus === 'approved'), label: t('Put an approved vehicle on duty'), to: '/driver/vehicles', note: null },
   ];
   const ready = setupSteps.every((step) => step.done);
 
@@ -168,8 +169,8 @@ export function DriverHomePage() {
         <Card className="bg-surface/95 shadow-lg">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-ink-500">Driver mode</p>
-              <p className="text-xl font-bold">{online ? 'You are online' : status.availabilityStatus === 'on_trip' ? 'Trip in progress' : 'You are offline'}</p>
+              <p className="text-sm text-ink-500">{t('Driver mode')}</p>
+              <p className="text-xl font-bold">{online ? t('You are online') : status.availabilityStatus === 'on_trip' ? t('Trip in progress') : t('You are offline')}</p>
             </div>
             <button
               type="button"
@@ -180,16 +181,16 @@ export function DriverHomePage() {
               className={`relative h-12 w-24 rounded-full p-1 text-xs font-bold transition-[background-color,color] duration-200 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 ${online ? 'bg-cholo-700 text-white' : 'bg-ink-500/20 text-ink-900'} disabled:opacity-60 disabled:active:scale-100`}
             >
               <span className={`absolute left-1 top-1 h-10 w-10 rounded-full bg-surface shadow transition-transform duration-200 ease-cholo-in-out ${online ? 'translate-x-12' : 'translate-x-0'}`} />
-              <span className={`absolute inset-y-0 flex items-center ${online ? 'left-3' : 'right-3'}`}>{switching ? '…' : online ? 'ON' : 'OFF'}</span>
+              <span className={`absolute inset-y-0 flex items-center ${online ? 'left-3' : 'right-3'}`}>{switching ? '…' : online ? t('ON') : t('OFF')}</span>
             </button>
           </div>
           {ready ? (
             <p className="mt-3 border-t border-border pt-3 text-sm text-ink-500">
-              {status.activeVehicle?.registrationNo} is on duty · ★ {Number(status.ratingAvg).toFixed(2)} ({status.ratingCount} rating{status.ratingCount === 1 ? '' : 's'})
+              {t(status.ratingCount === 1 ? '{0} is on duty · ★ {1} ({2} rating)' : '{0} is on duty · ★ {1} ({2} ratings)', status.activeVehicle?.registrationNo, Number(status.ratingAvg).toFixed(2), status.ratingCount)}
             </p>
           ) : (
             <div className="mt-3 border-t border-border pt-3">
-              <p className="text-sm font-semibold text-ink-900">Finish setting up to go online</p>
+              <p className="text-sm font-semibold text-ink-900">{t('Finish setting up to go online')}</p>
               <ul className="mt-2 space-y-1.5">
                 {setupSteps.map((step) => (
                   <li key={step.to}>
@@ -208,8 +209,8 @@ export function DriverHomePage() {
         {activeTrip && (
           <Card className="border-info-600/30 bg-surface/95 shadow-lg">
             <div className="flex items-center justify-between gap-3">
-              <div><StatusBadge status={activeTrip.status} /><p className="mt-1 font-semibold">Active trip · {activeTrip.publicCode}</p></div>
-              <Button onClick={() => navigate('/driver/trip')}>Resume</Button>
+              <div><StatusBadge status={activeTrip.status} /><p className="mt-1 font-semibold">{t('Active trip · {0}', activeTrip.publicCode)}</p></div>
+              <Button onClick={() => navigate('/driver/trip')}>{t('Resume')}</Button>
             </div>
           </Card>
         )}
@@ -217,8 +218,8 @@ export function DriverHomePage() {
 
       {!activeTrip && !currentOffer && (
         <div className="absolute inset-x-4 bottom-5 z-[500] mx-auto max-w-md rounded-2xl bg-surface/95 p-4 text-center shadow-lg">
-          <p className="font-semibold">{online ? 'Waiting for nearby ride offers' : 'Go online to receive offers'}</p>
-          <p className="mt-1 text-sm text-ink-500">Keep this screen open. New offers appear automatically.</p>
+          <p className="font-semibold">{online ? t('Waiting for nearby ride offers') : t('Go online to receive offers')}</p>
+          <p className="mt-1 text-sm text-ink-500">{t('Keep this screen open. New offers appear automatically.')}</p>
         </div>
       )}
 

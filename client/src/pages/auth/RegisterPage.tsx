@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as authApi from '../../api/auth.api';
 import { Button, Input, toast } from '../../components/ui';
 import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
+import { t } from '../../i18n';
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 72;
@@ -14,18 +15,18 @@ type FieldErrors = Partial<Record<Field, string>>;
 // Mirrors server/src/validators/auth.schema.js so users see the real reason before submitting.
 function validateField(field: Field, value: string): string | undefined {
   if (field === 'fullName') {
-    if (!value.trim()) return 'Enter your full name';
-    if (value.trim().length > 120) return 'Name must be 120 characters or fewer';
+    if (!value.trim()) return t('Enter your full name');
+    if (value.trim().length > 120) return t('Name must be 120 characters or fewer');
   }
   if (field === 'phone') {
-    if (!value) return 'Enter your phone number';
-    if (!value.startsWith('01')) return 'Phone number must start with 01';
-    if (value.length >= 3 && !/[3-9]/.test(value[2])) return 'Phone number format is invalid (third digit must be 3–9)';
-    if (value.length < 11) return `Phone number is incomplete (${value.length} of 11 digits)`;
+    if (!value) return t('Enter your phone number');
+    if (!value.startsWith('01')) return t('Phone number must start with 01');
+    if (value.length >= 3 && !/[3-9]/.test(value[2])) return t('Phone number format is invalid (third digit must be 3–9)');
+    if (value.length < 11) return t('Phone number is incomplete ({0} of 11 digits)', value.length);
   }
   if (field === 'password') {
-    if (value.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
-    if (value.length > MAX_PASSWORD_LENGTH) return `Password must be ${MAX_PASSWORD_LENGTH} characters or fewer`;
+    if (value.length < MIN_PASSWORD_LENGTH) return t('Password must be at least {0} characters', MIN_PASSWORD_LENGTH);
+    if (value.length > MAX_PASSWORD_LENGTH) return t('Password must be {0} characters or fewer', MAX_PASSWORD_LENGTH);
   }
   return undefined;
 }
@@ -85,7 +86,7 @@ export function RegisterPage() {
         setServerErrors(fields);
         return;
       }
-      const message = getApiErrorMessage(thrown, 'Could not create your account. Please try again.');
+      const message = getApiErrorMessage(thrown, t('Could not create your account. Please try again.'));
       setError(message);
       toast.error(message);
     } finally {
@@ -98,16 +99,16 @@ export function RegisterPage() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Create your account</h1>
+        <h1 className="text-2xl font-bold text-ink-900">{t('Create your account')}</h1>
         <p className="mt-1 text-sm text-ink-500">
-          {isDriverIntent ? "Next you'll apply to drive — it only takes a minute here." : 'Book your first ride in under two minutes.'}
+          {isDriverIntent ? t('Next you\'ll apply to drive — it only takes a minute here.') : t('Book your first ride in under two minutes.')}
         </p>
       </div>
 
       <div className="flex flex-col gap-4">
         <Input
           id="register-fullName"
-          label="Full name"
+          label={t('Full name')}
           value={fullName}
           onChange={edit('fullName', setFullName)}
           onBlur={() => touch('fullName')}
@@ -118,7 +119,7 @@ export function RegisterPage() {
         <Input
           variant="phone"
           id="register-phone"
-          label="Phone"
+          label={t('Phone')}
           value={phone}
           onChange={edit('phone', setPhone)}
           onBlur={() => touch('phone')}
@@ -128,7 +129,7 @@ export function RegisterPage() {
           <Input
             variant="password"
             id="register-password"
-            label="Password"
+            label={t('Password')}
             value={password}
             onChange={edit('password', setPassword)}
             onBlur={() => touch('password')}
@@ -136,13 +137,13 @@ export function RegisterPage() {
           />
           {!fieldError('password') && (
             <p className={`mt-1.5 text-xs ${passwordLongEnough ? 'text-cholo-700' : 'text-ink-500'}`}>
-              {passwordLongEnough ? '✓ ' : ''}At least {MIN_PASSWORD_LENGTH} characters
+              {passwordLongEnough ? '✓ ' : ''}{t('At least {0} characters', MIN_PASSWORD_LENGTH)}
             </p>
           )}
         </div>
         <Input
           id="register-referral"
-          label="Referral code (optional)"
+          label={t('Referral code (optional)')}
           value={referralCode}
           onChange={(event) => { setReferralCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setReferralError(undefined); }}
           error={referralError}
@@ -154,13 +155,13 @@ export function RegisterPage() {
       {error && <p className="text-sm text-danger-600">{error}</p>}
 
       <Button type="submit" variant="primary" loading={submitting} className="w-full">
-        Create account
+        {t('Create account')}
       </Button>
 
       <p className="text-center text-sm text-ink-500">
-        Already have an account?{' '}
+        {t('Already have an account?')}{' '}
         <Link to="/login" className="text-cholo-700 hover:underline">
-          Log in
+          {t('Log in')}
         </Link>
       </p>
     </form>

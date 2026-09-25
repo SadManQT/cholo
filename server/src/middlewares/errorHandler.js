@@ -1,5 +1,6 @@
 import { AppError } from '../utils/AppError.js';
 import { ERROR_MESSAGES } from '../utils/errorMessages.js';
+import { ERROR_MESSAGES_BN } from '../utils/errorMessages.bn.js';
 import { logger } from '../utils/logger.js';
 
 const postgresErrors = Object.freeze({
@@ -13,10 +14,16 @@ const postgresErrors = Object.freeze({
   ECONNREFUSED: { status: 503, code: 'DATABASE_UNAVAILABLE' },
 });
 
+// The web app sends Accept-Language: bn when the rider has chosen Bangla.
+function messageFor(request, code) {
+  const english = ERROR_MESSAGES[code] ?? code;
+  return request?.acceptsLanguages('en', 'bn') === 'bn' ? ERROR_MESSAGES_BN[code] ?? english : english;
+}
+
 function sendError(response, status, code, details) {
   const error = {
     code,
-    message: ERROR_MESSAGES[code] ?? code,
+    message: messageFor(response.req, code),
   };
 
   if (details !== undefined) {

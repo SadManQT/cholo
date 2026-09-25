@@ -1,4 +1,5 @@
 import { BottomSheet, Button } from '../ui';
+import { t } from '../../i18n';
 
 interface ConfirmSheetProps {
   open: boolean;
@@ -29,7 +30,7 @@ export function ConfirmSheet({
           <p className="mt-1 text-sm text-ink-500">{hint}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" disabled={loading} onClick={onClose}>Go back</Button>
+          <Button variant="secondary" disabled={loading} onClick={onClose}>{t('Go back')}</Button>
           <Button variant={danger ? 'danger' : 'primary'} loading={loading} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>

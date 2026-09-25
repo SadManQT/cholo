@@ -292,6 +292,7 @@ export interface SharedTrip {
   vehicle: { registrationNo: string; brand: string | null; model: string | null; color: string | null };
   pickup: Place;
   dropoff: Place;
+  stops: Place[];
   location: (LatLng & { at: string | null }) | null;
 }
 

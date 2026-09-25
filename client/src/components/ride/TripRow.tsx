@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, StatusBadge } from '../ui';
 import type { TripSummary } from '../../types/ride.types';
 import { formatBDT, formatDateTime } from '../../utils/format';
+import { t } from '../../i18n';
 
 export function TripRow({ trip, to }: { trip: TripSummary; to: string }) {
   const fare = trip.status === 'completed' ? trip.totalFare : trip.estFare;
@@ -11,7 +12,7 @@ export function TripRow({ trip, to }: { trip: TripSummary; to: string }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold text-ink-900">{trip.categoryName} · {trip.counterpartyName}</p>
-            <p className="mt-1 truncate text-sm text-ink-500">{trip.pickupAddress ?? 'Pickup'} → {trip.dropoffAddress ?? 'Dropoff'}</p>
+            <p className="mt-1 truncate text-sm text-ink-500">{trip.pickupAddress ?? t('Pickup')} → {trip.dropoffAddress ?? t('Dropoff')}</p>
           </div>
           <StatusBadge status={trip.status} className="shrink-0" />
         </div>

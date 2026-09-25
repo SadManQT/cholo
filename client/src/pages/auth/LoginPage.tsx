@@ -6,6 +6,7 @@ import { useAuth } from '../../context/auth';
 import { getApiErrorCode, getApiErrorMessage, getSuspension } from '../../utils/apiError';
 import { formatDateTime } from '../../utils/format';
 import { roleHomePath } from '../../utils/roleHomePath';
+import { t } from '../../i18n';
 
 export function LoginPage() {
   const { login, completeTwoFactor } = useAuth();
@@ -32,7 +33,7 @@ export function LoginPage() {
         return;
       }
       const user = result;
-      toast.success('Welcome back!');
+      toast.success(t('Welcome back!'));
       navigate(roleHomePath(user.roles), { replace: true });
     } catch (thrown) {
       const suspended = getSuspension(thrown);
@@ -40,7 +41,7 @@ export function LoginPage() {
         setSuspension(suspended);
         return;
       }
-      const message = getApiErrorMessage(thrown, 'Could not log in. Please try again.');
+      const message = getApiErrorMessage(thrown, t('Could not log in. Please try again.'));
       if (getApiErrorCode(thrown) === 'TOTP_CHALLENGE_EXPIRED') {
         setChallengeToken(null);
         setCode('');
@@ -56,11 +57,11 @@ export function LoginPage() {
     return (
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
-          <h1 className="text-2xl font-bold text-ink-900">Two-step login</h1>
-          <p className="mt-1 text-sm text-ink-500">Open your authenticator app and enter the 6-digit code for Cholo Admin.</p>
+          <h1 className="text-2xl font-bold text-ink-900">{t('Two-step login')}</h1>
+          <p className="mt-1 text-sm text-ink-500">{t('Open your authenticator app and enter the 6-digit code for Cholo Admin.')}</p>
         </div>
         <Input
-          label="Authentication code"
+          label={t('Authentication code')}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
@@ -70,9 +71,9 @@ export function LoginPage() {
           required
         />
         {error && <p className="text-sm text-danger-600">{error}</p>}
-        <Button type="submit" loading={submitting} disabled={code.length !== 6} className="w-full">Verify and log in</Button>
+        <Button type="submit" loading={submitting} disabled={code.length !== 6} className="w-full">{t('Verify and log in')}</Button>
         <button type="button" className="text-center text-sm text-cholo-700 hover:underline" onClick={() => { setChallengeToken(null); setCode(''); setError(null); }}>
-          Use a different account
+          {t('Use a different account')}
         </button>
       </form>
     );
@@ -81,14 +82,14 @@ export function LoginPage() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Log in</h1>
-        <p className="mt-1 text-sm text-ink-500">Welcome back to Cholo.</p>
+        <h1 className="text-2xl font-bold text-ink-900">{t('Log in')}</h1>
+        <p className="mt-1 text-sm text-ink-500">{t('Welcome back to Cholo.')}</p>
       </div>
 
       <div className="flex flex-col gap-4">
         <Input
           variant="phone"
-          label="Phone"
+          label={t('Phone')}
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
           required
@@ -96,7 +97,7 @@ export function LoginPage() {
         />
         <Input
           variant="password"
-          label="Password"
+          label={t('Password')}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
@@ -107,26 +108,26 @@ export function LoginPage() {
       {error && <p className="text-sm text-danger-600">{error}</p>}
       {suspension && (
         <div role="alert" className="rounded-xl border border-danger-600/30 bg-danger-600/5 p-4 text-sm">
-          <p className="font-semibold text-danger-600">This account is suspended</p>
-          {suspension.reason && <p className="mt-1 text-ink-900">Reason: {suspension.reason}</p>}
+          <p className="font-semibold text-danger-600">{t('This account is suspended')}</p>
+          {suspension.reason && <p className="mt-1 text-ink-900">{t('Reason:')} {suspension.reason}</p>}
           <p className="mt-1 text-ink-500">
-            {suspension.until ? `You can log in again after ${formatDateTime(suspension.until)}.` : 'The suspension has no end date. Contact support if you think this is a mistake.'}
+            {suspension.until ? t('You can log in again after {0}.', formatDateTime(suspension.until)) : t('The suspension has no end date. Contact support if you think this is a mistake.')}
           </p>
         </div>
       )}
 
       <Button type="submit" variant="primary" loading={submitting} className="w-full">
-        Log in
+        {t('Log in')}
       </Button>
 
       <Link to={phone ? `/forgot-password?phone=${phone}` : '/forgot-password'} className="text-center text-sm text-cholo-700 hover:underline">
-        Forgot password?
+        {t('Forgot password?')}
       </Link>
 
       <p className="text-center text-sm text-ink-500">
-        New to Cholo?{' '}
+        {t('New to Cholo?')}{' '}
         <Link to="/register" className="text-cholo-700 hover:underline">
-          Create an account
+          {t('Create an account')}
         </Link>
       </p>
     </form>

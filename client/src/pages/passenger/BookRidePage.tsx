@@ -30,12 +30,13 @@ import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
 import { staggerStyle } from '../../utils/stagger';
+import { t } from '../../i18n';
 
 const ACTIVE_REQUEST_KEY = 'cholo.activeRideRequest';
 type LocationField = 'pickup' | 'dropoff';
 
 function locationLabel(field: LocationField) {
-  return field === 'pickup' ? 'Pickup' : 'Dropoff';
+  return field === 'pickup' ? t('Pickup') : t('Dropoff');
 }
 
 function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; onSelect: (place: Place) => void }) {
@@ -44,7 +45,7 @@ function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; 
   return (
     <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-xl border border-border bg-surface shadow-lg">
       {suggestions.map((place) => (
-        <li key={`${place.lat},${place.lng}`}>
+        <li key={`${place.lat},${place.lng},${place.address}`}>
           <button
             type="button"
             onMouseDown={(event) => {
@@ -80,7 +81,7 @@ function StopField({ index, value, onChange, onRemove }: {
       const place = await geoApi.geocode(value.query);
       onChange({ query: place.address, place });
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not find that stop.'));
+      toast.error(getApiErrorMessage(error, t('Could not find that stop.')));
     } finally {
       setFinding(false);
     }
@@ -89,16 +90,16 @@ function StopField({ index, value, onChange, onRemove }: {
   return (
     <form onSubmit={find} className="relative flex items-end gap-2">
       <Input
-        label={`Stop ${index + 1}`}
+        label={t('Stop {0}', index + 1)}
         value={value.query}
         onChange={(event) => onChange({ query: event.target.value, place: null })}
         onBlur={() => window.setTimeout(suggestions.clear, 150)}
-        placeholder="Add a stop on the way"
+        placeholder={t('Add a stop on the way')}
         containerClassName="min-w-0 flex-1"
         autoComplete="off"
       />
-      <Button type="submit" variant="secondary" loading={finding} aria-label={`Find stop ${index + 1}`}>Find</Button>
-      <Button type="button" variant="ghost" onClick={onRemove} aria-label={`Remove stop ${index + 1}`}>✕</Button>
+      <Button type="submit" variant="secondary" loading={finding} aria-label={t('Find stop {0}', index + 1)}>{t('Find')}</Button>
+      <Button type="button" variant="ghost" onClick={onRemove} aria-label={t('Remove stop {0}', index + 1)}>✕</Button>
       <PlaceSuggestionList suggestions={suggestions.suggestions} onSelect={(place) => { onChange({ query: place.address, place }); suggestions.clear(); }} />
     </form>
   );
@@ -126,7 +127,7 @@ function PlaceShortcuts({ saved, recent, target, onPick }: {
 
   return (
     <div>
-      <p className="mb-2 text-xs font-medium text-ink-500">Quick pick for {locationLabel(target).toLowerCase()}</p>
+      <p className="mb-2 text-xs font-medium text-ink-500">{t(target === 'pickup' ? 'Quick pick for pickup' : 'Quick pick for dropoff')}</p>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
         {saved.map((place) => (
           <button key={place.id} type="button" className={chip} onClick={() => onPick(place)} title={place.address}>
@@ -136,16 +137,16 @@ function PlaceShortcuts({ saved, recent, target, onPick }: {
         ))}
         {missingPinned.map((label) => (
           <Link key={label} to={`/account/places?add=${label}`} className={`${chip} border-dashed text-ink-500`}>
-            + Set {label.toLowerCase()}
+            {t(label === 'Home' ? '+ Set home' : '+ Set university')}
           </Link>
         ))}
         {recentOnly.map((place) => (
-          <button key={`${place.lat},${place.lng}`} type="button" className={chip} onClick={() => onPick(place)} title={place.address}>
+          <button key={`${place.lat},${place.lng},${place.address}`} type="button" className={chip} onClick={() => onPick(place)} title={place.address}>
             <ClockIcon className="h-4 w-4 text-ink-500" />
             <span className="max-w-[10rem] truncate">{place.address}</span>
           </button>
         ))}
-        <Link to="/account/places" className={`${chip} text-cholo-700`}>Saved places</Link>
+        <Link to="/account/places" className={`${chip} text-cholo-700`}>{t('Saved places')}</Link>
       </div>
     </div>
   );
@@ -201,7 +202,7 @@ export function BookRidePage() {
       setCities(nextCities);
       setCategories(nextCategories);
     } catch (error) {
-      setReferenceError(getApiErrorMessage(error, 'Could not load ride options.'));
+      setReferenceError(getApiErrorMessage(error, t('Could not load ride options.')));
     } finally {
       setReferenceLoading(false);
     }
@@ -304,7 +305,7 @@ export function BookRidePage() {
       setSelectedCategoryId((current) => current && nextQuotes[current] ? current : firstAvailable?.id ?? null);
       const firstFailure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
       if (!firstAvailable) {
-        setQuoteError(getApiErrorMessage(firstFailure?.reason, 'No ride category is available for this route right now.'));
+        setQuoteError(getApiErrorMessage(firstFailure?.reason, t('No ride category is available for this route right now.')));
       }
       setQuotesLoading(false);
       setSnapPoint('half');
@@ -332,7 +333,7 @@ export function BookRidePage() {
         if (next.status === 'expired' || next.status === 'cancelled') {
           sessionStorage.removeItem(ACTIVE_REQUEST_KEY);
           setRideRequest(null);
-          toast.info(next.status === 'expired' ? 'No driver accepted in time. Try again.' : 'Ride request cancelled.');
+          toast.info(next.status === 'expired' ? t('No driver accepted in time. Try again.') : t('Ride request cancelled.'));
           return;
         }
         setRideRequest(next);
@@ -388,7 +389,7 @@ export function BookRidePage() {
       const place = await geoApi.geocode(query);
       selectSuggestion(field, place);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, `Could not find that ${field}.`));
+      toast.error(getApiErrorMessage(error, t('Could not find that {0}.', field)));
     } finally {
       setResolvingField(null);
     }
@@ -411,7 +412,7 @@ export function BookRidePage() {
         setDropoffQuery(place.address);
       }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not identify that map point.'));
+      toast.error(getApiErrorMessage(error, t('Could not identify that map point.')));
     } finally {
       setResolvingField(null);
     }
@@ -424,11 +425,11 @@ export function BookRidePage() {
   async function confirmRide() {
     if (!pickup || !dropoff || !selectedCategoryId || cities.length === 0) return;
     if (stops.some((stop) => !stop.place)) {
-      toast.error('Pick each stop from the suggestions or press Find, or remove it.');
+      toast.error(t('Pick each stop from the suggestions or press Find, or remove it.'));
       return;
     }
     if (scheduling && !scheduledAt) {
-      toast.error('Choose a pickup time.');
+      toast.error(t('Choose a pickup time.'));
       return;
     }
     setSubmitting(true);
@@ -445,15 +446,15 @@ export function BookRidePage() {
         ...(scheduling ? { scheduledFor: new Date(scheduledAt).toISOString() } : {}),
       });
       if (created.scheduledFor) {
-        toast.success(`Ride scheduled for ${formatDateTime(created.scheduledFor)}. We'll start finding a driver 10 minutes before.`);
+        toast.success(t('Ride scheduled for {0}. We\'ll start finding a driver 10 minutes before.', formatDateTime(created.scheduledFor)));
         navigate('/trips');
         return;
       }
       sessionStorage.setItem(ACTIVE_REQUEST_KEY, created.publicId);
       setRideRequest(created);
-      toast.success('Looking for a nearby driver.');
+      toast.success(t('Looking for a nearby driver.'));
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not request this ride.'));
+      toast.error(getApiErrorMessage(error, t('Could not request this ride.')));
     } finally {
       setSubmitting(false);
     }
@@ -466,9 +467,9 @@ export function BookRidePage() {
       await ridesApi.cancelRequest(rideRequest.publicId);
       sessionStorage.removeItem(ACTIVE_REQUEST_KEY);
       setRideRequest(null);
-      toast.info('Ride request cancelled.');
+      toast.info(t('Ride request cancelled.'));
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Could not cancel the request.'));
+      toast.error(getApiErrorMessage(error, t('Could not cancel the request.')));
     } finally {
       setCancelling(false);
     }
@@ -492,8 +493,8 @@ export function BookRidePage() {
 
       {!rideRequest && !(pickup && dropoff) && (
         <div className="pointer-events-none absolute left-3 top-3 z-[500] rounded-xl bg-surface/95 px-3 py-2 text-sm shadow-lg">
-          <span className="font-semibold">Map pin: {locationLabel(mapField)}</span>
-          <span className="ml-2 text-ink-500">Tap the map to set</span>
+          <span className="font-semibold">{t('Map pin: {0}', locationLabel(mapField))}</span>
+          <span className="ml-2 text-ink-500">{t('Tap the map to set')}</span>
         </div>
       )}
 
@@ -510,7 +511,7 @@ export function BookRidePage() {
             <Skeleton variant="card" />
           </div>
         ) : referenceError ? (
-          <EmptyState title="Ride options did not load" hint={referenceError} action={{ label: 'Retry', onClick: loadReferences }} />
+          <EmptyState title={t('Ride options did not load')} hint={referenceError} action={{ label: t('Retry'), onClick: loadReferences }} />
         ) : (
           <AnimatePresence mode="wait">
           {stage === 'searching' && rideRequest ? (
@@ -530,13 +531,13 @@ export function BookRidePage() {
               </span>
             </div>
             <div>
-              <h1 className="text-xl font-bold">Finding your driver…</h1>
+              <h1 className="text-xl font-bold">{t('Finding your driver…')}</h1>
               <p className="mt-1 text-sm text-ink-500">
-                {formatBDT(rideRequest.quote.estPayable ?? rideRequest.quote.estFare)} estimated · {rideRequest.quote.estDistanceKm} km
+                {t('{0} estimated · {1} km', formatBDT(rideRequest.quote.estPayable ?? rideRequest.quote.estFare), rideRequest.quote.estDistanceKm)}
               </p>
             </div>
             <Button variant="danger" loading={cancelling} onClick={cancelSearching} className="w-full">
-              Cancel request
+              {t('Cancel request')}
             </Button>
             </motion.div>
           ) : (
@@ -549,34 +550,34 @@ export function BookRidePage() {
               className="space-y-4 pb-2"
             >
             <div>
-              <h1 className="text-xl font-bold">Where are you going?</h1>
-              <p className="text-sm text-ink-500">Search an address or tap the map.</p>
+              <h1 className="text-xl font-bold">{t('Where are you going?')}</h1>
+              <p className="text-sm text-ink-500">{t('Search an address or tap the map.')}</p>
             </div>
 
             <form onSubmit={(event) => resolveSearch('pickup', event)} className="relative flex items-end gap-2">
               <Input
-                label="Pickup"
+                label={t('Pickup')}
                 value={pickupQuery}
                 onChange={(event) => setPickupQuery(event.target.value)}
                 onBlur={() => window.setTimeout(pickupSuggestions.clear, 150)}
-                placeholder="Current location or address"
+                placeholder={t('Current location or address')}
                 containerClassName="min-w-0 flex-1"
                 autoComplete="off"
               />
-              <Button type="submit" variant="secondary" loading={resolvingField === 'pickup'} aria-label="Find pickup">Find</Button>
+              <Button type="submit" variant="secondary" loading={resolvingField === 'pickup'} aria-label={t('Find pickup')}>{t('Find')}</Button>
               <PlaceSuggestionList suggestions={pickupSuggestions.suggestions} onSelect={(place) => selectSuggestion('pickup', place)} />
             </form>
             <form onSubmit={(event) => resolveSearch('dropoff', event)} className="relative flex items-end gap-2">
               <Input
-                label="Dropoff"
+                label={t('Dropoff')}
                 value={dropoffQuery}
                 onChange={(event) => setDropoffQuery(event.target.value)}
                 onBlur={() => window.setTimeout(dropoffSuggestions.clear, 150)}
-                placeholder="Where to?"
+                placeholder={t('Where to?')}
                 containerClassName="min-w-0 flex-1"
                 autoComplete="off"
               />
-              <Button type="submit" variant="secondary" loading={resolvingField === 'dropoff'} aria-label="Find dropoff">Find</Button>
+              <Button type="submit" variant="secondary" loading={resolvingField === 'dropoff'} aria-label={t('Find dropoff')}>{t('Find')}</Button>
               <PlaceSuggestionList suggestions={dropoffSuggestions.suggestions} onSelect={(place) => selectSuggestion('dropoff', place)} />
             </form>
 
@@ -595,7 +596,7 @@ export function BookRidePage() {
                 onClick={() => setStops((current) => [...current, { query: '', place: null }])}
                 className="text-sm font-medium text-cholo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700"
               >
-                + Add a stop
+                {t('+ Add a stop')}
               </button>
             )}
 
@@ -603,7 +604,7 @@ export function BookRidePage() {
 
             {geolocation.state === 'denied' && (
               <p className="rounded-xl bg-marigold-500/15 p-3 text-sm text-ink-900">
-                Location permission is off. Search your pickup or choose it on the map.
+                {t('Location permission is off. Search your pickup or choose it on the map.')}
               </p>
             )}
 
@@ -611,8 +612,8 @@ export function BookRidePage() {
               <>
                 <div className="border-t border-border pt-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="font-semibold">Choose a ride</h2>
-                    {quotesLoading && <span className="text-sm text-ink-500">Checking fares…</span>}
+                    <h2 className="font-semibold">{t('Choose a ride')}</h2>
+                    {quotesLoading && <span className="text-sm text-ink-500">{t('Checking fares…')}</span>}
                   </div>
                   {quotesLoading ? (
                     <div className="space-y-2">
@@ -620,7 +621,7 @@ export function BookRidePage() {
                       <Skeleton variant="card" />
                     </div>
                   ) : quoteError ? (
-                    <EmptyState title="No fares available" hint={quoteError} className="py-6" />
+                    <EmptyState title={t('No fares available')} hint={quoteError} className="py-6" />
                   ) : (
                     <div className="space-y-2">
                       {categories.filter((category) => quotes[category.id]).map((category, index) => (
@@ -639,25 +640,25 @@ export function BookRidePage() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="text-sm font-medium text-ink-900">
-                    Payment
+                    {t('Payment')}
                     <select
                       value={paymentIntent}
                       onChange={(event) => setPaymentIntent(event.target.value as PaymentIntent)}
                       className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
                     >
-                      <option value="cash">Cash</option>
-                      <option value="wallet">Wallet</option>
-                      <option value="bkash">bKash</option>
-                      <option value="nagad">Nagad</option>
-                      <option value="card">Card</option>
+                      <option value="cash">{t('Cash')}</option>
+                      <option value="wallet">{t('Wallet')}</option>
+                      <option value="bkash">{t('bKash')}</option>
+                      <option value="nagad">{t('Nagad')}</option>
+                      <option value="card">{t('Card')}</option>
                     </select>
                   </label>
-                  <Input label="Promo (optional)" value={promoCode} onChange={(event) => setPromoCode(event.target.value.toUpperCase())} />
+                  <Input label={t('Promo (optional)')} value={promoCode} onChange={(event) => setPromoCode(event.target.value.toUpperCase())} />
                 </div>
 
                 <fieldset className="rounded-xl border border-border p-3">
-                  <legend className="px-1 text-sm font-medium text-ink-900">When</legend>
-                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-alt p-1" role="radiogroup" aria-label="When">
+                  <legend className="px-1 text-sm font-medium text-ink-900">{t('When')}</legend>
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-alt p-1" role="radiogroup" aria-label={t('When')}>
                     {(['now', 'later'] as const).map((option) => (
                       <button
                         key={option}
@@ -667,13 +668,13 @@ export function BookRidePage() {
                         onClick={() => setWhen(option)}
                         className={`h-9 rounded-md text-sm font-semibold transition-colors ${when === option ? 'bg-surface text-cholo-700 shadow' : 'text-ink-500'}`}
                       >
-                        {option === 'now' ? 'Ride now' : 'Schedule'}
+                        {option === 'now' ? t('Ride now') : t('Schedule')}
                       </button>
                     ))}
                   </div>
                   {scheduling && (
                     <label className="mt-3 block text-sm font-medium text-ink-900">
-                      Pickup time
+                      {t('Pickup time')}
                       <input
                         type="datetime-local"
                         value={scheduledAt}
@@ -682,7 +683,7 @@ export function BookRidePage() {
                         onChange={(event) => setScheduledAt(event.target.value)}
                         className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
                       />
-                      <span className="mt-1 block text-xs font-normal text-ink-500">From 20 minutes to 7 days ahead. You'll get a reminder 30 minutes before.</span>
+                      <span className="mt-1 block text-xs font-normal text-ink-500">{t('From 20 minutes to 7 days ahead. You\'ll get a reminder 30 minutes before.')}</span>
                     </label>
                   )}
                 </fieldset>
@@ -694,7 +695,7 @@ export function BookRidePage() {
                     onChange={(event) => setWomenOnly(event.target.checked)}
                     className="h-5 w-5 accent-cholo-700"
                   />
-                  Women-only driver preference
+                  {t('Women-only driver preference')}
                 </label>
 
                 <Button
@@ -704,8 +705,8 @@ export function BookRidePage() {
                   onClick={confirmRide}
                 >
                   {selectedQuote && selectedCategory
-                    ? `${scheduling ? 'Schedule' : 'Confirm'} ${selectedCategory.name} — ${formatBDT(selectedQuote.totalFare)}`
-                    : 'Choose a ride'}
+                    ? t(scheduling ? 'Schedule {0} — {1}' : 'Confirm {0} — {1}', selectedCategory.name, formatBDT(selectedQuote.totalFare))
+                    : t('Choose a ride')}
                 </Button>
               </>
             )}

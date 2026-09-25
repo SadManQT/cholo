@@ -1,12 +1,13 @@
 import type { GatewayMethod } from '../../api/payments.api';
+import { t } from '../../i18n';
 
 export type PayMethod = 'wallet' | GatewayMethod;
 
 const LABELS: Record<PayMethod, { name: string; hint: string; mark: string; tone: string }> = {
-  wallet: { name: 'Cholo wallet', hint: 'Pay instantly from your balance', mark: '৳', tone: 'bg-cholo-700 text-white' },
-  bkash: { name: 'bKash', hint: 'Mobile wallet', mark: 'b', tone: 'bg-[#E2136E] text-white' },
-  nagad: { name: 'Nagad', hint: 'Mobile wallet', mark: 'N', tone: 'bg-[#F6921E] text-white' },
-  card: { name: 'Card', hint: 'Visa, Mastercard, Amex', mark: '▭', tone: 'bg-ink-900 text-white' },
+  wallet: { name: t('Cholo wallet'), hint: t('Pay instantly from your balance'), mark: '৳', tone: 'bg-cholo-700 text-white' },
+  bkash: { name: 'bKash', hint: t('Mobile wallet'), mark: 'b', tone: 'bg-[#E2136E] text-white' },
+  nagad: { name: t('Nagad'), hint: t('Mobile wallet'), mark: 'N', tone: 'bg-[#F6921E] text-white' },
+  card: { name: t('Card'), hint: t('Visa, Mastercard, Amex'), mark: '▭', tone: 'bg-ink-900 text-white' },
 };
 
 interface MethodPickerProps {
@@ -19,7 +20,7 @@ interface MethodPickerProps {
 
 export function MethodPicker({ methods, value, onChange, disabledReason = {}, walletBalance }: MethodPickerProps) {
   return (
-    <div role="radiogroup" aria-label="Payment method" className="grid gap-2 sm:grid-cols-2">
+    <div role="radiogroup" aria-label={t('Payment method')} className="grid gap-2 sm:grid-cols-2">
       {methods.map((method) => {
         const label = LABELS[method];
         const disabled = Boolean(disabledReason[method]);
@@ -38,7 +39,7 @@ export function MethodPicker({ methods, value, onChange, disabledReason = {}, wa
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-ink-900">{label.name}</span>
               <span className="block truncate text-xs text-ink-500">
-                {disabledReason[method] ?? (method === 'wallet' && walletBalance ? `Balance ${walletBalance}` : label.hint)}
+                {disabledReason[method] ?? (method === 'wallet' && walletBalance ? t('Balance {0}', walletBalance) : label.hint)}
               </span>
             </span>
           </button>

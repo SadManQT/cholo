@@ -2,13 +2,14 @@ import { Outlet } from 'react-router-dom';
 import { BottomTabs } from '../components/layout/BottomTabs';
 import { BellIcon, CarIcon, CoinIcon, ReceiptIcon, UserIcon } from '../components/layout/icons';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
+import { t } from '../i18n';
 
 const TABS = [
-  { to: '/driver', label: 'Home', icon: <CarIcon />, end: true },
-  { to: '/driver/earnings', label: 'Earnings', icon: <CoinIcon /> },
-  { to: '/driver/trips', label: 'Trips', icon: <ReceiptIcon /> },
-  { to: '/driver/notifications', label: 'Inbox', icon: <BellIcon /> },
-  { to: '/driver/account', label: 'Account', icon: <UserIcon /> },
+  { to: '/driver', label: t('Home'), icon: <CarIcon />, end: true },
+  { to: '/driver/earnings', label: t('Earnings'), icon: <CoinIcon /> },
+  { to: '/driver/trips', label: t('Trips'), icon: <ReceiptIcon /> },
+  { to: '/driver/notifications', label: t('Inbox'), icon: <BellIcon /> },
+  { to: '/driver/account', label: t('Account'), icon: <UserIcon /> },
 ];
 
 export function DriverLayout() {

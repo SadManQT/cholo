@@ -6,6 +6,7 @@ import { useAuth } from '../../context/auth';
 import { useCountdown } from '../../hooks/useCountdown';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { roleHomePath } from '../../utils/roleHomePath';
+import { t } from '../../i18n';
 
 const RESEND_COOLDOWN_SECONDS = 30;
 const OTP_LENGTH = 6;
@@ -38,10 +39,10 @@ export function OtpVerifyPage() {
 
     try {
       const user = await verifyOtp(phone!, otp);
-      toast.success('Welcome to Cholo!');
+      toast.success(t('Welcome to Cholo!'));
       navigate(intent === 'driver' ? '/driver/apply' : roleHomePath(user.roles), { replace: true });
     } catch (thrown) {
-      const message = getApiErrorMessage(thrown, 'Could not verify that code. Please try again.');
+      const message = getApiErrorMessage(thrown, t('Could not verify that code. Please try again.'));
       setError(message);
       toast.error(message);
       setCode('');
@@ -53,21 +54,21 @@ export function OtpVerifyPage() {
   async function handleResend() {
     try {
       await authApi.resendOtp(phone!);
-      toast.success('A new code is on its way.');
+      toast.success(t('A new code is on its way.'));
       resendCountdown.start(RESEND_COOLDOWN_SECONDS);
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not resend the code. Please try again.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not resend the code. Please try again.')));
     }
   }
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Verify your phone</h1>
-        <p className="mt-1 text-sm text-ink-500">Enter the 6-digit code we sent to {phone}.</p>
+        <h1 className="text-2xl font-bold text-ink-900">{t('Verify your phone')}</h1>
+        <p className="mt-1 text-sm text-ink-500">{t('Enter the 6-digit code we sent to {0}.', phone)}</p>
         {import.meta.env.DEV && (
           <p className="mt-2 rounded-lg bg-info-600/10 px-3 py-2 text-xs text-info-600">
-            Development mode: SMS is mocked. Copy the code from the API terminal&apos;s “Mock SMS sent” log.
+            {t('Development mode: SMS is mocked. Copy the code from the API terminal\'s “Mock SMS sent” log.')}
           </p>
         )}
       </div>
@@ -91,15 +92,15 @@ export function OtpVerifyPage() {
         onClick={() => submit(code)}
         className="w-full"
       >
-        Verify
+        {t('Verify')}
       </Button>
 
       <div className="text-center text-sm text-ink-500">
         {resendCountdown.isActive ? (
-          <span>Resend code in {resendCountdown.remaining}s</span>
+          <span>{t('Resend code in {0}s', resendCountdown.remaining)}</span>
         ) : (
           <button type="button" onClick={handleResend} className="text-cholo-700 hover:underline">
-            Resend code
+            {t('Resend code')}
           </button>
         )}
       </div>

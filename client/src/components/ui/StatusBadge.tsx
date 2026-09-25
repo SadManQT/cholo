@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 export type StatusBadgeStatus =
   | 'searching'
   | 'assigned'
@@ -15,13 +16,13 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIG: Record<StatusBadgeStatus, StatusConfig> = {
-  searching: { label: 'Searching', classes: 'bg-marigold-500/15 text-marigold-500', pulse: true },
-  assigned: { label: 'Assigned', classes: 'bg-info-600/10 text-info-600' },
-  arrived: { label: 'Arrived', classes: 'bg-info-600/10 text-info-600' },
-  in_progress: { label: 'In progress', classes: 'bg-cholo-50 text-cholo-700' },
-  completed: { label: 'Completed', classes: 'bg-cholo-50 text-cholo-700', check: true },
-  cancelled: { label: 'Cancelled', classes: 'bg-danger-600/10 text-danger-600' },
-  expired: { label: 'Expired', classes: 'bg-ink-500/10 text-ink-500' },
+  searching: { label: t('Searching'), classes: 'bg-marigold-500/15 text-marigold-500', pulse: true },
+  assigned: { label: t('Assigned'), classes: 'bg-info-600/10 text-info-600' },
+  arrived: { label: t('Arrived'), classes: 'bg-info-600/10 text-info-600' },
+  in_progress: { label: t('In progress'), classes: 'bg-cholo-50 text-cholo-700' },
+  completed: { label: t('Completed'), classes: 'bg-cholo-50 text-cholo-700', check: true },
+  cancelled: { label: t('Cancelled'), classes: 'bg-danger-600/10 text-danger-600' },
+  expired: { label: t('Expired'), classes: 'bg-ink-500/10 text-ink-500' },
 };
 
 function CheckIcon() {

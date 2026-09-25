@@ -389,6 +389,7 @@ export async function findSharedView(tripId, client = pool) {
             rr.pickup_address AS "pickupAddress", rr.dropoff_address AS "dropoffAddress",
             rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
             rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
+            COALESCE(rr.stops, '[]'::jsonb) AS stops,
             loc.lat, loc.lng, loc.at AS "locationAt"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id

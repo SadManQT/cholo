@@ -4,6 +4,7 @@ import type { RideRequest } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
 import { Button, Card, toast } from '../ui';
+import { t } from '../../i18n';
 
 /** Scheduled rides that haven't started searching yet, with a cancel button. Renders nothing when empty. */
 export function UpcomingRides() {
@@ -22,9 +23,9 @@ export function UpcomingRides() {
     try {
       await ridesApi.cancelRequest(request.publicId);
       setUpcoming((current) => current.filter((item) => item.publicId !== request.publicId));
-      toast.info('Scheduled ride cancelled.');
+      toast.info(t('Scheduled ride cancelled.'));
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not cancel this ride.'));
+      toast.error(getApiErrorMessage(thrown, t('Could not cancel this ride.')));
       load();
     } finally {
       setCancelling(null);
@@ -35,7 +36,7 @@ export function UpcomingRides() {
 
   return (
     <section className="mb-6" aria-labelledby="upcoming-heading">
-      <h2 id="upcoming-heading" className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500">Upcoming</h2>
+      <h2 id="upcoming-heading" className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500">{t('Upcoming')}</h2>
       <div className="space-y-3">
         {upcoming.map((request) => (
           <Card key={request.publicId} className="flex flex-wrap items-center gap-3">
@@ -43,11 +44,11 @@ export function UpcomingRides() {
               <p className="font-semibold">{formatDateTime(request.scheduledFor!)}</p>
               <p className="truncate text-sm text-ink-500">{request.pickup?.address} → {request.dropoff?.address}</p>
               <p className="text-sm text-ink-500">
-                {request.categoryName} · {formatBDT(request.quote.estFare)} estimated
-                {request.stops?.length ? ` · ${request.stops.length} stop${request.stops.length > 1 ? 's' : ''}` : ''}
+                {request.categoryName} · {t('{0} estimated', formatBDT(request.quote.estFare))}
+                {request.stops?.length ? t(' · {0} stop{1}', request.stops.length, request.stops.length > 1 ? 's' : '') : ''}
               </p>
             </div>
-            <Button variant="secondary" loading={cancelling === request.publicId} onClick={() => void cancel(request)}>Cancel</Button>
+            <Button variant="secondary" loading={cancelling === request.publicId} onClick={() => void cancel(request)}>{t('Cancel')}</Button>
           </Card>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { Card } from '../ui';
 import type { RideQuote, VehicleCategory } from '../../types/ride.types';
 import { formatBDT } from '../../utils/format';
+import { t } from '../../i18n';
 
 const svg = { viewBox: '0 0 32 32', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className: 'h-7 w-7', 'aria-hidden': true };
 
@@ -46,10 +47,10 @@ export function FareEstimateCard({ category, quote, selected, onSelect }: FareEs
             <p className="font-bold tabular-nums text-ink-900">{formatBDT(quote.totalFare)}</p>
           </div>
           <p className="text-sm text-ink-500">
-            {quote.durationMin} min · {quote.distanceKm.toFixed(1)} km
+            {t('{0} min · {1} km', quote.durationMin, quote.distanceKm.toFixed(1))}
             {quote.surgeMultiplier > 1 && (
               <span className="ml-2 rounded-full bg-marigold-500/15 px-2 py-0.5 text-xs font-medium text-marigold-500">
-                {quote.surgeMultiplier.toFixed(1)}× surge
+                {quote.surgeMultiplier.toFixed(1)}{t('× surge')}
               </span>
             )}
           </p>

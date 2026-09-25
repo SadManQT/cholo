@@ -1,6 +1,7 @@
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { EASE_IN_OUT } from '../../utils/motion';
+import { t } from '../../i18n';
 
 const REAR_WHEEL = { cx: 130, cy: 260 };
 const FRONT_WHEEL = { cx: 370, cy: 260 };
@@ -38,7 +39,7 @@ export function BikeRiderIllustration({ className = '' }: { className?: string }
   return (
     <div ref={wrapperRef} className={className}>
       {}
-      <svg viewBox="0 0 500 320" className="h-full w-full" role="img" aria-label="Illustration of a rider on a bike">
+      <svg viewBox="0 0 500 320" className="h-full w-full" role="img" aria-label={t('Illustration of a rider on a bike')}>
       <motion.g style={{ x: glideX }}>
         <ellipse cx={250} cy={296} rx={190} ry={12} fill="#0B1F2E" opacity={0.08} />
 

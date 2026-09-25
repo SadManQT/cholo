@@ -1,4 +1,5 @@
 import { formatDateTime } from '../../utils/format';
+import { t } from '../../i18n';
 
 interface TimelineDispute {
   status: string;
@@ -15,14 +16,14 @@ const RESOLVED_LABEL: Record<string, string> = {
 
 export function DisputeTimeline({ dispute, className = '' }: { dispute: TimelineDispute; className?: string }) {
   const steps = [
-    { label: 'Opened', at: dispute.createdAt },
-    { label: 'Under review', at: dispute.reviewStartedAt ?? (dispute.resolvedAt ? dispute.resolvedAt : null) },
-    { label: RESOLVED_LABEL[dispute.status] ?? 'Resolved', at: dispute.resolvedAt },
+    { label: t('Opened'), at: dispute.createdAt },
+    { label: t('Under review'), at: dispute.reviewStartedAt ?? (dispute.resolvedAt ? dispute.resolvedAt : null) },
+    { label: RESOLVED_LABEL[dispute.status] ? t(RESOLVED_LABEL[dispute.status]) : t('Resolved'), at: dispute.resolvedAt },
   ];
   const reached = steps.filter((step) => step.at).length;
 
   return (
-    <ol className={`flex items-start ${className}`} aria-label="Dispute progress">
+    <ol className={`flex items-start ${className}`} aria-label={t('Dispute progress')}>
       {steps.map((step, index) => {
         const done = index < reached;
         return (

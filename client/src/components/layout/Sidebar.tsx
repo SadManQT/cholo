@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LogoutIcon } from './icons';
+import { t } from '../../i18n';
 
 export interface SidebarItem {
   to: string;
@@ -38,13 +39,13 @@ export function Sidebar({ sections, user, onSignOut }: SidebarProps) {
     <>
       <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-surface">
         <div className="flex items-center gap-2 px-5 pb-4 pt-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cholo-700 text-sm font-black text-white">C</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cholo-700 text-sm font-black text-white">{t('C')}</span>
           <div className="leading-tight">
-            <p className="font-bold text-ink-900">Cholo</p>
-            <p className="text-xs text-ink-500">Operations</p>
+            <p className="font-bold text-ink-900">{t('Cholo')}</p>
+            <p className="text-xs text-ink-500">{t('Operations')}</p>
           </div>
         </div>
-        <nav aria-label="Admin" className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+        <nav aria-label={t('Admin')} className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
           {sections.map((section) => (
             <div key={section.title}>
               <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-500/80">{section.title}</p>
@@ -69,7 +70,7 @@ export function Sidebar({ sections, user, onSignOut }: SidebarProps) {
               <p className="truncate text-sm font-semibold text-ink-900">{user.fullName}</p>
               <p className="truncate text-xs text-ink-500">{user.phone}</p>
             </div>
-            <button type="button" onClick={onSignOut} aria-label="Sign out" title="Sign out" className="rounded-lg p-2 text-ink-500 hover:bg-surface-alt hover:text-danger-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700">
+            <button type="button" onClick={onSignOut} aria-label={t('Sign out')} title={t('Sign out')} className="rounded-lg p-2 text-ink-500 hover:bg-surface-alt hover:text-danger-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700">
               <LogoutIcon />
             </button>
           </div>
@@ -77,10 +78,10 @@ export function Sidebar({ sections, user, onSignOut }: SidebarProps) {
       </aside>
       <div className="sticky top-0 z-20 border-b border-border bg-surface md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="font-bold text-ink-900">Cholo <span className="font-normal text-ink-500">Operations</span></span>
-          <button type="button" onClick={onSignOut} className="text-sm font-medium text-ink-500 hover:text-danger-600">Sign out</button>
+          <span className="font-bold text-ink-900">{t('Cholo')} <span className="font-normal text-ink-500">{t('Operations')}</span></span>
+          <button type="button" onClick={onSignOut} className="text-sm font-medium text-ink-500 hover:text-danger-600">{t('Sign out')}</button>
         </div>
-        <nav aria-label="Admin" className="flex gap-1 overflow-x-auto px-2 pb-2">
+        <nav aria-label={t('Admin')} className="flex gap-1 overflow-x-auto px-2 pb-2">
           {allItems.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={linkClasses}>
               {item.icon}

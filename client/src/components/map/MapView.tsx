@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import * as geoApi from '../../api/geo.api';
 import type { LatLng, RouteResult } from '../../types/geo.types';
+import { t } from '../../i18n';
 
 const DHAKA_CENTER: LatLng = { lat: 23.8103, lng: 90.4125 };
 
@@ -181,7 +182,7 @@ export function MapView({ pickup, dropoff, stops = [], driver, user, sos, onMapC
   const center = points[0] ?? DHAKA_CENTER;
 
   return (
-    <div className={`relative isolate overflow-hidden bg-surface-alt ${className}`} aria-label="Ride map">
+    <div className={`relative isolate overflow-hidden bg-surface-alt ${className}`} aria-label={t('Ride map')}>
       <MapContainer center={center} zoom={13} className="h-full w-full" zoomControl={false}>
         <VectorTileLayer />
         <ClickHandler onMapClick={onMapClick} />
@@ -214,15 +215,15 @@ export function MapView({ pickup, dropoff, stops = [], driver, user, sos, onMapC
         >
           <div className="w-full max-w-xs rounded-2xl bg-surface p-5 text-center shadow-2xl">
             <span className="mx-auto block h-10 w-10 animate-spin rounded-full border-4 border-cholo-700/20 border-t-cholo-700" aria-hidden="true" />
-            <p className="mt-4 font-bold text-ink-900">Finding the best route for you…</p>
-            <p className="mt-1 text-sm text-ink-500">Checking the shortest road path that stays inside Bangladesh.</p>
+            <p className="mt-4 font-bold text-ink-900">{t('Finding the best route for you…')}</p>
+            <p className="mt-1 text-sm text-ink-500">{t('Checking the shortest road path that stays inside Bangladesh.')}</p>
           </div>
         </div>
       )}
       {(roadRoute || routeUnavailable) && (
         <div className="pointer-events-none absolute left-3 top-3 z-[450] max-w-[calc(100%-5.5rem)] truncate rounded-xl bg-surface/95 px-3 py-2 text-xs font-semibold text-ink-900 shadow-lg">
-          {roadRoute && `Shortest route · ${roadRoute.distanceKm} km · ${roadRoute.durationMin} min${roadRoute.alternatives.length ? ` · ${roadRoute.alternatives.length} alternative${roadRoute.alternatives.length > 1 ? 's' : ''}` : ''}`}
-          {routeUnavailable && 'Road route is temporarily unavailable'}
+          {roadRoute && t('Shortest route · {0} km · {1} min{2}', roadRoute.distanceKm, roadRoute.durationMin, roadRoute.alternatives.length ? ` · ${roadRoute.alternatives.length} alternative${roadRoute.alternatives.length > 1 ? 's' : ''}` : '')}
+          {routeUnavailable && t('Road route is temporarily unavailable')}
         </div>
       )}
     </div>

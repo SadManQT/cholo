@@ -5,6 +5,18 @@ import { setUnauthorizedHandler } from '../api/client';
 import * as meApi from '../api/me.api';
 import type { User } from '../types/user.types';
 import { AuthContext } from './auth';
+import { language, setLanguage, storedLanguage } from '../i18n';
+
+// A language picked on this device wins and is saved to the profile; otherwise the profile's choice applies
+// (which reloads the page once into that language).
+function syncLanguage(me: User) {
+  const chosenHere = storedLanguage();
+  if (chosenHere && chosenHere !== me.preferredLanguage) {
+    meApi.updateMe({ preferredLanguage: chosenHere }).catch(() => {});
+  } else if (!chosenHere && me.preferredLanguage !== language) {
+    setLanguage(me.preferredLanguage);
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -17,7 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     meApi
       .getMe()
-      .then(setUser)
+      .then((me) => {
+        setUser(me);
+        syncLanguage(me);
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -25,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadFullProfile() {
     const me = await meApi.getMe();
     setUser(me);
+    syncLanguage(me);
     return me;
   }
 
