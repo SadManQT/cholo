@@ -863,4 +863,8 @@ export const bn: Record<string, string> = {
   "Enter your driving license number": "ড্রাইভিং লাইসেন্স নম্বর লিখুন",
   "Enter the expiry date on your license": "লাইসেন্সের মেয়াদ শেষের তারিখ লিখুন",
   "Your driving license must not be expired": "ড্রাইভিং লাইসেন্সের মেয়াদ থাকতে হবে",
+  "Location is blocked for Cholo. Click the location icon in the address bar, choose Allow, then try again.": "Cholo-র জন্য লোকেশন বন্ধ করা আছে। ঠিকানা বারের লোকেশন আইকনে ক্লিক করে Allow বেছে নিন, তারপর আবার চেষ্টা করুন।",
+  "Your device could not find its location. On a Mac, turn on Location Services for your browser in System Settings → Privacy & Security → Location Services, then try again.": "আপনার ডিভাইস লোকেশন খুঁজে পায়নি। Mac-এ System Settings → Privacy & Security → Location Services থেকে আপনার ব্রাউজারের জন্য লোকেশন চালু করে আবার চেষ্টা করুন।",
+  "This browser cannot share its location. Try Chrome or Safari on your phone.": "এই ব্রাউজার লোকেশন দিতে পারে না। ফোনে Chrome বা Safari ব্যবহার করে দেখুন।",
+  "Location is off, so offers use your last known position. Turn location on to stay accurate.": "লোকেশন বন্ধ, তাই অফারগুলো আপনার সর্বশেষ জানা অবস্থান ধরে আসবে। সঠিক রাখতে লোকেশন চালু করুন।",
 };
