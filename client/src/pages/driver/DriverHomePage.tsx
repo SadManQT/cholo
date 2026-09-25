@@ -7,7 +7,7 @@ import { ConnectionPill } from '../../components/ride/ConnectionPill';
 import { OfferSheet } from '../../components/ride/OfferSheet';
 import { Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../components/ui';
 import { useSocket } from '../../context/socket';
-import { useGeolocation } from '../../hooks/useGeolocation';
+import { locationHelp, useGeolocation } from '../../hooks/useGeolocation';
 import type { DriverStatus, RideOffer, SocketTripStatus, TripSummary } from '../../types/ride.types';
 import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
 import { t } from '../../i18n';
@@ -84,7 +84,17 @@ export function DriverHomePage() {
         setOffers([]);
         toast.info(t('You are offline.'));
       } else {
-        const location = await geolocation.request();
+        let location: Awaited<ReturnType<typeof geolocation.request>> | undefined;
+        try {
+          location = await geolocation.request();
+        } catch (locationError) {
+          // With a last known position the server can still dispatch; without one, explain how to fix it.
+          if (status.currentLat == null || status.currentLng == null) {
+            toast.error(t(locationHelp(locationError)));
+            return;
+          }
+          toast.info(t('Location is off, so offers use your last known position. Turn location on to stay accurate.'));
+        }
         const updated = await driverApi.setAvailability('online', location);
         setStatus((current) => current ? { ...current, ...updated, availabilityStatus: 'online' } : current);
         toast.success(t('You are online and ready for offers.'));
