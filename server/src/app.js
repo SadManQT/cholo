@@ -15,7 +15,10 @@ const app = express();
 
 // Render terminates TLS one proxy hop in front of the app; without this every request shares the proxy's IP
 // and one rider's failed logins would rate-limit everyone.
-if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
+// Production requests arrive through Render's proxy, and browser API calls also through Vercel's rewrite
+// (vercel.json), which replaces X-Forwarded-For with the rider's real IP. Trusting two hops reads that IP;
+// a direct caller could spoof it, so the login and code limiters also cap attempts per phone number.
+if (env.NODE_ENV === 'production') app.set('trust proxy', 2);
 app.disable('x-powered-by');
 
 app.use(cors(corsOptions));

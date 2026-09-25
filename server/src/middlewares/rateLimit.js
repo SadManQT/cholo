@@ -33,19 +33,17 @@ export const registerLimiter = createRateLimiter({
   keyGenerator: (request) => ipKeyGenerator(request.ip),
 });
 
-export const loginLimiter = createRateLimiter({
-  windowMs: 15 * MINUTE,
-  limit: isTest ? 1000 : 8,
-  keyGenerator: phoneAndIpKey,
-  skipSuccessfulRequests: true,
-});
+const phoneKey = (request) => `phone:${request.body?.phone ?? 'unknown'}`;
 
-export const verifyOtpLimiter = createRateLimiter({
-  windowMs: 15 * MINUTE,
-  limit: isTest ? 1000 : 8,
-  keyGenerator: phoneAndIpKey,
-  skipSuccessfulRequests: true,
-});
+const perIpAndPhone = (limit) => [
+  createRateLimiter({ windowMs: 15 * MINUTE, limit: isTest ? 1000 : limit, keyGenerator: phoneAndIpKey, skipSuccessfulRequests: true }),
+  // Caps guesses on one account no matter how many IP addresses they come from.
+  createRateLimiter({ windowMs: 15 * MINUTE, limit: isTest ? 1000 : limit * 3, keyGenerator: phoneKey, skipSuccessfulRequests: true }),
+];
+
+export const loginLimiter = perIpAndPhone(8);
+
+export const verifyOtpLimiter = perIpAndPhone(8);
 
 export const resendOtpLimiter = createRateLimiter({
   windowMs: HOUR,
