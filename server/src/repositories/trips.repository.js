@@ -172,7 +172,8 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
             EXISTS (SELECT 1 FROM favorite_drivers fd
                     WHERE fd.passenger_id = $2 AND fd.driver_id = t.driver_id) AS "driverIsFavorite",
             EXISTS (SELECT 1 FROM user_reports ur
-                    WHERE ur.trip_id = t.id AND ur.reporter_id = $2) AS "reportedByMe"
+                    WHERE ur.trip_id = t.id AND ur.reporter_id = $2) AS "reportedByMe",
+            t.ended_early_at AS "endedEarlyAt", t.end_lat::float8 AS "endLat", t.end_lng::float8 AS "endLng"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id
@@ -409,4 +410,20 @@ export async function findSharedView(tripId, client = pool) {
     [tripId],
   );
   return rows[0];
+}
+
+export async function listReachedStops(tripId, client) {
+  const { rows } = await client.query(
+    `SELECT lat::float8 AS lat, lng::float8 AS lng FROM trip_stops
+     WHERE trip_id = $1 AND arrived_at IS NOT NULL ORDER BY stop_order`,
+    [tripId],
+  );
+  return rows;
+}
+
+export async function markEndedEarly(tripId, { lat, lng }, client) {
+  await client.query(
+    `UPDATE trips SET ended_early_at = now(), end_lat = $2, end_lng = $3 WHERE id = $1`,
+    [tripId, lat, lng],
+  );
 }

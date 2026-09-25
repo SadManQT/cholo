@@ -17,6 +17,7 @@ export const arrivalSchema = z.object(reportedPosition).default({});
 
 export const completeTripSchema = z.object({
   waitingMin: z.number().int().min(0).optional(),
+  endEarly: z.boolean().optional(),
   ...reportedPosition,
 });
 
