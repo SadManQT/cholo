@@ -29,7 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(phone: string, password: string) {
-    await authApi.login(phone, password);
+    const challenge = await authApi.login(phone, password);
+    return challenge ?? loadFullProfile();
+  }
+
+  async function completeTwoFactor(challengeToken: string, code: string) {
+    await authApi.loginTwoFactor(challengeToken, code);
     return loadFullProfile();
   }
 
@@ -43,5 +48,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, verifyOtp, refreshUser: loadFullProfile, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, login, completeTwoFactor, verifyOtp, refreshUser: loadFullProfile, logout }}>{children}</AuthContext.Provider>;
 }

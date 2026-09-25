@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import {
-  BadgeCheckIcon, BanknoteIcon, BellIcon, FileIcon, GridIcon, LifebuoyIcon, ListIcon, MapIcon, ScaleIcon, SirenIcon, TagIcon, UsersIcon,
+  BadgeCheckIcon, BanknoteIcon, BellIcon, BoltIcon, FileIcon, FlagIcon, GiftIcon, GridIcon, LifebuoyIcon, ListIcon, MapIcon, ScaleIcon,
+  ShieldIcon, SirenIcon, TagIcon, UsersIcon,
 } from '../components/layout/icons';
 import { Sidebar } from '../components/layout/Sidebar';
 import type { SidebarSection } from '../components/layout/Sidebar';
@@ -26,13 +27,19 @@ export function AdminLayout() {
       { to: '/admin/users', label: 'Users', icon: <UsersIcon /> },
       { to: '/admin/pricing', label: 'Pricing', icon: <TagIcon /> },
       { to: '/admin/zones', label: 'Zones', icon: <MapIcon /> },
+      { to: '/admin/surge', label: 'Surge', icon: <BoltIcon /> },
+      { to: '/admin/promos', label: 'Promo codes', icon: <GiftIcon /> },
       { to: '/admin/payouts', label: 'Withdrawals', icon: <BanknoteIcon /> },
     ] },
     { title: 'Trust & safety', items: [
       { to: '/admin/sos', label: 'SOS board', icon: <SirenIcon /> },
+      { to: '/admin/reports', label: 'User reports', icon: <FlagIcon /> },
       { to: '/admin/disputes', label: 'Disputes', icon: <ScaleIcon /> },
       { to: '/admin/support', label: 'Support', icon: <LifebuoyIcon /> },
       { to: '/admin/audit', label: 'Audit log', icon: <ListIcon /> },
+    ] },
+    { title: 'You', items: [
+      { to: '/admin/account', label: 'Account & security', icon: <ShieldIcon /> },
     ] },
   ];
 

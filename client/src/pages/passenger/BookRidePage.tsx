@@ -26,7 +26,7 @@ import type {
   VehicleCategory,
 } from '../../types/ride.types';
 import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
-import { formatBDT } from '../../utils/format';
+import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
 import { staggerStyle } from '../../utils/stagger';
@@ -59,6 +59,55 @@ function PlaceSuggestionList({ suggestions, onSelect }: { suggestions: Place[]; 
       ))}
     </ul>
   );
+}
+
+const MAX_STOPS = 2;
+
+function StopField({ index, value, onChange, onRemove }: {
+  index: number;
+  value: { query: string; place: Place | null };
+  onChange: (next: { query: string; place: Place | null }) => void;
+  onRemove: () => void;
+}) {
+  const suggestions = usePlaceSuggestions(value.query, value.place?.address !== value.query);
+  const [finding, setFinding] = useState(false);
+
+  async function find(event: FormEvent) {
+    event.preventDefault();
+    if (value.query.trim().length < 3) return;
+    setFinding(true);
+    try {
+      const place = await geoApi.geocode(value.query);
+      onChange({ query: place.address, place });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not find that stop.'));
+    } finally {
+      setFinding(false);
+    }
+  }
+
+  return (
+    <form onSubmit={find} className="relative flex items-end gap-2">
+      <Input
+        label={`Stop ${index + 1}`}
+        value={value.query}
+        onChange={(event) => onChange({ query: event.target.value, place: null })}
+        onBlur={() => window.setTimeout(suggestions.clear, 150)}
+        placeholder="Add a stop on the way"
+        containerClassName="min-w-0 flex-1"
+        autoComplete="off"
+      />
+      <Button type="submit" variant="secondary" loading={finding} aria-label={`Find stop ${index + 1}`}>Find</Button>
+      <Button type="button" variant="ghost" onClick={onRemove} aria-label={`Remove stop ${index + 1}`}>✕</Button>
+      <PlaceSuggestionList suggestions={suggestions.suggestions} onSelect={(place) => { onChange({ query: place.address, place }); suggestions.clear(); }} />
+    </form>
+  );
+}
+
+// datetime-local works in local wall-clock time, which for riders is Dhaka time.
+function toLocalInputValue(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 const PINNED_LABELS = ['Home', 'University'];
@@ -125,6 +174,9 @@ export function BookRidePage() {
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntent>('cash');
   const [promoCode, setPromoCode] = useState('');
   const [womenOnly, setWomenOnly] = useState(false);
+  const [stops, setStops] = useState<Array<{ query: string; place: Place | null }>>([]);
+  const [when, setWhen] = useState<'now' | 'later'>('now');
+  const [scheduledAt, setScheduledAt] = useState('');
   const [rideRequest, setRideRequest] = useState<RideRequest | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -159,21 +211,27 @@ export function BookRidePage() {
     void loadReferences();
   }, [loadReferences]);
 
+  // Restores a live search after a reload, and also from another tab or device (session storage is per tab).
   useEffect(() => {
     const storedPublicId = sessionStorage.getItem(ACTIVE_REQUEST_KEY);
-    if (!storedPublicId) return;
+    const restore = storedPublicId
+      ? ridesApi.getRequest(storedPublicId)
+      : ridesApi.listActiveRequests().then((requests) => requests.find((request) => request.status === 'searching') ?? null);
 
-    ridesApi.getRequest(storedPublicId)
+    restore
       .then((request) => {
+        if (!request) return;
         if (request.tripCode) {
           sessionStorage.removeItem(ACTIVE_REQUEST_KEY);
           navigate(`/trips/${request.tripCode}/live`, { replace: true });
           return;
         }
-        if (request.status === 'searching' || request.status === 'pending') {
+        if (request.status === 'searching') {
+          sessionStorage.setItem(ACTIVE_REQUEST_KEY, request.publicId);
           setRideRequest(request);
           setPickup(request.pickup ?? null);
           setDropoff(request.dropoff ?? null);
+          setStops((request.stops ?? []).map((place) => ({ query: place.address, place })));
         } else {
           sessionStorage.removeItem(ACTIVE_REQUEST_KEY);
         }
@@ -208,9 +266,19 @@ export function BookRidePage() {
       });
   }, [geolocationState, pickup, requestCurrentLocation]);
 
+  const stopPlaces = useMemo(
+    () => stops.map((stop) => stop.place).filter((place): place is Place => Boolean(place)),
+    [stops],
+  );
+  const stopsKey = stopPlaces.map((place) => `${place.lat},${place.lng}`).join(';');
+
   useEffect(() => {
     if (!pickup || !dropoff || cities.length === 0 || categories.length === 0 || rideRequest) return;
     let cancelled = false;
+    const quoteStops = stopsKey ? stopsKey.split(';').map((pair) => {
+      const [lat, lng] = pair.split(',').map(Number);
+      return { lat, lng };
+    }) : [];
 
     async function loadQuotes() {
       setQuotesLoading(true);
@@ -222,6 +290,7 @@ export function BookRidePage() {
           categoryId: category.id,
           pickup: { lat: pickup!.lat, lng: pickup!.lng },
           dropoff: { lat: dropoff!.lat, lng: dropoff!.lng },
+          ...(quoteStops.length ? { stops: quoteStops } : {}),
         })),
       );
       if (cancelled) return;
@@ -245,7 +314,7 @@ export function BookRidePage() {
     return () => {
       cancelled = true;
     };
-  }, [categories, cities, dropoff, pickup, rideRequest]);
+  }, [categories, cities, dropoff, pickup, rideRequest, stopsKey]);
 
   useEffect(() => {
     if (!rideRequest) return;
@@ -348,8 +417,20 @@ export function BookRidePage() {
     }
   }
 
+  const scheduleMin = toLocalInputValue(new Date(Date.now() + 20 * 60_000));
+  const scheduleMax = toLocalInputValue(new Date(Date.now() + 7 * 86_400_000));
+  const scheduling = when === 'later';
+
   async function confirmRide() {
     if (!pickup || !dropoff || !selectedCategoryId || cities.length === 0) return;
+    if (stops.some((stop) => !stop.place)) {
+      toast.error('Pick each stop from the suggestions or press Find, or remove it.');
+      return;
+    }
+    if (scheduling && !scheduledAt) {
+      toast.error('Choose a pickup time.');
+      return;
+    }
     setSubmitting(true);
     try {
       const created = await ridesApi.createRequest({
@@ -360,7 +441,14 @@ export function BookRidePage() {
         paymentIntent,
         ...(promoCode.trim() ? { promoCode: promoCode.trim() } : {}),
         womenOnly,
+        ...(stopPlaces.length ? { stops: stopPlaces } : {}),
+        ...(scheduling ? { scheduledFor: new Date(scheduledAt).toISOString() } : {}),
       });
+      if (created.scheduledFor) {
+        toast.success(`Ride scheduled for ${formatDateTime(created.scheduledFor)}. We'll start finding a driver 10 minutes before.`);
+        navigate('/trips');
+        return;
+      }
       sessionStorage.setItem(ACTIVE_REQUEST_KEY, created.publicId);
       setRideRequest(created);
       toast.success('Looking for a nearby driver.');
@@ -396,6 +484,7 @@ export function BookRidePage() {
       <MapView
         pickup={pickup}
         dropoff={dropoff}
+        stops={stopPlaces}
         user={mapUserPosition}
         onMapClick={rideRequest ? undefined : handleMapClick}
         className="h-full"
@@ -491,6 +580,25 @@ export function BookRidePage() {
               <PlaceSuggestionList suggestions={dropoffSuggestions.suggestions} onSelect={(place) => selectSuggestion('dropoff', place)} />
             </form>
 
+            {stops.map((stop, index) => (
+              <StopField
+                key={index}
+                index={index}
+                value={stop}
+                onChange={(next) => setStops((current) => current.map((item, itemIndex) => (itemIndex === index ? next : item)))}
+                onRemove={() => setStops((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+              />
+            ))}
+            {stops.length < MAX_STOPS && (
+              <button
+                type="button"
+                onClick={() => setStops((current) => [...current, { query: '', place: null }])}
+                className="text-sm font-medium text-cholo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700"
+              >
+                + Add a stop
+              </button>
+            )}
+
             <PlaceShortcuts saved={places.saved} recent={places.recent} target={mapField} onPick={(place) => selectSuggestion(mapField, place)} />
 
             {geolocation.state === 'denied' && (
@@ -547,6 +655,38 @@ export function BookRidePage() {
                   <Input label="Promo (optional)" value={promoCode} onChange={(event) => setPromoCode(event.target.value.toUpperCase())} />
                 </div>
 
+                <fieldset className="rounded-xl border border-border p-3">
+                  <legend className="px-1 text-sm font-medium text-ink-900">When</legend>
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-alt p-1" role="radiogroup" aria-label="When">
+                    {(['now', 'later'] as const).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        role="radio"
+                        aria-checked={when === option}
+                        onClick={() => setWhen(option)}
+                        className={`h-9 rounded-md text-sm font-semibold transition-colors ${when === option ? 'bg-surface text-cholo-700 shadow' : 'text-ink-500'}`}
+                      >
+                        {option === 'now' ? 'Ride now' : 'Schedule'}
+                      </button>
+                    ))}
+                  </div>
+                  {scheduling && (
+                    <label className="mt-3 block text-sm font-medium text-ink-900">
+                      Pickup time
+                      <input
+                        type="datetime-local"
+                        value={scheduledAt}
+                        min={scheduleMin}
+                        max={scheduleMax}
+                        onChange={(event) => setScheduledAt(event.target.value)}
+                        className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
+                      />
+                      <span className="mt-1 block text-xs font-normal text-ink-500">From 20 minutes to 7 days ahead. You'll get a reminder 30 minutes before.</span>
+                    </label>
+                  )}
+                </fieldset>
+
                 <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border p-3 text-sm">
                   <input
                     type="checkbox"
@@ -564,7 +704,7 @@ export function BookRidePage() {
                   onClick={confirmRide}
                 >
                   {selectedQuote && selectedCategory
-                    ? `Confirm ${selectedCategory.name} — ${formatBDT(selectedQuote.totalFare)}`
+                    ? `${scheduling ? 'Schedule' : 'Confirm'} ${selectedCategory.name} — ${formatBDT(selectedQuote.totalFare)}`
                     : 'Choose a ride'}
                 </Button>
               </>

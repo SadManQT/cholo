@@ -31,7 +31,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-const SKIP_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/refresh', '/auth/forgot-password', '/auth/reset-password'];
+const SKIP_REFRESH_PATHS = ['/auth/login', '/share/', '/auth/register', '/auth/verify-otp', '/auth/refresh', '/auth/forgot-password', '/auth/reset-password'];
 
 function shouldAttemptRefresh(url: string | undefined) {
   return url !== undefined && !SKIP_REFRESH_PATHS.some((path) => url.includes(path));

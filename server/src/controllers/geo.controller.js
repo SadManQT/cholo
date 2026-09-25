@@ -17,6 +17,6 @@ export const reverseGeocode = asyncHandler(async (request, response) => {
 });
 
 export const route = asyncHandler(async (request, response) => {
-  const data = await geoService.route(request.body.pickup, request.body.dropoff);
+  const data = await geoService.route(request.body.pickup, request.body.dropoff, request.body.stops);
   response.json({ success: true, data });
 });

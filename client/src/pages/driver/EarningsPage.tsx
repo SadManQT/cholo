@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as driverApi from '../../api/driver.api';
 import { Card, EmptyState, Skeleton } from '../../components/ui';
 import type { DailyEarning, EarningTripRow } from '../../types/earnings.types';
@@ -53,9 +54,14 @@ export function EarningsPage() {
 
   return (
     <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">Earnings</h1>
-        <p className="text-sm text-ink-500">What you've made, by day and by trip.</p>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Earnings</h1>
+          <p className="text-sm text-ink-500">What you've made, by day and by trip.</p>
+        </div>
+        <Link to="/driver/statements" className="flex min-h-11 items-center rounded-xl border border-border px-3 text-sm font-semibold text-cholo-700 hover:border-cholo-700">
+          Monthly statements
+        </Link>
       </div>
 
       <div className="mb-5 flex gap-2" role="group" aria-label="Date range">

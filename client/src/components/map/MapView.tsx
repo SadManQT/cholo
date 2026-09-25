@@ -52,11 +52,13 @@ const CURRENT_LOCATION_SIZE = 26;
 const PIN_WIDTH = 32;
 const PIN_HEIGHT = 44;
 
-type PinKind = 'pickup' | 'dropoff' | 'driver' | 'sos';
+type PinKind = 'pickup' | 'dropoff' | 'driver' | 'sos' | 'stop1' | 'stop2';
 
-const PIN_GLYPHS: Record<PinKind, string> = { pickup: 'A', dropoff: 'B', driver: '', sos: '!' };
+const PIN_GLYPHS: Record<PinKind, string> = { pickup: 'A', dropoff: 'B', driver: '', sos: '!', stop1: '1', stop2: '2' };
 
 const PIN_CLASS_NAMES: Record<PinKind, string> = {
+  stop1: 'cholo-map-marker cholo-map-marker--stop',
+  stop2: 'cholo-map-marker cholo-map-marker--stop',
   pickup: 'cholo-map-marker cholo-map-marker--pickup',
   dropoff: 'cholo-map-marker cholo-map-marker--dropoff',
   driver: 'cholo-map-marker cholo-map-marker--driver',
@@ -90,21 +92,25 @@ interface ViewportControllerProps {
   points: LatLng[];
 }
 
+// Refit only when the points themselves change; parents re-render often (typing, polling) and a refit on
+// every render snapped the map back while the user was panning.
 function ViewportController({ points }: ViewportControllerProps) {
   const map = useMap();
+  const pointsKey = points.map((point) => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`).join(';');
 
   useEffect(() => {
-    if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView(points[0] as LatLngExpression, Math.max(map.getZoom(), 15), { animate: true });
+    if (!pointsKey) return;
+    const current = pointsKey.split(';').map((pair) => pair.split(',').map(Number) as [number, number]);
+    if (current.length === 1) {
+      map.setView(current[0] as LatLngExpression, Math.max(map.getZoom(), 15), { animate: true });
       return;
     }
-    map.fitBounds(latLngBounds(points.map((point) => [point.lat, point.lng])), {
+    map.fitBounds(latLngBounds(current), {
       padding: [48, 48],
       maxZoom: 15,
       animate: true,
     });
-  }, [map, points]);
+  }, [map, pointsKey]);
 
   return null;
 }
@@ -121,6 +127,7 @@ function ClickHandler({ onMapClick }: { onMapClick?: (point: LatLng) => void }) 
 interface MapViewProps {
   pickup?: LatLng | null;
   dropoff?: LatLng | null;
+  stops?: LatLng[];
   driver?: LatLng | null;
   user?: LatLng | null;
   sos?: LatLng | null;
@@ -128,8 +135,10 @@ interface MapViewProps {
   className?: string;
 }
 
-export function MapView({ pickup, dropoff, driver, user, sos, onMapClick, className = '' }: MapViewProps) {
+export function MapView({ pickup, dropoff, stops = [], driver, user, sos, onMapClick, className = '' }: MapViewProps) {
   const [roadRoute, setRoadRoute] = useState<RouteResult | null>(null);
+  // Callers rebuild the stops array every render; key the route fetch on its contents instead.
+  const stopsKey = stops.map((stop) => `${stop.lat},${stop.lng}`).join(';');
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeUnavailable, setRouteUnavailable] = useState(false);
 
@@ -146,7 +155,11 @@ export function MapView({ pickup, dropoff, driver, user, sos, onMapClick, classN
     setRouteLoading(true);
     setRouteUnavailable(false);
 
-    geoApi.getRoute(pickup, dropoff)
+    const routeStops = stopsKey ? stopsKey.split(';').map((pair) => {
+      const [lat, lng] = pair.split(',').map(Number);
+      return { lat, lng };
+    }) : [];
+    geoApi.getRoute(pickup, dropoff, routeStops)
       .then((result) => {
         if (!cancelled) setRoadRoute(result);
       })
@@ -160,10 +173,10 @@ export function MapView({ pickup, dropoff, driver, user, sos, onMapClick, classN
     return () => {
       cancelled = true;
     };
-  }, [dropoff, pickup]);
+  }, [dropoff, pickup, stopsKey]);
 
   const routePoints = roadRoute?.path.length ? roadRoute.path : [];
-  const points = [...routePoints, pickup, dropoff, driver, user, sos]
+  const points = [...routePoints, pickup, ...stops, dropoff, driver, user, sos]
     .filter((point): point is LatLng => Boolean(point));
   const center = points[0] ?? DHAKA_CENTER;
 
@@ -187,6 +200,7 @@ export function MapView({ pickup, dropoff, driver, user, sos, onMapClick, classN
           />
         )}
         {pickup && <Marker position={pickup} icon={markerIcon('pickup')} />}
+        {stops.slice(0, 2).map((stop, index) => <Marker key={`stop-${index}`} position={stop} icon={markerIcon(index === 0 ? 'stop1' : 'stop2')} />)}
         {dropoff && <Marker position={dropoff} icon={markerIcon('dropoff')} />}
         {driver && <Marker position={driver} icon={markerIcon('driver')} />}
         {sos && <Marker position={sos} icon={markerIcon('sos')} />}

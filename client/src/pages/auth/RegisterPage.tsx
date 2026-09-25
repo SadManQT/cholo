@@ -38,6 +38,8 @@ export function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState((searchParams.get('ref') ?? '').toUpperCase());
+  const [referralError, setReferralError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
@@ -64,13 +66,21 @@ export function RegisterPage() {
     setServerErrors({});
 
     try {
-      await authApi.register({ fullName, phone, password });
+      await authApi.register({ fullName, phone, password, ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}) });
       const verifyParams = new URLSearchParams({ phone });
       if (intent) verifyParams.set('intent', intent);
       navigate(`/verify?${verifyParams.toString()}`);
     } catch (thrown) {
       const fields: FieldErrors = getApiFieldErrors(thrown);
       if (getApiErrorCode(thrown) === 'PHONE_TAKEN') fields.phone = getApiErrorMessage(thrown);
+      const referralIssue = getApiErrorCode(thrown) === 'REFERRAL_CODE_INVALID'
+        ? getApiErrorMessage(thrown)
+        : (getApiFieldErrors(thrown) as Record<string, string>).referralCode;
+      if (referralIssue) {
+        setReferralError(referralIssue);
+        document.getElementById('register-referral')?.focus();
+        return;
+      }
       if (Object.keys(fields).length > 0) {
         setServerErrors(fields);
         return;
@@ -130,6 +140,15 @@ export function RegisterPage() {
             </p>
           )}
         </div>
+        <Input
+          id="register-referral"
+          label="Referral code (optional)"
+          value={referralCode}
+          onChange={(event) => { setReferralCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setReferralError(undefined); }}
+          error={referralError}
+          maxLength={20}
+          autoComplete="off"
+        />
       </div>
 
       {error && <p className="text-sm text-danger-600">{error}</p>}

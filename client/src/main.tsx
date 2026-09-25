@@ -8,6 +8,8 @@ import App from './App.tsx'
 import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { SocketProvider } from './context/SocketContext.tsx'
+import './hooks/useInstallPrompt.ts'
+import { registerServiceWorker } from './registerServiceWorker.ts'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,3 +24,5 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+registerServiceWorker()

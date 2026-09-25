@@ -54,11 +54,19 @@ export interface RideRequest {
   };
   pickup?: Place;
   dropoff?: Place;
+  stops?: Place[];
   paymentIntent?: PaymentIntent;
+  categoryName?: string;
+  scheduledFor?: string | null;
   requestedAt: string;
   expiresAt: string | null;
   cancelledAt?: string | null;
   tripCode?: string | null;
+}
+
+export interface TripStop extends Place {
+  order: number;
+  arrivedAt: string | null;
 }
 
 export interface RideOffer {
@@ -228,6 +236,9 @@ export interface TripDetail {
     cancelledAt: string;
   } | null;
   receipt: { receiptNo: string; issuedAt: string } | null;
+  stops: TripStop[];
+  driverIsFavorite: boolean;
+  reportedByMe: boolean;
   history: Array<{
     fromStatus: TripStatus | null;
     toStatus: TripStatus;
@@ -253,6 +264,7 @@ export interface SocketTripStatus {
   arrivedAt?: string;
   startedAt?: string;
   completedAt?: string;
+  stopReached?: number;
 }
 
 export interface SocketLocation extends TrackedLocation {
@@ -267,6 +279,22 @@ export interface CreateRideRequestInput {
   paymentIntent: PaymentIntent;
   promoCode?: string;
   womenOnly: boolean;
+  stops?: Place[];
+  scheduledFor?: string;
 }
+
+export interface SharedTrip {
+  tripCode: string;
+  status: TripStatus;
+  startedAt: string | null;
+  endedAt: string | null;
+  driver: { firstName: string; photoUrl: string | null; rating: string };
+  vehicle: { registrationNo: string; brand: string | null; model: string | null; color: string | null };
+  pickup: Place;
+  dropoff: Place;
+  location: (LatLng & { at: string | null }) | null;
+}
+
+export type ReportCategory = 'safety' | 'harassment' | 'fraud' | 'behavior' | 'other';
 
 export type LocationUpdate = LatLng & { heading?: number; speedKmh?: number };

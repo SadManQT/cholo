@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import * as meApi from '../../api/me.api';
 import * as tripsApi from '../../api/trips.api';
 import { MapView } from '../../components/map/MapView';
 import { PayTripCard } from '../../components/payment/PayTripCard';
 import { RateTripCard } from '../../components/ride/RateTripCard';
+import { ReportDialog } from '../../components/ride/ReportDialog';
 import { TripStatusStepper } from '../../components/ride/TripStatusStepper';
 import { Button, Card, EmptyState, Skeleton, StatusBadge, toast } from '../../components/ui';
 import type { TripDetail } from '../../types/ride.types';
@@ -26,6 +28,8 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
 
   const loadTrip = useCallback(async () => {
     if (!code) return;
@@ -57,6 +61,21 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
     }
   }
 
+  async function toggleFavorite() {
+    if (!trip) return;
+    const next = !trip.driverIsFavorite;
+    setFavoriteBusy(true);
+    try {
+      await meApi.setFavoriteDriver(trip.driver.id, next);
+      setTrip({ ...trip, driverIsFavorite: next });
+      toast.success(next ? `${trip.driver.name} gets your ride requests first when nearby.` : 'Removed from favourite drivers.');
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, 'Could not update favourite drivers.'));
+    } finally {
+      setFavoriteBusy(false);
+    }
+  }
+
   if (loading) return <main className="mx-auto max-w-3xl space-y-4 p-4"><Skeleton variant="map-placeholder" /><Skeleton variant="card" /><Skeleton lines={5} /></main>;
   if (error || !trip) return <EmptyState title="Trip did not load" hint={error ?? 'Trip not found.'} action={{ label: 'Retry', onClick: loadTrip }} />;
 
@@ -82,16 +101,30 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         <StatusBadge status={trip.status} />
       </div>
 
-      <MapView pickup={trip.pickup} dropoff={trip.dropoff} className="mb-5 h-56 rounded-2xl" />
+      <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} className="mb-5 h-56 rounded-2xl" />
 
       <Card className="mb-4">
         <TripStatusStepper status={trip.status} />
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="text-sm font-semibold">{counterparty.name} · ★ {counterparty.rating}</p>
-          <p className="text-sm text-ink-500">
-            {trip.categoryName}
-            {trip.participantRole === 'passenger' && ` · ${trip.vehicle.registrationNo}`}
-          </p>
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div>
+            <p className="text-sm font-semibold">{counterparty.name} · ★ {counterparty.rating}</p>
+            <p className="text-sm text-ink-500">
+              {trip.categoryName}
+              {trip.participantRole === 'passenger' && ` · ${trip.vehicle.registrationNo}`}
+            </p>
+          </div>
+          {trip.participantRole === 'passenger' && trip.status === 'completed' && (
+            <button
+              type="button"
+              aria-pressed={trip.driverIsFavorite}
+              disabled={favoriteBusy}
+              onClick={() => void toggleFavorite()}
+              className={`flex min-h-11 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors print:hidden ${trip.driverIsFavorite ? 'border-danger-600/40 bg-danger-600/5 text-danger-600' : 'border-border text-ink-900 hover:border-cholo-700'}`}
+            >
+              <span aria-hidden="true">{trip.driverIsFavorite ? '♥' : '♡'}</span>
+              {trip.driverIsFavorite ? 'Favourite' : 'Add to favourites'}
+            </button>
+          )}
         </div>
       </Card>
 
@@ -102,6 +135,9 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
 
       <Card className="mb-4 space-y-3">
         <div><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Pickup</p><p>{trip.pickup.address || 'Pickup location'}</p></div>
+        {trip.stops.map((stop) => (
+          <div key={stop.order}><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Stop {stop.order}</p><p>{stop.address || 'Pinned on the map'}</p></div>
+        ))}
         <div><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Dropoff</p><p>{trip.dropoff.address || 'Dropoff location'}</p></div>
         <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
           <div><p className="text-ink-500">Assigned</p><p>{formatDateTime(trip.timeline.assignedAt)}</p></div>
@@ -155,6 +191,23 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
           ))}
         </ol>
       </Card>
+
+      <div className="mt-4 text-center print:hidden">
+        {trip.reportedByMe ? (
+          <p className="text-sm text-ink-500">You reported this trip. Our safety team is reviewing it.</p>
+        ) : (
+          <button type="button" className="text-sm font-medium text-danger-600 hover:underline" onClick={() => setReportOpen(true)}>
+            Report {counterparty.name}
+          </button>
+        )}
+      </div>
+      <ReportDialog
+        open={reportOpen}
+        tripCode={trip.publicCode}
+        personName={counterparty.name}
+        onClose={() => setReportOpen(false)}
+        onReported={() => setTrip({ ...trip, reportedByMe: true })}
+      />
     </main>
   );
 }

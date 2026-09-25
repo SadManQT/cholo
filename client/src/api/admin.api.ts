@@ -178,3 +178,106 @@ export async function updateZone(id: string, input: Partial<Omit<ZoneInput, 'cit
 export async function deleteZone(id: string) {
   await apiClient.delete(`/admin/zones/${id}`);
 }
+
+export interface AdminPromo {
+  id: string;
+  code: string;
+  description: string | null;
+  promoType: 'percentage' | 'fixed_amount';
+  value: number;
+  maxDiscount: number | null;
+  minFare: number | null;
+  usageLimitTotal: number | null;
+  usageLimitPerUser: number | null;
+  firstRideOnly: boolean;
+  cityId: number | null;
+  categoryId: number | null;
+  validFrom: string;
+  validUntil: string | null;
+  isActive: boolean;
+  redemptions: number;
+  totalDiscount: number;
+}
+
+export type PromoInput = Omit<AdminPromo, 'id' | 'redemptions' | 'totalDiscount' | 'description' | 'cityId' | 'categoryId'> & {
+  description?: string;
+  cityId?: number | null;
+  categoryId?: number | null;
+  notifyRiders?: boolean;
+};
+
+export async function listPromos() {
+  return collection(await apiClient.get<ApiSuccess<AdminPromo[]>>('/admin/promos', { params: { limit: 100 } }));
+}
+
+export async function createPromo(input: PromoInput) {
+  const response = await apiClient.post<ApiSuccess<AdminPromo>>('/admin/promos', input);
+  return response.data.data;
+}
+
+export async function updatePromo(id: string, input: Partial<PromoInput>) {
+  const response = await apiClient.patch<ApiSuccess<AdminPromo>>(`/admin/promos/${id}`, input);
+  return response.data.data;
+}
+
+export interface SurgeRule {
+  id: string;
+  zoneId: string;
+  zoneName: string;
+  categoryId: number | null;
+  categoryName: string | null;
+  multiplier: number;
+  reason: 'demand' | 'weather' | 'event' | 'peak_hour';
+  startsAt: string;
+  endsAt: string | null;
+  isActive: boolean;
+  isLive: boolean;
+}
+
+export async function listSurge(includeEnded = false) {
+  return collection(await apiClient.get<ApiSuccess<SurgeRule[]>>('/admin/surge', { params: { includeEnded, limit: 100 } }));
+}
+
+export async function createSurge(input: { zoneId: string; categoryId?: number | null; multiplier: number; reason: SurgeRule['reason']; endsAt?: string | null }) {
+  const response = await apiClient.post<ApiSuccess<SurgeRule>>('/admin/surge', input);
+  return response.data.data;
+}
+
+export async function endSurge(id: string) {
+  await apiClient.post(`/admin/surge/${id}/end`);
+}
+
+export type ReportStatus = 'open' | 'investigating' | 'action_taken' | 'dismissed';
+
+export interface UserReport {
+  id: string;
+  category: 'safety' | 'harassment' | 'fraud' | 'behavior' | 'other';
+  description: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+  tripCode: string | null;
+  reporter: { id: number; name: string; phone: string };
+  reported: { id: number; name: string; phone: string; status: string; openReports: number };
+}
+
+export async function listReports(status?: ReportStatus) {
+  return collection(await apiClient.get<ApiSuccess<UserReport[]>>('/admin/reports', { params: { status, limit: 100 } }));
+}
+
+export async function updateReport(id: string, status: Exclude<ReportStatus, 'open'>, note?: string) {
+  await apiClient.patch(`/admin/reports/${id}`, { status, ...(note ? { note } : {}) });
+}
+
+export type ExportKind = 'trips' | 'payments' | 'withdrawals';
+
+/** Downloads through the authenticated client (a plain link can't carry the bearer token). */
+export async function downloadExport(kind: ExportKind, from: string, to: string) {
+  const response = await apiClient.get<Blob>(`/admin/exports/${kind}.csv`, { params: { from, to }, responseType: 'blob' });
+  const url = URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `cholo-${kind}-${from}-to-${to}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}

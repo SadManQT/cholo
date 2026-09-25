@@ -41,6 +41,12 @@ const DriverApplyPage = lazy(() => import('./pages/driver/DriverApplyPage').then
 const DriverDocumentsPage = lazy(() => import('./pages/driver/DriverDocumentsPage').then((module) => ({ default: module.DriverDocumentsPage })));
 const DriverVehiclesPage = lazy(() => import('./pages/driver/DriverVehiclesPage').then((module) => ({ default: module.DriverVehiclesPage })));
 const PaymentResultPage = lazy(() => import('./pages/passenger/PaymentResultPage').then((module) => ({ default: module.PaymentResultPage })));
+const SharedTripPage = lazy(() => import('./pages/shared/SharedTripPage').then((module) => ({ default: module.SharedTripPage })));
+const PromosAdminPage = lazy(() => import('./pages/admin/PromosAdminPage').then((module) => ({ default: module.PromosAdminPage })));
+const SurgePage = lazy(() => import('./pages/admin/SurgePage').then((module) => ({ default: module.SurgePage })));
+const ReportsPage = lazy(() => import('./pages/admin/ReportsPage').then((module) => ({ default: module.ReportsPage })));
+const StatementsPage = lazy(() => import('./pages/driver/StatementsPage').then((module) => ({ default: module.StatementsPage })));
+const StatementPage = lazy(() => import('./pages/driver/StatementPage').then((module) => ({ default: module.StatementPage })));
 const ZonesPage = lazy(() => import('./pages/admin/ZonesPage').then((module) => ({ default: module.ZonesPage })));
 
 function App() {
@@ -50,6 +56,7 @@ function App() {
         <Routes>
         {}
         <Route path="/welcome" element={<HomePage />} />
+        <Route path="/share/:token" element={<SharedTripPage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/register" element={<RegisterPage />} />
@@ -104,6 +111,8 @@ function App() {
           <Route path="trip" element={<DriverActiveTripPage />} />
           <Route path="earnings" element={<EarningsPage />} />
           <Route path="withdrawals" element={<WithdrawalsPage />} />
+          <Route path="statements" element={<StatementsPage />} />
+          <Route path="statements/:month" element={<StatementPage />} />
           <Route path="trips" element={<TripHistoryPage driverMode />} />
           <Route path="trips/:code" element={<TripDetailPage driverMode />} />
           <Route path="account" element={<ProfilePage driverMode />} />
@@ -125,6 +134,10 @@ function App() {
           <Route path="users" element={<UsersPage />} />
           <Route path="pricing" element={<PricingPage />} />
           <Route path="zones" element={<ZonesPage />} />
+          <Route path="promos" element={<PromosAdminPage />} />
+          <Route path="surge" element={<SurgePage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="account" element={<ProfilePage adminMode />} />
           <Route path="payouts" element={<PayoutsPage />} />
           <Route path="disputes" element={<DisputesPage />} />
           <Route path="sos" element={<SosBoardPage />} />

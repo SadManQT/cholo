@@ -1,0 +1,15 @@
+name: Keep the API awake
+
+# Render's free plan sleeps after 15 idle minutes (the next rider then waits ~50 s), and Supabase's free plan
+# pauses after a quiet week. /health touches both. GitHub may delay scheduled runs by a few minutes.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl --fail --silent --show-error --max-time 90 --retry 2 "${{ vars.API_HEALTH_URL || 'https://cholo-api-e1nr.onrender.com/health' }}"
