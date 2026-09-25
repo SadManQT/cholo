@@ -84,7 +84,8 @@ export function useGeolocation({ watch = false }: { watch?: boolean } = {}) {
         setState(stateForError(geolocationError));
         setError(geolocationError.message || 'Could not read your location.');
       },
-      GEO_OPTIONS,
+      // No timeout: a watch should wait for the next fix, not error every 12 s on a laptop without GPS.
+      { enableHighAccuracy: true, maximumAge: 5_000 },
     );
 
     return () => navigator.geolocation.clearWatch(watchId);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as driverApi from '../../api/driver.api';
 import * as tripsApi from '../../api/trips.api';
@@ -15,7 +15,9 @@ import { t } from '../../i18n';
 export function DriverHomePage() {
   const navigate = useNavigate();
   const { socket, connectionState } = useSocket();
-  const geolocation = useGeolocation();
+  const [watching, setWatching] = useState(false);
+  const geolocation = useGeolocation({ watch: watching });
+  const lastSentAt = useRef(0);
   const [status, setStatus] = useState<DriverStatus | null>(null);
   const [activeTrip, setActiveTrip] = useState<TripSummary | null>(null);
   const [offers, setOffers] = useState<RideOffer[]>([]);
@@ -152,6 +154,17 @@ export function DriverHomePage() {
     }
   }
 
+  // While online, follow the device and keep the server's dispatch position fresh (every ~10 s).
+  const isOnline = status?.availabilityStatus === 'online';
+  useEffect(() => setWatching(isOnline), [isOnline]);
+  useEffect(() => {
+    if (!isOnline || !socket || !geolocation.position) return;
+    const now = Date.now();
+    if (now - lastSentAt.current < 10_000) return;
+    lastSentAt.current = now;
+    socket.emit('location:update', geolocation.position);
+  }, [geolocation.position, isOnline, socket]);
+
   const mapPosition = useMemo(() => {
     if (geolocation.position) return geolocation.position;
     if (status?.currentLat != null && status.currentLng != null) {
@@ -173,7 +186,7 @@ export function DriverHomePage() {
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden">
       <ConnectionPill state={connectionState} />
-      <MapView user={mapPosition} className="h-full" />
+      <MapView driver={mapPosition} className="h-full" />
 
       <div className="absolute inset-x-3 top-3 z-[500] mx-auto max-w-xl space-y-3">
         <Card className="bg-surface/95 shadow-lg">

@@ -67,14 +67,16 @@ test('a malformed payload is dropped without touching the database', async () =>
   assert.equal(query.mock.callCount(), 0);
 });
 
-test('a driver with no active trip: pings are dropped (nothing to attach them to)', async () => {
+test('a driver with no active trip: the ping updates their dispatch position but is not broadcast', async () => {
   const query = mock.method(pool, 'query', async () => ({ rows: [] }));
   const socket = fakeSocket({ id: 42, roles: ['DRIVER'] });
   registerLocationHandler({}, socket);
 
   await emit(socket, { lat: 23.79, lng: 90.40 });
 
-  assert.equal(query.mock.callCount(), 1);
+  assert.equal(query.mock.callCount(), 2);
+  assert.match(query.mock.calls[1].arguments[0], /UPDATE driver_availability/);
+  assert.deepEqual(query.mock.calls[1].arguments[1].slice(0, 3), [42, 23.79, 90.40]);
   assert.equal(socket.toEmitCalls.length, 0);
 });
 
