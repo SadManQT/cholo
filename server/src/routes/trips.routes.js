@@ -3,16 +3,18 @@ import { Router } from 'express';
 import * as tripsController from '../controllers/trips.controller.js';
 import { auth, requireRole } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
-import { paymentMutationLimiter } from '../middlewares/rateLimit.js';
+import { paymentMutationLimiter, supportMutationLimiter } from '../middlewares/rateLimit.js';
 import {
   cancelTripSchema,
   completeTripSchema,
   payTripSchema,
   rateTripSchema,
+  reportTripSchema,
   sosSchema,
   tripCodeParamsSchema,
   tripListQuerySchema,
   tripMessageSchema,
+  tripStopParamsSchema,
 } from '../validators/trips.schema.js';
 
 const router = Router();
@@ -43,6 +45,19 @@ router.post(
   tripsController.triggerSos,
 );
 router.post(
+  '/:tripCode/report',
+  supportMutationLimiter,
+  validate(tripCodeParamsSchema, 'params'),
+  validate(reportTripSchema),
+  tripsController.report,
+);
+router.post(
+  '/:tripCode/share',
+  requireRole('PASSENGER'),
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.share,
+);
+router.post(
   '/:tripCode/rating',
   validate(tripCodeParamsSchema, 'params'),
   validate(rateTripSchema),
@@ -65,6 +80,12 @@ router.post(
   requireRole('DRIVER'),
   validate(tripCodeParamsSchema, 'params'),
   tripsController.markStarted,
+);
+router.post(
+  '/:tripCode/stops/:stopOrder/arrived',
+  requireRole('DRIVER'),
+  validate(tripStopParamsSchema, 'params'),
+  tripsController.arriveAtStop,
 );
 router.post(
   '/:tripCode/complete',

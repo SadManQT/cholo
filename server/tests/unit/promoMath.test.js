@@ -19,8 +19,8 @@ test('computeDiscount: never exceeds the fare itself, even with no maxDiscount',
   assert.equal(computeDiscount({ promoType: 'fixed_amount', value: 1000, maxDiscount: null }, 200), 200);
 });
 
-test('computeDiscount: rounds to 2dp', () => {
-  assert.equal(computeDiscount({ promoType: 'percentage', value: 33.333, maxDiscount: null }, 100), 33.33);
+test('computeDiscount: rounds down to whole taka', () => {
+  assert.equal(computeDiscount({ promoType: 'percentage', value: 33.333, maxDiscount: null }, 100), 33);
 });
 
 function basePromo(overrides = {}) {

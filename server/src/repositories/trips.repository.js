@@ -20,7 +20,8 @@ const TRIP_FOR_UPDATE_COLUMNS = `
   rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
   rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
   rr.city_id AS "cityId", rr.category_id AS "categoryId",
-  rr.payment_intent AS "paymentIntent", rr.promo_code_id AS "promoCodeId"
+  rr.payment_intent AS "paymentIntent", rr.promo_code_id AS "promoCodeId",
+  rr.surge_multiplier::float8 AS "surgeMultiplier", rr.stops
 `;
 
 export async function findByCodeForUpdate(tripCode, client) {
@@ -163,7 +164,15 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
             tc.cancelled_at AS "cancelledAt",
             r.receipt_no AS "receiptNo", r.issued_at AS "receiptIssuedAt",
             (SELECT jsonb_build_object('score', rt.score, 'comment', rt.comment)
-             FROM ratings rt WHERE rt.trip_id = t.id AND rt.rater_id = $2) AS "myRating"
+             FROM ratings rt WHERE rt.trip_id = t.id AND rt.rater_id = $2) AS "myRating",
+            (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                      'order', ts.stop_order, 'lat', ts.lat::float8, 'lng', ts.lng::float8,
+                      'address', ts.address_text, 'arrivedAt', ts.arrived_at) ORDER BY ts.stop_order), '[]'::jsonb)
+             FROM trip_stops ts WHERE ts.trip_id = t.id) AS stops,
+            EXISTS (SELECT 1 FROM favorite_drivers fd
+                    WHERE fd.passenger_id = $2 AND fd.driver_id = t.driver_id) AS "driverIsFavorite",
+            EXISTS (SELECT 1 FROM user_reports ur
+                    WHERE ur.trip_id = t.id AND ur.reporter_id = $2) AS "reportedByMe"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id
@@ -346,5 +355,57 @@ export async function markPaid(tripId, client) {
     [tripId],
   );
 
+  return rows[0];
+}
+
+export async function insertStops(tripId, stops, client) {
+  for (const [index, stop] of stops.entries()) {
+    await client.query(
+      `INSERT INTO trip_stops (trip_id, stop_order, lat, lng, address_text) VALUES ($1, $2, $3, $4, $5)`,
+      [tripId, index + 1, stop.lat, stop.lng, stop.address ?? null],
+    );
+  }
+}
+
+export async function markStopArrived(tripId, stopOrder, client) {
+  const { rows } = await client.query(
+    `UPDATE trip_stops SET arrived_at = now()
+     WHERE trip_id = $1 AND stop_order = $2 AND arrived_at IS NULL
+     RETURNING stop_order AS "order", arrived_at AS "arrivedAt"`,
+    [tripId, stopOrder],
+  );
+  return rows[0];
+}
+
+// What a family member sees through a share link: no phone numbers, no passenger details.
+export async function findSharedView(tripId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT t.trip_code AS "tripCode", t.status, t.assigned_at AS "assignedAt",
+            t.started_at AS "startedAt", t.completed_at AS "completedAt",
+            GREATEST(t.completed_at, tc.cancelled_at) AS "endedAt",
+            split_part(du.full_name, ' ', 1) AS "driverFirstName", du.photo_url AS "driverPhotoUrl",
+            dp.rating_avg AS "driverRating",
+            v.registration_no AS "registrationNo", v.brand, v.model, v.color,
+            rr.pickup_address AS "pickupAddress", rr.dropoff_address AS "dropoffAddress",
+            rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
+            rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
+            loc.lat, loc.lng, loc.at AS "locationAt"
+     FROM trips t
+     JOIN ride_requests rr ON rr.id = t.request_id
+     JOIN users du ON du.id = t.driver_id
+     JOIN driver_profiles dp ON dp.user_id = t.driver_id
+     JOIN vehicles v ON v.id = t.vehicle_id
+     JOIN driver_availability da ON da.driver_id = t.driver_id
+     LEFT JOIN trip_cancellations tc ON tc.trip_id = t.id
+     LEFT JOIN LATERAL (
+       SELECT COALESCE(p.lat, da.current_lat)::float8 AS lat, COALESCE(p.lng, da.current_lng)::float8 AS lng,
+              COALESCE(p.recorded_at, da.last_ping_at) AS at
+       FROM (SELECT 1) one
+       LEFT JOIN LATERAL (SELECT lat, lng, recorded_at FROM trip_location_pings
+                          WHERE trip_id = t.id ORDER BY recorded_at DESC LIMIT 1) p ON true
+     ) loc ON t.status IN ('assigned', 'arrived', 'in_progress')
+     WHERE t.id = $1`,
+    [tripId],
+  );
   return rows[0];
 }

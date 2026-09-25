@@ -20,3 +20,8 @@ export const cancelRequest = asyncHandler(async (request, response) => {
   const data = await ridesService.cancelRequest(request.user.id, request.params.publicId);
   response.json({ success: true, data });
 });
+
+export const listActiveRequests = asyncHandler(async (request, response) => {
+  const data = await ridesService.listActiveRequests(request.user.id);
+  response.json({ success: true, data });
+});

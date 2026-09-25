@@ -13,7 +13,8 @@ test('findEligibleDrivers filters by category, online status, and gender when wo
     assert.match(sql, /da\.status = 'online'/);
     assert.match(sql, /v\.category_id = \$1/);
     assert.match(sql, /u\.gender = 'female'/);
-    assert.deepEqual(values, [3, true]);
+    assert.match(sql, /NOT EXISTS \(SELECT 1 FROM ride_offers prior/);
+    assert.deepEqual(values, [3, true, null, null]);
     return { rows: [] };
   });
 
@@ -36,8 +37,8 @@ test('insertOffers inserts one row per offer with ON CONFLICT DO NOTHING and ret
   assert.equal(query.mock.callCount(), 2);
   assert.match(query.mock.calls[0].arguments[0], /ON CONFLICT \(request_id, driver_id\) DO NOTHING/);
   assert.match(query.mock.calls[0].arguments[0], /RETURNING id, driver_id AS "driverId"/);
-  assert.deepEqual(query.mock.calls[0].arguments[1], [38, 1, 0.5]);
-  assert.deepEqual(query.mock.calls[1].arguments[1], [38, 2, 1.2]);
+  assert.deepEqual(query.mock.calls[0].arguments[1], [38, 1, 0.5, 1]);
+  assert.deepEqual(query.mock.calls[1].arguments[1], [38, 2, 1.2, 1]);
   assert.deepEqual(inserted, [{ id: 1, driverId: 1 }, { id: 2, driverId: 2 }]);
 });
 

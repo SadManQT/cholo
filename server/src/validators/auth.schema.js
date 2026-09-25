@@ -9,6 +9,12 @@ export const registerSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password must be 72 characters or fewer'),
   gender: z.enum(['female', 'male', 'other']).optional(),
+  referralCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{4,20}$/, 'Referral codes are letters and numbers only').optional(),
+});
+
+export const twoFactorLoginSchema = z.object({
+  challengeToken: z.string().min(20).max(2000),
+  code: z.string().regex(/^[0-9]{6}$/, 'Enter the 6-digit code'),
 });
 
 export const verifyOtpSchema = z.object({

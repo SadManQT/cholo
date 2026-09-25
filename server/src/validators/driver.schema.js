@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { isOwnFileUrl } from '../services/storage.service.js';
 import { dhakaDate } from '../utils/dhakaDate.js';
 
 const isoDate = z.string().date();
@@ -17,7 +18,7 @@ const documentDates = (schema) => schema.refine(
 );
 
 const documentFields = {
-  fileUrl: z.string().url().max(2048),
+  fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form'),
   docNumber: z.string().trim().min(1).max(60).optional(),
   issueDate: isoDate.optional(),
   expiryDate: isoDate.optional(),
@@ -91,4 +92,8 @@ export const createPayoutAccountSchema = z.object({
 export const createWithdrawalSchema = z.object({
   amount: z.number().min(50),
   payoutAccountId: z.coerce.number().int().positive(),
+});
+
+export const statementParamsSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM'),
 });

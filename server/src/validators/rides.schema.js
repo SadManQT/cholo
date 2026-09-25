@@ -7,30 +7,39 @@ const coordinate = z.object({
 
 const smallintId = z.number().int().positive().max(32_767);
 
+const addressedCoordinate = coordinate.extend({
+  address: z.string().trim().min(3).max(255).optional(),
+});
+
+const MAX_STOPS = 2;
+const stopsList = z.array(addressedCoordinate).max(MAX_STOPS, `Add at most ${MAX_STOPS} stops`).default([]);
+
 export const quoteSchema = z.object({
   cityId: smallintId,
   categoryId: smallintId,
   pickup: coordinate,
   dropoff: coordinate,
-});
-
-const addressedCoordinate = coordinate.extend({
-  address: z.string().trim().min(3).max(255).optional(),
+  stops: stopsList,
 });
 
 const MIN_SCHEDULE_LEAD_MINUTES = 15;
+const MAX_SCHEDULE_DAYS = 7;
 
 export const createRideRequestSchema = z.object({
   cityId: smallintId,
   categoryId: smallintId,
   pickup: addressedCoordinate,
   dropoff: addressedCoordinate,
+  stops: stopsList,
   paymentIntent: z.enum(['cash', 'wallet', 'bkash', 'nagad', 'card']),
   promoCode: z.string().trim().min(1).max(30).transform((value) => value.toUpperCase()).optional(),
   womenOnly: z.boolean().default(false),
   scheduledFor: z.string().datetime({ offset: true }).refine(
     (value) => new Date(value).getTime() >= Date.now() + MIN_SCHEDULE_LEAD_MINUTES * 60_000,
-    `scheduledFor must be at least ${MIN_SCHEDULE_LEAD_MINUTES} minutes from now`,
+    `Schedule at least ${MIN_SCHEDULE_LEAD_MINUTES} minutes ahead`,
+  ).refine(
+    (value) => new Date(value).getTime() <= Date.now() + MAX_SCHEDULE_DAYS * 86_400_000,
+    `Schedule at most ${MAX_SCHEDULE_DAYS} days ahead`,
   ).optional(),
 });
 

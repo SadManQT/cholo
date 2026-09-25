@@ -1,10 +1,15 @@
 import { pool } from '../config/db.js';
 
-export async function findEligibleDrivers({ categoryId, womenOnly }, client = pool) {
+export async function findEligibleDrivers(
+  { categoryId, womenOnly, requestId = null, passengerId = null },
+  client = pool,
+) {
   const { rows } = await client.query(
     `SELECT da.driver_id AS "driverId",
             da.current_lat::float8 AS "currentLat",
-            da.current_lng::float8 AS "currentLng"
+            da.current_lng::float8 AS "currentLng",
+            EXISTS (SELECT 1 FROM favorite_drivers fd
+                    WHERE fd.passenger_id = $4 AND fd.driver_id = da.driver_id) AS "isFavorite"
      FROM driver_availability da
      JOIN driver_profiles dp ON dp.user_id = da.driver_id
      JOIN vehicles v ON v.id = dp.active_vehicle_id
@@ -13,22 +18,25 @@ export async function findEligibleDrivers({ categoryId, womenOnly }, client = po
        AND da.current_lat IS NOT NULL
        AND da.current_lng IS NOT NULL
        AND v.category_id = $1
-       AND ($2 = false OR u.gender = 'female')`,
-    [categoryId, womenOnly],
+       AND ($2 = false OR u.gender = 'female')
+       AND u.status = 'active'
+       AND NOT EXISTS (SELECT 1 FROM ride_offers prior
+                       WHERE prior.request_id = $3 AND prior.driver_id = da.driver_id)`,
+    [categoryId, womenOnly, requestId, passengerId],
   );
 
   return rows;
 }
 
-export async function insertOffers(requestId, offers, client = pool) {
+export async function insertOffers(requestId, offers, client = pool, round = 1) {
   const inserted = [];
   for (const offer of offers) {
     const { rows } = await client.query(
       `INSERT INTO ride_offers (request_id, driver_id, round, driver_distance_km)
-       VALUES ($1, $2, 1, $3)
+       VALUES ($1, $2, $4, $3)
        ON CONFLICT (request_id, driver_id) DO NOTHING
        RETURNING id, driver_id AS "driverId"`,
-      [requestId, offer.driverId, offer.distanceKm],
+      [requestId, offer.driverId, offer.distanceKm, round],
     );
     if (rows[0]) inserted.push(rows[0]);
   }
@@ -110,4 +118,32 @@ export async function withdrawPendingOffersForRequests(requestIds, client = pool
      WHERE request_id = ANY($1::bigint[]) AND response = 'pending'`,
     [requestIds],
   );
+}
+
+export async function timeOutStalePending(offerTimeoutSeconds, client = pool) {
+  const { rowCount } = await client.query(
+    `UPDATE ride_offers SET response = 'timed_out', responded_at = now()
+     WHERE response = 'pending' AND offered_at + ($1 * INTERVAL '1 second') <= now()`,
+    [offerTimeoutSeconds],
+  );
+  return rowCount;
+}
+
+// Searching requests nobody is currently looking at: no pending offer left, and the last round
+// (if any) has had its full answer window.
+export async function findRequestsNeedingRedispatch(offerTimeoutSeconds, client = pool) {
+  const { rows } = await client.query(
+    `SELECT rr.id, rr.public_id AS "publicId", rr.passenger_id AS "passengerId",
+            rr.category_id AS "categoryId", rr.women_only AS "womenOnly",
+            rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
+            COALESCE(MAX(ro.round), 0)::int AS "lastRound"
+     FROM ride_requests rr
+     LEFT JOIN ride_offers ro ON ro.request_id = rr.id
+     WHERE rr.status = 'searching'
+     GROUP BY rr.id
+     HAVING COUNT(*) FILTER (WHERE ro.response = 'pending') = 0
+        AND COALESCE(MAX(ro.offered_at), rr.requested_at) + ($1 * INTERVAL '1 second') <= now()`,
+    [offerTimeoutSeconds],
+  );
+  return rows;
 }

@@ -21,13 +21,13 @@ test('quote computes base + distance + time + booking fee for a normal trip', ()
   const fare = quote({ tariff: carTariff, distanceKm: 9.21, durationMin: 9, surgeMultiplier: 1 });
 
   assert.equal(fare.baseFare, 60);
-  assert.equal(fare.distanceFare, 202.62);
+  assert.equal(fare.distanceFare, 202.5);
   assert.equal(fare.timeFare, 22.5);
   assert.equal(fare.waitingFare, 0);
   assert.equal(fare.surgeAmount, 0);
   assert.equal(fare.bookingFee, 10);
   assert.equal(fare.discountAmount, 0);
-  assert.equal(fare.totalFare, 295.12);
+  assert.equal(fare.totalFare, 295);
   assertIdentity(fare);
 });
 
@@ -44,9 +44,11 @@ test('quote floors the ride cost at minimum_fare for a short trip, folding the t
 test('quote applies surge as an amount on top of the (possibly floored) ride cost, not on booking fee', () => {
   const fare = quote({ tariff: carTariff, distanceKm: 9.21, durationMin: 9, surgeMultiplier: 1.5 });
 
-  const rideCost = fare.baseFare + fare.distanceFare + fare.timeFare;
-  assert.equal(fare.surgeAmount, Math.round(rideCost * 0.5 * 100) / 100);
-  assert.equal(fare.totalFare, Math.round((rideCost * 1.5 + fare.bookingFee) * 100) / 100);
+  const unsurged = quote({ tariff: carTariff, distanceKm: 9.21, durationMin: 9, surgeMultiplier: 1 });
+  const exactRideCost = 60 + 202.62 + 22.5;
+  assert.equal(fare.surgeAmount, Math.round(exactRideCost * 0.5 * 100) / 100);
+  assert.equal(fare.totalFare, Math.round(exactRideCost * 1.5 + fare.bookingFee));
+  assert.ok(fare.totalFare > unsurged.totalFare);
   assertIdentity(fare);
 });
 
@@ -75,7 +77,7 @@ test('quote bills only waiting time beyond free_wait_minutes, at waiting_per_min
   });
 
   assert.equal(fare.waitingFare, 12);
-  assert.equal(fare.totalFare, 307.12);
+  assert.equal(fare.totalFare, 307);
   assertIdentity(fare);
 });
 
@@ -94,4 +96,15 @@ test('quote treats a tariff with no waiting fields (waitingPerMin/freeWaitMinute
   assert.equal(fare.waitingFare, 0);
   assert.ok(!Number.isNaN(fare.totalFare));
   assertIdentity(fare);
+});
+
+test('quote always returns a whole-taka total and keeps the breakdown adding up', () => {
+  for (const distanceKm of [0, 0.37, 3.33, 9.21, 17.77]) {
+    for (const surgeMultiplier of [1, 1.25, 1.7]) {
+      const fare = quote({ tariff: carTariff, distanceKm, durationMin: 7, surgeMultiplier });
+      assert.equal(fare.totalFare, Math.round(fare.totalFare));
+      assert.ok(fare.distanceFare >= 0 && fare.baseFare >= 0);
+      assertIdentity(fare);
+    }
+  }
 });

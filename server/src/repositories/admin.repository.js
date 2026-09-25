@@ -260,3 +260,18 @@ export async function listVehicleApplications({ status, limit, offset }, client 
   );
   return rows;
 }
+
+export async function getTwoFactor(userId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT totp_secret AS secret, totp_enabled_at AS "enabledAt" FROM admin_profiles WHERE user_id = $1`,
+    [userId],
+  );
+  return rows[0];
+}
+
+export async function setTwoFactor(userId, { secret, enabledAt }, client = pool) {
+  await client.query(
+    `UPDATE admin_profiles SET totp_secret = $2, totp_enabled_at = $3 WHERE user_id = $1`,
+    [userId, secret, enabledAt],
+  );
+}

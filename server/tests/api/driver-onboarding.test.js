@@ -135,7 +135,7 @@ async function uploadDriverDocuments(driverToken) {
       accessToken: driverToken,
       body: {
         docType,
-        fileUrl: `https://example.com/${docType}.jpg`,
+        fileUrl: `private://documents/${docType}.jpg`,
         issueDate: '2025-01-01',
         expiryDate: '2035-01-01',
       },
@@ -168,7 +168,7 @@ async function uploadVehicleDocuments(driverToken, vehicleId) {
       accessToken: driverToken,
       body: {
         docType,
-        fileUrl: `https://example.com/vehicle-${docType}.jpg`,
+        fileUrl: `private://documents/vehicle-${docType}.jpg`,
         issueDate: '2025-01-01',
         expiryDate: '2035-01-01',
       },
@@ -238,7 +238,7 @@ test('driver document uploads preserve history and reject invalid date ranges', 
     accessToken: driver.driverToken,
     body: {
       docType: 'license',
-      fileUrl: 'https://example.com/license-v1.jpg',
+      fileUrl: 'private://documents/license-v1.jpg',
       issueDate: '2025-01-01',
       expiryDate: '2035-01-01',
     },
@@ -247,7 +247,7 @@ test('driver document uploads preserve history and reject invalid date ranges', 
     accessToken: driver.driverToken,
     body: {
       docType: 'license',
-      fileUrl: 'https://example.com/license-v2.jpg',
+      fileUrl: 'private://documents/license-v2.jpg',
       issueDate: '2026-01-01',
       expiryDate: '2036-01-01',
     },
@@ -264,7 +264,7 @@ test('driver document uploads preserve history and reject invalid date ranges', 
     accessToken: driver.driverToken,
     body: {
       docType: 'nid',
-      fileUrl: 'https://example.com/nid.jpg',
+      fileUrl: 'private://documents/nid.jpg',
       issueDate: '2035-01-01',
       expiryDate: '2030-01-01',
     },
@@ -352,7 +352,7 @@ test('admin rejection requires a reason, writes an audit row, and a re-upload re
 
   const upload = await request('POST', '/driver/documents', {
     accessToken: driver.driverToken,
-    body: { docType: 'nid', fileUrl: 'https://example.com/corrected-nid.jpg' },
+    body: { docType: 'nid', fileUrl: 'private://documents/corrected-nid.jpg' },
   });
   assert.equal(upload.status, 201);
 

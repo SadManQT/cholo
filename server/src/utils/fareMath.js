@@ -20,12 +20,20 @@ export function quote({ tariff, distanceKm, durationMin, surgeMultiplier = 1, wa
   }
 
   const surgeAmount = round2(rideCost * (surgeMultiplier - 1));
-  const totalFare = round2(
+  const exactTotal = round2(
     baseFare + distanceFare + timeFare + waitingFare + surgeAmount + bookingFee - discountAmount,
   );
 
+  // Riders pay whole taka. The rounding difference (at most ±0.50) goes into a fare line so the
+  // breakdown still adds up to the total (chk_fare_identity).
+  const totalFare = Math.round(exactTotal);
+  const roundingAdjustment = round2(totalFare - exactTotal);
+  let adjustedBaseFare = baseFare;
+  if (distanceFare + roundingAdjustment >= 0) distanceFare = round2(distanceFare + roundingAdjustment);
+  else adjustedBaseFare = round2(baseFare + roundingAdjustment);
+
   return {
-    baseFare,
+    baseFare: adjustedBaseFare,
     distanceFare,
     timeFare,
     waitingFare,

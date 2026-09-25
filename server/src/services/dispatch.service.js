@@ -11,31 +11,77 @@ import { formatShortName } from '../utils/formatName.js';
 import { haversineDistanceKm } from '../utils/haversine.js';
 
 const DISPATCH_RADIUS_KM = 5;
+const MAX_DISPATCH_RADIUS_KM = 10;
+const RADIUS_STEP_KM = 2.5;
 
-const OFFER_TIMEOUT_SECONDS = 15;
+export const OFFER_TIMEOUT_SECONDS = 15;
 
-export async function fanOutOffers({ requestId, categoryId, pickupLat, pickupLng, womenOnly }, client) {
-  const candidates = await offersRepo.findEligibleDrivers({ categoryId, womenOnly }, client);
+function radiusForRound(round) {
+  return Math.min(DISPATCH_RADIUS_KM + RADIUS_STEP_KM * (round - 1), MAX_DISPATCH_RADIUS_KM);
+}
 
-  const offers = candidates
+// Round 1 goes to the rider's favourite drivers alone when any are nearby; if none of them
+// accepts, the re-dispatch sweep offers the ride to everyone else in the next round.
+export async function fanOutOffers(
+  { requestId, passengerId = null, categoryId, pickupLat, pickupLng, womenOnly, round = 1 },
+  client,
+) {
+  const candidates = await offersRepo.findEligibleDrivers({ categoryId, womenOnly, requestId, passengerId }, client);
+  const radiusKm = radiusForRound(round);
+
+  let offers = candidates
     .map((driver) => ({
       driverId: driver.driverId,
+      isFavorite: Boolean(driver.isFavorite),
       distanceKm: Math.round(
         haversineDistanceKm(pickupLat, pickupLng, driver.currentLat, driver.currentLng) * 100,
       ) / 100,
     }))
-    .filter((offer) => offer.distanceKm <= DISPATCH_RADIUS_KM)
+    .filter((offer) => offer.distanceKm <= radiusKm)
     .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  if (round === 1 && offers.some((offer) => offer.isFavorite)) {
+    offers = offers.filter((offer) => offer.isFavorite);
+  }
 
   if (offers.length === 0) return [];
 
-  const inserted = await offersRepo.insertOffers(requestId, offers, client);
+  const inserted = await offersRepo.insertOffers(requestId, offers, client, round);
 
   return inserted.map((row) => ({
     offerId: row.id,
     driverId: row.driverId,
     distanceKm: offers.find((offer) => String(offer.driverId) === String(row.driverId))?.distanceKm,
   }));
+}
+
+// Runs every few seconds: expires unanswered offers, then offers still-searching requests to
+// drivers who haven't seen them yet, widening the radius each round. The request-expiry job
+// still ends the search after REQUEST_EXPIRY_MINUTES.
+export async function redispatchStaleRequests() {
+  await offersRepo.timeOutStalePending(OFFER_TIMEOUT_SECONDS);
+  const requests = await offersRepo.findRequestsNeedingRedispatch(OFFER_TIMEOUT_SECONDS);
+  let offered = 0;
+
+  for (const request of requests) {
+    const newOffers = await withTransaction(async (client) => {
+      const locked = await ridesRepo.findForUpdate(request.id, client);
+      if (locked?.status !== 'searching') return [];
+      return fanOutOffers({
+        requestId: request.id,
+        passengerId: request.passengerId,
+        categoryId: request.categoryId,
+        pickupLat: request.pickupLat,
+        pickupLng: request.pickupLng,
+        womenOnly: request.womenOnly,
+        round: request.lastRound + 1,
+      }, client);
+    });
+    broadcastNewOffers(newOffers, request.publicId);
+    offered += newOffers.length;
+  }
+
+  return offered;
 }
 
 export function broadcastNewOffers(offers, requestPublicId) {
@@ -115,6 +161,7 @@ async function acceptOffer(driverId, requestId, offerId, requestPassengerId) {
         driverId,
         vehicleId: availability.activeVehicleId,
       }, client);
+      if (request.stops?.length) await tripsRepo.insertStops(insertedTrip.id, request.stops, client);
 
       await driversRepo.updateAvailability(driverId, { status: 'on_trip' }, client);
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import * as driverController from '../controllers/driver.controller.js';
 import { auth, requireRole } from '../middlewares/auth.js';
+import { signPrivateFiles } from '../middlewares/signPrivateFiles.js';
 import { validate } from '../middlewares/validate.js';
 import {
   applyDriverSchema,
@@ -12,6 +13,7 @@ import {
   createVehicleSchema,
   createWithdrawalSchema,
   earningsQuerySchema,
+  statementParamsSchema,
   idParamsSchema,
   respondToOfferSchema,
   updateVehicleSchema,
@@ -21,6 +23,7 @@ import { walletTransactionsQuerySchema } from '../validators/wallet.schema.js';
 const router = Router();
 
 router.use(auth);
+router.use(signPrivateFiles);
 router.post('/apply', validate(applyDriverSchema), driverController.apply);
 
 router.use(requireRole('DRIVER'));
@@ -66,6 +69,8 @@ router.post(
 );
 
 router.get('/earnings', validate(earningsQuerySchema, 'query'), driverController.getEarnings);
+router.get('/statements', driverController.listStatements);
+router.get('/statements/:month', validate(statementParamsSchema, 'params'), driverController.getStatement);
 
 router.get('/payout-accounts', driverController.listPayoutAccounts);
 router.post('/payout-accounts', validate(createPayoutAccountSchema), driverController.addPayoutAccount);

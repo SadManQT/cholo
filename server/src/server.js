@@ -3,6 +3,8 @@ import { pool } from './config/db.js';
 import { env } from './config/env.js';
 import { startDocumentExpiryJob } from './jobs/documentExpiry.job.js';
 import { startExpireRequestsJob } from './jobs/expireRequests.job.js';
+import { startRedispatchJob } from './jobs/redispatch.job.js';
+import { startScheduledRidesJob } from './jobs/scheduledRides.job.js';
 import { startSuspensionsJob } from './jobs/suspensions.job.js';
 import { attachSocketServer } from './sockets/index.js';
 
@@ -12,7 +14,10 @@ const server = app.listen(env.PORT, () => {
 
 const io = attachSocketServer(server);
 
-const jobs = [startExpireRequestsJob(), startSuspensionsJob(), startDocumentExpiryJob()];
+const jobs = [
+  startExpireRequestsJob(), startSuspensionsJob(), startDocumentExpiryJob(),
+  startRedispatchJob(), startScheduledRidesJob(),
+];
 
 let isShuttingDown = false;
 

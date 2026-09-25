@@ -1,11 +1,22 @@
 import { Router } from 'express';
 
 import * as adminController from '../controllers/admin.controller.js';
+import * as marketplaceController from '../controllers/marketplace.controller.js';
 import { auth, requireRole } from '../middlewares/auth.js';
+import { signPrivateFiles } from '../middlewares/signPrivateFiles.js';
 import { validate } from '../middlewares/validate.js';
 import { adminMutationLimiter } from '../middlewares/rateLimit.js';
 import {
   auditLogQuerySchema,
+  createPromoSchema,
+  createSurgeSchema,
+  exportParamsSchema,
+  exportQuerySchema,
+  promoListQuerySchema,
+  reportQueueQuerySchema,
+  surgeListQuerySchema,
+  updatePromoSchema,
+  updateReportSchema,
   disputeQueueQuerySchema,
   driverQueueQuerySchema,
   pricingRulesQuerySchema,
@@ -33,6 +44,7 @@ import { ticketMessageSchema } from '../validators/support.schema.js';
 const router = Router();
 
 router.use(auth, requireRole('ADMIN'));
+router.use(signPrivateFiles);
 router.get('/stats', validate(statsQuerySchema, 'query'), adminController.getStats);
 router.get('/drivers', validate(driverQueueQuerySchema, 'query'), adminController.listDrivers);
 router.get('/vehicles', validate(vehicleQueueQuerySchema, 'query'), adminController.listVehicles);
@@ -151,6 +163,30 @@ router.patch(
 router.post(
   '/support/tickets/:id/messages', adminMutationLimiter,
   validate(idParamsSchema, 'params'), validate(ticketMessageSchema), adminController.addSupportMessage,
+);
+
+router.get('/promos', validate(promoListQuerySchema, 'query'), marketplaceController.listPromos);
+router.post('/promos', adminMutationLimiter, validate(createPromoSchema), marketplaceController.createPromo);
+router.patch(
+  '/promos/:id', adminMutationLimiter,
+  validate(idParamsSchema, 'params'), validate(updatePromoSchema), marketplaceController.updatePromo,
+);
+
+router.get('/surge', validate(surgeListQuerySchema, 'query'), marketplaceController.listSurge);
+router.post('/surge', adminMutationLimiter, validate(createSurgeSchema), marketplaceController.createSurge);
+router.post(
+  '/surge/:id/end', adminMutationLimiter, validate(idParamsSchema, 'params'), marketplaceController.endSurge,
+);
+
+router.get('/reports', validate(reportQueueQuerySchema, 'query'), marketplaceController.listReports);
+router.patch(
+  '/reports/:id', adminMutationLimiter,
+  validate(idParamsSchema, 'params'), validate(updateReportSchema), marketplaceController.updateReport,
+);
+
+router.get(
+  '/exports/:kind.csv',
+  validate(exportParamsSchema, 'params'), validate(exportQuerySchema, 'query'), marketplaceController.exportCsv,
 );
 
 export default router;
