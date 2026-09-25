@@ -6,6 +6,7 @@
     { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] }
   ],
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://cholo-api-e1nr.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
