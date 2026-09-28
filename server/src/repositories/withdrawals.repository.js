@@ -20,7 +20,7 @@ export async function listForDriver(driverId, { page, limit }, client = pool) {
   const { rows } = await client.query(
     `SELECT w.id, w.public_id AS "publicId", w.amount, w.fee, w.status,
             w.rejection_reason AS "rejectionReason", w.requested_at AS "requestedAt",
-            w.processed_at AS "processedAt",
+            w.processed_at AS "processedAt", w.gateway_ref AS "payoutReference",
             pa.account_type AS "accountType", pa.account_no_masked AS "accountNoMasked",
             count(*) OVER()::int AS "totalCount"
      FROM withdrawals w
@@ -53,6 +53,31 @@ export async function markApproved(withdrawalId, adminId, client) {
      WHERE id = $1
      RETURNING id, status, processed_at AS "processedAt"`,
     [withdrawalId, adminId],
+  );
+
+  return rows[0];
+}
+
+/** Finance sent the money: approved → paid, with the bKash/Nagad/bank transaction reference if given. */
+export async function markPaid(withdrawalId, adminId, reference, client) {
+  const { rows } = await client.query(
+    `UPDATE withdrawals SET status = 'paid', processed_by = $2, processed_at = now(), gateway_ref = $3
+     WHERE id = $1
+     RETURNING id, status, processed_at AS "processedAt", gateway_ref AS "payoutReference"`,
+    [withdrawalId, adminId, reference ?? null],
+  );
+
+  return rows[0];
+}
+
+/** The payout bounced (wrong number, closed account): approved → failed; the caller returns the money. */
+export async function markFailed(withdrawalId, adminId, reason, client) {
+  const { rows } = await client.query(
+    `UPDATE withdrawals
+     SET status = 'failed', processed_by = $2, processed_at = now(), rejection_reason = $3
+     WHERE id = $1
+     RETURNING id, status, processed_at AS "processedAt"`,
+    [withdrawalId, adminId, reason],
   );
 
   return rows[0];

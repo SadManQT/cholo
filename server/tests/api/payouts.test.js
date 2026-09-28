@@ -504,3 +504,72 @@ test('POST /admin/withdrawals/:id/approve requires ADMIN role, not just any auth
   assert.equal(response.status, 403);
   assert.equal((await response.json()).error.code, 'FORBIDDEN_ROLE');
 });
+
+async function approvedWithdrawal(t, amount = 50) {
+  const { driver, walletBalance } = await createDriverWithBalance(t);
+  const account = await createPayoutAccount(driver.accessToken);
+  const requested = await request('POST', '/driver/withdrawals', { accessToken: driver.accessToken, body: { amount, payoutAccountId: account.id } });
+  const { id } = (await requested.json()).data;
+  const financeAdmin = await createAdmin('finance');
+  assert.equal((await request('POST', `/admin/withdrawals/${id}/approve`, { accessToken: financeAdmin.accessToken })).status, 200);
+  return { driver, walletBalance, id, financeAdmin };
+}
+
+const balanceOf = async (userId) => Number((await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [userId])).rows[0].balance);
+const titlesFor = async (userId) => (await pool.query(`SELECT title FROM notifications WHERE user_id = $1`, [userId])).rows.map((row) => row.title);
+
+test('an approved withdrawal is marked paid with its payout reference; the driver is told at each step', async (t) => {
+  const { driver, walletBalance, id, financeAdmin } = await approvedWithdrawal(t);
+  const paid = await request('POST', `/admin/withdrawals/${id}/paid`, { accessToken: financeAdmin.accessToken, body: { reference: 'BKX9A1' } });
+  assert.equal(paid.status, 200);
+  assert.equal((await paid.json()).data.status, 'paid');
+
+  const history = (await (await request('GET', '/driver/withdrawals', { accessToken: driver.accessToken })).json()).data;
+  assert.equal(history[0].status, 'paid');
+  assert.equal(history[0].payoutReference, 'BKX9A1');
+  assert.equal(await balanceOf(driver.userId), Math.round((walletBalance - 50) * 100) / 100, 'the money stays out of the wallet');
+  const titles = await titlesFor(driver.userId);
+  assert.ok(titles.includes('Withdrawal approved') && titles.includes('Withdrawal paid'));
+
+  const again = await request('POST', `/admin/withdrawals/${id}/paid`, { accessToken: financeAdmin.accessToken, body: {} });
+  assert.equal(again.status, 409);
+  assert.equal((await again.json()).error.code, 'WITHDRAWAL_NOT_APPROVED');
+});
+
+test('a failed payout returns the money to the driver exactly once', async (t) => {
+  const { driver, walletBalance, id, financeAdmin } = await approvedWithdrawal(t);
+  const failed = await request('POST', `/admin/withdrawals/${id}/failed`, {
+    accessToken: financeAdmin.accessToken, body: { reason: 'bKash number is not registered' },
+  });
+  assert.equal(failed.status, 200);
+  assert.equal((await failed.json()).data.status, 'failed');
+  assert.equal(await balanceOf(driver.userId), Math.round(walletBalance * 100) / 100);
+
+  const twice = await request('POST', `/admin/withdrawals/${id}/failed`, { accessToken: financeAdmin.accessToken, body: { reason: 'again' } });
+  assert.equal(twice.status, 409);
+  assert.equal(await balanceOf(driver.userId), Math.round(walletBalance * 100) / 100, 'not refunded twice');
+  assert.ok((await titlesFor(driver.userId)).includes('Withdrawal could not be paid'));
+});
+
+test('a requested (not yet approved) withdrawal cannot be marked paid, and only finance can do it', async (t) => {
+  const { driver } = await createDriverWithBalance(t);
+  const account = await createPayoutAccount(driver.accessToken);
+  const { id } = (await (await request('POST', '/driver/withdrawals', { accessToken: driver.accessToken, body: { amount: 50, payoutAccountId: account.id } })).json()).data;
+  const support = await createAdmin('support');
+  assert.equal((await request('POST', `/admin/withdrawals/${id}/paid`, { accessToken: support.accessToken, body: {} })).status, 403);
+  const finance = await createAdmin('finance');
+  const early = await request('POST', `/admin/withdrawals/${id}/paid`, { accessToken: finance.accessToken, body: {} });
+  assert.equal(early.status, 409);
+  assert.equal((await early.json()).error.code, 'WITHDRAWAL_NOT_APPROVED');
+});
+
+test('a frozen wallet cannot withdraw', async (t) => {
+  const { driver, walletBalance } = await createDriverWithBalance(t);
+  const account = await createPayoutAccount(driver.accessToken);
+  await pool.query(`UPDATE wallets SET status = 'frozen' WHERE user_id = $1`, [driver.userId]);
+  const response = await request('POST', '/driver/withdrawals', { accessToken: driver.accessToken, body: { amount: 50, payoutAccountId: account.id } });
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).error.code, 'WALLET_FROZEN');
+  assert.equal(await balanceOf(driver.userId), Math.round(walletBalance * 100) / 100);
+  await pool.query(`UPDATE wallets SET status = 'active' WHERE user_id = $1`, [driver.userId]);
+});
