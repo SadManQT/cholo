@@ -137,7 +137,7 @@ export async function findActiveTripIdForUser(userId, client = pool) {
   return rows[0]?.id;
 }
 
-export async function listForUser(userId, { page, limit, status, role }, client = pool) {
+export async function listForUser(userId, { page, limit, status, role, paymentStatus }, client = pool) {
   const offset = (page - 1) * limit;
   const { rows } = await client.query(
     `SELECT t.trip_code AS "publicCode", t.status,
@@ -164,9 +164,10 @@ export async function listForUser(userId, { page, limit, status, role }, client 
          OR ($2 = 'active' AND t.status IN ('assigned', 'arrived', 'in_progress'))
          OR t.status::text = $2
        )
+       AND ($6::text IS NULL OR t.payment_status::text = $6)
      ORDER BY t.created_at DESC
      LIMIT $3 OFFSET $4`,
-    [userId, status ?? null, limit, offset, role ?? null],
+    [userId, status ?? null, limit, offset, role ?? null, paymentStatus ?? null],
   );
 
   return rows;

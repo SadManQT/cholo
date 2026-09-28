@@ -31,6 +31,7 @@ export const tripListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: z.enum(['active', 'assigned', 'arrived', 'in_progress', 'completed', 'cancelled']).optional(),
   role: z.enum(['passenger', 'driver']).optional(),
+  paymentStatus: z.enum(['unpaid', 'paid', 'refunded']).optional(),
 });
 
 export const tripMessageSchema = z.object({

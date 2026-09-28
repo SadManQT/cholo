@@ -1,6 +1,6 @@
 import { animate } from 'motion';
 import { useReducedMotion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AnimationPlaybackControls } from 'motion';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { t } from '../../i18n';
@@ -16,27 +16,42 @@ interface SlideToConfirmProps {
 const THUMB_SIZE_PX = 48;
 const THUMB_MARGIN_PX = 4;
 /** How far along the track (0–1) the thumb must be released to confirm. */
-const CONFIRM_AT = 0.9;
+const CONFIRM_AT = 0.85;
 
 /**
- * Drag the thumb to the end to confirm. Only a drag that starts on the thumb counts, so a stray tap on the
- * track can't confirm; releasing early, or the browser taking the touch over (pointercancel), springs back.
- * Keyboard users focus the thumb and press Enter or Space.
+ * Drag to the end to confirm. The drag can start anywhere on the track and moves the thumb by how far the
+ * finger travels (it never jumps to the finger), so a tap can't confirm. Releasing early, or the browser
+ * taking the touch over (pointercancel), springs back. Keyboard users focus the thumb and press Enter/Space.
+ *
+ * The thumb, fill and label are moved by writing transforms straight to the DOM once per frame, not through
+ * React state, so dragging stays smooth even while the trip page re-renders for GPS and socket updates.
  */
 export function SlideToConfirm({ label, loading = false, lockedReason = null, onConfirm }: SlideToConfirmProps) {
-  const [offset, setOffset] = useState(0);
-  const [trackWidth, setTrackWidth] = useState(0);
   const reduceMotion = useReducedMotion();
+  const [dragging, setDragging] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLButtonElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
   const springRef = useRef<AnimationPlaybackControls | null>(null);
+  const frameRef = useRef(0);
   const drag = useRef<{ pointerId: number; startX: number; startOffset: number } | null>(null);
   const offsetRef = useRef(0);
+  const pendingRef = useRef(0);
+  const widthRef = useRef(0);
   const disabled = loading || Boolean(lockedReason);
-  const travel = Math.max(0, trackWidth - THUMB_SIZE_PX - THUMB_MARGIN_PX * 2);
 
-  function move(next: number) {
-    offsetRef.current = next;
-    setOffset(next);
+  const travel = () => Math.max(0, widthRef.current - THUMB_SIZE_PX - THUMB_MARGIN_PX * 2);
+
+  function paint(offset: number) {
+    offsetRef.current = offset;
+    const span = travel();
+    if (thumbRef.current) thumbRef.current.style.transform = `translate3d(${offset}px, 0, 0)`;
+    // The fill is a full-width layer slid in from the left so it ends just past the thumb.
+    if (fillRef.current) {
+      fillRef.current.style.transform = `translate3d(${offset + THUMB_SIZE_PX + THUMB_MARGIN_PX * 2 - widthRef.current}px, 0, 0)`;
+    }
+    if (labelRef.current) labelRef.current.style.opacity = String(span > 0 ? Math.max(0, 1 - (offset / span) * 1.4) : 1);
   }
 
   function stopSpring() {
@@ -46,51 +61,78 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
 
   function springBack() {
     stopSpring();
+    cancelAnimationFrame(frameRef.current);
     if (reduceMotion || offsetRef.current === 0) {
-      move(0);
+      paint(0);
       return;
     }
-    springRef.current = animate(offsetRef.current, 0, { type: 'spring', stiffness: 500, damping: 32, onUpdate: move });
+    springRef.current = animate(offsetRef.current, 0, { type: 'spring', stiffness: 520, damping: 34, onUpdate: paint });
   }
 
-  useEffect(() => () => springRef.current?.stop(), []);
+  useEffect(() => () => {
+    springRef.current?.stop();
+    cancelAnimationFrame(frameRef.current);
+  }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    const observer = new ResizeObserver((entries) => setTrackWidth(entries[0].contentRect.width));
+    const measure = (width: number) => {
+      widthRef.current = width;
+      paint(Math.min(offsetRef.current, travel()));
+    };
+    measure(el.getBoundingClientRect().width);
+    const observer = new ResizeObserver((entries) => measure(entries[0].contentRect.width));
     observer.observe(el);
     return () => observer.disconnect();
+    // paint and travel only read refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Locked or busy mid-drag (the driver moved out of range, a request started): let go.
   useEffect(() => {
     if (!disabled) return;
     drag.current = null;
+    setDragging(false);
     springBack();
     // springBack only reads refs and stable values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled]);
 
-  function onPointerDown(event: PointerEvent<HTMLButtonElement>) {
+  function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (disabled || drag.current || (event.pointerType === 'mouse' && event.button !== 0)) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     stopSpring();
     drag.current = { pointerId: event.pointerId, startX: event.clientX, startOffset: offsetRef.current };
+    setDragging(true);
   }
 
-  function onPointerMove(event: PointerEvent<HTMLButtonElement>) {
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
     const active = drag.current;
     if (!active || active.pointerId !== event.pointerId) return;
-    move(Math.min(travel, Math.max(0, active.startOffset + event.clientX - active.startX)));
+    pendingRef.current = Math.min(travel(), Math.max(0, active.startOffset + event.clientX - active.startX));
+    if (frameRef.current) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = 0;
+      if (drag.current) paint(pendingRef.current);
+    });
   }
 
-  function release(event: PointerEvent<HTMLButtonElement>, commit: boolean) {
+  function release(event: PointerEvent<HTMLDivElement>, commit: boolean) {
     const active = drag.current;
     if (!active || active.pointerId !== event.pointerId) return;
     drag.current = null;
-    if (commit && !disabled && travel > 0 && offsetRef.current >= travel * CONFIRM_AT) onConfirm();
+    setDragging(false);
+    cancelAnimationFrame(frameRef.current);
+    frameRef.current = 0;
+    // Use where the finger ended, even if the last frame hadn't painted yet.
+    const offset = Math.min(travel(), Math.max(0, active.startOffset + event.clientX - active.startX));
+    paint(commit ? offset : offsetRef.current);
+    if (commit && !disabled && travel() > 0 && offset >= travel() * CONFIRM_AT) {
+      paint(travel());
+      onConfirm();
+    }
     springBack();
   }
 
@@ -101,39 +143,39 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
     if (!disabled && !event.repeat) onConfirm();
   }
 
-  const progress = travel > 0 ? offset / travel : 0;
   const text = loading ? t('Working…') : lockedReason ?? t('Slide to {0}', label);
 
   return (
     <div
       ref={trackRef}
-      className={`relative h-14 select-none overflow-hidden rounded-2xl ${lockedReason ? 'bg-ink-500/20' : 'bg-cholo-700 shadow-lg'}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={(event) => release(event, true)}
+      onPointerCancel={(event) => release(event, false)}
+      onLostPointerCapture={(event) => release(event, false)}
+      className={`relative h-14 touch-none select-none overflow-hidden rounded-2xl ${lockedReason ? 'bg-ink-500/20' : 'bg-cholo-700 shadow-lg'} ${disabled ? 'cursor-not-allowed' : dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
       {!lockedReason && (
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 bg-cholo-800"
-          style={{ width: offset + THUMB_SIZE_PX + THUMB_MARGIN_PX * 2 }}
+          ref={fillRef}
+          className="pointer-events-none absolute inset-0 bg-cholo-800 will-change-transform"
+          style={{ transform: `translate3d(${THUMB_SIZE_PX + THUMB_MARGIN_PX * 2}px, 0, 0) translateX(-100%)` }}
         />
       )}
       <div
+        ref={labelRef}
         className={`pointer-events-none absolute inset-0 flex items-center justify-center pl-16 pr-4 text-center font-bold ${lockedReason ? 'text-ink-900' : 'text-white'}`}
-        style={{ opacity: loading || lockedReason ? 1 : Math.max(0, 1 - progress * 1.4) }}
         aria-hidden="true"
       >
         {text}
       </div>
       <button
+        ref={thumbRef}
         type="button"
         disabled={disabled}
         aria-label={text}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={(event) => release(event, true)}
-        onPointerCancel={(event) => release(event, false)}
-        onLostPointerCapture={(event) => release(event, false)}
         onKeyDown={onKeyDown}
-        className={`absolute left-1 top-1 flex h-12 w-12 touch-none items-center justify-center rounded-xl bg-surface text-xl font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-cholo-700 ${disabled ? 'cursor-not-allowed text-ink-500' : 'cursor-grab text-cholo-700 active:cursor-grabbing'}`}
-        style={{ transform: `translateX(${offset}px)` }}
+        className={`pointer-events-none absolute left-1 top-1 flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-xl font-bold will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-cholo-700 ${dragging ? 'shadow-md' : ''} ${disabled ? 'text-ink-500' : 'text-cholo-700'}`}
       >
         <span aria-hidden="true">{loading ? '…' : '→'}</span>
       </button>
