@@ -37,6 +37,13 @@ export function getApiFieldErrors(error: unknown): Record<string, string> {
   return result;
 }
 
+/** The unpaid trip that blocks a new booking (UNPAID_TRIP), if that is why the request failed. */
+export function getUnpaidTrip(error: unknown): { tripCode: string; totalFare: string } | null {
+  if (!isAxiosError<ApiErrorBody>(error) || error.response?.data?.error?.code !== 'UNPAID_TRIP') return null;
+  const details = error.response.data.error.details as { tripCode?: string; totalFare?: string } | undefined;
+  return details?.tripCode ? { tripCode: details.tripCode, totalFare: String(details.totalFare ?? '0') } : null;
+}
+
 export function getSuspension(error: unknown): { reason: string | null; until: string | null } | null {
   if (!isAxiosError<ApiErrorBody>(error) || error.response?.data?.error?.code !== 'ACCOUNT_SUSPENDED') return null;
   const details = error.response.data.error.details as { reason?: string | null; until?: string | null } | undefined;

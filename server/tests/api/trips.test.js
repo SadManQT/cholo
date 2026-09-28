@@ -462,8 +462,12 @@ test('two of the SAME passenger\'s trips paid the same instant, wallet funded fo
   const passenger = await createPassenger();
   const setupA = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
   const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
+  // An unpaid trip now blocks booking the next one, so two unpaid trips only exist from before that rule.
+  // Recreate that state: hide A's debt while B is booked, then restore it.
+  await pool.query(`UPDATE trips SET payment_status = 'paid' WHERE trip_code = $1`, [setupA.tripCode]);
   const setupB = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
   const completedB = await completeAssignedTrip(setupB.tripCode, setupB.driver.accessToken);
+  await pool.query(`UPDATE trips SET payment_status = 'unpaid' WHERE trip_code = $1`, [setupA.tripCode]);
 
   const fareA = Number(completedA.fare.total);
   const fareB = Number(completedB.fare.total);
@@ -880,4 +884,40 @@ test('a rider cannot dispute an arrival once the trip has started', async (t) =>
   const disputed = await request('POST', `/trips/${tripCode}/pickup/dispute`, { accessToken: passenger.accessToken });
   assert.equal(disputed.status, 409);
   assert.equal((await disputed.json()).error.code, 'BAD_TRANSITION');
+});
+
+test('a rider who has not paid for a finished trip cannot book another until they pay', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  assert.equal(completed.payment.status, 'unpaid');
+
+  const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
+  const book = (extra = {}) => request('POST', '/ride-requests', {
+    accessToken: setup.passenger.accessToken,
+    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash', ...extra },
+  });
+
+  const blocked = await book();
+  assert.equal(blocked.status, 409);
+  const { error } = await blocked.json();
+  assert.equal(error.code, 'UNPAID_TRIP');
+  assert.equal(error.details.tripCode, setup.tripCode);
+
+  const later = new Date(Date.now() + 3 * 60 * 60_000).toISOString();
+  assert.equal((await book({ scheduledFor: later })).status, 409, 'scheduling a ride is blocked too');
+
+  const unpaidList = await request('GET', '/trips?status=completed&role=passenger&paymentStatus=unpaid', { accessToken: setup.passenger.accessToken });
+  assert.deepEqual((await unpaidList.json()).data.map((trip) => trip.publicCode), [setup.tripCode]);
+
+  await creditWallet(setup.passenger.userId, Number(completed.fare.total) + 100);
+  const paid = await request('POST', `/trips/${setup.tripCode}/pay`, { accessToken: setup.passenger.accessToken, body: { method: 'wallet' } });
+  assert.equal(paid.status, 201);
+
+  const allowed = await book();
+  assert.equal(allowed.status, 201);
+  await pool.query(
+    `UPDATE ride_requests SET status = 'cancelled', cancelled_at = now()
+     WHERE public_id = $1`,
+    [(await allowed.json()).data.publicId],
+  );
 });
