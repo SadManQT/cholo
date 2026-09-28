@@ -1,231 +1,75 @@
 # Cholo (চলো)
 
-A ride-sharing platform for Bangladesh, built as a learning project by two people. Node.js/Express + PostgreSQL backend, React frontend — see `docs/` for the full design blueprint (ER diagrams, normalization proof, API contracts, build order).
+A ride-sharing platform for Bangladesh — passenger app, driver app and admin console.
 
-**Deciding what to build next?** Open **https://sadmanqt.github.io/cholo/docs/cholo-feature-roadmap.html** — it's the 24-step build order from `docs/13-14`, broken into per-feature prompts (one to build it, one to make your agent explain it back to you), with a shared checklist: checking a step off commits the change to `docs/roadmap-progress.json` via the GitHub API, so both of you see it update within seconds. Viewing needs nothing; checking things off needs a one-time GitHub token (the page's "Set up write access" button explains how — a fine-grained token scoped to just this repo, kept only in your own browser).
+**Live:** https://cholo-cholo7.vercel.app/
 
-## Quickstart (5 minutes)
+## Features
 
-**Prerequisite:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) running.
+**Passengers**
+- Sign up with phone number + OTP, full English and Bangla interface
+- Book a ride with fare estimates per vehicle type, extra stops and scheduled rides
+- Live map tracking of the driver, in-trip chat and SOS button
+- Share a trip link with family
+- Pay by cash, wallet or SSLCommerz; promo codes and referrals
+- Trip history, receipts, saved places and favourites
+
+**Drivers**
+- Apply online with documents and vehicles, reviewed by admins
+- Go online, get ride offers and accept them in real time
+- Arrival, stops and completion only within 300 m of the place; end the trip early if the rider gets out
+- Earnings, statements, payout accounts and withdrawals
+
+**Admins**
+- Dashboard and analytics
+- Driver approvals, users, payouts, disputes, support queue and SOS board
+- Pricing, surge, zones and promos
+- Reports, exports, audit log and two-factor sign-in
+
+**Tech:** React + TypeScript + Vite, Node.js/Express, PostgreSQL, Socket.io, Leaflet/OpenStreetMap.
+
+## Installation
+
+**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/), or Node.js 20+ and PostgreSQL 16.
+
+### With Docker (recommended)
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/SadManQT/cholo.git
 cd cholo
 cp .env.example .env
 docker compose up -d --build
 ```
 
-That starts the complete stack: PostgreSQL 16, the production Express image,
-and the production React/Nginx image. PostgreSQL loads `database/schema.sql`
-plus required reference data on first boot; the API applies numbered migrations
-before it starts.
+Open http://localhost:4173.
 
-Open `http://localhost:4173`. Verify both services:
+### For development
 
 ```bash
-curl http://localhost:3000/health
-curl http://localhost:4173/healthz
-```
-
-For hot-reload development, start only PostgreSQL first:
-
-```bash
+git clone https://github.com/SadManQT/cholo.git
+cd cholo
+cp .env.example .env
 docker compose up -d postgres
-```
 
-Install and start the API in a second terminal:
-
-```bash
+# API (terminal 1)
 cd server
 npm ci
 npm run db:init
 npm run dev
-```
 
-Verify that the API can reach PostgreSQL:
-
-```bash
-curl http://localhost:3000/health
-```
-
-It should return `{"db":true}`.
-
-The first versioned API endpoint lists active operating cities through the
-full route → controller → service → repository pipeline:
-
-```bash
-curl http://localhost:3000/api/v1/cities
-```
-
-Run the backend regression suite:
-
-```bash
-cd server
-npm test
-```
-
-The M1 infrastructure also provides validated CORS, structured request logs,
-Zod request validation, async error forwarding, PostgreSQL error translation,
-standard 404 responses, and one centralized error handler.
-
-Install and start the frontend in a third terminal:
-
-```bash
+# Web app (terminal 2)
 cd client
 cp .env.example .env
 npm ci
 npm run dev
 ```
 
-Open the URL Vite prints (`http://localhost:5173` by default). `VITE_API_URL`
-in `client/.env` already points at the API from the steps above — no further
-setup needed. During local development SMS delivery is intentionally mocked:
-after registration, copy the six-digit code from the API terminal's
-`Mock SMS sent` log into the OTP screen.
+Open http://localhost:5173. In development, OTP codes are printed in the API terminal instead of sent by SMS.
 
-Run the frontend's own checks from `client/`:
+### Demo accounts (optional)
 
 ```bash
-npx tsc -b      # type-check
-npx oxlint      # lint
-npm run build   # production build
+docker compose exec -T postgres psql -U cholo -d cholo < database/seeds/seed.dev.sql
 ```
 
-### M6 two-browser demo
-
-Open one normal window as a passenger and one incognito window as an approved
-driver. On the driver Home screen, go online and allow location access. Book a
-ride from the passenger window; the 15-second offer appears for the driver.
-Accept it, then use the driver trip screen to mark arrival, start, send GPS
-updates, chat, and complete. The passenger window follows status/location in
-real time and falls back to REST polling during a socket reconnect.
-
-### Updating required reference data
-
-Docker initialization scripts run only when the database volume is first
-created. After pulling a milestone that adds roles, categories, or other
-required reference rows, apply the idempotent seed without deleting your data:
-
-```bash
-docker compose up -d
-docker compose exec postgres psql -U cholo -d cholo \
-  -f /docker-entrypoint-initdb.d/02-seed-reference.sql
-```
-
-After pulling changes, apply only unrecorded migrations and refresh idempotent
-reference data without deleting your existing volume:
-
-```bash
-npm run db:init
-```
-
-### Demo world
-
-Load the idempotent Nusrat/Rafiq/Ayesha showcase data in local development:
-
-```bash
-docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U cholo -d cholo \
-  < database/seeds/seed.dev.sql
-```
-
-All three accounts use password `DemoPass123`:
-
-- Passenger Nusrat: `01710000001`
-- Driver Rafiq: `01810000002`
-- Super admin Ayesha: `01510009993`
-
-Never run `seed.dev.sql` against production.
-
-### Verify it worked
-
-Wait a few seconds for the healthcheck, then:
-
-```bash
-docker compose ps
-```
-
-`postgres` should show `healthy`. Then check the schema actually loaded:
-
-```bash
-docker compose exec postgres psql -U cholo -d cholo -c "\dt"
-```
-
-You should see the **54 application tables** plus `schema_migrations` (the
-deployment runner's one metadata table), for **55 runtime tables**. To
-double-check the application-table count directly:
-
-```bash
-docker compose exec postgres psql -U cholo -d cholo -t -c \
-  "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name <> 'schema_migrations';"
-```
-
-should print `54`.
-
-### Stopping
-
-```bash
-docker compose down
-```
-
-Data persists in a Docker volume between runs — your database survives a stop/start.
-
-### Resetting the database
-
-The schema only loads on an **empty** data directory. If you edit `database/schema.sql` and want the container to pick up the change, you have to wipe the volume and let it re-initialize:
-
-```bash
-docker compose down -v
-docker compose up -d
-```
-
-### Port already in use?
-
-The default host port is `5433` (not Postgres's usual `5432`) precisely because `5432` is commonly already taken by a local Postgres install. If `5433` is *also* taken on your machine, set a different one in your `.env`:
-
-```
-POSTGRES_PORT=5434
-```
-
-and re-run `docker compose up -d`. The container's internal port doesn't change — only how you reach it from the host.
-
-## Project structure
-
-```
-cholo/
-├── client/                # React + TypeScript + Vite SPA (auth screens, ui/ kit, role-based routing)
-├── server/                # Express API (auth, accounts, driver onboarding/fleet, pricing/dispatch/rides, sockets)
-├── database/
-│   ├── schema.sql         # full DDL: 54 tables, triggers, views — generated from docs/01–03
-│   ├── migrations/        # numbered, append-only upgrades for persistent databases
-│   └── seeds/             # idempotent reference rows required by the API
-├── docs/                  # the design blueprint (read before changing schema/API/architecture)
-├── docker-compose.yml     # production-like client + API + PostgreSQL 16 stack
-├── .env.example           # every env var this project needs, with fake values
-└── README.md              # this file
-```
-
-## Where things are documented
-
-- `docs/01-er-diagram-database-architecture.md` — entities, relationships, why each design decision was made
-- `docs/02-03-normalization-schema-transactions.md` — normalization proof + the SQL/constraint/trigger design behind `schema.sql`
-- `docs/04-data-dictionary.md` — every table, every column
-- `docs/05-06-07-learning-roadmap-architecture-folders.md` — folder conventions and the learning path
-- `docs/08-09-10-backend-api-auth.md` — REST API + auth design
-- `docs/11-12-frontend-react-ui-ux.md` — frontend design
-- `docs/13-14-development-plan-build-order.md` — the milestone-by-milestone build order this project follows
-
-## Status
-
-Following the milestone plan in `docs/13-14`. **M0 — Foundation** through
-the repository-side **M8 — Admin, Hardening & Launch** work are complete: auth, driver onboarding/fleet,
-pricing/dispatch/ride lifecycle, the real passenger and driver apps with
-Leaflet maps, Socket.io offers/tracking/status, reconnect fallback, chat,
-SOS, and trip history/detail/receipt views, and the full money path — wallet
-+ ledger, cash and wallet-paid trips, an SSLCommerz sandbox gateway with an
-idempotent webhook, driver earnings, payout accounts + withdrawals (finance-
-admin approval), promo validation/redemption + auto-generated receipts, the
-operational admin console, support/dispute/SOS workflows, targeted abuse
-limits, release tests, full-stack Docker, deploy blueprints, and a seeded demo
-world. The live-deploy checklist remains open until the owners connect their
-Vercel, Render, and payment-provider credentials. See `docs/M8-LAUNCH-GUIDE.md`
-and `docs/M8-VIVA-REHEARSAL.md`.
+All use password `DemoPass123`: passenger `01710000001`, driver `01810000002`, admin `01510009993`.
