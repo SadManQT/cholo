@@ -11,6 +11,7 @@ import type { UpcomingFeature } from '../../components/marketing/UpcomingFeature
 import { EASE_IN_OUT } from '../../utils/motion';
 import { t } from '../../i18n';
 import { LanguageSwitch } from '../../components/layout/LanguageSwitch';
+import { ThemeSwitch } from '../../components/layout/ThemeSwitch';
 
 const CTA_BASE = 'inline-flex h-12 items-center justify-center rounded-xl px-6 text-base font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2';
 const CTA_PRIMARY = `${CTA_BASE} bg-cholo-700 text-white hover:bg-cholo-800`;
@@ -44,7 +45,7 @@ const FEATURES: TourFeature[] = [
   },
   {
     icon: 'globe',
-    accent: 'bg-ink-900',
+    accent: 'bg-ink-900 !text-surface',
     title: t('Speaks your language'),
     body: t('বাংলা or English, your choice, everywhere — every screen, every notification, every receipt. Switch anytime, no settings hunt required.'),
   },
@@ -107,7 +108,8 @@ export function HomePage() {
     <div className="min-h-screen bg-surface-alt text-ink-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6">
         <span className="text-xl font-bold text-cholo-700">Cholo</span>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <ThemeSwitch />
           <LanguageSwitch />
           <Link to="/login" className="text-sm font-semibold text-ink-900 hover:text-cholo-700">{t('Log in')}</Link>
           <Link to="/register" className={`${CTA_PRIMARY} hidden h-10 px-4 text-sm sm:inline-flex`}>{t('Sign up')}</Link>

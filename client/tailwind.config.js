@@ -1,32 +1,37 @@
+// Every palette colour is a CSS variable (RGB channels, see src/index.css) so the whole UI switches
+// between the light and dark themes by toggling the `dark` class on <html>.
+const token = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         cholo: {
-          50: '#E9F5F1',
-          700: '#0E7A5F',
-          800: '#0A5C48',
+          50: token('cholo-50'),
+          700: token('cholo-700'),
+          800: token('cholo-800'),
         },
         ink: {
-          500: '#5A6B7A',
-          900: '#0B1F2E',
+          500: token('ink-500'),
+          900: token('ink-900'),
         },
         marigold: {
-          500: '#F5A623',
+          500: token('marigold-500'),
         },
         danger: {
-          600: '#DC2626',
+          600: token('danger-600'),
         },
         info: {
-          600: '#2563EB',
+          600: token('info-600'),
         },
         surface: {
-          DEFAULT: '#FFFFFF',
-          alt: '#F5F7F9',
+          DEFAULT: token('surface'),
+          alt: token('surface-alt'),
         },
         border: {
-          DEFAULT: '#E3E8EE',
+          DEFAULT: token('border'),
         },
       },
       fontFamily: {

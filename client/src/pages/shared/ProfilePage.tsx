@@ -8,6 +8,7 @@ import {
   DeleteAccountCard, FavoriteDriversCard, InstallAppCard, InviteFriendsCard, TwoFactorCard,
 } from '../../components/account/AccountCards';
 import { Button, Card, Input, StatePill, toast } from '../../components/ui';
+import { ThemePicker } from '../../components/layout/ThemeSwitch';
 import { useAuth } from '../../context/auth';
 import type { EmergencyContact } from '../../types/place.types';
 import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
@@ -253,7 +254,7 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
             {user.photoUrl
               ? <img src={user.photoUrl} alt="" className="h-full w-full object-cover" />
               : <span className="flex h-full w-full items-center justify-center bg-cholo-700 text-lg font-bold text-white">{initials}</span>}
-            <span className={`absolute inset-0 flex items-center justify-center bg-ink-900/55 text-[11px] font-semibold text-white transition-opacity ${photoBusy ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'}`}>
+            <span className={`absolute inset-0 flex items-center justify-center bg-black/55 text-[11px] font-semibold text-white transition-opacity ${photoBusy ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'}`}>
               {photoBusy ? '…' : t('Change')}
             </span>
           </button>
@@ -288,6 +289,12 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
       {!adminMode && <EmergencyContacts />}
       {!adminMode && !driverMode && <FavoriteDriversCard />}
       <InstallAppCard />
+
+      <Card>
+        <h2 className="font-semibold">{t('Appearance')}</h2>
+        <p className="text-sm text-ink-500">{t('Choose light or dark, or follow your device setting.')}</p>
+        <ThemePicker />
+      </Card>
 
       <Card>
         <h2 className="font-semibold">{t('Profile details')}</h2>

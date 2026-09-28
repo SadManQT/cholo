@@ -12,7 +12,7 @@ export function ConnectionPill({ state }: { state: SocketConnectionState }) {
           animate={{ opacity: 1, transform: 'translateX(-50%) translateY(0px)' }}
           exit={{ opacity: 0, transform: 'translateX(-50%) translateY(-8px)' }}
           transition={{ duration: 0.2, ease: EASE_OUT }}
-          className="fixed left-1/2 top-3 z-[1000] rounded-full bg-ink-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg"
+          className="fixed left-1/2 top-3 z-[1000] rounded-full bg-ink-900 px-3 py-1.5 text-xs font-medium text-surface shadow-lg"
         >
           {state === 'disconnected' ? t('Live updates offline') : t('Reconnecting live updates…')}
         </motion.div>

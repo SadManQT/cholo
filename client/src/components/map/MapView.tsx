@@ -7,10 +7,14 @@ import { MapContainer, Marker, Polyline, useMap, useMapEvents } from 'react-leaf
 import * as geoApi from '../../api/geo.api';
 import type { LatLng, RouteResult } from '../../types/geo.types';
 import { t } from '../../i18n';
+import { useTheme } from '../../theme';
 
 const DHAKA_CENTER: LatLng = { lat: 23.8103, lng: 90.4125 };
 
-const VECTOR_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
+const VECTOR_STYLE_URLS = {
+  light: 'https://tiles.openfreemap.org/styles/bright',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+};
 
 const LATIN_ONLY_NAME = ['coalesce', ['get', 'name:latin'], ['get', 'name_en'], ['get', 'name']];
 
@@ -33,18 +37,23 @@ function restyleLabels(glMap: MaplibreMap) {
 
 export function VectorTileLayer() {
   const map = useMap();
+  const { theme } = useTheme();
 
   useEffect(() => {
-    const layer = L.maplibreGL({ style: VECTOR_STYLE_URL }).addTo(map);
+    const layer = L.maplibreGL({ style: VECTOR_STYLE_URLS[theme] }).addTo(map);
     const glMap = layer.getMaplibreMap();
 
+    glMap.on('style.load', () => restyleLabels(glMap));
     if (glMap.isStyleLoaded()) restyleLabels(glMap);
-    else glMap.once('load', () => restyleLabels(glMap));
+    // If the dark style can't be fetched, fall back to the light map rather than a blank one.
+    if (theme === 'dark') {
+      glMap.once('error', () => { if (!glMap.isStyleLoaded()) glMap.setStyle(VECTOR_STYLE_URLS.light); });
+    }
 
     return () => {
       layer.remove();
     };
-  }, [map]);
+  }, [map, theme]);
 
   return null;
 }
@@ -209,7 +218,7 @@ export function MapView({ pickup, dropoff, stops = [], driver, user, sos, onMapC
       </MapContainer>
       {routeLoading && (
         <div
-          className="absolute inset-0 z-[650] flex items-center justify-center bg-ink-900/35 p-4 backdrop-blur-[2px]"
+          className="absolute inset-0 z-[650] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
           role="status"
           aria-live="polite"
         >

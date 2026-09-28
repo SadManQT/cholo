@@ -30,7 +30,7 @@ export function Dialog({ open, title, description, onClose, children, footer }: 
       aria-labelledby={titleId}
       onClose={onClose}
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border bg-surface p-0 text-ink-900 shadow-2xl backdrop:bg-ink-900/50 backdrop:backdrop-blur-[2px]"
+      className="fixed inset-0 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-border bg-surface p-0 text-ink-900 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-[2px]"
     >
       {open && (
         <div className="flex flex-col gap-4 p-5 sm:p-6">

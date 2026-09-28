@@ -93,7 +93,7 @@ function ColumnChart({ columns, label }: {
             tabIndex={0}
           >
             {active === column.key && (
-              <div className="pointer-events-none absolute bottom-full z-10 mb-2 whitespace-nowrap rounded-lg bg-ink-900 px-3 py-2 text-xs text-white shadow-lg">
+              <div className="pointer-events-none absolute bottom-full z-10 mb-2 whitespace-nowrap rounded-lg bg-ink-900 px-3 py-2 text-xs text-surface shadow-lg">
                 <p className="font-semibold">{column.label}</p>
                 {column.tooltip.map((line) => <p key={line} className="tabular-nums">{line}</p>)}
               </div>

@@ -7,7 +7,7 @@ const LABELS: Record<PayMethod, { name: string; hint: string; mark: string; tone
   wallet: { name: t('Cholo wallet'), hint: t('Pay instantly from your balance'), mark: '৳', tone: 'bg-cholo-700 text-white' },
   bkash: { name: 'bKash', hint: t('Mobile wallet'), mark: 'b', tone: 'bg-[#E2136E] text-white' },
   nagad: { name: t('Nagad'), hint: t('Mobile wallet'), mark: 'N', tone: 'bg-[#F6921E] text-white' },
-  card: { name: t('Card'), hint: t('Visa, Mastercard, Amex'), mark: '▭', tone: 'bg-ink-900 text-white' },
+  card: { name: t('Card'), hint: t('Visa, Mastercard, Amex'), mark: '▭', tone: 'bg-ink-900 text-surface' },
 };
 
 interface MethodPickerProps {
