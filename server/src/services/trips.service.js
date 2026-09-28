@@ -343,6 +343,23 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       await settleDriverEarnings(trip, fare.totalFare, client);
     }
 
+    // Wallet trips settle themselves at drop-off, like cash. If the final fare came out higher than the
+    // balance (a longer route, waiting time), the trip stays due and the rider pays it another way.
+    let paymentStatus = updated.paymentStatus;
+    if (trip.paymentIntent === 'wallet' && Number(fare.totalFare) > 0) {
+      const wallet = await walletRepo.getByUserIdForUpdate(trip.passengerId, client);
+      if (wallet?.status === 'active' && Number(wallet.balance) >= Number(fare.totalFare)) {
+        paymentStatus = (await chargeWalletForTrip(trip, wallet, Number(fare.totalFare), client)).paymentStatus;
+      } else {
+        await notificationsService.notify(trip.passengerId, {
+          category: 'payment',
+          title: 'Payment due for your trip',
+          body: `Your wallet didn't cover the ৳${fare.totalFare} fare for trip ${trip.tripCode}. Pay it with bKash, Nagad, card or a top-up to keep riding.`,
+          payload: { tripCode: trip.tripCode },
+        }, client);
+      }
+    }
+
     await rewardReferralOnFirstTrip(trip, client);
 
     if (endedAt) {
@@ -368,7 +385,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       total: fare.totalFare,
     }, client);
 
-    return { trip, updated, receipt, endedAt };
+    return { trip, updated: { ...updated, paymentStatus }, receipt, endedAt };
   });
 
   const { trip, updated, receipt } = result;
@@ -437,6 +454,33 @@ async function loadPayableTrip(passengerId, tripCode, client) {
 
 const GATEWAY_METHODS = ['bkash', 'nagad', 'card'];
 
+/** Debits the rider's (already locked) wallet for a trip, marks it paid and pays the driver their share. */
+async function chargeWalletForTrip(trip, wallet, amount, client) {
+  await paymentsRepo.insertPayment({
+    purpose: 'trip',
+    tripId: trip.id,
+    payerId: trip.passengerId,
+    methodType: 'wallet',
+    gateway: 'none',
+    amount,
+    status: 'succeeded',
+  }, client);
+
+  await walletRepo.insertTransaction({
+    walletId: wallet.id,
+    txnType: 'trip_payment',
+    direction: 'debit',
+    amount,
+    referenceType: 'trip',
+    referenceId: trip.id,
+    idempotencyKey: `trip-payment-${trip.id}`,
+  }, client);
+
+  const updated = await tripsRepo.markPaid(trip.id, client);
+  await settleDriverEarnings(trip, amount, client, { platformCollected: true });
+  return updated;
+}
+
 export async function payTrip(passengerId, tripCode, { method }) {
   if (GATEWAY_METHODS.includes(method)) {
     return payTripByGateway(passengerId, tripCode, method);
@@ -447,33 +491,12 @@ export async function payTrip(passengerId, tripCode, { method }) {
     const trip = await loadPayableTrip(passengerId, tripCode, client);
 
     const wallet = await walletRepo.getByUserIdForUpdate(passengerId, client);
+    if (wallet.status !== 'active') throw new AppError(409, 'WALLET_FROZEN');
     if (Number(wallet.balance) < Number(trip.totalFare)) {
-      throw new AppError(422, 'INSUFFICIENT_FUNDS');
+      throw new AppError(422, 'INSUFFICIENT_FUNDS', { balance: wallet.balance, required: trip.totalFare });
     }
 
-    await paymentsRepo.insertPayment({
-      purpose: 'trip',
-      tripId: trip.id,
-      payerId: passengerId,
-      methodType: method,
-      gateway: 'none',
-      amount: trip.totalFare,
-      status: 'succeeded',
-    }, client);
-
-    await walletRepo.insertTransaction({
-      walletId: wallet.id,
-      txnType: 'trip_payment',
-      direction: 'debit',
-      amount: trip.totalFare,
-      referenceType: 'trip',
-      referenceId: trip.id,
-      idempotencyKey: `trip-payment-${trip.id}`,
-    }, client);
-
-    const updated = await tripsRepo.markPaid(trip.id, client);
-    await settleDriverEarnings(trip, Number(trip.totalFare), client, { platformCollected: true });
-
+    const updated = await chargeWalletForTrip(trip, wallet, Number(trip.totalFare), client);
     return { trip, updated };
   });
 

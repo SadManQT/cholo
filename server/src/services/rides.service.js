@@ -3,6 +3,7 @@ import * as offersRepo from '../repositories/offers.repository.js';
 import * as pricingRepo from '../repositories/pricing.repository.js';
 import * as promosRepo from '../repositories/promos.repository.js';
 import * as ridesRepo from '../repositories/rides.repository.js';
+import * as walletRepo from '../repositories/wallet.repository.js';
 import { AppError } from '../utils/AppError.js';
 import { quote as computeFare } from '../utils/fareMath.js';
 import { computeDiscount } from '../utils/promoMath.js';
@@ -68,6 +69,14 @@ export async function createRequest(passengerId, dto) {
       // A finished trip has to be paid for before the next one can be booked.
       const unpaid = await ridesRepo.findUnpaidTrip(passengerId, client);
       if (unpaid) throw new AppError(409, 'UNPAID_TRIP', { tripCode: unpaid.tripCode, totalFare: unpaid.totalFare });
+      // Paying by wallet means the fare is taken at drop-off, so the balance has to cover the estimate now.
+      if (paymentIntent === 'wallet') {
+        const wallet = await walletRepo.getByUserId(passengerId, client);
+        if (wallet?.status !== 'active') throw new AppError(409, 'WALLET_FROZEN');
+        if (Number(wallet.balance) < estPayable) {
+          throw new AppError(422, 'INSUFFICIENT_FUNDS', { balance: wallet.balance, required: estPayable.toFixed(2) });
+        }
+      }
       if (scheduledFor) {
         if (await ridesRepo.countUpcomingScheduled(passengerId, client) >= MAX_UPCOMING_SCHEDULED) {
           throw new AppError(409, 'TOO_MANY_SCHEDULED_RIDES');

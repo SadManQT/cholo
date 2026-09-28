@@ -73,6 +73,7 @@ export const ERROR_MESSAGES = Object.freeze({
   ALREADY_PAID: 'This trip has already been paid.',
   PAYMENT_IN_PROGRESS: 'A payment for this trip is already in progress.',
   INSUFFICIENT_FUNDS: 'Your wallet balance is not enough to cover this fare.',
+  WALLET_FROZEN: 'Your wallet is frozen. Contact support, or choose another payment method.',
   GATEWAY_UNAVAILABLE: 'The payment gateway is temporarily unavailable. Please try again.',
   GATEWAY_SESSION_FAILED: 'The payment gateway could not start this payment.',
   BAD_SIGNATURE: 'This webhook could not be verified.',

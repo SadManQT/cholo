@@ -5,14 +5,22 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT } from '../../utils/format';
 import { Button, Card, Input, toast } from '../ui';
 import { MethodPicker } from './MethodPicker';
+import { TOPUP_RETURN_KEY } from '../../utils/topup';
 import { t } from '../../i18n';
 
 const PRESETS = [100, 200, 500, 1000];
 const MIN = 10;
 const MAX = 25_000;
 
-export function TopUpCard() {
-  const [amount, setAmount] = useState('200');
+interface TopUpCardProps {
+  /** Pre-filled amount, e.g. what a trip is short by. */
+  initialAmount?: number;
+  /** Where to send the rider after the top-up succeeds (the trip they're topping up to pay). */
+  returnTo?: string | null;
+}
+
+export function TopUpCard({ initialAmount, returnTo }: TopUpCardProps = {}) {
+  const [amount, setAmount] = useState(String(initialAmount && initialAmount >= MIN && initialAmount <= MAX ? Math.ceil(initialAmount) : 200));
   const [method, setMethod] = useState<GatewayMethod>('bkash');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,6 +35,12 @@ export function TopUpCard() {
     setBusy(true);
     try {
       const { redirectUrl } = await paymentsApi.topup(value, method);
+      try {
+        if (returnTo) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
+        else sessionStorage.removeItem(TOPUP_RETURN_KEY);
+      } catch {
+        // Storage blocked: the result page falls back to the wallet.
+      }
       window.location.assign(redirectUrl);
     } catch (thrown) {
       toast.error(getApiErrorMessage(thrown, t('Could not start the top-up.')));
