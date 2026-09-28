@@ -93,6 +93,17 @@ function call(method, path, { body, token, raw, contentType } = {}) {
   });
 }
 
+// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
+async function riderConfirmsPickup(tripCode) {
+  const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const userId = Number(rows[0].passenger_id);
+  const response = await call('POST', `/trips/${tripCode}/pickup/confirm`, {
+    token: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }),
+  });
+  assert.equal(response.status, 200);
+  return response;
+}
+
 function nextPhone() {
   phoneCounter += 1;
   return `0163${String(phoneCounter).padStart(7, '0')}`;
@@ -178,6 +189,7 @@ async function acceptAndComplete(driver, offerId) {
   assert.equal(accepted.status, 200);
   const tripCode = (await accepted.json()).data.trip.publicCode;
   await call('POST', `/trips/${tripCode}/arrived`, { token: driver.token });
+  await riderConfirmsPickup(tripCode);
   await call('POST', `/trips/${tripCode}/start`, { token: driver.token });
   return tripCode;
 }
@@ -205,6 +217,7 @@ test('drivers can only mark arrival, reach a stop and complete within 300 m of t
 
   // Reported 100 m from the pickup: accepted, and it becomes the driver's position.
   assert.equal((await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: { lat: PICKUP.lat + 0.0009, lng: PICKUP.lng } })).status, 200);
+  await riderConfirmsPickup(code);
   assert.equal((await call('POST', `/trips/${code}/start`, { token: driver.token })).status, 200);
 
   assert.equal((await (await call('POST', `/trips/${code}/stops/1/arrived`, { token: driver.token, body: PICKUP })).json()).error.code, 'TOO_FAR_FROM_STOP');
@@ -229,6 +242,7 @@ test('"Stop here": only the rider can ask, only during the ride, and the driver 
   // Not riding yet: nothing to stop.
   assert.equal((await (await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).json()).error.code, 'BAD_TRANSITION');
   await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await riderConfirmsPickup(code);
   await call('POST', `/trips/${code}/start`, { token: driver.token });
 
   assert.equal((await call('POST', `/trips/${code}/stop-request`, { token: driver.token })).status, 403);
@@ -259,6 +273,7 @@ test('"End trip here": refused until the rider asks, then charges the route actu
   const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
   const code = accepted.data.trip.publicCode;
   await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await riderConfirmsPickup(code);
   await call('POST', `/trips/${code}/start`, { token: driver.token });
 
   const midway = { lat: 23.7700, lng: 90.3900 };
@@ -291,6 +306,7 @@ test('"End trip here" at the drop-off is just a normal completion', async () => 
   const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
   const code = accepted.data.trip.publicCode;
   await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await riderConfirmsPickup(code);
   await call('POST', `/trips/${code}/start`, { token: driver.token });
   const ended = await (await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, lat: DROPOFF.lat, lng: DROPOFF.lng } })).json();
   assert.equal(ended.data.endedEarly, false);

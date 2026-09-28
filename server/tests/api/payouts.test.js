@@ -45,6 +45,17 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
+// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
+async function riderConfirmsPickup(tripCode) {
+  const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const userId = Number(rows[0].passenger_id);
+  const response = await request('POST', `/trips/${tripCode}/pickup/confirm`, {
+    accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }),
+  });
+  assert.equal(response.status, 200);
+  return response;
+}
+
 async function createPassenger() {
   seed += 1;
   const phone = `015${String(seed).padStart(8, '0').slice(-8)}`;
@@ -161,6 +172,7 @@ async function createDriverWithBalance(t) {
   const tripCode = (await accepted.json()).data.trip.publicCode;
 
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   const completed = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
   const totalFare = Number((await completed.json()).data.fare.total);
@@ -185,6 +197,7 @@ async function createPayoutAccount(driverAccessToken, overrides = {}) {
 test('GET /driver/earnings returns daily aggregates (v_driver_daily_earnings) and per-trip rows for a completed trip', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   const completed = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
   const totalFare = Number((await completed.json()).data.fare.total);

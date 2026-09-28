@@ -22,7 +22,9 @@ const TRIP_FOR_UPDATE_COLUMNS = `
   rr.city_id AS "cityId", rr.category_id AS "categoryId",
   rr.payment_intent AS "paymentIntent", rr.promo_code_id AS "promoCodeId",
   rr.surge_multiplier::float8 AS "surgeMultiplier", rr.stops,
-  t.early_stop_requested_at AS "earlyStopRequestedAt"
+  t.early_stop_requested_at AS "earlyStopRequestedAt",
+  t.start_requested_at AS "startRequestedAt", t.pickup_confirmed_at AS "pickupConfirmedAt",
+  t.arrival_disputed_at AS "arrivalDisputedAt"
 `;
 
 export async function findByCodeForUpdate(tripCode, client) {
@@ -64,7 +66,7 @@ export async function hasCompletedTrip(passengerId, client = pool) {
 
 export async function markArrived(tripId, client) {
   const { rows } = await client.query(
-    `UPDATE trips SET status = 'arrived', arrived_at = now()
+    `UPDATE trips SET status = 'arrived', arrived_at = now(), start_requested_at = NULL, pickup_confirmed_at = NULL
      WHERE id = $1
      RETURNING trip_code AS "tripCode", status, arrived_at AS "arrivedAt"`,
     [tripId],
@@ -78,6 +80,44 @@ export async function markStarted(tripId, client) {
     `UPDATE trips SET status = 'in_progress', started_at = now()
      WHERE id = $1
      RETURNING trip_code AS "tripCode", status, started_at AS "startedAt"`,
+    [tripId],
+  );
+
+  return rows[0];
+}
+
+/** The driver slid "Start trip"; it starts once the rider confirms. Keeps the first request time. */
+export async function markStartRequested(tripId, client) {
+  const { rows } = await client.query(
+    `UPDATE trips SET start_requested_at = COALESCE(start_requested_at, now())
+     WHERE id = $1
+     RETURNING start_requested_at AS "startRequestedAt"`,
+    [tripId],
+  );
+
+  return rows[0].startRequestedAt;
+}
+
+/** The rider confirmed they are with the driver. Keeps the first confirmation time. */
+export async function markPickupConfirmed(tripId, client) {
+  const { rows } = await client.query(
+    `UPDATE trips SET pickup_confirmed_at = COALESCE(pickup_confirmed_at, now())
+     WHERE id = $1
+     RETURNING pickup_confirmed_at AS "pickupConfirmedAt"`,
+    [tripId],
+  );
+
+  return rows[0].pickupConfirmedAt;
+}
+
+/** The rider says the driver is not at the pickup: undo the arrival so the driver must arrive again. */
+export async function undoArrival(tripId, client) {
+  const { rows } = await client.query(
+    `UPDATE trips
+     SET status = 'assigned', arrived_at = NULL, start_requested_at = NULL, pickup_confirmed_at = NULL,
+         arrival_disputed_at = now()
+     WHERE id = $1
+     RETURNING trip_code AS "tripCode", status, arrival_disputed_at AS "arrivalDisputedAt"`,
     [tripId],
   );
 
@@ -175,7 +215,9 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
             EXISTS (SELECT 1 FROM user_reports ur
                     WHERE ur.trip_id = t.id AND ur.reporter_id = $2) AS "reportedByMe",
             t.ended_early_at AS "endedEarlyAt", t.end_lat::float8 AS "endLat", t.end_lng::float8 AS "endLng",
-            t.early_stop_requested_at AS "earlyStopRequestedAt"
+            t.early_stop_requested_at AS "earlyStopRequestedAt",
+            t.start_requested_at AS "startRequestedAt", t.pickup_confirmed_at AS "pickupConfirmedAt",
+            t.arrival_disputed_at AS "arrivalDisputedAt"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id

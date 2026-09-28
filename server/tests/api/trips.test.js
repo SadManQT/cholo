@@ -44,6 +44,17 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
+// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
+async function riderConfirmsPickup(tripCode) {
+  const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const userId = Number(rows[0].passenger_id);
+  const response = await request('POST', `/trips/${tripCode}/pickup/confirm`, {
+    accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }),
+  });
+  assert.equal(response.status, 200);
+  return response;
+}
+
 async function createPassenger() {
   seed += 1;
   const phone = `017${String(seed).padStart(8, '0').slice(-8)}`;
@@ -185,15 +196,22 @@ test('BAD_TRANSITION: arrived twice', async (t) => {
   assert.equal((await second.json()).error.code, 'BAD_TRANSITION');
 });
 
-test('the full happy path: arrived -> start -> complete, with a fare breakdown satisfying chk_fare_identity', async (t) => {
+test('the full happy path: arrived -> start -> rider confirms -> complete, with a fare breakdown satisfying chk_fare_identity', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
 
   const arrived = await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
   assert.equal(arrived.status, 200);
   assert.equal((await arrived.json()).data.status, 'arrived');
 
-  const started = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
-  assert.equal(started.status, 200);
+  // The driver's start waits for the rider; the rider's confirmation then starts the trip.
+  const requested = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  assert.equal(requested.status, 202);
+  const requestedBody = (await requested.json()).data;
+  assert.equal(requestedBody.status, 'arrived');
+  assert.equal(requestedBody.awaitingRider, true);
+  assert.ok(requestedBody.startRequestedAt);
+
+  const started = await riderConfirmsPickup(tripCode);
   assert.equal((await started.json()).data.status, 'in_progress');
 
   const completed = await request('POST', `/trips/${tripCode}/complete`, {
@@ -234,6 +252,7 @@ test('T2: cash-trip completion inserts a succeeded payment, a driver_earnings sp
   const balanceBefore = Number(beforeRows[0].balance);
 
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   const completed = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
   assert.equal(completed.status, 200);
@@ -285,6 +304,7 @@ test('T2: cash-trip completion inserts a succeeded payment, a driver_earnings sp
 
 async function completeAssignedTrip(tripCode, driverAccessToken) {
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driverAccessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driverAccessToken });
   const response = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driverAccessToken, body: {} });
   return (await response.json()).data;
@@ -503,6 +523,7 @@ async function walletBalanceMatchesAudit(userId) {
 test('BAD_TRANSITION: completing an already-completed trip', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   const first = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
   assert.equal(first.status, 200);
@@ -517,6 +538,7 @@ test('waiting time beyond free_wait_minutes is billed at waiting_per_min', async
   try {
     const { tripCode, driver } = await createAssignedTrip(t);
     await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+    await riderConfirmsPickup(tripCode);
     await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
 
     const response = await request('POST', `/trips/${tripCode}/complete`, {
@@ -649,6 +671,7 @@ test('cancel: a driver cancelling never owes a fee, even past the grace period, 
 test('BAD_TRANSITION: cancelling an in_progress trip is rejected for both roles', async (t) => {
   const { tripCode, passenger, driver } = await createAssignedTrip(t);
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
 
   const asPassenger = await request('POST', `/trips/${tripCode}/cancel`, {
@@ -750,4 +773,111 @@ test('M6 trip chat and SOS writes are participant-scoped and stored', async (t) 
     [tripCode],
   );
   assert.equal(rows[0].count, 1);
+});
+
+test('a driver cannot start a trip alone: it stays "arrived" until the rider confirms', async (t) => {
+  const { tripCode, driver } = await createAssignedTrip(t);
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+
+  const first = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  const again = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  assert.equal(first.status, 202);
+  assert.equal(again.status, 202);
+  assert.equal((await again.json()).data.startRequestedAt, (await first.json()).data.startRequestedAt, 'the first request time is kept');
+
+  const { rows } = await pool.query(`SELECT status, started_at FROM trips WHERE trip_code = $1`, [tripCode]);
+  assert.equal(rows[0].status, 'arrived');
+  assert.equal(rows[0].started_at, null);
+
+  const { rows: notes } = await pool.query(
+    `SELECT n.title FROM notifications n JOIN trips tr ON tr.passenger_id = n.user_id
+     WHERE tr.trip_code = $1 AND n.title = 'Your driver wants to start the trip'`,
+    [tripCode],
+  );
+  assert.equal(notes.length, 1, 'the rider is told once, not on every retry');
+});
+
+test('the rider can confirm first; the driver\'s start then begins the trip straight away', async (t) => {
+  const { tripCode, driver, passenger } = await createAssignedTrip(t);
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+
+  const confirmed = await request('POST', `/trips/${tripCode}/pickup/confirm`, { accessToken: passenger.accessToken });
+  assert.equal(confirmed.status, 200);
+  const confirmedBody = (await confirmed.json()).data;
+  assert.equal(confirmedBody.status, 'arrived');
+  assert.ok(confirmedBody.pickupConfirmedAt);
+
+  const detail = (await (await request('GET', `/trips/${tripCode}`, { accessToken: driver.accessToken })).json()).data;
+  assert.ok(detail.pickupConfirmedAt, 'the driver can see the rider confirmed');
+
+  const started = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  assert.equal(started.status, 200);
+  assert.equal((await started.json()).data.status, 'in_progress');
+});
+
+test('only the trip\'s own rider can confirm the pickup, and only once the driver has arrived', async (t) => {
+  const { tripCode, driver, passenger } = await createAssignedTrip(t);
+  const early = await request('POST', `/trips/${tripCode}/pickup/confirm`, { accessToken: passenger.accessToken });
+  assert.equal(early.status, 409);
+  assert.equal((await early.json()).error.code, 'BAD_TRANSITION');
+
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  const stranger = await createPassenger();
+  const notMine = await request('POST', `/trips/${tripCode}/pickup/confirm`, { accessToken: stranger.accessToken });
+  assert.equal(notMine.status, 404);
+  const byDriver = await request('POST', `/trips/${tripCode}/pickup/confirm`, { accessToken: driver.accessToken });
+  assert.equal(byDriver.status, 403);
+});
+
+test('"My driver isn\'t here" undoes the arrival: the trip cannot start until the driver arrives again', async (t) => {
+  const { tripCode, driver, passenger } = await createAssignedTrip(t);
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  assert.equal((await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken })).status, 202);
+
+  const disputed = await request('POST', `/trips/${tripCode}/pickup/dispute`, { accessToken: passenger.accessToken });
+  assert.equal(disputed.status, 200);
+  const body = (await disputed.json()).data;
+  assert.equal(body.status, 'assigned');
+  assert.ok(body.arrivalDisputedAt);
+
+  const { rows } = await pool.query(
+    `SELECT id, status, arrived_at, start_requested_at, pickup_confirmed_at FROM trips WHERE trip_code = $1`,
+    [tripCode],
+  );
+  assert.equal(rows[0].status, 'assigned');
+  assert.equal(rows[0].arrived_at, null);
+  assert.equal(rows[0].start_requested_at, null, 'the earlier start request is dropped');
+
+  const { rows: audit } = await pool.query(
+    `SELECT action FROM audit_logs WHERE entity_type = 'trips' AND entity_id = $1 AND action = 'TRIP_ARRIVAL_DISPUTED'`,
+    [rows[0].id],
+  );
+  assert.equal(audit.length, 1);
+  const { rows: history } = await pool.query(
+    `SELECT from_status, to_status FROM trip_status_history WHERE trip_id = $1 ORDER BY id DESC LIMIT 1`,
+    [rows[0].id],
+  );
+  assert.deepEqual({ ...history[0] }, { from_status: 'arrived', to_status: 'assigned' });
+
+  const confirmNow = await request('POST', `/trips/${tripCode}/pickup/confirm`, { accessToken: passenger.accessToken });
+  assert.equal(confirmNow.status, 409, 'nothing to confirm until the driver arrives again');
+  const startNow = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+  assert.equal(startNow.status, 409);
+
+  // Arriving again resets the handshake; both sides still have to agree.
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  assert.equal((await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken })).status, 202);
+  const started = await riderConfirmsPickup(tripCode);
+  assert.equal((await started.json()).data.status, 'in_progress');
+});
+
+test('a rider cannot dispute an arrival once the trip has started', async (t) => {
+  const { tripCode, driver, passenger } = await createAssignedTrip(t);
+  await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
+  await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
+
+  const disputed = await request('POST', `/trips/${tripCode}/pickup/dispute`, { accessToken: passenger.accessToken });
+  assert.equal(disputed.status, 409);
+  assert.equal((await disputed.json()).error.code, 'BAD_TRANSITION');
 });
