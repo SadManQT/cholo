@@ -20,7 +20,7 @@ import { AppError } from '../utils/AppError.js';
 import { signScoped, verifyScoped } from '../utils/scopedTokens.js';
 import { logger } from '../utils/logger.js';
 import { computeCommission } from '../utils/commissionMath.js';
-import { haversineDistanceKm } from '../utils/haversine.js';
+import { haversineDistanceKm, pathDistanceKm } from '../utils/haversine.js';
 import { quote as computeFare, round2 } from '../utils/fareMath.js';
 import { computeDiscount, isPromoApplicable, isPromoUsageAvailable } from '../utils/promoMath.js';
 import * as geoService from './geo.service.js';
@@ -258,6 +258,17 @@ async function currentPosition(driverId, reported, client) {
   return driversRepo.findFreshLocation(driverId, FRESH_LOCATION_SECONDS, client);
 }
 
+// Ended early, the rider pays for the distance actually covered: the GPS path from pickup, through every
+// position the driver's phone sent during the ride, to where it stopped. Without enough GPS points it falls
+// back to the road route to that spot. A detour can't inflate the bill past the route plus DETOUR_ALLOWANCE.
+const DETOUR_ALLOWANCE = 1.25;
+async function distanceDriven(trip, pickup, endedAt, routeKm, client) {
+  const pings = trip.startedAt ? await tripsRepo.listPingsSince(trip.id, trip.startedAt, client) : [];
+  if (pings.length < 2) return routeKm;
+  const drivenKm = pathDistanceKm([pickup, ...pings, endedAt]);
+  return round2(Math.min(drivenKm, routeKm * DETOUR_ALLOWANCE));
+}
+
 export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, lng, endEarly = false } = {}) {
   const reported = lat != null && lng != null ? { lat, lng } : undefined;
   const result = await withTransaction(async (client) => {
@@ -283,13 +294,15 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       await assertNear(driverId, dropoff, reported, 'TOO_FAR_FROM_DROPOFF', client);
     }
 
-    const { distanceKm, durationMin } = endedAt
-      ? await geoService.route({ lat: trip.pickupLat, lng: trip.pickupLng }, endedAt, await tripsRepo.listReachedStops(trip.id, client))
+    const pickup = { lat: trip.pickupLat, lng: trip.pickupLng };
+    let { distanceKm, durationMin } = endedAt
+      ? await geoService.route(pickup, endedAt, await tripsRepo.listReachedStops(trip.id, client))
       : await geoService.route(
-        { lat: trip.pickupLat, lng: trip.pickupLng },
+        pickup,
         dropoff,
         (trip.stops ?? []).map(({ lat: stopLat, lng: stopLng }) => ({ lat: stopLat, lng: stopLng })),
       );
+    if (endedAt) distanceKm = await distanceDriven(trip, pickup, endedAt, distanceKm, client);
 
     const tariff = await pricingRepo.getCurrentTariff(trip.cityId, trip.categoryId, client);
     if (!tariff) throw new AppError(422, 'NO_TARIFF_FOR_MARKET');
