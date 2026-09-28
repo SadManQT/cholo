@@ -61,8 +61,15 @@ export async function disputeArrival(tripCode: string) {
   return response.data.data;
 }
 
+export interface TripCompletion {
+  status: TripStatus;
+  endedEarly: boolean;
+  fare: { total: string; currency: string };
+  payment: { method: string; status: 'paid' | 'unpaid' | 'refunded' };
+}
+
 export async function completeTrip(tripCode: string, waitingMin = 0, position?: Position, { endEarly = false } = {}) {
-  const response = await apiClient.post<ApiSuccess<{ status: TripStatus; endedEarly: boolean }>>(
+  const response = await apiClient.post<ApiSuccess<TripCompletion>>(
     `/trips/${encodeURIComponent(tripCode)}/complete`,
     { waitingMin, ...positionBody(position), ...(endEarly ? { endEarly: true } : {}) },
   );

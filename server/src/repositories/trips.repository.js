@@ -457,6 +457,16 @@ export async function findSharedView(tripId, client = pool) {
   return rows[0];
 }
 
+/** The driver's last saved position since the trip started, or null. */
+export async function findLastPingSince(tripId, since, client) {
+  const { rows } = await client.query(
+    `SELECT lat::float8 AS lat, lng::float8 AS lng FROM trip_location_pings
+     WHERE trip_id = $1 AND recorded_at >= $2 ORDER BY recorded_at DESC, id DESC LIMIT 1`,
+    [tripId, since],
+  );
+  return rows[0] ?? null;
+}
+
 /** The driver's saved positions since the trip started, oldest first: the path actually driven. */
 export async function listPingsSince(tripId, since, client) {
   const { rows } = await client.query(

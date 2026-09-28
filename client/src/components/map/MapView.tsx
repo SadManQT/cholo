@@ -9,6 +9,16 @@ import type { LatLng, RouteResult } from '../../types/geo.types';
 import { t } from '../../i18n';
 import { useTheme } from '../../theme';
 
+// Navigating away mid-zoom leaves Leaflet's zoom/pan animation steps running against a removed map; they read
+// the removed pane's position and throw "Cannot read properties of undefined (reading '_leaflet_pos')".
+// A removed map has no pane, so those late steps get (0, 0) and do nothing.
+type MapInternals = { _mapPane?: HTMLElement; _getMapPanePos: () => L.Point };
+const mapProto = L.Map.prototype as unknown as MapInternals;
+const originalGetMapPanePos = mapProto._getMapPanePos;
+mapProto._getMapPanePos = function guardedGetMapPanePos(this: MapInternals) {
+  return this._mapPane ? originalGetMapPanePos.call(this) : L.point(0, 0);
+};
+
 const DHAKA_CENTER: LatLng = { lat: 23.8103, lng: 90.4125 };
 
 const VECTOR_STYLE_URLS = {

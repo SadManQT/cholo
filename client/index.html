@@ -9,12 +9,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Cholo: book rides in Bangladesh, track your driver live, and pay by cash, wallet, bKash, Nagad or card." />
     <title>Cholo</title>
-    <!-- Apply the saved or system theme before first paint so dark mode never flashes white (see src/theme.ts). -->
+    <!-- Apply the saved theme before first paint so dark mode never flashes white (see src/theme.ts). Light is the default. -->
     <script>
       (function () {
         var theme;
         try { theme = localStorage.getItem('cholo.theme'); } catch (e) {}
-        var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var dark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) {
           document.documentElement.classList.add('dark');
           document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0A131B');
