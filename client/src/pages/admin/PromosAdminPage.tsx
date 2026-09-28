@@ -5,7 +5,7 @@ import * as referenceApi from '../../api/reference.api';
 import { Button, Card, EmptyState, Input, Skeleton, StatePill, toast } from '../../components/ui';
 import type { City, VehicleCategory } from '../../types/ride.types';
 import { getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
-import { formatBDT, formatDateTime } from '../../utils/format';
+import { dhakaDate, formatBDT, formatDateTime } from '../../utils/format';
 
 function localNow() {
   const now = new Date();
@@ -150,10 +150,10 @@ export function PromosAdminPage() {
               </select>
             </label>
             <label className="text-sm font-medium">Starts
-              <input type="datetime-local" value={form.validFrom} onChange={(event) => update('validFrom', event.target.value)} className={select} />
+              <input type="datetime-local" value={form.validFrom} min={`${dhakaDate(-365)}T00:00`} max={`${dhakaDate(2 * 365)}T23:59`} onChange={(event) => update('validFrom', event.target.value)} className={select} />
             </label>
             <label className="text-sm font-medium">Ends (optional)
-              <input type="datetime-local" value={form.validUntil} onChange={(event) => update('validUntil', event.target.value)} className={select} />
+              <input type="datetime-local" value={form.validUntil} min={form.validFrom || localNow()} max={`${dhakaDate(5 * 365)}T23:59`} onChange={(event) => update('validUntil', event.target.value)} className={select} />
               {fieldErrors.validUntil && <span className="mt-1 block text-xs text-danger-600">{fieldErrors.validUntil}</span>}
             </label>
             <Input label="Description (shown to riders)" value={form.description} onChange={(event) => update('description', event.target.value)} containerClassName="md:col-span-2" />

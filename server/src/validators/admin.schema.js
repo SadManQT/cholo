@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { dhakaDate } from '../utils/dhakaDate.js';
+import { dateTimeWithin, isFuture, isoDate, pastMonth } from './dates.js';
+
 export const driverQueueQuerySchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected', 'suspended']).default('pending'),
   page: z.coerce.number().int().positive().default(1),
@@ -36,7 +39,7 @@ export const statsQuerySchema = z.object({
 });
 
 export const analyticsQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must look like 2026-09').optional(),
+  month: pastMonth.optional(),
   minTrips: z.coerce.number().int().min(1).max(1000).default(2),
 });
 
@@ -57,10 +60,10 @@ export const userDecisionSchema = z.object({
 
 export const suspendUserSchema = userDecisionSchema.extend({
   duration: z.enum(['permanent', '1w', '1m', 'custom']).default('permanent'),
-  until: z.iso.datetime({ offset: true }).optional(),
-}).refine(({ duration, until }) => duration !== 'custom' || (until && new Date(until) > new Date()), {
+  until: dateTimeWithin(10, 5).optional(),
+}).refine(({ duration, until }) => duration !== 'custom' || (until && isFuture(until)), {
   path: ['until'],
-  message: 'Choose an end date in the future',
+  message: 'Choose an end date in the future (use a permanent suspension for longer than 5 years)',
 });
 
 export const pricingRulesQuerySchema = z.object({
@@ -81,13 +84,16 @@ export const publishPricingRuleSchema = z
     waitingPerMin: z.coerce.number().nonnegative().default(0),
     freeWaitMinutes: z.coerce.number().int().nonnegative().default(0),
     cancellationFee: z.coerce.number().nonnegative().default(0),
-    effectiveFrom: z.string().datetime({ offset: true }),
-    effectiveTo: z.string().datetime({ offset: true }).optional(),
+    effectiveFrom: dateTimeWithin(1, 5),
+    effectiveTo: dateTimeWithin(10, 10).optional(),
   })
   .refine(
     ({ effectiveFrom, effectiveTo }) => !effectiveTo || new Date(effectiveTo) > new Date(effectiveFrom),
     { path: ['effectiveTo'], message: 'effectiveTo must be later than effectiveFrom' },
-  );
+  )
+  .refine(({ effectiveTo }) => !effectiveTo || isFuture(effectiveTo), {
+    path: ['effectiveTo'], message: 'effectiveTo must be in the future',
+  });
 
 export const vehicleQueueQuerySchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
@@ -176,8 +182,8 @@ const promoFields = {
   firstRideOnly: z.boolean().optional(),
   cityId: z.coerce.number().int().positive().nullable().optional(),
   categoryId: z.coerce.number().int().positive().nullable().optional(),
-  validFrom: z.string().datetime({ offset: true }),
-  validUntil: z.string().datetime({ offset: true }).nullable().optional(),
+  validFrom: dateTimeWithin(1, 2),
+  validUntil: dateTimeWithin(10, 5).nullable().optional(),
   isActive: z.boolean().optional(),
 };
 
@@ -187,6 +193,9 @@ const promoRules = (data, context) => {
   }
   if (data.validFrom && data.validUntil && new Date(data.validUntil) <= new Date(data.validFrom)) {
     context.addIssue({ code: 'custom', path: ['validUntil'], message: 'End must be after start' });
+  }
+  if (data.validUntil && !isFuture(data.validUntil)) {
+    context.addIssue({ code: 'custom', path: ['validUntil'], message: 'End must be in the future' });
   }
 };
 
@@ -209,10 +218,14 @@ export const createSurgeSchema = z.object({
   categoryId: z.coerce.number().int().positive().nullable().optional(),
   multiplier: z.number().min(1.1, 'Surge starts at 1.1×').max(3, 'Surge is capped at 3×'),
   reason: z.enum(['demand', 'weather', 'event', 'peak_hour']),
-  startsAt: z.string().datetime({ offset: true }).optional(),
-  endsAt: z.string().datetime({ offset: true }).nullable().optional(),
+  // Surge is a short-term lever: it may start up to an hour back (to cover a spike already underway)
+  // and is planned at most 30 days ahead.
+  startsAt: dateTimeWithin(1 / 8760, 30 / 365.25).optional(),
+  endsAt: dateTimeWithin(10, 60 / 365.25).nullable().optional(),
 }).refine((data) => !data.endsAt || new Date(data.endsAt) > new Date(data.startsAt ?? Date.now()), {
   path: ['endsAt'], message: 'End must be after start',
+}).refine((data) => !data.endsAt || isFuture(data.endsAt), {
+  path: ['endsAt'], message: 'End must be in the future',
 });
 
 export const reportQueueQuerySchema = z.object({
@@ -225,12 +238,11 @@ export const updateReportSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
-
 export const exportParamsSchema = z.object({ kind: z.enum(['trips', 'payments', 'withdrawals']) });
 
 export const exportQuerySchema = z.object({ from: isoDate, to: isoDate })
   .refine((data) => data.from <= data.to, { path: ['to'], message: 'End date must be on or after the start' })
+  .refine((data) => data.to <= dhakaDate(), { path: ['to'], message: 'End date cannot be in the future' })
   .refine((data) => (new Date(data.to) - new Date(data.from)) / 86_400_000 <= 366, {
     path: ['to'], message: 'Export at most one year at a time',
   });

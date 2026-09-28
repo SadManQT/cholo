@@ -70,7 +70,7 @@ function DecisionDialog({ user, onClose, onDone }: { user: AdminUserRow; onClose
           </div>
           {duration === 'custom' && (
             <label className="mt-3 flex flex-col gap-1.5 text-sm font-medium">Suspended through
-              <input type="date" value={until} min={dhakaDate(1)} onChange={(event) => setUntil(event.target.value)} className={`h-11 rounded-xl border bg-surface px-3.5 ${errors.until ? 'border-danger-600' : 'border-border'}`} />
+              <input type="date" value={until} min={dhakaDate(1)} max={dhakaDate(5 * 365)} onChange={(event) => setUntil(event.target.value)} className={`h-11 rounded-xl border bg-surface px-3.5 ${errors.until ? 'border-danger-600' : 'border-border'}`} />
               {errors.until && <span className="font-normal text-danger-600">{errors.until}</span>}
             </label>
           )}

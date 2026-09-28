@@ -38,7 +38,7 @@ function ExportsCard() {
       <p className="text-sm text-ink-500">CSV files open in Excel and Google Sheets. Dates are Dhaka days, up to one year at a time.</p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <label className="text-sm font-medium">From
-          <input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
+          <input type="date" value={from} min={dhakaDate(-10 * 365)} max={to} onChange={(event) => setFrom(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
         </label>
         <label className="text-sm font-medium">To
           <input type="date" value={to} min={from} max={dhakaDate()} onChange={(event) => setTo(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />

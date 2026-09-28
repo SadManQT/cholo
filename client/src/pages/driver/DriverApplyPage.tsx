@@ -108,6 +108,7 @@ export function DriverApplyPage() {
               type="date"
               value={form.licenseExpiry}
               min={dhakaDate(1)}
+              max={dhakaDate(15 * 365)}
               onChange={(event) => setForm({ ...form, licenseExpiry: event.target.value })}
               aria-invalid={Boolean(errors.licenseExpiry) || undefined}
               className={`h-11 rounded-xl border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 ${errors.licenseExpiry ? 'border-danger-600 focus-visible:ring-danger-600' : 'border-border focus-visible:ring-cholo-700'}`}

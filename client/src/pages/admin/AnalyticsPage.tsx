@@ -275,7 +275,7 @@ export function AnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <label className="text-sm font-medium" htmlFor="analytics-month">Month
-            <input id="analytics-month" type="month" value={month} max={dhakaDate().slice(0, 7)} onChange={(event) => event.target.value && setMonth(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
+            <input id="analytics-month" type="month" value={month} min={dhakaDate(-10 * 365).slice(0, 7)} max={dhakaDate().slice(0, 7)} onChange={(event) => event.target.value && setMonth(event.target.value)} className="mt-1 block h-11 rounded-xl border border-border bg-surface px-3" />
           </label>
           <label className="text-sm font-medium" htmlFor="analytics-min-trips">Min. trips to rank a driver
             <input id="analytics-min-trips" type="number" min={1} max={1000} value={minTrips} onChange={(event) => setMinTrips(Math.max(1, Number(event.target.value) || 1))} className="mt-1 block h-11 w-28 rounded-xl border border-border bg-surface px-3" />

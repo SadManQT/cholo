@@ -2,14 +2,25 @@ import { z } from 'zod';
 
 import { isOwnFileUrl } from '../services/storage.service.js';
 import { dhakaDate } from '../utils/dhakaDate.js';
+import { dhakaDateInYears, isoDate, pastMonth } from './dates.js';
 
-const isoDate = z.string().date();
 const today = () => dhakaDate();
+
+// A document can't be issued in the future or before its holder could plausibly have it, and must not
+// already be expired or claim to last longer than any Bangladeshi licence, NID or vehicle paper does.
+const issueDate = isoDate
+  .refine((value) => value <= today(), 'Issue date cannot be in the future')
+  .refine((value) => value >= dhakaDateInYears(-60), 'Issue date is too far in the past');
+const expiryDate = isoDate
+  .refine((value) => value > today(), 'This document has already expired')
+  .refine((value) => value <= dhakaDateInYears(20), 'Expiry date is too far in the future');
 
 export const applyDriverSchema = z.object({
   nidNumber: z.string().regex(/^(?:[0-9]{10}|[0-9]{13}|[0-9]{17})$/, 'NID must contain 10, 13, or 17 digits'),
   licenseNumber: z.string().trim().min(1).max(30),
-  licenseExpiry: isoDate.refine((value) => value > today(), 'Driving license must not be expired'),
+  licenseExpiry: isoDate
+    .refine((value) => value > today(), 'Driving license must not be expired')
+    .refine((value) => value <= dhakaDateInYears(15), 'License expiry is too far in the future'),
 });
 
 const documentDates = (schema) => schema.refine(
@@ -20,8 +31,8 @@ const documentDates = (schema) => schema.refine(
 const documentFields = {
   fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form'),
   docNumber: z.string().trim().min(1).max(60).optional(),
-  issueDate: isoDate.optional(),
-  expiryDate: isoDate.optional(),
+  issueDate: issueDate.optional(),
+  expiryDate: expiryDate.optional(),
 };
 
 export const createDriverDocumentSchema = documentDates(z.object({
@@ -77,7 +88,12 @@ export const respondToOfferSchema = z.object({
 export const earningsQuerySchema = z.object({
   from: isoDate.default(() => dhakaDate(-29)),
   to: isoDate.default(today),
-});
+})
+  .refine(({ from, to }) => from <= to, { path: ['to'], message: 'End date must be on or after the start' })
+  .refine(({ to }) => to <= today(), { path: ['to'], message: 'End date cannot be in the future' })
+  .refine(({ from, to }) => (new Date(to) - new Date(from)) / 86_400_000 <= 366, {
+    path: ['from'], message: 'Choose at most one year at a time',
+  });
 
 export const createPayoutAccountSchema = z.object({
   accountType: z.enum(['bkash', 'nagad', 'bank']),
@@ -95,5 +111,5 @@ export const createWithdrawalSchema = z.object({
 });
 
 export const statementParamsSchema = z.object({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM'),
+  month: pastMonth,
 });

@@ -95,7 +95,7 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
               {askNumber && <Input label={t('Document number')} value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
               {askExpiry && (
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">{t('Expiry date')}
-                  <input type="date" value={expiryDate} min={dhakaDate(1)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
+                  <input type="date" value={expiryDate} min={dhakaDate(1)} max={dhakaDate(20 * 365)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
                 </label>
               )}
             </div>
