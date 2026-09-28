@@ -175,7 +175,7 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-ink-900/40 transition-opacity duration-200 ease-cholo-out ${
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ease-cholo-out ${
           snapPoint === 'full' ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => onClose?.()}

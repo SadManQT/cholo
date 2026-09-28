@@ -93,3 +93,5 @@ export const FlagIcon = (props: IconProps) => <Stroke {...props}><path d="M4 21V
 export const ShieldIcon = (props: IconProps) => <Stroke {...props}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" /><path d="M12 8v4M12 16h.01" /></Stroke>;
 export const GiftIcon = (props: IconProps) => <Stroke {...props}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v9h14v-9M12 8S10.5 3 8 3a2.5 2.5 0 0 0 0 5h4ZM12 8s1.5-5 4-5a2.5 2.5 0 0 1 0 5h-4Z" /></Stroke>;
 export const DownloadIcon = (props: IconProps) => <Stroke {...props}><path d="M12 3v12M7 10l5 5 5-5M4 21h16" /></Stroke>;
+export const SunIcon = (props: IconProps) => <Stroke {...props}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Stroke>;
+export const MoonIcon = (props: IconProps) => <Stroke {...props}><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" /></Stroke>;

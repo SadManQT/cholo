@@ -3,12 +3,41 @@
 @tailwind utilities;
 
 @layer base {
+  /* Palette as RGB channels so Tailwind's opacity modifiers (bg-cholo-700/30) keep working. */
   :root {
-    --color-cholo-700: theme('colors.cholo.700');
+    color-scheme: light;
+    --c-cholo-50: 233 245 241;
+    --c-cholo-700: 14 122 95;
+    --c-cholo-800: 10 92 72;
+    --c-ink-500: 90 107 122;
+    --c-ink-900: 11 31 46;
+    --c-marigold-500: 245 166 35;
+    --c-danger-600: 220 38 38;
+    --c-info-600: 37 99 235;
+    --c-surface: 255 255 255;
+    --c-surface-alt: 245 247 249;
+    --c-border: 227 232 238;
+    --color-cholo-700: rgb(var(--c-cholo-700));
 
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Dark theme: navy surfaces, light ink, and brand colours lifted enough to read on them. */
+  :root.dark {
+    color-scheme: dark;
+    --c-cholo-50: 16 48 40;
+    --c-cholo-700: 22 150 115;
+    --c-cholo-800: 14 122 95;
+    --c-ink-500: 150 166 181;
+    --c-ink-900: 230 237 243;
+    --c-marigold-500: 247 178 64;
+    --c-danger-600: 244 96 96;
+    --c-info-600: 88 145 245;
+    --c-surface: 18 30 41;
+    --c-surface-alt: 10 19 27;
+    --c-border: 38 54 68;
   }
 
   html,
@@ -63,7 +92,16 @@
   }
 
   .leaflet-container {
-    @apply font-sans;
+    @apply bg-surface-alt font-sans;
+  }
+
+  .dark .leaflet-control-zoom a,
+  .dark .leaflet-control-attribution {
+    @apply border-border bg-surface text-ink-900;
+  }
+
+  .dark .leaflet-control-attribution a {
+    @apply text-cholo-700;
   }
 
   .animate-stagger-in {

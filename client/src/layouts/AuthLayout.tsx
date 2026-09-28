@@ -3,6 +3,7 @@ import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { EASE_OUT } from '../utils/motion';
 import { t } from '../i18n';
 import { LanguageSwitch } from '../components/layout/LanguageSwitch';
+import { ThemeSwitch } from '../components/layout/ThemeSwitch';
 
 export function AuthLayout() {
   const location = useLocation();
@@ -27,7 +28,10 @@ export function AuthLayout() {
           </motion.div>
         </AnimatePresence>
       </div>
-      <LanguageSwitch />
+      <div className="flex items-center gap-2">
+        <ThemeSwitch />
+        <LanguageSwitch />
+      </div>
     </div>
   );
 }
