@@ -368,3 +368,46 @@ test('"End trip here" at the drop-off is just a normal completion', async () => 
   const ended = await (await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, lat: DROPOFF.lat, lng: DROPOFF.lng } })).json();
   assert.equal(ended.data.endedEarly, false);
 });
+
+test('after the rider asks to stop, a plain "Complete trip" away from the drop-off is billed as ended early', async () => {
+  const { driver, code, tripId } = await startedTripWithStopRequest();
+  const midway = { lat: 23.7700, lng: 90.3900 };
+  await drive(tripId, line(PICKUP, midway, 10));
+  const completed = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { ...midway } });
+  assert.equal(completed.status, 200);
+  const { data } = await completed.json();
+  assert.equal(data.endedEarly, true);
+
+  const straightKm = haversineDistanceKm(PICKUP.lat, PICKUP.lng, midway.lat, midway.lng);
+  const { rows } = await db.query(`SELECT actual_distance_km::float8 AS km, ended_early_at FROM trips WHERE id = $1`, [tripId]);
+  assert.ok(Math.abs(rows[0].km - straightKm) < 0.05, `charged ${rows[0].km} km for ~${straightKm.toFixed(2)} km driven`);
+  assert.ok(rows[0].ended_early_at);
+});
+
+test('after the rider asks to stop, a driver with no live GPS is billed from the last point of the ride', async () => {
+  const { driver, code, tripId } = await startedTripWithStopRequest();
+  const midway = { lat: 23.7700, lng: 90.3900 };
+  await drive(tripId, line(PICKUP, midway, 10));
+  await db.query(`UPDATE driver_availability SET last_ping_at = now() - interval '1 hour' WHERE driver_id = $1`, [driver.userId]);
+
+  const completed = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: {} });
+  assert.equal(completed.status, 200);
+  assert.equal((await completed.json()).data.endedEarly, true);
+  const { rows } = await db.query(`SELECT end_lat::float8 AS lat, end_lng::float8 AS lng FROM trips WHERE id = $1`, [tripId]);
+  assert.deepEqual({ ...rows[0] }, midway);
+});
+
+test('without a stop request, "Complete trip" away from the drop-off is still refused', async () => {
+  const rider = await createUser();
+  const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
+  await book(rider);
+  const offer = (await pendingOffersFor(driver.userId))[0];
+  const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
+  const code = accepted.data.trip.publicCode;
+  await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await riderConfirmsPickup(code);
+  await call('POST', `/trips/${code}/start`, { token: driver.token });
+  const refused = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { lat: 23.7700, lng: 90.3900 } });
+  assert.equal(refused.status, 422);
+  assert.equal((await refused.json()).error.code, 'TOO_FAR_FROM_DROPOFF');
+});

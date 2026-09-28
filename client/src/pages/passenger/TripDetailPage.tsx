@@ -102,7 +102,13 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         <StatusBadge status={trip.status} />
       </div>
 
-      <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} className="mb-5 h-56 rounded-2xl" />
+      {/* Ended early: show the ride as it happened (to where it stopped), not the planned route. */}
+      <MapView
+        pickup={trip.pickup}
+        dropoff={trip.endedEarly ? { lat: trip.endedEarly.lat, lng: trip.endedEarly.lng } : trip.dropoff}
+        stops={trip.endedEarly ? trip.stops.filter((stop) => stop.arrivedAt) : trip.stops}
+        className="mb-5 h-56 rounded-2xl"
+      />
 
       <Card className="mb-4">
         <TripStatusStepper status={trip.status} />
@@ -139,7 +145,15 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         {trip.stops.map((stop) => (
           <div key={stop.order}><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{t('Stop {0}', stop.order)}</p><p>{stop.address || t('Pinned on the map')}</p></div>
         ))}
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{t('Dropoff')}</p><p>{trip.dropoff.address || t('Dropoff location')}</p></div>
+        {trip.endedEarly ? (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{t('Ended at')}</p>
+            <p>{t('Where the rider asked to stop')}</p>
+            <p className="text-sm text-ink-500"><span className="line-through">{trip.dropoff.address || t('Dropoff location')}</span> · {t('planned drop-off')}</p>
+          </div>
+        ) : (
+          <div><p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{t('Dropoff')}</p><p>{trip.dropoff.address || t('Dropoff location')}</p></div>
+        )}
         <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
           <div><p className="text-ink-500">{t('Assigned')}</p><p>{formatDateTime(trip.timeline.assignedAt)}</p></div>
           <div><p className="text-ink-500">{t('Distance')}</p><p>{formatDistance(trip.actual.distanceKm ?? trip.estimate.distanceKm)}</p></div>
@@ -149,7 +163,11 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
       <Card className="mb-4">
         <div className="mb-3 flex items-end justify-between border-b border-border pb-3">
           <div><p className="text-sm text-ink-500">{trip.status === 'completed' ? t('Final fare') : t('Estimated fare')}</p><p className="text-4xl font-bold tabular-nums">{formatBDT(displayFare)}</p></div>
-          <p className="text-sm font-medium uppercase text-ink-500">{t(trip.fare.paymentStatus)}</p>
+          <p className={`text-sm font-medium uppercase ${trip.fare.paymentStatus === 'paid' ? 'text-cholo-700' : 'text-ink-500'}`}>
+            {trip.status === 'completed' && trip.fare.paymentStatus === 'paid'
+              ? (trip.estimate.paymentIntent === 'cash' ? t('Paid in cash') : t('Paid'))
+              : t(trip.fare.paymentStatus)}
+          </p>
         </div>
         {trip.status === 'completed' ? (
           <div className="space-y-2 text-sm">
