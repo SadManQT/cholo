@@ -162,7 +162,7 @@ async function createDriverWithBalance(t) {
   const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
   const booked = await request('POST', '/ride-requests', {
     accessToken: passenger.accessToken,
-    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'wallet' },
+    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'bkash' },
   });
   assert.equal(booked.status, 201);
   const [offer] = (await (await request('GET', '/driver/offers', { accessToken: driver.accessToken })).json()).data;

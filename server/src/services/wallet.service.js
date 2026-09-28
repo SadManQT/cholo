@@ -29,7 +29,8 @@ export async function listTransactions(userId, query) {
 }
 
 export async function initiateTopup(userId, { amount, method }) {
-  await requireWallet(userId);
+  const wallet = await requireWallet(userId);
+  if (wallet.status !== 'active') throw new AppError(409, 'WALLET_FROZEN');
 
   const payment = await withTransaction((client) => paymentsRepo.insertPayment({
     purpose: 'wallet_topup',

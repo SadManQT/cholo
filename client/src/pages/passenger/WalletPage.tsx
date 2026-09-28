@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import * as walletApi from '../../api/wallet.api';
 import { TopUpCard } from '../../components/payment/TopUpCard';
 import { WalletTxnRow } from '../../components/wallet/WalletTxnRow';
@@ -19,6 +20,11 @@ export function WalletPage() {
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
+  // Arriving from a trip that the wallet doesn't cover: pre-fill the shortfall and come back to that trip.
+  const [searchParams] = useSearchParams();
+  const neededAmount = Number(searchParams.get('amount')) || undefined;
+  const returnTo = searchParams.get('returnTo');
+  const safeReturnTo = returnTo?.startsWith('/trips/') ? returnTo : null;
 
   const loadPage = useCallback(async (nextPage: number, replace = false) => {
     const requestId = ++requestIdRef.current;
@@ -82,7 +88,20 @@ export function WalletPage() {
             <p className="mt-2 text-xs text-white/70">{wallet?.currency === 'BDT' ? t('Taka (BDT)') : wallet?.currency}{wallet?.status === 'frozen' ? t(' · Frozen') : ''}</p>
           </div>
 
-          {wallet?.status !== 'frozen' && <TopUpCard />}
+          {wallet?.status === 'frozen' ? (
+            <p role="alert" className="mb-5 rounded-xl bg-danger-600/10 p-4 text-sm text-danger-600">
+              {t('Your wallet is frozen, so it can’t be topped up or used to pay. Contact support to unfreeze it.')}
+            </p>
+          ) : (
+            <>
+              {safeReturnTo && neededAmount && (
+                <p role="status" className="mb-3 rounded-xl bg-marigold-500/15 p-3 text-sm text-ink-900">
+                  {t('Add at least {0} to pay for your trip.', formatBDT(neededAmount))}
+                </p>
+              )}
+              <TopUpCard initialAmount={neededAmount} returnTo={safeReturnTo} />
+            </>
+          )}
 
           <h2 className="mb-3 font-semibold">{t('Transactions')}</h2>
           {transactions.length === 0 ? (

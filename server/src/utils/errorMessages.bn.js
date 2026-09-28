@@ -75,6 +75,7 @@ export const ERROR_MESSAGES_BN = Object.freeze({
   ALREADY_PAID: 'এই ট্রিপের ভাড়া আগেই পরিশোধ হয়েছে।',
   PAYMENT_IN_PROGRESS: 'এই ট্রিপের একটি পেমেন্ট চলছে।',
   INSUFFICIENT_FUNDS: 'এই ভাড়ার জন্য আপনার ওয়ালেটে যথেষ্ট টাকা নেই।',
+  WALLET_FROZEN: 'আপনার ওয়ালেট স্থগিত আছে। সাপোর্টে যোগাযোগ করুন, অথবা অন্য পেমেন্ট পদ্ধতি বেছে নিন।',
   GATEWAY_UNAVAILABLE: 'পেমেন্ট গেটওয়ে সাময়িকভাবে বন্ধ। আবার চেষ্টা করুন।',
   GATEWAY_SESSION_FAILED: 'পেমেন্ট গেটওয়ে এই পেমেন্ট শুরু করতে পারেনি।',
   BAD_SIGNATURE: 'এই ওয়েবহুক যাচাই করা যায়নি।',
