@@ -6,6 +6,10 @@ import * as supportService from '../services/support.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as zonesService from '../services/zones.service.js';
 
+export const listPendingDocuments = asyncHandler(async (request, response) => {
+  response.json({ success: true, data: await adminService.listPendingDocuments() });
+});
+
 export const listDrivers = asyncHandler(async (request, response) => {
   const result = await adminService.listDrivers(request.query);
   response.json({ success: true, ...result });

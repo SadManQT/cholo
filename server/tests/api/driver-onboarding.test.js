@@ -243,6 +243,8 @@ test('driver document uploads preserve history and reject invalid date ranges', 
       expiryDate: '2035-01-01',
     },
   });
+  // Once reviewed, a new upload is a new version (a still-pending copy would be edited in place instead).
+  await databaseClient.query(`UPDATE driver_documents SET status = 'approved' WHERE driver_id = $1`, [driver.userId]);
   const second = await request('POST', '/driver/documents', {
     accessToken: driver.driverToken,
     body: {
@@ -270,6 +272,43 @@ test('driver document uploads preserve history and reject invalid date ranges', 
     },
   });
   assert.equal(invalid.status, 422);
+});
+
+test('a document waiting for review is edited in place, and the admin queue shows the latest copy', async () => {
+  const driver = await applyAsDriver();
+  const admin = await createUser({ admin: true, roles: ['PASSENGER', 'ADMIN'] });
+
+  const noFile = await request('POST', '/driver/documents', {
+    accessToken: driver.driverToken, body: { docType: 'photo', docNumber: 'X' },
+  });
+  assert.equal(noFile.status, 422);
+  assert.equal((await noFile.json()).error.code, 'DOCUMENT_FILE_REQUIRED');
+
+  const first = await (await request('POST', '/driver/documents', {
+    accessToken: driver.driverToken,
+    body: { docType: 'license', fileUrl: 'private://documents/license-typo.jpg', docNumber: 'DL-TYPO' },
+  })).json();
+  const edited = await (await request('POST', '/driver/documents', {
+    accessToken: driver.driverToken, body: { docType: 'license', docNumber: 'DL-FIXED' },
+  })).json();
+  assert.equal(edited.data.id, first.data.id, 'same row, not a new version');
+  assert.equal(edited.data.docNumber, 'DL-FIXED');
+
+  const list = await (await request('GET', '/driver/documents', { accessToken: driver.driverToken })).json();
+  assert.equal(list.data.length, 1);
+
+  // An already-approved driver's new upload still reaches the review queue.
+  await databaseClient.query(`UPDATE driver_profiles SET verification_status = 'approved' WHERE user_id = $1`, [driver.userId]);
+  await databaseClient.query(`UPDATE driver_documents SET status = 'approved' WHERE driver_id = $1`, [driver.userId]);
+  const renewed = await (await request('POST', '/driver/documents', {
+    accessToken: driver.driverToken,
+    body: { docType: 'license', fileUrl: 'private://documents/license-renewed.jpg', docNumber: 'DL-NEW' },
+  })).json();
+  const queue = await (await request('GET', '/admin/documents/pending', { accessToken: admin.accessToken })).json();
+  const mine = queue.data.filter((doc) => !doc.vehicle && doc.id === renewed.data.id);
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0].docNumber, 'DL-NEW');
+  assert.ok(!queue.data.some((doc) => doc.id === first.data.id), 'the older, approved copy is not in the queue');
 });
 
 test('vehicle endpoints enforce owner scoping and block pending vehicle activation', async () => {

@@ -71,6 +71,9 @@ export async function getStatus(userId) {
 export async function addDriverDocument(userId, input) {
   return withTransaction(async (client) => {
     requireDriver(await driversRepo.findProfileForUpdate(userId, client));
+    const edited = await documentsRepo.updatePendingDriverDocument({ driverId: userId, ...input }, client);
+    if (edited) return edited;
+    if (!input.fileUrl) throw new AppError(422, 'DOCUMENT_FILE_REQUIRED');
     const document = await documentsRepo.insertDriverDocument(
       { driverId: userId, ...input },
       client,
@@ -145,6 +148,9 @@ export async function addVehicleDocument(userId, vehicleId, input) {
       throw new AppError(404, 'VEHICLE_NOT_FOUND');
     }
 
+    const edited = await documentsRepo.updatePendingVehicleDocument({ vehicleId, ...input }, client);
+    if (edited) return edited;
+    if (!input.fileUrl) throw new AppError(422, 'DOCUMENT_FILE_REQUIRED');
     const document = await documentsRepo.insertVehicleDocument(
       { vehicleId, ...input },
       client,

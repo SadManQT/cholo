@@ -27,8 +27,24 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
   const [expiryDate, setExpiryDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const flag = latest ? expiryFlag(latest.expiryDate) : null;
-  const canReplace = !latest || latest.status !== 'pending';
+  // A copy still waiting for review is edited in place (new file optional); once reviewed, a new copy is uploaded.
+  const pending = latest?.status === 'pending';
+  const formOpen = pending ? editing : Boolean(file);
+
+  function startEdit() {
+    setDocNumber(latest?.docNumber ?? '');
+    setExpiryDate(latest?.expiryDate ?? '');
+    setError(null);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setFile(null);
+    setError(null);
+  }
 
   function pick(next: File | undefined) {
     if (!next) return;
@@ -39,21 +55,22 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
   }
 
   async function submit() {
-    if (!file) return setError(t('Choose a photo or PDF of the document.'));
+    if (!file && !pending) return setError(t('Choose a photo or PDF of the document.'));
     if (askExpiry && !expiryDate) return setError(t('Enter the expiry date printed on the document.'));
     setBusy(true);
     setError(null);
     try {
-      const fileUrl = await uploadFile(file, { isPrivate: true });
+      const fileUrl = file ? await uploadFile(file, { isPrivate: true }) : undefined;
       await onSubmit({
-        fileUrl,
+        ...(fileUrl ? { fileUrl } : {}),
         ...(docNumber.trim() ? { docNumber: docNumber.trim() } : {}),
         ...(expiryDate ? { expiryDate } : {}),
       });
       setFile(null);
       setDocNumber('');
       setExpiryDate('');
-      toast.success(t('{0} submitted for review.', label));
+      setEditing(false);
+      toast.success(pending ? t('{0} updated.', label) : t('{0} submitted for review.', label));
     } catch (thrown) {
       setError(getApiErrorMessage(thrown, t('Could not submit this document.')));
     } finally {
@@ -83,14 +100,23 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
         </div>
       </div>
 
-      {canReplace && (
+      {pending && !editing && (
+        <div className="mt-3 border-t border-border pt-3">
+          <Button variant="secondary" onClick={startEdit}>{t('Edit')}</Button>
+        </div>
+      )}
+
+      {(!pending || editing) && (
         <div className="mt-3 space-y-3 border-t border-border pt-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" onClick={() => fileInput.current?.click()}>{file ? t('Choose another file') : latest ? t('Upload a new copy') : t('Choose file')}</Button>
-            {file && <span className="min-w-0 truncate text-sm text-ink-500">{file.name}</span>}
+            <Button variant="secondary" onClick={() => fileInput.current?.click()}>
+              {file ? t('Choose another file') : pending ? t('Replace file') : latest ? t('Upload a new copy') : t('Choose file')}
+            </Button>
+            {file ? <span className="min-w-0 truncate text-sm text-ink-500">{file.name}</span>
+              : pending && <span className="text-sm text-ink-500">{t('Keeping the current file')}</span>}
             <input ref={fileInput} type="file" accept={ACCEPTED_UPLOAD_TYPES.join(',')} className="hidden" onChange={(event) => { pick(event.target.files?.[0]); event.target.value = ''; }} />
           </div>
-          {file && (askNumber || askExpiry) && (
+          {formOpen && (askNumber || askExpiry) && (
             <div className="grid gap-3 sm:grid-cols-2">
               {askNumber && <Input label={t('Document number')} value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
               {askExpiry && (
@@ -101,7 +127,12 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
             </div>
           )}
           {error && <p className="text-sm text-danger-600">{error}</p>}
-          {file && <Button loading={busy} onClick={() => void submit()}>{t('Submit for review')}</Button>}
+          {formOpen && (
+            <div className="flex flex-wrap gap-2">
+              <Button loading={busy} onClick={() => void submit()}>{pending ? t('Save changes') : t('Submit for review')}</Button>
+              {pending && <Button variant="ghost" disabled={busy} onClick={cancelEdit}>{t('Cancel')}</Button>}
+            </div>
+          )}
         </div>
       )}
     </div>
