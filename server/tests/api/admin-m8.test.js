@@ -312,7 +312,7 @@ test('leaderboard ranks drivers and riders by completed trips, admins only', asy
   assert.equal(rider.rank, 1);
 });
 
-test('analytics runs all ten reports with their SQL, admins only', async () => {
+test('analytics runs all ten reports, admins only', async () => {
   assert.equal((await supertest(app).get('/api/v1/admin/analytics')).status, 401);
   assert.equal((await supertest(app).get('/api/v1/admin/analytics').set('Authorization', `Bearer ${passenger.token}`)).status, 403);
   assert.equal((await supertest(app).get('/api/v1/admin/analytics?month=2026-13').set('Authorization', `Bearer ${admin.token}`)).status, 422);
@@ -326,7 +326,7 @@ test('analytics runs all ten reports with their SQL, admins only', async () => {
   const reports = Object.fromEntries(response.body.data.map((report) => [report.id, report]));
   assert.equal(response.body.data.length, 10);
   for (const report of response.body.data) {
-    assert.ok(report.sql.startsWith('SELECT'), `${report.id} returns its SQL`);
+    assert.equal(report.sql, undefined, `${report.id} does not expose its SQL`);
     assert.ok(Array.isArray(report.rows), `${report.id} returns rows`);
   }
 

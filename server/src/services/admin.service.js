@@ -56,11 +56,7 @@ export async function getStats(query) {
 export async function getAnalytics({ month = dhakaDate().slice(0, 7), minTrips }) {
   return Promise.all(analyticsRepo.REPORTS.map(async (report) => ({
     id: report.id,
-    number: report.number,
     title: report.title,
-    question: report.question,
-    concepts: report.concepts,
-    sql: report.sql.trim(),
     rows: await analyticsRepo.runReport(report, { month, minTrips }),
   })));
 }

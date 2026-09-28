@@ -200,13 +200,9 @@ export interface Leaderboard {
   riders: TopRider[];
 }
 
-/** One analytics report: the question, the SQL that answers it, and the rows it returned. */
+/** One analytics report and the rows it returned. */
 export interface AnalyticsReport {
   id: string;
-  number: number;
   title: string;
-  question: string;
-  concepts: string[];
-  sql: string;
   rows: Array<Record<string, string | number | null>>;
 }
