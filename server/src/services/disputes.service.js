@@ -75,6 +75,20 @@ export async function resolveDispute(adminId, disputeId, input, ipAddress) {
         idempotencyKey: `dispute-refund-${dispute.id}`,
         note: `Refund for ${dispute.disputeNo}`,
       }, client);
+      // The driver gives back their share of what is refunded (the net-to-gross ratio of this trip's earning);
+      // the platform absorbs its commission share.
+      const earning = await disputesRepo.findEarningForTrip(dispute.tripId, client);
+      if (earning && Number(earning.grossFare) > 0) {
+        const clawback = Math.round((input.refundAmount * Number(earning.netEarning) / Number(earning.grossFare)) * 100) / 100;
+        if (clawback > 0) {
+          const driverWallet = await walletRepo.getByUserId(earning.driverId, client);
+          await walletRepo.insertTransaction({
+            walletId: driverWallet.id, txnType: 'adjustment', direction: 'debit', amount: clawback,
+            referenceType: 'payment', referenceId: payment.id, idempotencyKey: `dispute-clawback-${dispute.id}`,
+            note: `Your share of the refund for ${dispute.disputeNo}`,
+          }, client);
+        }
+      }
       await disputesRepo.markPaymentRefunded(payment.id, input.refundAmount, client);
       await disputesRepo.markTripRefunded(dispute.tripId, client);
       refundPaymentId = payment.id;

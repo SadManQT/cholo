@@ -1019,3 +1019,95 @@ test('a frozen wallet cannot be booked with, pay a trip or be topped up', async 
   assert.equal(booked.status, 409);
   assert.equal((await booked.json()).error.code, 'WALLET_FROZEN');
 });
+
+async function walletBalance(userId) {
+  return Number((await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [userId])).rows[0].balance);
+}
+
+async function adjustWallet(userId, amount) {
+  seed += 1;
+  await pool.query(
+    `INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, reference_type, idempotency_key)
+     SELECT id, 'adjustment', $2, $3, 'manual', $4 FROM wallets WHERE user_id = $1`,
+    [userId, amount >= 0 ? 'credit' : 'debit', Math.abs(amount), `test-adjust-${userId}-${seed}`],
+  );
+}
+
+test('a cancellation fee is taken from the rider, paid to the driver, and blocks the next booking until topped up', async (t) => {
+  await pool.query(`UPDATE pricing_rules SET cancellation_fee = 25.00 WHERE category_id = 3`);
+  try {
+    const { tripCode, passenger, driver } = await createAssignedTrip(t);
+    await pool.query(`UPDATE trips SET assigned_at = now() - INTERVAL '10 minutes' WHERE trip_code = $1`, [tripCode]);
+    const driverBefore = await walletBalance(driver.userId);
+
+    const cancelled = await request('POST', `/trips/${tripCode}/cancel`, { accessToken: passenger.accessToken, body: { reasonCode: 'changed_mind' } });
+    assert.equal(cancelled.status, 200);
+    assert.equal(await walletBalance(passenger.userId), -25);
+    assert.equal(await walletBalance(driver.userId), driverBefore + 25);
+
+    const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
+    const book = () => request('POST', '/ride-requests', {
+      accessToken: passenger.accessToken,
+      body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'cash' },
+    });
+    const blocked = await book();
+    assert.equal(blocked.status, 409);
+    assert.equal((await blocked.json()).error.code, 'OUTSTANDING_BALANCE');
+
+    await creditWallet(passenger.userId, 25);
+    const allowed = await book();
+    assert.equal(allowed.status, 201);
+    await pool.query(`UPDATE ride_requests SET status = 'cancelled', cancelled_at = now() WHERE public_id = $1`, [(await allowed.json()).data.publicId]);
+  } finally {
+    await pool.query(`UPDATE pricing_rules SET cancellation_fee = 0.00 WHERE category_id = 3`);
+  }
+});
+
+test('a dispute refund takes the driver\'s share back from their wallet', async (t) => {
+  const setup = await createAssignedTrip(t);
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  const { rows: [earning] } = await pool.query(
+    `SELECT de.gross_fare, de.net_earning FROM driver_earnings de JOIN trips tr ON tr.id = de.trip_id WHERE tr.trip_code = $1`, [setup.tripCode],
+  );
+  const created = await request('POST', '/disputes', {
+    accessToken: setup.passenger.accessToken,
+    body: { tripPublicId: setup.tripCode, disputeType: 'fare_overcharge', description: 'Charged too much for this ride' },
+  });
+  assert.equal(created.status, 201);
+  const disputeId = (await created.json()).data.id;
+
+  seed += 1;
+  const { rows: [admin] } = await pool.query(
+    `INSERT INTO users (full_name, phone, password_hash, phone_verified_at) VALUES ('Refund Admin', $1, 'x', now()) RETURNING id`,
+    [`014${String(seed).slice(-8)}`],
+  );
+  await pool.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE name = 'ADMIN'`, [admin.id]);
+  await pool.query(`INSERT INTO admin_profiles (user_id, designation, access_level) VALUES ($1, 'Finance', 'finance')`, [admin.id]);
+  const adminToken = signAccessToken({ userId: admin.id, roles: ['ADMIN'], sessionId: admin.id });
+
+  const driverBefore = await walletBalance(setup.driver.userId);
+  const refund = 100;
+  const resolved = await request('POST', `/admin/disputes/${disputeId}/resolve`, {
+    accessToken: adminToken, body: { status: 'resolved_refunded', resolutionNote: 'Route was longer than needed', refundAmount: refund },
+  });
+  assert.equal(resolved.status, 200);
+  const share = Math.round((refund * Number(earning.net_earning) / Number(earning.gross_fare)) * 100) / 100;
+  assert.equal(Math.round((driverBefore - await walletBalance(setup.driver.userId)) * 100) / 100, share);
+  assert.ok(Number(completed.fare.total) >= refund);
+});
+
+test('a driver owing more than the commission limit cannot go online or accept a ride', async (t) => {
+  const { driver } = await createAssignedTrip(t);
+  await pool.query(`UPDATE trips SET status = 'cancelled' WHERE driver_id = $1 AND status = 'assigned'`, [driver.userId]);
+  await pool.query(`UPDATE driver_availability SET status = 'offline' WHERE driver_id = $1`, [driver.userId]);
+  await adjustWallet(driver.userId, -(env.COMMISSION_DEBT_LIMIT + 1 - (await walletBalance(driver.userId))));
+
+  const online = await request('PUT', '/driver/availability', { accessToken: driver.accessToken, body: { status: 'online', currentLat: PICKUP.lat, currentLng: PICKUP.lng } });
+  assert.equal(online.status, 409);
+  const { error } = await online.json();
+  assert.equal(error.code, 'COMMISSION_DEBT_LIMIT');
+
+  await creditWallet(driver.userId, env.COMMISSION_DEBT_LIMIT + 1);
+  const back = await request('PUT', '/driver/availability', { accessToken: driver.accessToken, body: { status: 'online', currentLat: PICKUP.lat, currentLng: PICKUP.lng } });
+  assert.equal(back.status, 200);
+});

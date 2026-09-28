@@ -55,6 +55,8 @@ export const ERROR_MESSAGES = Object.freeze({
   OUTSIDE_SERVICE_AREA: 'Cholo rides are currently available only within Bangladesh. Choose a location inside Bangladesh.',
   GEO_PROVIDER_UNAVAILABLE: 'The mapping service is temporarily unavailable. Please try again.',
   ACTIVE_REQUEST_EXISTS: 'You already have an active ride request.',
+  COMMISSION_DEBT_LIMIT: 'You owe Cholo too much commission from cash trips. Top up your wallet to pay it before taking more rides.',
+  OUTSTANDING_BALANCE: 'Your wallet is below zero (an unpaid cancellation fee or commission). Top up to clear it before booking.',
   UNPAID_TRIP: 'Pay for your last trip before booking a new one.',
   RIDE_REQUEST_NOT_FOUND: 'The ride request was not found.',
   ALREADY_MATCHED: 'A driver has already accepted this request.',
