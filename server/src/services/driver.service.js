@@ -1,3 +1,5 @@
+import { env } from '../config/env.js';
+import * as walletRepo from '../repositories/wallet.repository.js';
 import { withTransaction } from '../config/db.js';
 import * as documentsRepo from '../repositories/documents.repository.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
@@ -165,6 +167,15 @@ export async function listVehicleDocuments(userId, vehicleId) {
   return documentsRepo.listVehicleDocumentsForDriver(vehicleId, userId);
 }
 
+/** Refuses work while the driver owes more commission than COMMISSION_DEBT_LIMIT (a negative wallet). */
+export async function assertCommissionDebtWithinLimit(driverId, client) {
+  const limit = env.COMMISSION_DEBT_LIMIT;
+  if (!limit) return;
+  const wallet = await walletRepo.getByUserId(driverId, client);
+  const owed = -Number(wallet?.balance ?? 0);
+  if (owed > limit) throw new AppError(409, 'COMMISSION_DEBT_LIMIT', { owed: owed.toFixed(2), limit: limit.toFixed(2) });
+}
+
 export async function setAvailability(userId, input) {
   return withTransaction(async (client) => {
     const current = requireDriver(await driversRepo.findAvailabilityForUpdate(userId, client));
@@ -182,6 +193,8 @@ export async function setAvailability(userId, input) {
         throw new AppError(409, 'VEHICLE_NOT_APPROVED');
       }
     }
+
+    if (input.status === 'online') await assertCommissionDebtWithinLimit(userId, client);
 
     if (
       input.status === 'online'

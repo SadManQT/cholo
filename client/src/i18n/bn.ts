@@ -948,6 +948,7 @@ export const bn: Record<string, string> = {
   "Withdraw": "তুলুন",
   "In app": "অ্যাপে",
   "Recent wallet activity": "সাম্প্রতিক ওয়ালেট লেনদেন",
+  "Pay dues now": "এখনই বকেয়া পরিশোধ করুন",
   "Trip started.": "ট্রিপ শুরু হয়েছে।",
   "Marked as arrived. Your rider will confirm when they are in the car.": "পৌঁছানো চিহ্নিত হয়েছে। যাত্রী গাড়িতে উঠে নিশ্চিত করবেন।",
   "Waiting for {0} to confirm…": "{0}-এর নিশ্চিতকরণের অপেক্ষায়…",

@@ -46,6 +46,9 @@ const envSchema = z.object({
   // Drivers can only mark arrival, reach a stop or complete a trip within this distance of the place.
   // 0 turns the check off. one radius for all three; tune per place type if GPS in dense areas fights it.
   ARRIVAL_RADIUS_METERS: z.coerce.number().int().min(0).max(5_000).default(300),
+  // A driver who owes more than this in commission from cash trips can't go online or accept rides until they
+  // pay it down (top up the wallet). 0 turns the limit off.
+  COMMISSION_DEBT_LIMIT: z.coerce.number().min(0).max(1_000_000).default(500),
 });
 
 function formatIssues(issues) {

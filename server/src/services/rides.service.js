@@ -69,6 +69,11 @@ export async function createRequest(passengerId, dto) {
       // A finished trip has to be paid for before the next one can be booked.
       const unpaid = await ridesRepo.findUnpaidTrip(passengerId, client);
       if (unpaid) throw new AppError(409, 'UNPAID_TRIP', { tripCode: unpaid.tripCode, totalFare: unpaid.totalFare });
+      // A wallet below zero means money is owed (a cancellation fee, or commission for a driver who also rides).
+      const payerWallet = await walletRepo.getByUserId(passengerId, client);
+      if (payerWallet && Number(payerWallet.balance) < 0) {
+        throw new AppError(409, 'OUTSTANDING_BALANCE', { balance: payerWallet.balance });
+      }
       // Paying by wallet means the fare is taken at drop-off, so the balance has to cover the estimate now.
       if (paymentIntent === 'wallet') {
         const wallet = await walletRepo.getByUserId(passengerId, client);

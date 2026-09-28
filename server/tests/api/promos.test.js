@@ -483,3 +483,23 @@ test('driver earnings rows say how the rider paid, so the app can split cash fro
   const { data } = await response.json();
   assert.equal(data.trips.find((row) => row.tripCode === setup.tripCode).paymentMethod, 'cash');
 });
+
+test('a partial promo is paid by Cholo: the driver earns on the full fare, and their wallet gets the discount less commission', async (t) => {
+  const promo = await createPromo({ promoType: 'fixed_amount', value: 50 });
+  const setup = await bookAndComplete(t, { promoCode: promo.code });
+  const total = Number(setup.response.data.fare.total);
+  const discount = Number(setup.response.data.fare.discount);
+  assert.equal(discount, 50);
+
+  const { rows: [trip] } = await pool.query(`SELECT id FROM trips WHERE trip_code = $1`, [setup.tripCode]);
+  const { rows: [earning] } = await pool.query(`SELECT gross_fare, commission_amount FROM driver_earnings WHERE trip_id = $1`, [trip.id]);
+  assert.equal(Number(earning.gross_fare), total + discount, 'the driver earns on the undiscounted fare');
+
+  const { rows: txns } = await pool.query(
+    `SELECT wt.direction, wt.amount FROM wallet_transactions wt JOIN wallets w ON w.id = wt.wallet_id
+     WHERE w.user_id = $1 AND wt.reference_type = 'trip' AND wt.reference_id = $2`,
+    [setup.driver.userId, trip.id],
+  );
+  const delta = txns.reduce((sum, row) => sum + (row.direction === 'credit' ? 1 : -1) * Number(row.amount), 0);
+  assert.equal(Math.round(delta * 100) / 100, Math.round((discount - Number(earning.commission_amount)) * 100) / 100);
+});

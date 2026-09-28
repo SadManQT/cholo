@@ -1,3 +1,4 @@
+import { assertCommissionDebtWithinLimit } from './driver.service.js';
 import { withTransaction } from '../config/db.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
 import * as offersRepo from '../repositories/offers.repository.js';
@@ -126,6 +127,7 @@ export async function respondToOffer(driverId, offerId, response) {
     return { id: offerId, response: 'rejected' };
   }
 
+  await assertCommissionDebtWithinLimit(driverId);
   return acceptOffer(driverId, offer.requestId, offerId, offer.passengerId);
 }
 
