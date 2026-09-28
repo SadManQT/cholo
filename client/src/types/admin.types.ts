@@ -175,3 +175,38 @@ export interface AuditLog {
   ipAddress: string | null;
   createdAt: string;
 }
+
+interface LeaderboardEntry {
+  rank: number;
+  publicId: string;
+  name: string;
+  phone: string;
+  completedTrips: number;
+  distanceKm: string;
+  rating: string;
+  ratingCount: number;
+}
+
+export interface TopDriver extends LeaderboardEntry {
+  netEarned: string;
+}
+
+export interface TopRider extends LeaderboardEntry {
+  totalSpent: string;
+}
+
+export interface Leaderboard {
+  drivers: TopDriver[];
+  riders: TopRider[];
+}
+
+/** One analytics report: the question, the SQL that answers it, and the rows it returned. */
+export interface AnalyticsReport {
+  id: string;
+  number: number;
+  title: string;
+  question: string;
+  concepts: string[];
+  sql: string;
+  rows: Array<Record<string, string | number | null>>;
+}

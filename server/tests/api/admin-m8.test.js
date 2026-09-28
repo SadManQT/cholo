@@ -278,3 +278,61 @@ test('SOS is accepted without a limiter and follows acknowledge then resolve lif
   assert.equal(resolved.status, 200);
   assert.equal(resolved.body.data.status, 'resolved');
 });
+
+test('leaderboard ranks drivers and riders by completed trips, admins only', async () => {
+  assert.equal((await supertest(app).get('/api/v1/admin/leaderboard')).status, 401);
+  assert.equal((await supertest(app).get('/api/v1/admin/leaderboard').set('Authorization', `Bearer ${passenger.token}`)).status, 403);
+
+  // Two completed trips by the same driver and rider.
+  const first = await createTrip('completed');
+  const { rows: [request] } = await client.query(
+    `INSERT INTO ride_requests (passenger_id, city_id, category_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,
+                                est_fare, payment_intent, status)
+     SELECT passenger_id, city_id, category_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, est_fare, payment_intent, 'matched'
+     FROM ride_requests WHERE id = (SELECT request_id FROM trips WHERE id = $1)
+     RETURNING id`,
+    [first.id],
+  );
+  await client.query(
+    `INSERT INTO trips (request_id, passenger_id, driver_id, vehicle_id, status, arrived_at, started_at, completed_at,
+                        base_fare, distance_fare, total_fare, payment_status)
+     SELECT $2, passenger_id, driver_id, vehicle_id, 'completed', now(), now(), now(), 50, 100, 150, 'paid'
+     FROM trips WHERE id = $1`,
+    [first.id, request.id],
+  );
+
+  const response = await supertest(app).get('/api/v1/admin/leaderboard?days=30').set('Authorization', `Bearer ${admin.token}`);
+  assert.equal(response.status, 200);
+  const driver = response.body.data.drivers.find((row) => row.name === 'M8 Driver');
+  assert.equal(driver.completedTrips, 2);
+  assert.equal(driver.rank, 1);
+  const rider = response.body.data.riders.find((row) => row.name === 'M8 Passenger');
+  assert.equal(rider.completedTrips, 2);
+  assert.equal(Number(rider.totalSpent), 250);
+  assert.equal(rider.rank, 1);
+});
+
+test('analytics runs all ten reports with their SQL, admins only', async () => {
+  assert.equal((await supertest(app).get('/api/v1/admin/analytics')).status, 401);
+  assert.equal((await supertest(app).get('/api/v1/admin/analytics').set('Authorization', `Bearer ${passenger.token}`)).status, 403);
+  assert.equal((await supertest(app).get('/api/v1/admin/analytics?month=2026-13').set('Authorization', `Bearer ${admin.token}`)).status, 422);
+
+  await createTrip('completed');
+  const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date()).slice(0, 7);
+  const response = await supertest(app)
+    .get(`/api/v1/admin/analytics?month=${month}&minTrips=1`)
+    .set('Authorization', `Bearer ${admin.token}`);
+  assert.equal(response.status, 200);
+  const reports = Object.fromEntries(response.body.data.map((report) => [report.id, report]));
+  assert.equal(response.body.data.length, 10);
+  for (const report of response.body.data) {
+    assert.ok(report.sql.startsWith('SELECT'), `${report.id} returns its SQL`);
+    assert.ok(Array.isArray(report.rows), `${report.id} returns rows`);
+  }
+
+  const thisMonth = reports['monthly-trend'].rows.find((row) => row.month === month);
+  assert.ok(Number(thisMonth.completed_trips) >= 1);
+  assert.ok(reports['rider-lifetime-value'].rows.some((row) => row.rider_name === 'M8 Passenger'));
+  assert.ok(reports['frequent-pairs'].rows.some((row) => row.driver_name === 'M8 Driver' && row.rider_name === 'M8 Passenger'));
+  assert.ok(reports['top-rated-drivers'].rows.some((row) => row.driver_name === 'M8 Driver'));
+});

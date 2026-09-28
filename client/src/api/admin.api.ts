@@ -3,10 +3,12 @@ import type { ApiSuccess } from '../types/api.types';
 import type { WithdrawalQueueRow, WithdrawalStatus } from '../types/earnings.types';
 import type {
   AdminDispute,
+  AnalyticsReport,
   AdminUserRow,
   AuditLog,
   DashboardStats,
   DriverApplication,
+  Leaderboard,
   PricingRule,
   PublishPricingRuleInput,
   SosAlert,
@@ -22,6 +24,18 @@ function collection<T>(response: { data: ApiSuccess<T[]> }) {
 
 export async function getStats(cityId?: number) {
   const response = await apiClient.get<ApiSuccess<DashboardStats>>('/admin/stats', { params: { cityId } });
+  return response.data.data;
+}
+
+/** The ten SQL analytics reports, each with its SQL text. */
+export async function getAnalytics(params: { month: string; minTrips: number }) {
+  const response = await apiClient.get<ApiSuccess<AnalyticsReport[]>>('/admin/analytics', { params });
+  return response.data.data;
+}
+
+/** Top drivers and riders by completed trips. `days` omitted = all time. */
+export async function getLeaderboard(params: { days?: number; cityId?: number }) {
+  const response = await apiClient.get<ApiSuccess<Leaderboard>>('/admin/leaderboard', { params });
   return response.data.data;
 }
 

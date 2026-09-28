@@ -35,6 +35,16 @@ export const statsQuerySchema = z.object({
   cityId: z.coerce.number().int().positive().optional(),
 });
 
+export const analyticsQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must look like 2026-09').optional(),
+  minTrips: z.coerce.number().int().min(1).max(1000).default(2),
+});
+
+export const leaderboardQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(3650).optional(),
+  cityId: z.coerce.number().int().positive().optional(),
+});
+
 export const userListQuerySchema = z.object({
   search: z.string().trim().max(120).default(''),
   status: z.enum(['active', 'suspended', 'deleted']).optional(),

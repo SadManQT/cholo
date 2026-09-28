@@ -7,7 +7,9 @@ import { signPrivateFiles } from '../middlewares/signPrivateFiles.js';
 import { validate } from '../middlewares/validate.js';
 import { adminMutationLimiter } from '../middlewares/rateLimit.js';
 import {
+  analyticsQuerySchema,
   auditLogQuerySchema,
+  leaderboardQuerySchema,
   createPromoSchema,
   createSurgeSchema,
   exportParamsSchema,
@@ -46,6 +48,8 @@ const router = Router();
 router.use(auth, requireRole('ADMIN'));
 router.use(signPrivateFiles);
 router.get('/stats', validate(statsQuerySchema, 'query'), adminController.getStats);
+router.get('/analytics', validate(analyticsQuerySchema, 'query'), adminController.getAnalytics);
+router.get('/leaderboard', validate(leaderboardQuerySchema, 'query'), adminController.getLeaderboard);
 router.get('/drivers', validate(driverQueueQuerySchema, 'query'), adminController.listDrivers);
 router.get('/vehicles', validate(vehicleQueueQuerySchema, 'query'), adminController.listVehicles);
 router.post(

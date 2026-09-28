@@ -211,3 +211,13 @@ export const deleteZone = asyncHandler(async (request, response) => {
   await zonesService.deleteZone(request.user.id, request.params.id, request.ip);
   response.status(204).end();
 });
+
+export const getLeaderboard = asyncHandler(async (request, response) => {
+  const data = await adminService.getLeaderboard(request.query);
+  response.json({ success: true, data });
+});
+
+export const getAnalytics = asyncHandler(async (request, response) => {
+  const data = await adminService.getAnalytics(request.query);
+  response.json({ success: true, data });
+});

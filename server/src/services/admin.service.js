@@ -1,5 +1,6 @@
 import { withTransaction } from '../config/db.js';
 import * as adminRepo from '../repositories/admin.repository.js';
+import * as analyticsRepo from '../repositories/analytics.repository.js';
 import * as auditRepo from '../repositories/audit.repository.js';
 import * as documentsRepo from '../repositories/documents.repository.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
@@ -49,6 +50,31 @@ export async function getStats(query) {
     adminRepo.getRevenueTrend(query.cityId),
   ]);
   return { ...stats, trend };
+}
+
+/** Runs all ten analytics reports and returns each with its SQL, so the page can show how it was worked out. */
+export async function getAnalytics({ month = dhakaDate().slice(0, 7), minTrips }) {
+  return Promise.all(analyticsRepo.REPORTS.map(async (report) => ({
+    id: report.id,
+    number: report.number,
+    title: report.title,
+    question: report.question,
+    concepts: report.concepts,
+    sql: report.sql.trim(),
+    rows: await analyticsRepo.runReport(report, { month, minTrips }),
+  })));
+}
+
+// Rows arrive best first, so the rank is just the position in the list.
+const ranked = (rows) => rows.map((row, index) => ({ rank: index + 1, ...row, completedTrips: Number(row.completedTrips) }));
+
+export async function getLeaderboard({ days, cityId }) {
+  const since = days ? new Date(Date.now() - days * 86_400_000) : new Date(0);
+  const [drivers, riders] = await Promise.all([
+    adminRepo.getTopDrivers({ since, cityId }),
+    adminRepo.getTopRiders({ since, cityId }),
+  ]);
+  return { drivers: ranked(drivers), riders: ranked(riders) };
 }
 
 export async function listUsers(query) {

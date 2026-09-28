@@ -4,7 +4,7 @@ import * as referenceApi from '../../api/reference.api';
 import type { ExportKind } from '../../api/admin.api';
 import { DownloadIcon } from '../../components/layout/icons';
 import { Button, Card, EmptyState, Skeleton, toast } from '../../components/ui';
-import type { DashboardStats } from '../../types/admin.types';
+import type { DashboardStats, Leaderboard } from '../../types/admin.types';
 import type { City } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { dhakaDate, formatBDT, formatDate } from '../../utils/format';
@@ -49,6 +49,92 @@ function ExportsCard() {
           </Button>
         ))}
       </div>
+    </Card>
+  );
+}
+
+const PERIODS = [
+  { days: 7, label: 'Last 7 days' },
+  { days: 30, label: 'Last 30 days' },
+  { days: undefined, label: 'All time' },
+];
+
+function RankTable({ title, rows, moneyLabel, money }: {
+  title: string;
+  rows: Leaderboard['drivers'] | Leaderboard['riders'];
+  moneyLabel: string;
+  money: (row: Leaderboard['drivers'][number] & Leaderboard['riders'][number]) => string;
+}) {
+  return (
+    <div className="min-w-0">
+      <h3 className="mb-2 font-semibold">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="rounded-xl bg-surface-alt p-4 text-sm text-ink-500">No completed trips in this period.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface-alt text-xs uppercase tracking-wide text-ink-500">
+              <tr><th className="p-2">#</th><th className="p-2">Name</th><th className="p-2 text-right">Trips</th><th className="p-2 text-right">{moneyLabel}</th><th className="p-2 text-right">Rating</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.publicId} className="border-t border-border">
+                  <td className="p-2 font-bold tabular-nums">{row.rank}</td>
+                  <td className="p-2"><p className="font-medium">{row.name}</p><p className="text-xs text-ink-500">{row.phone} · {row.distanceKm} km</p></td>
+                  <td className="p-2 text-right tabular-nums">{row.completedTrips}</td>
+                  <td className="p-2 text-right tabular-nums">{money(row as Leaderboard['drivers'][number] & Leaderboard['riders'][number])}</td>
+                  <td className="p-2 text-right tabular-nums">★ {Number(row.rating).toFixed(2)}<span className="text-xs text-ink-500"> ({row.ratingCount})</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Top drivers and riders by completed trips, ties broken by money earned or spent. */
+function LeaderboardCard({ cityId }: { cityId?: number }) {
+  const [days, setDays] = useState<number | undefined>(30);
+  const [board, setBoard] = useState<Leaderboard | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(null);
+    adminApi.getLeaderboard({ days, cityId })
+      .then((next) => { if (!cancelled) setBoard(next); })
+      .catch((thrown) => { if (!cancelled) setError(getApiErrorMessage(thrown, 'Could not load the leaderboard.')); });
+    return () => { cancelled = true; };
+  }, [days, cityId]);
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="font-semibold">Top drivers and riders</h2><p className="text-sm text-ink-500">Ranked by completed trips.</p></div>
+        <div className="flex gap-1 rounded-xl bg-surface-alt p-1" role="group" aria-label="Period">
+          {PERIODS.map((period) => (
+            <button
+              key={period.label}
+              type="button"
+              aria-pressed={days === period.days}
+              onClick={() => setDays(period.days)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${days === period.days ? 'bg-surface shadow-sm' : 'text-ink-500'}`}
+            >
+              {period.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {error && <p className="mt-3 rounded-xl bg-danger-600/10 p-3 text-sm text-danger-600">{error}</p>}
+      {!board && !error && <div className="mt-4 grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>}
+      {board && (
+        <div className="mt-4 grid gap-5 lg:grid-cols-2">
+          <RankTable title="Top drivers" rows={board.drivers} moneyLabel="Earned" money={(row) => formatBDT(row.netEarned)} />
+          <RankTable title="Top riders" rows={board.riders} moneyLabel="Spent" money={(row) => formatBDT(row.totalSpent)} />
+        </div>
+      )}
     </Card>
   );
 }
@@ -128,6 +214,7 @@ export function DashboardPage() {
           ))}
         </div>
       </Card>
+      <LeaderboardCard cityId={cityId ? Number(cityId) : undefined} />
       <ExportsCard />
     </main>
   );

@@ -107,6 +107,62 @@ export async function getRevenueTrend(cityId, client = pool) {
   return rows;
 }
 
+// Top drivers and riders over completed trips.
+// $1 = only trips completed on or after this time, $2 = city id, or NULL for every city.
+// COALESCE($2, r.city_id) means "use $2 if given, otherwise match any city" (Oracle calls it NVL).
+export async function getTopDrivers({ since, cityId }, client = pool) {
+  const { rows } = await client.query(
+    `SELECT u.public_id AS "publicId",
+            u.full_name AS "name",
+            u.phone,
+            COUNT(*) AS "completedTrips",
+            COALESCE(SUM(e.net_earning), 0) AS "netEarned",
+            COALESCE(SUM(t.actual_distance_km), 0) AS "distanceKm",
+            d.rating_avg AS "rating",
+            d.rating_count AS "ratingCount"
+     FROM trips t
+     JOIN ride_requests r ON r.id = t.request_id
+     JOIN users u ON u.id = t.driver_id
+     JOIN driver_profiles d ON d.user_id = t.driver_id
+     LEFT JOIN driver_earnings e ON e.trip_id = t.id
+     WHERE t.status = 'completed'
+       AND u.status <> 'deleted'
+       AND t.completed_at >= $1
+       AND r.city_id = COALESCE($2, r.city_id)
+     GROUP BY u.id, u.public_id, u.full_name, u.phone, d.rating_avg, d.rating_count
+     ORDER BY "completedTrips" DESC, "netEarned" DESC
+     FETCH FIRST 10 ROWS ONLY`,
+    [since, cityId ?? null],
+  );
+  return rows;
+}
+
+export async function getTopRiders({ since, cityId }, client = pool) {
+  const { rows } = await client.query(
+    `SELECT u.public_id AS "publicId",
+            u.full_name AS "name",
+            u.phone,
+            COUNT(*) AS "completedTrips",
+            SUM(t.total_fare) AS "totalSpent",
+            COALESCE(SUM(t.actual_distance_km), 0) AS "distanceKm",
+            p.rating_avg AS "rating",
+            p.rating_count AS "ratingCount"
+     FROM trips t
+     JOIN ride_requests r ON r.id = t.request_id
+     JOIN users u ON u.id = t.passenger_id
+     JOIN passenger_profiles p ON p.user_id = t.passenger_id
+     WHERE t.status = 'completed'
+       AND u.status <> 'deleted'
+       AND t.completed_at >= $1
+       AND r.city_id = COALESCE($2, r.city_id)
+     GROUP BY u.id, u.public_id, u.full_name, u.phone, p.rating_avg, p.rating_count
+     ORDER BY "completedTrips" DESC, "totalSpent" DESC
+     FETCH FIRST 10 ROWS ONLY`,
+    [since, cityId ?? null],
+  );
+  return rows;
+}
+
 export async function listUsers({ search, status, limit, offset }, client = pool) {
   const pattern = `%${search}%`;
   const { rows } = await client.query(

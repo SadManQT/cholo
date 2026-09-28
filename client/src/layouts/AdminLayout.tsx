@@ -17,6 +17,7 @@ export function AdminLayout() {
   const sections: SidebarSection[] = [
     { title: 'Overview', items: [
       { to: '/admin', label: 'Dashboard', icon: <GridIcon />, end: true },
+      { to: '/admin/analytics', label: 'Analytics', icon: <ListIcon /> },
       { to: '/admin/notifications', label: 'Notifications', icon: <BellIcon />, badge: unread },
     ] },
     { title: 'Drivers', items: [
