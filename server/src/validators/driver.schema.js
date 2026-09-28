@@ -102,10 +102,10 @@ export const respondToOfferSchema = z.object({
 
 export const earningsQuerySchema = z.object({
   from: isoDate.default(() => dhakaDate(-29)),
-  to: isoDate.default(today),
+  // A phone clock a little ahead of Dhaka time must not make the request fail: clamp to today.
+  to: isoDate.default(today).transform((value) => (value > today() ? today() : value)),
 })
   .refine(({ from, to }) => from <= to, { path: ['to'], message: 'End date must be on or after the start' })
-  .refine(({ to }) => to <= today(), { path: ['to'], message: 'End date cannot be in the future' })
   .refine(({ from, to }) => (new Date(to) - new Date(from)) / 86_400_000 <= 366, {
     path: ['from'], message: 'Choose at most one year at a time',
   });
@@ -121,7 +121,8 @@ export const createPayoutAccountSchema = z.object({
 );
 
 export const createWithdrawalSchema = z.object({
-  amount: z.number().min(50),
+  amount: z.number().min(50).max(1_000_000)
+    .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-6, 'Use at most 2 decimal places'),
   payoutAccountId: z.coerce.number().int().positive(),
 });
 

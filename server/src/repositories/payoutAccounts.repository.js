@@ -1,13 +1,13 @@
 import { pool } from '../config/db.js';
 
-export async function insert({ driverId, accountType, accountName, accountNoMasked, bankName }, client = pool) {
+export async function insert({ driverId, accountType, accountName, accountNo, accountNoMasked, bankName }, client = pool) {
   const { rows } = await client.query(
-    `INSERT INTO driver_payout_accounts (driver_id, account_type, account_name, account_no_masked, bank_name, is_verified)
-     VALUES ($1, $2, $3, $4, $5, true)
+    `INSERT INTO driver_payout_accounts (driver_id, account_type, account_name, account_no_masked, bank_name, account_no, is_verified)
+     VALUES ($1, $2, $3, $4, $5, $6, true)
      RETURNING id, account_type AS "accountType", account_name AS "accountName",
                account_no_masked AS "accountNoMasked", bank_name AS "bankName",
                is_default AS "isDefault", is_verified AS "isVerified", created_at AS "createdAt"`,
-    [driverId, accountType, accountName, accountNoMasked, bankName ?? null],
+    [driverId, accountType, accountName, accountNoMasked, bankName ?? null, accountNo],
   );
 
   return rows[0];

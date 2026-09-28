@@ -102,7 +102,7 @@ export async function listQueue({ status, page, limit }, client = pool) {
             w.requested_at AS "requestedAt", w.processed_at AS "processedAt",
             u.full_name AS "driverName", u.phone AS "driverPhone",
             pa.account_type AS "accountType", pa.account_name AS "accountName",
-            pa.account_no_masked AS "accountNoMasked", pa.bank_name AS "bankName",
+            pa.account_no_masked AS "accountNoMasked", pa.account_no AS "accountNo", pa.bank_name AS "bankName",
             count(*) OVER()::int AS "totalCount"
      FROM withdrawals w
      JOIN users u ON u.id = w.driver_id

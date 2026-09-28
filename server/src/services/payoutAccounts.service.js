@@ -12,6 +12,7 @@ export async function createPayoutAccount(driverId, { accountType, accountName, 
     driverId,
     accountType,
     accountName,
+    accountNo,
     accountNoMasked: maskAccountNumber(accountNo),
     bankName,
   }, client));

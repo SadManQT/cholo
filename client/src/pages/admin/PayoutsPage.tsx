@@ -115,7 +115,7 @@ export function PayoutsPage() {
                 <div>
                   <p className="font-semibold">{row.driverName} · {row.driverPhone}</p>
                   <p className="text-sm text-ink-500">
-                    {ACCOUNT_TYPE_LABELS[row.accountType]} · {row.accountName} · {row.accountNoMasked}
+                    {ACCOUNT_TYPE_LABELS[row.accountType]} · {row.accountName} · <span className="font-semibold text-ink-900">{row.accountNo ?? row.accountNoMasked}</span>
                     {row.bankName ? ` · ${row.bankName}` : ''}
                   </p>
                   <p className="text-xs text-ink-500">
