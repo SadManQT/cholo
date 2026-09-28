@@ -50,6 +50,7 @@ router.use(signPrivateFiles);
 router.get('/stats', validate(statsQuerySchema, 'query'), adminController.getStats);
 router.get('/analytics', validate(analyticsQuerySchema, 'query'), adminController.getAnalytics);
 router.get('/leaderboard', validate(leaderboardQuerySchema, 'query'), adminController.getLeaderboard);
+router.get('/documents/pending', adminController.listPendingDocuments);
 router.get('/drivers', validate(driverQueueQuerySchema, 'query'), adminController.listDrivers);
 router.get('/vehicles', validate(vehicleQueueQuerySchema, 'query'), adminController.listVehicles);
 router.post(

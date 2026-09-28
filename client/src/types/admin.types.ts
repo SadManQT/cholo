@@ -25,6 +25,14 @@ export interface ReviewDocument {
   rejectionReason: string | null;
 }
 
+/** A document whose newest copy is waiting for review, with who it belongs to. */
+export interface PendingDocument extends ReviewDocument {
+  vehicle: boolean;
+  owner: string;
+  detail: string;
+  uploadedAt: string;
+}
+
 export interface DriverApplication {
   id: string;
   publicId: string;

@@ -34,6 +34,7 @@ export const ERROR_MESSAGES_BN = Object.freeze({
   DRIVER_NOT_FOUND: 'ড্রাইভার প্রোফাইল পাওয়া যায়নি।',
   DRIVER_ALREADY_REVIEWED: 'এই ড্রাইভার আবেদন আগেই রিভিউ করা হয়েছে।',
   DOCS_NOT_APPROVED: 'প্রয়োজনীয় সব ড্রাইভার ডকুমেন্ট আগে অনুমোদিত হতে হবে।',
+  DOCUMENT_FILE_REQUIRED: 'ডকুমেন্টের একটি ছবি বা PDF বেছে নিন।',
   DOCUMENT_NOT_FOUND: 'ডকুমেন্টটি পাওয়া যায়নি।',
   DOCUMENT_ALREADY_REVIEWED: 'এই ডকুমেন্ট আগেই রিভিউ করা হয়েছে।',
   DOCUMENT_EXPIRED: 'মেয়াদোত্তীর্ণ ডকুমেন্ট অনুমোদন করা যায় না।',

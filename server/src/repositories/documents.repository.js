@@ -36,6 +36,27 @@ export async function insertDriverDocument(
   return rows[0];
 }
 
+// Editing: while the newest copy of a document type is still waiting for review, a resubmission replaces
+// it in place (same row, fresh upload time) instead of piling up versions. A null field keeps its value.
+export async function updatePendingDriverDocument(
+  { driverId, docType, docNumber, fileUrl, issueDate, expiryDate },
+  client = pool,
+) {
+  const { rows } = await client.query(
+    `UPDATE driver_documents
+     SET file_url = COALESCE($3, file_url), doc_number = COALESCE($4, doc_number),
+         issue_date = COALESCE($5, issue_date), expiry_date = COALESCE($6, expiry_date), uploaded_at = now()
+     WHERE status = 'pending'
+       AND id = (SELECT id FROM driver_documents
+                 WHERE driver_id = $1 AND doc_type = $2
+                 ORDER BY uploaded_at DESC, id DESC LIMIT 1)
+     RETURNING ${DRIVER_DOCUMENT_SELECT}`,
+    [driverId, docType, fileUrl ?? null, docNumber ?? null, issueDate ?? null, expiryDate ?? null],
+  );
+
+  return rows[0];
+}
+
 export async function listDriverDocuments(driverId, client = pool) {
   const { rows } = await client.query(
     `SELECT ${DRIVER_DOCUMENT_SELECT}
@@ -103,6 +124,57 @@ export async function insertVehicleDocument(
   );
 
   return rows[0];
+}
+
+export async function updatePendingVehicleDocument(
+  { vehicleId, docType, docNumber, fileUrl, issueDate, expiryDate },
+  client = pool,
+) {
+  const { rows } = await client.query(
+    `UPDATE vehicle_documents
+     SET file_url = COALESCE($3, file_url), doc_number = COALESCE($4, doc_number),
+         issue_date = COALESCE($5, issue_date), expiry_date = COALESCE($6, expiry_date), uploaded_at = now()
+     WHERE status = 'pending'
+       AND id = (SELECT id FROM vehicle_documents
+                 WHERE vehicle_id = $1 AND doc_type = $2
+                 ORDER BY uploaded_at DESC, id DESC LIMIT 1)
+     RETURNING ${VEHICLE_DOCUMENT_RETURNING}`,
+    [vehicleId, docType, fileUrl ?? null, docNumber ?? null, issueDate ?? null, expiryDate ?? null],
+  );
+
+  return rows[0];
+}
+
+/** Every document whose newest copy is waiting for review, for any driver or active vehicle, oldest first. */
+export async function listPendingForReview(client = pool) {
+  const { rows } = await client.query(
+    `WITH latest_driver AS (
+       SELECT DISTINCT ON (driver_id, doc_type) *
+       FROM driver_documents
+       ORDER BY driver_id, doc_type, uploaded_at DESC, id DESC
+     ), latest_vehicle AS (
+       SELECT DISTINCT ON (vehicle_id, doc_type) *
+       FROM vehicle_documents
+       ORDER BY vehicle_id, doc_type, uploaded_at DESC, id DESC
+     )
+     SELECT d.id, false AS vehicle, d.doc_type::text AS "docType", d.status, d.expiry_date::text AS "expiryDate",
+            d.file_url AS "fileUrl", d.doc_number AS "docNumber", d.rejection_reason AS "rejectionReason",
+            d.uploaded_at AS "uploadedAt", u.full_name AS owner, u.phone AS detail
+     FROM latest_driver d
+     JOIN users u ON u.id = d.driver_id
+     WHERE d.status = 'pending'
+     UNION ALL
+     SELECT d.id, true, d.doc_type::text, d.status, d.expiry_date::text,
+            d.file_url, d.doc_number, d.rejection_reason,
+            d.uploaded_at, u.full_name, v.registration_no
+     FROM latest_vehicle d
+     JOIN vehicles v ON v.id = d.vehicle_id AND v.is_active
+     JOIN users u ON u.id = v.driver_id
+     WHERE d.status = 'pending'
+     ORDER BY "uploadedAt", id`,
+  );
+
+  return rows;
 }
 
 export async function listVehicleDocumentsForDriver(vehicleId, driverId, client = pool) {

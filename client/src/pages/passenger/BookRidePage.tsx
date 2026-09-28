@@ -6,6 +6,8 @@ import * as geoApi from '../../api/geo.api';
 import * as meApi from '../../api/me.api';
 import * as referenceApi from '../../api/reference.api';
 import * as ridesApi from '../../api/rides.api';
+import * as tripsApi from '../../api/trips.api';
+import { FullScreenSpinner } from '../../components/layout/FullScreenSpinner';
 import { ClockIcon, GraduationIcon, HomeIcon, PinIcon } from '../../components/layout/icons';
 import { MapView } from '../../components/map/MapView';
 import { ConnectionPill } from '../../components/ride/ConnectionPill';
@@ -154,6 +156,7 @@ function PlaceShortcuts({ saved, recent, target, onPick }: {
 
 export function BookRidePage() {
   const navigate = useNavigate();
+  const [checkingTrip, setCheckingTrip] = useState(true);
   const { socket, connectionState } = useSocket();
   const geolocation = useGeolocation();
   const requestCurrentLocation = geolocation.request;
@@ -211,6 +214,19 @@ export function BookRidePage() {
   useEffect(() => {
     void loadReferences();
   }, [loadReferences]);
+
+  // While a ride is under way, Book always shows that ride instead of the booking form.
+  useEffect(() => {
+    let cancelled = false;
+    tripsApi.listTrips({ status: 'active', role: 'passenger', limit: 1 })
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data[0]) navigate(`/trips/${data[0].publicCode}/live`, { replace: true });
+        else setCheckingTrip(false);
+      })
+      .catch(() => { if (!cancelled) setCheckingTrip(false); });
+    return () => { cancelled = true; };
+  }, [navigate]);
 
   // Restores a live search after a reload, and also from another tab or device (session storage is per tab).
   useEffect(() => {
@@ -478,6 +494,8 @@ export function BookRidePage() {
   const mapUserPosition = useMemo(() => geolocation.position
     ? { lat: geolocation.position.lat, lng: geolocation.position.lng }
     : null, [geolocation.position]);
+
+  if (checkingTrip) return <FullScreenSpinner />;
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">

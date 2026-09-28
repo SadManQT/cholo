@@ -43,7 +43,8 @@ const documentDates = (schema) => schema
   );
 
 const documentFields = {
-  fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form'),
+  // Optional only when editing a copy that is still waiting for review (the service enforces it).
+  fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form').optional(),
   docNumber: z.string().trim().min(1).max(60).optional(),
   issueDate: issueDate.optional(),
   expiryDate: expiryDate.optional(),
