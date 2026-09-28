@@ -7,6 +7,7 @@ import { BadgeCheckIcon, CarIcon, FileIcon } from '../../components/layout/icons
 import { Button, Input, toast } from '../../components/ui';
 import { useAuth } from '../../context/auth';
 import { getApiErrorCode, getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
+import { LICENSE_MAX_YEARS, licenseMaxExpiry } from '../../utils/documents';
 import { dhakaDate } from '../../utils/format';
 import { t } from '../../i18n';
 
@@ -31,6 +32,7 @@ export function DriverApplyPage() {
     if (!form.licenseNumber.trim()) next.licenseNumber = t('Enter your driving license number');
     if (!form.licenseExpiry) next.licenseExpiry = t('Enter the expiry date on your license');
     else if (form.licenseExpiry <= dhakaDate()) next.licenseExpiry = t('Your driving license must not be expired');
+    else if (form.licenseExpiry > licenseMaxExpiry()) next.licenseExpiry = t('A Bangladeshi driving license is valid for at most {0} years', LICENSE_MAX_YEARS);
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -108,7 +110,7 @@ export function DriverApplyPage() {
               type="date"
               value={form.licenseExpiry}
               min={dhakaDate(1)}
-              max={dhakaDate(15 * 365)}
+              max={licenseMaxExpiry()}
               onChange={(event) => setForm({ ...form, licenseExpiry: event.target.value })}
               aria-invalid={Boolean(errors.licenseExpiry) || undefined}
               className={`h-11 rounded-xl border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 ${errors.licenseExpiry ? 'border-danger-600 focus-visible:ring-danger-600' : 'border-border focus-visible:ring-cholo-700'}`}

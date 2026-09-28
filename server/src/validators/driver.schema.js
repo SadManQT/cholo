@@ -15,18 +15,32 @@ const expiryDate = isoDate
   .refine((value) => value > today(), 'This document has already expired')
   .refine((value) => value <= dhakaDateInYears(20), 'Expiry date is too far in the future');
 
+// BRTA issues driving licences for at most 10 years (non-professional; professional ones last 5), so a
+// licence expiring later than that from today — or from its issue date — can't be genuine.
+export const LICENSE_MAX_YEARS = 10;
+const LICENSE_TOO_LONG = `A Bangladeshi driving license is valid for at most ${LICENSE_MAX_YEARS} years`;
+
 export const applyDriverSchema = z.object({
   nidNumber: z.string().regex(/^(?:[0-9]{10}|[0-9]{13}|[0-9]{17})$/, 'NID must contain 10, 13, or 17 digits'),
   licenseNumber: z.string().trim().min(1).max(30),
   licenseExpiry: isoDate
     .refine((value) => value > today(), 'Driving license must not be expired')
-    .refine((value) => value <= dhakaDateInYears(15), 'License expiry is too far in the future'),
+    .refine((value) => value <= dhakaDateInYears(LICENSE_MAX_YEARS), LICENSE_TOO_LONG),
 });
 
-const documentDates = (schema) => schema.refine(
-  ({ issueDate, expiryDate }) => !issueDate || !expiryDate || expiryDate > issueDate,
-  { path: ['expiryDate'], message: 'Expiry date must be after issue date' },
-);
+const addYears = (date, years) => `${Number(date.slice(0, 4)) + years}${date.slice(4)}`;
+
+const documentDates = (schema) => schema
+  .refine(
+    ({ issueDate, expiryDate }) => !issueDate || !expiryDate || expiryDate > issueDate,
+    { path: ['expiryDate'], message: 'Expiry date must be after issue date' },
+  )
+  .refine(
+    ({ docType, issueDate, expiryDate }) => docType !== 'license' || !expiryDate
+      || (expiryDate <= dhakaDateInYears(LICENSE_MAX_YEARS)
+        && (!issueDate || expiryDate <= addYears(issueDate, LICENSE_MAX_YEARS))),
+    { path: ['expiryDate'], message: LICENSE_TOO_LONG },
+  );
 
 const documentFields = {
   fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form'),
