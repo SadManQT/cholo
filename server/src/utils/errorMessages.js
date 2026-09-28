@@ -123,5 +123,6 @@ export const ERROR_MESSAGES = Object.freeze({
   TOO_FAR_FROM_PICKUP: 'You are not at the pickup yet. Get within the pickup area to mark arrival.',
   TOO_FAR_FROM_STOP: 'You are not at this stop yet.',
   TOO_FAR_FROM_DROPOFF: 'You are not at the drop-off yet. The trip can be completed once you arrive.',
+  EARLY_STOP_NOT_REQUESTED: 'The rider has not asked to stop here. Ask them to tap "Stop here" in their app, or drive to the drop-off.',
   LOCATION_NEEDED_TO_ARRIVE: 'Turn on location so Cholo can confirm you have arrived.',
 });

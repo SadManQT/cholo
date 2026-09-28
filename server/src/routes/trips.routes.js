@@ -98,6 +98,12 @@ router.post(
   tripsController.complete,
 );
 router.post(
+  '/:tripCode/stop-request',
+  requireRole('PASSENGER'),
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.requestEarlyStop,
+);
+router.post(
   '/:tripCode/cancel',
   validate(tripCodeParamsSchema, 'params'),
   validate(cancelTripSchema),

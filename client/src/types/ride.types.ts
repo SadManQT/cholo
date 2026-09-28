@@ -239,6 +239,8 @@ export interface TripDetail {
   stops: TripStop[];
   arrivalRadiusMeters: number;
   endedEarly: { at: string; lat: number; lng: number } | null;
+  /** When the rider tapped "Stop here"; only then may the driver end the trip away from the drop-off. */
+  earlyStopRequestedAt: string | null;
   driverIsFavorite: boolean;
   reportedByMe: boolean;
   history: Array<{
@@ -267,6 +269,7 @@ export interface SocketTripStatus {
   startedAt?: string;
   completedAt?: string;
   stopReached?: number;
+  earlyStopRequestedAt?: string;
 }
 
 export interface SocketLocation extends TrackedLocation {

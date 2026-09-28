@@ -48,6 +48,11 @@ export const complete = asyncHandler(async (request, response) => {
   response.json({ success: true, data });
 });
 
+export const requestEarlyStop = asyncHandler(async (request, response) => {
+  const data = await tripsService.requestEarlyStop(request.user.id, request.params.tripCode);
+  response.json({ success: true, data });
+});
+
 export const cancel = asyncHandler(async (request, response) => {
   const data = await tripsService.cancelTrip(request.user.id, request.params.tripCode, request.body);
   response.json({ success: true, data });

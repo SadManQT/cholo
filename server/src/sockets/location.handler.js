@@ -1,3 +1,4 @@
+import { withTransaction } from '../config/db.js';
 import * as driversRepo from '../repositories/drivers.repository.js';
 import * as tripsRepo from '../repositories/trips.repository.js';
 import * as trackingService from '../services/tracking.service.js';
@@ -19,7 +20,7 @@ export function registerLocationHandler(io, socket) {
     const tripId = await tripsRepo.findActiveTripIdForUser(socket.user.id);
     if (!tripId) {
       // Online and waiting: keep the dispatch position fresh so offers go to where the driver is now.
-      await driversRepo.updateLocation(socket.user.id, parsed.data);
+      await withTransaction((client) => driversRepo.updateLocation(socket.user.id, parsed.data, client));
       return;
     }
 

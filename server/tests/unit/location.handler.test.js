@@ -69,14 +69,17 @@ test('a malformed payload is dropped without touching the database', async () =>
 
 test('a driver with no active trip: the ping updates their dispatch position but is not broadcast', async () => {
   const query = mock.method(pool, 'query', async () => ({ rows: [] }));
+  mock.method(pool, 'connect', async () => ({ query: pool.query, release() {} }));
   const socket = fakeSocket({ id: 42, roles: ['DRIVER'] });
   registerLocationHandler({}, socket);
 
   await emit(socket, { lat: 23.79, lng: 90.40 });
 
-  assert.equal(query.mock.callCount(), 2);
-  assert.match(query.mock.calls[1].arguments[0], /UPDATE driver_availability/);
-  assert.deepEqual(query.mock.calls[1].arguments[1].slice(0, 3), [42, 23.79, 90.40]);
+  assert.equal(query.mock.callCount(), 4);
+  assert.equal(query.mock.calls[1].arguments[0], 'BEGIN');
+  assert.match(query.mock.calls[2].arguments[0], /UPDATE driver_availability/);
+  assert.deepEqual(query.mock.calls[2].arguments[1].slice(0, 3), [42, 23.79, 90.40]);
+  assert.equal(query.mock.calls[3].arguments[0], 'COMMIT');
   assert.equal(socket.toEmitCalls.length, 0);
 });
 
@@ -87,14 +90,17 @@ test('a valid ping from a driver on an active trip is recorded and broadcast to 
     if (sql.includes('FROM trips')) return { rows: [{ id: 7 }] };
     return { rows: [] };
   });
+  mock.method(pool, 'connect', async () => ({ query: pool.query, release() {} }));
   const socket = fakeSocket({ id: 42, roles: ['DRIVER'] });
   registerLocationHandler({}, socket);
 
   await emit(socket, { lat: 23.79, lng: 90.40, heading: 45 });
 
-  assert.equal(queries.length, 3);
-  assert.match(queries[1], /INSERT INTO trip_location_pings/);
-  assert.match(queries[2], /UPDATE driver_availability/);
+  assert.equal(queries.length, 5);
+  assert.equal(queries[1], 'BEGIN');
+  assert.match(queries[2], /INSERT INTO trip_location_pings/);
+  assert.match(queries[3], /UPDATE driver_availability/);
+  assert.equal(queries[4], 'COMMIT');
 
   assert.equal(socket.toEmitCalls.length, 1);
   assert.equal(socket.toEmitCalls[0].room, tripRoom(7));

@@ -188,14 +188,19 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
     assertTransition(trip, 'in_progress');
     const dropoff = { lat: trip.dropoffLat, lng: trip.dropoffLng };
 
-    // "End trip here": the rider got out before the drop-off. Charge the route actually driven, pickup →
-    // stops already reached → here, and record it for admins. At the drop-off it is a normal completion.
+    // "End trip here": the rider asked to get out before the drop-off. Charge the route actually driven,
+    // pickup → stops already reached → here, and record it for admins. At the drop-off it is a normal
+    // completion. Away from the drop-off the rider must have asked first (requestEarlyStop), so a driver
+    // can't cut a trip short on their own.
     let endedAt = null;
     if (endEarly) {
       const here = await currentPosition(driverId, reported, client);
       if (!here) throw new AppError(422, 'LOCATION_NEEDED_TO_ARRIVE');
       const metersToDropoff = haversineDistanceKm(here.lat, here.lng, dropoff.lat, dropoff.lng) * 1000;
-      if (metersToDropoff > (env.ARRIVAL_RADIUS_METERS || 0)) endedAt = here;
+      if (metersToDropoff > (env.ARRIVAL_RADIUS_METERS || 0)) {
+        if (!trip.earlyStopRequestedAt) throw new AppError(409, 'EARLY_STOP_NOT_REQUESTED');
+        endedAt = here;
+      }
     } else {
       await assertNear(driverId, dropoff, reported, 'TOO_FAR_FROM_DROPOFF', client);
     }
@@ -272,7 +277,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       await notificationsService.notify(trip.passengerId, {
         category: 'ride',
         title: 'Your trip ended before the planned drop-off',
-        body: `Your driver ended trip ${trip.tripCode} early. You were charged for the ${distanceKm} km driven. If you didn't ask to get out, report it from the receipt.`,
+        body: `You asked to stop, so your driver ended trip ${trip.tripCode} there. You were charged for the ${distanceKm} km driven.`,
         payload: { tripCode: trip.tripCode },
       }, client);
     }
@@ -312,6 +317,31 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
 
   await notifyTripStatus(trip, { status: updated.status, completedAt: updated.completedAt, fare: response.fare });
   return response;
+}
+
+/** The rider asks to get out before the drop-off. The driver is told, and may then end the trip there. */
+export async function requestEarlyStop(passengerId, tripCode) {
+  const result = await withTransaction(async (client) => {
+    await attributeTo(passengerId, client);
+    const trip = await tripsRepo.findByCodeForUpdate(tripCode, client);
+    if (!trip || Number(trip.passengerId) !== passengerId) throw new AppError(404, 'TRIP_NOT_FOUND');
+    assertTransition(trip, 'in_progress');
+
+    const requestedAt = await tripsRepo.markEarlyStopRequested(trip.id, client);
+    if (!trip.earlyStopRequestedAt) {
+      await notificationsService.notify(trip.driverId, {
+        category: 'ride',
+        title: 'Your rider wants to get out here',
+        body: `The rider on trip ${trip.tripCode} asked to stop. You can end the trip where you are.`,
+        payload: { tripCode: trip.tripCode },
+      }, client);
+    }
+    return { trip, requestedAt };
+  });
+
+  const { trip, requestedAt } = result;
+  await notifyTripStatus(trip, { status: trip.status, tripCode: trip.tripCode, earlyStopRequestedAt: requestedAt });
+  return { tripCode: trip.tripCode, earlyStopRequestedAt: requestedAt };
 }
 
 async function loadPayableTrip(passengerId, tripCode, client) {
@@ -555,6 +585,7 @@ function toTripDetail(trip, history) {
     myRating: trip.myRating ?? null,
     arrivalRadiusMeters: env.ARRIVAL_RADIUS_METERS,
     endedEarly: trip.endedEarlyAt ? { at: trip.endedEarlyAt, lat: trip.endLat, lng: trip.endLng } : null,
+    earlyStopRequestedAt: trip.earlyStopRequestedAt ?? null,
     stops: trip.stops ?? [],
     driverIsFavorite: trip.driverIsFavorite ?? false,
     reportedByMe: trip.reportedByMe ?? false,
@@ -589,7 +620,7 @@ export async function sendMessage(userId, tripCode, input) {
   if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) {
     throw new AppError(409, 'TRIP_CLOSED');
   }
-  return tripsRepo.insertMessage(trip.id, userId, input);
+  return withTransaction((client) => tripsRepo.insertMessage(trip.id, userId, input, client));
 }
 
 export async function triggerSos(userId, tripCode, location) {

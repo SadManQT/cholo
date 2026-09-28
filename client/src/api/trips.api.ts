@@ -51,6 +51,14 @@ export async function completeTrip(tripCode: string, waitingMin = 0, position?: 
   return response.data.data;
 }
 
+/** The rider asks to get out before the drop-off. */
+export async function requestEarlyStop(tripCode: string) {
+  const response = await apiClient.post<ApiSuccess<{ tripCode: string; earlyStopRequestedAt: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/stop-request`,
+  );
+  return response.data.data;
+}
+
 export async function cancelTrip(
   tripCode: string,
   reasonCode: 'changed_mind' | 'driver_late' | 'no_show' | 'wrong_pickup' | 'vehicle_issue' | 'other',

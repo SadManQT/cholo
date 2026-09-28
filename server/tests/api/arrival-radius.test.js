@@ -218,7 +218,39 @@ test('drivers can only mark arrival, reach a stop and complete within 300 m of t
   assert.equal(detail.data.arrivalRadiusMeters, 300);
 });
 
-test('"End trip here": charges the route actually driven, records the spot, tells the rider', async () => {
+test('"Stop here": only the rider can ask, only during the ride, and the driver is told', async () => {
+  const rider = await createUser();
+  const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
+  await book(rider);
+  const offer = (await pendingOffersFor(driver.userId))[0];
+  const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
+  const code = accepted.data.trip.publicCode;
+
+  // Not riding yet: nothing to stop.
+  assert.equal((await (await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).json()).error.code, 'BAD_TRANSITION');
+  await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await call('POST', `/trips/${code}/start`, { token: driver.token });
+
+  assert.equal((await call('POST', `/trips/${code}/stop-request`, { token: driver.token })).status, 403);
+  const stranger = await createUser();
+  assert.equal((await call('POST', `/trips/${code}/stop-request`, { token: stranger.token })).status, 404);
+
+  const asked = await call('POST', `/trips/${code}/stop-request`, { token: rider.token });
+  assert.equal(asked.status, 200);
+  const askedAt = (await asked.json()).data.earlyStopRequestedAt;
+  assert.ok(askedAt);
+  // Asking twice keeps the first time and doesn't notify the driver again.
+  assert.equal((await (await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).json()).data.earlyStopRequestedAt, askedAt);
+  const { rows: inbox } = await db.query(
+    `SELECT title FROM notifications WHERE user_id = $1 AND title = 'Your rider wants to get out here'`,
+    [driver.userId],
+  );
+  assert.equal(inbox.length, 1);
+  const detail = (await (await call('GET', `/trips/${code}`, { token: driver.token })).json()).data;
+  assert.equal(detail.earlyStopRequestedAt, askedAt);
+});
+
+test('"End trip here": refused until the rider asks, then charges the route actually driven and tells the rider', async () => {
   const rider = await createUser();
   const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
   const { body: booked } = await book(rider);
@@ -230,6 +262,11 @@ test('"End trip here": charges the route actually driven, records the spot, tell
   await call('POST', `/trips/${code}/start`, { token: driver.token });
 
   const midway = { lat: 23.7700, lng: 90.3900 };
+  const refused = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, ...midway } });
+  assert.equal(refused.status, 409);
+  assert.equal((await refused.json()).error.code, 'EARLY_STOP_NOT_REQUESTED');
+
+  assert.equal((await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).status, 200);
   osrmUrls.length = 0;
   const ended = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, ...midway } });
   assert.equal(ended.status, 200);

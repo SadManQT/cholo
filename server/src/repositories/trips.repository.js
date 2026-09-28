@@ -21,7 +21,8 @@ const TRIP_FOR_UPDATE_COLUMNS = `
   rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
   rr.city_id AS "cityId", rr.category_id AS "categoryId",
   rr.payment_intent AS "paymentIntent", rr.promo_code_id AS "promoCodeId",
-  rr.surge_multiplier::float8 AS "surgeMultiplier", rr.stops
+  rr.surge_multiplier::float8 AS "surgeMultiplier", rr.stops,
+  t.early_stop_requested_at AS "earlyStopRequestedAt"
 `;
 
 export async function findByCodeForUpdate(tripCode, client) {
@@ -173,7 +174,8 @@ export async function findDetailForUser(tripCode, userId, client = pool) {
                     WHERE fd.passenger_id = $2 AND fd.driver_id = t.driver_id) AS "driverIsFavorite",
             EXISTS (SELECT 1 FROM user_reports ur
                     WHERE ur.trip_id = t.id AND ur.reporter_id = $2) AS "reportedByMe",
-            t.ended_early_at AS "endedEarlyAt", t.end_lat::float8 AS "endLat", t.end_lng::float8 AS "endLng"
+            t.ended_early_at AS "endedEarlyAt", t.end_lat::float8 AS "endLat", t.end_lng::float8 AS "endLng",
+            t.early_stop_requested_at AS "earlyStopRequestedAt"
      FROM trips t
      JOIN ride_requests rr ON rr.id = t.request_id
      JOIN cities c ON c.id = rr.city_id
@@ -426,4 +428,15 @@ export async function markEndedEarly(tripId, { lat, lng }, client) {
     `UPDATE trips SET ended_early_at = now(), end_lat = $2, end_lng = $3 WHERE id = $1`,
     [tripId, lat, lng],
   );
+}
+
+// Returns the time the rider asked to stop; the first request wins, a repeat changes nothing.
+export async function markEarlyStopRequested(tripId, client) {
+  const { rows } = await client.query(
+    `UPDATE trips SET early_stop_requested_at = COALESCE(early_stop_requested_at, now())
+     WHERE id = $1
+     RETURNING early_stop_requested_at AS "earlyStopRequestedAt"`,
+    [tripId],
+  );
+  return rows[0].earlyStopRequestedAt;
 }

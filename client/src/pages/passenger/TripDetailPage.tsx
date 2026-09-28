@@ -172,7 +172,7 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
       {trip.endedEarly && (
         <Card className="mb-4 border-marigold-500/40 bg-marigold-500/10">
           <h2 className="font-semibold">{t('Ended before the planned drop-off')}</h2>
-          <p className="mt-1 text-sm">{t('The trip ended at {0}. The fare covers the distance driven. If you did not ask to get out, report it below.', formatDateTime(trip.endedEarly.at))}</p>
+          <p className="mt-1 text-sm">{t(driverMode ? 'The rider asked to stop, and the trip ended at {0}. The fare covers the distance driven.' : 'You asked to stop, and the trip ended at {0}. The fare covers the distance driven.', formatDateTime(trip.endedEarly.at))}</p>
         </Card>
       )}
       {trip.cancellation && (

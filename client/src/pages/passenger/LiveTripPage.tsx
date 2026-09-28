@@ -31,7 +31,7 @@ export function LiveTripPage() {
   const [error, setError] = useState<string | null>(null);
   const [snapPoint, setSnapPoint] = useState<SnapPoint>('half');
   const [chatOpen, setChatOpen] = useState(false);
-  const [confirmation, setConfirmation] = useState<'cancel' | 'sos' | null>(null);
+  const [confirmation, setConfirmation] = useState<'cancel' | 'sos' | 'stop' | null>(null);
   const [mutating, setMutating] = useState(false);
   const [sharing, setSharing] = useState(false);
   const tracking = useRideTracking(code, trip?.status ?? 'assigned');
@@ -102,6 +102,22 @@ export function LiveTripPage() {
     }
   }
 
+  // Getting out before the drop-off: the rider asks first, then the driver can end the trip where they are.
+  async function requestStop() {
+    if (!code) return;
+    setMutating(true);
+    try {
+      const { earlyStopRequestedAt } = await tripsApi.requestEarlyStop(code);
+      setTrip((current) => current && { ...current, earlyStopRequestedAt });
+      setConfirmation(null);
+      toast.success(t('Your driver has been asked to stop.'));
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, t('Could not ask your driver to stop.')));
+    } finally {
+      setMutating(false);
+    }
+  }
+
   // Family can follow the trip without an account. The share sheet on phones, the clipboard elsewhere.
   async function shareTrip() {
     if (!code || !trip) return;
@@ -154,6 +170,7 @@ export function LiveTripPage() {
 
   const driverPosition = tracking.driverPosition ?? trip.pickup;
   const canCancel = tracking.status === 'assigned' || tracking.status === 'arrived';
+  const stopRequestedAt = trip.earlyStopRequestedAt ?? tracking.earlyStopRequestedAt;
   const vehicleName = [trip.vehicle.color, trip.vehicle.brand, trip.vehicle.model].filter(Boolean).join(' ') || trip.categoryName;
 
   return (
@@ -232,6 +249,15 @@ export function LiveTripPage() {
             <p className="mt-3 border-t border-border pt-3 font-semibold">{t('Estimated {0}', formatBDT(trip.estimate.fare))}</p>
           </div>
 
+          {tracking.status === 'in_progress' && (stopRequestedAt ? (
+            <p role="status" className="rounded-xl bg-marigold-500/15 p-3 text-sm">
+              <span className="font-semibold">{t('You asked to stop here.')}</span>{' '}
+              {t('Your driver will end the trip where you are. You pay only for the distance driven.')}
+            </p>
+          ) : (
+            <Button variant="secondary" onClick={() => setConfirmation('stop')} className="w-full">{t('Stop here')}</Button>
+          ))}
+
           <div className="grid grid-cols-3 gap-3">
             <Button variant="secondary" onClick={() => setChatOpen(true)}>{t('Chat')}</Button>
             <Button variant="secondary" loading={sharing} onClick={() => void shareTrip()}>{t('Share trip')}</Button>
@@ -253,6 +279,15 @@ export function LiveTripPage() {
         danger
         loading={mutating}
         onConfirm={cancelTrip}
+        onClose={() => setConfirmation(null)}
+      />
+      <ConfirmSheet
+        open={confirmation === 'stop'}
+        title={t('Get out here?')}
+        hint={t('Your driver will be asked to end the trip where you are now. You pay only for the distance driven, and any stops not reached are dropped.')}
+        confirmLabel={t('Ask driver to stop')}
+        loading={mutating}
+        onConfirm={requestStop}
         onClose={() => setConfirmation(null)}
       />
       <ConfirmSheet

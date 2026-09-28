@@ -7,6 +7,7 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
   const { socket, connectionState } = useSocket();
   const [driverPosition, setDriverPosition] = useState<SocketLocation | null>(null);
   const [status, setStatus] = useState<TripStatus>(initialStatus);
+  const [earlyStopRequestedAt, setEarlyStopRequestedAt] = useState<string | null>(null);
 
   useEffect(() => setStatus(initialStatus), [initialStatus]);
 
@@ -23,13 +24,16 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
         if (cancelled) return;
         if (location) setDriverPosition(location);
         setStatus(trip.status);
+        setEarlyStopRequestedAt(trip.earlyStopRequestedAt ?? null);
       } catch {
       }
     }
 
     const onLocation = (payload: SocketLocation) => setDriverPosition(payload);
     const onStatus = (payload: SocketTripStatus) => {
-      if (!payload.tripCode || payload.tripCode === tripCode) setStatus(payload.status);
+      if (payload.tripCode && payload.tripCode !== tripCode) return;
+      setStatus(payload.status);
+      if (payload.earlyStopRequestedAt) setEarlyStopRequestedAt(payload.earlyStopRequestedAt);
     };
 
     socket?.on('location:update', onLocation);
@@ -45,5 +49,5 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
     };
   }, [socket, tripCode]);
 
-  return { driverPosition, status, connectionState };
+  return { driverPosition, status, earlyStopRequestedAt, connectionState };
 }
