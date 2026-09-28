@@ -7,6 +7,8 @@ import * as meApi from '../../api/me.api';
 import * as referenceApi from '../../api/reference.api';
 import * as ridesApi from '../../api/rides.api';
 import * as tripsApi from '../../api/trips.api';
+import * as walletApi from '../../api/wallet.api';
+import { MethodPicker } from '../../components/payment/MethodPicker';
 import { FullScreenSpinner } from '../../components/layout/FullScreenSpinner';
 import { ClockIcon, GraduationIcon, HomeIcon, PinIcon } from '../../components/layout/icons';
 import { MapView } from '../../components/map/MapView';
@@ -19,6 +21,7 @@ import { useGeolocation } from '../../hooks/useGeolocation';
 import { usePlaceSuggestions } from '../../hooks/usePlaceSuggestions';
 import type { LatLng, Place } from '../../types/geo.types';
 import type { RecentPlace, SavedPlace } from '../../types/place.types';
+import type { Wallet } from '../../types/wallet.types';
 import type {
   City,
   PaymentIntent,
@@ -195,6 +198,24 @@ export function BookRidePage() {
 
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
   const selectedQuote = selectedCategoryId ? quotes[selectedCategoryId] : undefined;
+
+  // Wallet rides are charged at drop-off, so the wallet can only be chosen when it covers the fare.
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const loadWallet = useCallback(() => {
+    walletApi.getWallet().then(setWallet).catch(() => setWallet(null));
+  }, []);
+  useEffect(loadWallet, [loadWallet]);
+  const fareForWallet = selectedQuote?.totalFare ?? null;
+  const walletShortBy = wallet && fareForWallet != null ? Math.max(0, fareForWallet - Number(wallet.balance)) : 0;
+  const walletReason = !wallet ? t('Wallet unavailable right now')
+    : wallet.status === 'frozen' ? t('Wallet is frozen')
+      : walletShortBy > 0 ? t('Balance {0}, {1} short', formatBDT(wallet.balance), formatBDT(walletShortBy))
+        : null;
+  useEffect(() => {
+    if (paymentIntent !== 'wallet' || !walletReason || !wallet) return;
+    setPaymentIntent('cash');
+    toast.info(t('Your wallet doesn’t cover this ride, so payment is set to cash. Top up to pay by wallet.'));
+  }, [paymentIntent, walletReason, wallet]);
 
   const loadReferences = useCallback(async () => {
     setReferenceLoading(true);
@@ -484,6 +505,8 @@ export function BookRidePage() {
       toast.success(t('Looking for a nearby driver.'));
     } catch (error) {
       const unpaid = getUnpaidTrip(error);
+      const code = getApiErrorCode(error);
+      if (code === 'INSUFFICIENT_FUNDS' || code === 'WALLET_FROZEN') loadWallet();
       if (unpaid) setUnpaidTrip(unpaid);
       else toast.error(getApiErrorMessage(error, t('Could not request this ride.')));
     } finally {
@@ -684,23 +707,26 @@ export function BookRidePage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="text-sm font-medium text-ink-900">
-                    {t('Payment')}
-                    <select
-                      value={paymentIntent}
-                      onChange={(event) => setPaymentIntent(event.target.value as PaymentIntent)}
-                      className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3 focus:border-cholo-700 focus:outline-none focus:ring-2 focus:ring-cholo-700/20"
-                    >
-                      <option value="cash">{t('Cash')}</option>
-                      <option value="wallet">{t('Wallet')}</option>
-                      <option value="bkash">{t('bKash')}</option>
-                      <option value="nagad">{t('Nagad')}</option>
-                      <option value="card">{t('Card')}</option>
-                    </select>
-                  </label>
-                  <Input label={t('Promo (optional)')} value={promoCode} onChange={(event) => setPromoCode(event.target.value.toUpperCase())} />
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-ink-900">{t('Payment')}</p>
+                  <MethodPicker
+                    methods={['cash', 'wallet', 'bkash', 'nagad', 'card']}
+                    value={paymentIntent}
+                    onChange={(method) => setPaymentIntent(method as PaymentIntent)}
+                    disabledReason={walletReason ? { wallet: walletReason } : {}}
+                    hints={{
+                      wallet: wallet ? t('Balance {0} · paid at drop-off', formatBDT(wallet.balance)) : undefined,
+                      bkash: t('Pay after the ride'),
+                      nagad: t('Pay after the ride'),
+                      card: t('Pay after the ride'),
+                    }}
+                    topUpHref={wallet?.status === 'active' && walletShortBy > 0 ? `/wallet?amount=${Math.max(10, Math.ceil(walletShortBy))}` : undefined}
+                  />
+                  {paymentIntent === 'wallet' && fareForWallet != null && (
+                    <p className="mt-1.5 text-xs text-ink-500">{t('About {0} will be taken from your wallet when the trip ends.', formatBDT(fareForWallet))}</p>
+                  )}
                 </div>
+                <Input label={t('Promo (optional)')} value={promoCode} onChange={(event) => setPromoCode(event.target.value.toUpperCase())} />
 
                 <fieldset className="rounded-xl border border-border p-3">
                   <legend className="px-1 text-sm font-medium text-ink-900">{t('When')}</legend>

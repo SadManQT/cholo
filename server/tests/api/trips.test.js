@@ -319,11 +319,11 @@ async function creditWallet(userId, amount) {
   );
 }
 
-test('T3: POST /trips/:tripCode/pay settles a wallet-intent trip — payment succeeded, ledger debited, trip marked paid', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+test('T3: POST /trips/:tripCode/pay settles an unpaid trip from the wallet — payment succeeded, ledger debited, trip marked paid', async (t) => {
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
   assert.equal(completed.status, 'completed');
-  assert.equal(completed.payment.method, 'wallet');
+  assert.equal(completed.payment.method, 'bkash');
   assert.equal(completed.payment.status, 'unpaid');
   const totalFare = Number(completed.fare.total);
 
@@ -367,7 +367,7 @@ test('T3: POST /trips/:tripCode/pay settles a wallet-intent trip — payment suc
 });
 
 test('T3: POST /trips/:tripCode/pay rejects with 422 INSUFFICIENT_FUNDS and touches nothing when the wallet is short', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
 
   const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
@@ -391,7 +391,7 @@ test('T3: POST /trips/:tripCode/pay rejects with 422 INSUFFICIENT_FUNDS and touc
 });
 
 test('T3: POST /trips/:tripCode/pay is 409 ALREADY_PAID on a second attempt', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
   await creditWallet(setup.passenger.userId, Number(completed.fare.total) + 100);
 
@@ -422,7 +422,7 @@ test('T3: POST /trips/:tripCode/pay on an ALREADY cash-settled trip is also 409 
 });
 
 test('T3: POST /trips/:tripCode/pay before completion is 409 BAD_TRANSITION', async (t) => {
-  const { tripCode, passenger } = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const { tripCode, passenger } = await createAssignedTrip(t, { paymentIntent: 'bkash' });
 
   const response = await request('POST', `/trips/${tripCode}/pay`, {
     accessToken: passenger.accessToken,
@@ -433,7 +433,7 @@ test('T3: POST /trips/:tripCode/pay before completion is 409 BAD_TRANSITION', as
 });
 
 test('T3: POST /trips/:tripCode/pay rejects a non-PASSENGER caller', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
 
   const response = await request('POST', `/trips/${setup.tripCode}/pay`, {
@@ -445,7 +445,7 @@ test('T3: POST /trips/:tripCode/pay rejects a non-PASSENGER caller', async (t) =
 });
 
 test('T3: POST /trips/:tripCode/pay by a passenger who is not on the trip gets 404 (no existence leak)', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
   const stranger = await createPassenger();
 
@@ -460,12 +460,12 @@ test('T3: POST /trips/:tripCode/pay by a passenger who is not on the trip gets 4
 
 test('two of the SAME passenger\'s trips paid the same instant, wallet funded for exactly one — ends with exactly one 201 and one 422, DB left consistent', async (t) => {
   const passenger = await createPassenger();
-  const setupA = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  const setupA = await createAssignedTrip(t, { paymentIntent: 'bkash', passenger });
   const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
   // An unpaid trip now blocks booking the next one, so two unpaid trips only exist from before that rule.
   // Recreate that state: hide A's debt while B is booked, then restore it.
   await pool.query(`UPDATE trips SET payment_status = 'paid' WHERE trip_code = $1`, [setupA.tripCode]);
-  const setupB = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  const setupB = await createAssignedTrip(t, { paymentIntent: 'bkash', passenger });
   const completedB = await completeAssignedTrip(setupB.tripCode, setupB.driver.accessToken);
   await pool.query(`UPDATE trips SET payment_status = 'unpaid' WHERE trip_code = $1`, [setupA.tripCode]);
 
@@ -887,7 +887,7 @@ test('a rider cannot dispute an arrival once the trip has started', async (t) =>
 });
 
 test('a rider who has not paid for a finished trip cannot book another until they pay', async (t) => {
-  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet' });
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash' });
   const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
   assert.equal(completed.payment.status, 'unpaid');
 
@@ -920,4 +920,102 @@ test('a rider who has not paid for a finished trip cannot book another until the
      WHERE public_id = $1`,
     [(await allowed.json()).data.publicId],
   );
+});
+
+async function bookWallet(passenger) {
+  const { rows: cityRows } = await pool.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
+  return request('POST', '/ride-requests', {
+    accessToken: passenger.accessToken,
+    body: { cityId: cityRows[0].id, categoryId: 3, pickup: PICKUP, dropoff: DROPOFF, paymentIntent: 'wallet' },
+  });
+}
+
+test('wallet booking needs the balance to cover the estimated fare', async () => {
+  const passenger = await createPassenger();
+  const refused = await bookWallet(passenger);
+  assert.equal(refused.status, 422);
+  const { error } = await refused.json();
+  assert.equal(error.code, 'INSUFFICIENT_FUNDS');
+  assert.equal(Number(error.details.balance), 0);
+  assert.ok(Number(error.details.required) > 0);
+
+  await creditWallet(passenger.userId, Number(error.details.required));
+  const booked = await bookWallet(passenger);
+  assert.equal(booked.status, 201);
+  await pool.query(`UPDATE ride_requests SET status = 'cancelled', cancelled_at = now() WHERE public_id = $1`, [(await booked.json()).data.publicId]);
+});
+
+test('a wallet trip is paid automatically at drop-off: rider debited, driver credited, nothing left to pay', async (t) => {
+  const passenger = await createPassenger();
+  await creditWallet(passenger.userId, 1000);
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  assert.equal(completed.payment.method, 'wallet');
+  assert.equal(completed.payment.status, 'paid');
+  const fare = Number(completed.fare.total);
+
+  const { rows: [riderWallet] } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [passenger.userId]);
+  assert.equal(Number(riderWallet.balance), Math.round((1000 - fare) * 100) / 100);
+  const { rows: payments } = await pool.query(
+    `SELECT p.method_type, p.status, p.amount FROM payments p JOIN trips tr ON tr.id = p.trip_id WHERE tr.trip_code = $1`,
+    [setup.tripCode],
+  );
+  assert.equal(payments.length, 1);
+  assert.deepEqual([payments[0].method_type, payments[0].status, Number(payments[0].amount)], ['wallet', 'succeeded', fare]);
+  const { rows: earning } = await pool.query(
+    `SELECT wt.txn_type FROM wallet_transactions wt JOIN wallets w ON w.id = wt.wallet_id
+     JOIN trips tr ON tr.id = wt.reference_id AND wt.reference_type = 'trip'
+     WHERE w.user_id = $1 AND tr.trip_code = $2`,
+    [setup.driver.userId, setup.tripCode],
+  );
+  assert.deepEqual(earning.map((row) => row.txn_type), ['trip_earning']);
+
+  const again = await request('POST', `/trips/${setup.tripCode}/pay`, { accessToken: passenger.accessToken, body: { method: 'wallet' } });
+  assert.equal(again.status, 409);
+  assert.equal((await again.json()).error.code, 'ALREADY_PAID');
+});
+
+test('when the wallet no longer covers the fare at drop-off, the trip stays due and the rider is told', async (t) => {
+  const passenger = await createPassenger();
+  const { error } = await (await bookWallet(passenger)).json();
+  await creditWallet(passenger.userId, Number(error.details.required));
+  const setup = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
+  // The balance drops below the fare during the trip (spent elsewhere, or the fare came out higher).
+  seed += 1;
+  await pool.query(
+    `INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, reference_type, idempotency_key)
+     SELECT id, 'adjustment', 'debit', $2, 'manual', $3 FROM wallets WHERE user_id = $1`,
+    [passenger.userId, Number(error.details.required) - 1, `test-spend-${passenger.userId}-${seed}`],
+  );
+
+  const completed = await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  assert.equal(completed.payment.status, 'unpaid');
+
+  const { rows: [wallet] } = await pool.query(`SELECT balance FROM wallets WHERE user_id = $1`, [passenger.userId]);
+  assert.equal(Number(wallet.balance), 1, 'nothing was taken');
+  const { rows: notes } = await pool.query(
+    `SELECT 1 FROM notifications WHERE user_id = $1 AND title = 'Payment due for your trip'`, [passenger.userId],
+  );
+  assert.equal(notes.length, 1);
+});
+
+test('a frozen wallet cannot be booked with, pay a trip or be topped up', async (t) => {
+  const passenger = await createPassenger();
+  await creditWallet(passenger.userId, 1000);
+  const setup = await createAssignedTrip(t, { paymentIntent: 'bkash', passenger });
+  await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  await pool.query(`UPDATE wallets SET status = 'frozen' WHERE user_id = $1`, [passenger.userId]);
+
+  const pay = await request('POST', `/trips/${setup.tripCode}/pay`, { accessToken: passenger.accessToken, body: { method: 'wallet' } });
+  assert.equal(pay.status, 409);
+  assert.equal((await pay.json()).error.code, 'WALLET_FROZEN');
+
+  const topup = await request('POST', '/wallet/topup', { accessToken: passenger.accessToken, body: { amount: 100, method: 'bkash' } });
+  assert.equal(topup.status, 409);
+  assert.equal((await topup.json()).error.code, 'WALLET_FROZEN');
+
+  await pool.query(`UPDATE trips SET payment_status = 'paid' WHERE trip_code = $1`, [setup.tripCode]);
+  const booked = await bookWallet(passenger);
+  assert.equal(booked.status, 409);
+  assert.equal((await booked.json()).error.code, 'WALLET_FROZEN');
 });
