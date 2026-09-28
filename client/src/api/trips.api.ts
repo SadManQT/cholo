@@ -36,9 +36,26 @@ export async function markArrived(tripCode: string, position?: Position) {
   return response.data.data;
 }
 
+/** Starts the trip if the rider already confirmed; otherwise asks them to (status stays "arrived"). */
 export async function startTrip(tripCode: string) {
-  const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus }>>(
+  const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus; startRequestedAt?: string; awaitingRider?: boolean }>>(
     `/trips/${encodeURIComponent(tripCode)}/start`,
+  );
+  return response.data.data;
+}
+
+/** The rider confirms they are in the car. Starts the trip if the driver already asked to. */
+export async function confirmPickup(tripCode: string) {
+  const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus; pickupConfirmedAt?: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/pickup/confirm`,
+  );
+  return response.data.data;
+}
+
+/** The rider says the driver is not at the pickup; the arrival is undone. */
+export async function disputeArrival(tripCode: string) {
+  const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus; arrivalDisputedAt: string }>>(
+    `/trips/${encodeURIComponent(tripCode)}/pickup/dispute`,
   );
   return response.data.data;
 }

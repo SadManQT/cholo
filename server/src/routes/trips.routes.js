@@ -84,6 +84,18 @@ router.post(
   tripsController.markStarted,
 );
 router.post(
+  '/:tripCode/pickup/confirm',
+  requireRole('PASSENGER'),
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.confirmPickup,
+);
+router.post(
+  '/:tripCode/pickup/dispute',
+  requireRole('PASSENGER'),
+  validate(tripCodeParamsSchema, 'params'),
+  tripsController.disputeArrival,
+);
+router.post(
   '/:tripCode/stops/:stopOrder/arrived',
   requireRole('DRIVER'),
   validate(tripStopParamsSchema, 'params'),

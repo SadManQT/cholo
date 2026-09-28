@@ -31,7 +31,7 @@ export function LiveTripPage() {
   const [error, setError] = useState<string | null>(null);
   const [snapPoint, setSnapPoint] = useState<SnapPoint>('half');
   const [chatOpen, setChatOpen] = useState(false);
-  const [confirmation, setConfirmation] = useState<'cancel' | 'sos' | 'stop' | null>(null);
+  const [confirmation, setConfirmation] = useState<'cancel' | 'sos' | 'stop' | 'dispute' | null>(null);
   const [mutating, setMutating] = useState(false);
   const [sharing, setSharing] = useState(false);
   const tracking = useRideTracking(code, trip?.status ?? 'assigned');
@@ -86,6 +86,50 @@ export function LiveTripPage() {
     const timer = window.setTimeout(() => navigate(`/trips/${code}`, { replace: true }), 1_200);
     return () => window.clearTimeout(timer);
   }, [code, navigate, tracking.status]);
+
+  // The trip only starts once the rider agrees they are in the car, so a driver can't claim a pickup
+  // they never made. Whoever acts second (driver's "Start trip" or this confirmation) starts it.
+  const handshake = tracking.handshake ?? (trip && {
+    startRequestedAt: trip.startRequestedAt, pickupConfirmedAt: trip.pickupConfirmedAt, arrivalDisputedAt: trip.arrivalDisputedAt,
+  });
+  const startRequested = tracking.status === 'arrived' && Boolean(handshake?.startRequestedAt);
+
+  async function confirmPickup() {
+    if (!code) return;
+    setMutating(true);
+    try {
+      const result = await tripsApi.confirmPickup(code);
+      if (result.status === 'in_progress') {
+        setTrip((current) => current && { ...current, status: 'in_progress' });
+        toast.success(t('Trip started. Have a safe ride.'));
+      } else {
+        tracking.patchHandshake({ pickupConfirmedAt: result.pickupConfirmedAt ?? new Date().toISOString() });
+        toast.success(t('Thanks. Your driver can start the trip now.'));
+      }
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, t('Could not confirm your pickup.')));
+      void loadTrip();
+    } finally {
+      setMutating(false);
+    }
+  }
+
+  async function disputeArrival() {
+    if (!code) return;
+    setMutating(true);
+    try {
+      const result = await tripsApi.disputeArrival(code);
+      tracking.patchHandshake({ startRequestedAt: null, pickupConfirmedAt: null, arrivalDisputedAt: result.arrivalDisputedAt });
+      setTrip((current) => current && { ...current, status: result.status });
+      setConfirmation(null);
+      toast.info(t('We told your driver they have not reached you. They need to arrive again before the trip can start.'));
+    } catch (thrown) {
+      toast.error(getApiErrorMessage(thrown, t('Could not report this to your driver.')));
+      void loadTrip();
+    } finally {
+      setMutating(false);
+    }
+  }
 
   async function cancelTrip() {
     if (!code) return;
@@ -219,6 +263,23 @@ export function LiveTripPage() {
 
           <TripStatusStepper status={tracking.status} />
 
+          {tracking.status === 'arrived' && (
+            <div role="status" className={`space-y-3 rounded-xl p-3 text-sm ${startRequested ? 'bg-marigold-500/15' : 'bg-cholo-50'}`}>
+              {handshake?.pickupConfirmedAt ? (
+                <p><span className="font-semibold">{t('You confirmed you are in the car.')}</span> {t('Your driver will start the trip.')}</p>
+              ) : (
+                <>
+                  <p className="font-semibold text-ink-900">{startRequested ? t('Your driver wants to start the trip') : t('Is your driver here?')}</p>
+                  <p className="text-ink-500">
+                    {t('Check the number plate {0} before you get in. The trip starts only after you confirm.', trip.vehicle.registrationNo)}
+                  </p>
+                  <Button loading={mutating} onClick={() => void confirmPickup()} className="w-full">{t("I'm in the car")}</Button>
+                </>
+              )}
+              <Button variant="secondary" disabled={mutating} onClick={() => setConfirmation('dispute')} className="w-full">{t("My driver isn't here")}</Button>
+            </div>
+          )}
+
           <Card>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cholo-50 text-lg font-bold text-cholo-700">
@@ -279,6 +340,16 @@ export function LiveTripPage() {
         danger
         loading={mutating}
         onConfirm={cancelTrip}
+        onClose={() => setConfirmation(null)}
+      />
+      <ConfirmSheet
+        open={confirmation === 'dispute'}
+        title={t('Your driver is not here?')}
+        hint={t('Your driver will be told they have not reached you, and the trip goes back to "on the way". They must reach the pickup and mark arrival again before the trip can start.')}
+        confirmLabel={t("My driver isn't here")}
+        danger
+        loading={mutating}
+        onConfirm={disputeArrival}
         onClose={() => setConfirmation(null)}
       />
       <ConfirmSheet

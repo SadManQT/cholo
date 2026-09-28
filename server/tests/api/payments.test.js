@@ -67,6 +67,17 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
+// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
+async function riderConfirmsPickup(tripCode) {
+  const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const userId = Number(rows[0].passenger_id);
+  const response = await request('POST', `/trips/${tripCode}/pickup/confirm`, {
+    accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }),
+  });
+  assert.equal(response.status, 200);
+  return response;
+}
+
 function postWebhook(gateway, formFields) {
   return fetch(`${baseUrl}/api/v1/webhooks/payments/${gateway}`, {
     method: 'POST',
@@ -155,6 +166,7 @@ async function createAssignedTrip(t, { paymentIntent = 'bkash' } = {}) {
 
 async function completeAssignedTrip(tripCode, driverAccessToken) {
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driverAccessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driverAccessToken });
   const response = await request('POST', `/trips/${tripCode}/complete`, { accessToken: driverAccessToken, body: {} });
   return (await response.json()).data;

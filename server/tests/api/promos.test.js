@@ -46,6 +46,17 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
+// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
+async function riderConfirmsPickup(tripCode) {
+  const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
+  const userId = Number(rows[0].passenger_id);
+  const response = await request('POST', `/trips/${tripCode}/pickup/confirm`, {
+    accessToken: signAccessToken({ userId, roles: ['PASSENGER'], sessionId: userId }),
+  });
+  assert.equal(response.status, 200);
+  return response;
+}
+
 async function createPassenger() {
   seed += 1;
   const phone = `017${String(seed).padStart(8, '0').slice(-8)}`;
@@ -125,6 +136,7 @@ async function createAssignedTrip(t, { promoCode, passenger: existingPassenger }
 
 async function completeTrip(tripCode, driver) {
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
+  await riderConfirmsPickup(tripCode);
   await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   return request('POST', `/trips/${tripCode}/complete`, { accessToken: driver.accessToken, body: {} });
 }

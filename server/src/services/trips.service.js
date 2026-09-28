@@ -81,16 +81,94 @@ export async function markArrived(driverId, tripCode, location) {
   return updated.updated;
 }
 
+async function loadRiderTripForUpdate(passengerId, tripCode, client) {
+  const trip = await tripsRepo.findByCodeForUpdate(tripCode, client);
+  if (!trip || Number(trip.passengerId) !== passengerId) throw new AppError(404, 'TRIP_NOT_FOUND');
+  return trip;
+}
+
+async function announceStart(trip, started) {
+  await notifyTripStatus(trip, { status: started.status, tripCode: trip.tripCode, startedAt: started.startedAt });
+  return started;
+}
+
+/**
+ * The driver slides "Start trip". A driver's word alone can't start a ride (they could claim to be at a
+ * pickup they are nowhere near), so the rider has to agree they are in the car: if they already confirmed,
+ * the trip starts now; otherwise the request waits for the rider's confirmation (confirmPickup).
+ */
 export async function markStarted(driverId, tripCode) {
-  const updated = await withTransaction(async (client) => {
+  const result = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
     const trip = await loadOwnedTripForUpdate(driverId, tripCode, client);
     assertTransition(trip, 'arrived');
-    return { trip, updated: await tripsRepo.markStarted(trip.id, client) };
+    if (trip.pickupConfirmedAt) return { trip, started: await tripsRepo.markStarted(trip.id, client) };
+
+    const startRequestedAt = await tripsRepo.markStartRequested(trip.id, client);
+    if (!trip.startRequestedAt) {
+      await notificationsService.notify(trip.passengerId, {
+        category: 'ride',
+        title: 'Your driver wants to start the trip',
+        body: `Confirm in the app once you are in the car for trip ${trip.tripCode}. If your driver is not there, say so.`,
+        payload: { tripCode: trip.tripCode },
+      }, client);
+    }
+    return { trip, startRequestedAt };
   });
 
-  await notifyTripStatus(updated.trip, { status: updated.updated.status, startedAt: updated.updated.startedAt });
-  return updated.updated;
+  const { trip, started, startRequestedAt } = result;
+  if (started) return announceStart(trip, started);
+  await notifyTripStatus(trip, { status: trip.status, tripCode: trip.tripCode, startRequestedAt });
+  return { tripCode: trip.tripCode, status: trip.status, startRequestedAt, awaitingRider: true };
+}
+
+/**
+ * The rider confirms they are with the driver. If the driver already asked to start, the trip starts now;
+ * otherwise the driver's next "Start trip" starts it straight away.
+ */
+export async function confirmPickup(passengerId, tripCode) {
+  const result = await withTransaction(async (client) => {
+    await attributeTo(passengerId, client);
+    const trip = await loadRiderTripForUpdate(passengerId, tripCode, client);
+    assertTransition(trip, 'arrived');
+    const pickupConfirmedAt = await tripsRepo.markPickupConfirmed(trip.id, client);
+    if (trip.startRequestedAt) return { trip, started: await tripsRepo.markStarted(trip.id, client) };
+    return { trip, pickupConfirmedAt };
+  });
+
+  const { trip, started, pickupConfirmedAt } = result;
+  if (started) return announceStart(trip, started);
+  await notifyTripStatus(trip, { status: trip.status, tripCode: trip.tripCode, pickupConfirmedAt });
+  return { tripCode: trip.tripCode, status: trip.status, pickupConfirmedAt };
+}
+
+/**
+ * The rider says the driver is not at the pickup. The arrival is undone, so the trip can't start and the
+ * driver has to reach the pickup and mark arrival again. Logged for admins in case of repeat offenders.
+ */
+export async function disputeArrival(passengerId, tripCode) {
+  const result = await withTransaction(async (client) => {
+    await attributeTo(passengerId, client);
+    const trip = await loadRiderTripForUpdate(passengerId, tripCode, client);
+    assertTransition(trip, 'arrived');
+    const updated = await tripsRepo.undoArrival(trip.id, client);
+    await auditRepo.insert({
+      actorId: passengerId, actorRole: 'PASSENGER', action: 'TRIP_ARRIVAL_DISPUTED', entityType: 'trips', entityId: trip.id,
+      oldValue: { status: trip.status, arrivedAt: trip.arrivedAt, startRequestedAt: trip.startRequestedAt },
+      newValue: { status: updated.status, arrivalDisputedAt: updated.arrivalDisputedAt },
+    }, client);
+    await notificationsService.notify(trip.driverId, {
+      category: 'ride',
+      title: 'Your rider says you are not at the pickup',
+      body: `Trip ${trip.tripCode} is back to "on the way". Go to the pickup point and mark arrival again.`,
+      payload: { tripCode: trip.tripCode },
+    }, client);
+    return { trip, updated };
+  });
+
+  const { trip, updated } = result;
+  await notifyTripStatus(trip, { status: updated.status, tripCode: trip.tripCode, arrivalDisputedAt: updated.arrivalDisputedAt });
+  return updated;
 }
 
 export async function arriveAtStop(driverId, tripCode, stopOrder, location) {
@@ -586,6 +664,9 @@ function toTripDetail(trip, history) {
     arrivalRadiusMeters: env.ARRIVAL_RADIUS_METERS,
     endedEarly: trip.endedEarlyAt ? { at: trip.endedEarlyAt, lat: trip.endLat, lng: trip.endLng } : null,
     earlyStopRequestedAt: trip.earlyStopRequestedAt ?? null,
+    startRequestedAt: trip.startRequestedAt ?? null,
+    pickupConfirmedAt: trip.pickupConfirmedAt ?? null,
+    arrivalDisputedAt: trip.arrivalDisputedAt ?? null,
     stops: trip.stops ?? [],
     driverIsFavorite: trip.driverIsFavorite ?? false,
     reportedByMe: trip.reportedByMe ?? false,

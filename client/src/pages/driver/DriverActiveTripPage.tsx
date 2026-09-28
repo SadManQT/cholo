@@ -80,6 +80,24 @@ export function DriverActiveTripPage() {
     toast.info(t('Your rider wants to get out here. You can end the trip where you are.'));
   }, [stopRequestedAt]);
 
+  // Starting needs the rider's agreement (so a driver can't start a ride from somewhere else).
+  const handshake = tracking.handshake ?? (trip && {
+    startRequestedAt: trip.startRequestedAt, pickupConfirmedAt: trip.pickupConfirmedAt, arrivalDisputedAt: trip.arrivalDisputedAt,
+  });
+  const riderConfirmed = trip?.status === 'arrived' && Boolean(handshake?.pickupConfirmedAt);
+  const awaitingRider = trip?.status === 'arrived' && !riderConfirmed && Boolean(handshake?.startRequestedAt);
+
+  // Announce the rider's answer as it happens, not what was already true when the page opened.
+  const loaded = Boolean(trip);
+  const announcedConfirm = useRef<boolean | undefined>(undefined);
+  useEffect(() => {
+    if (!loaded) return;
+    if (riderConfirmed && announcedConfirm.current === false) toast.success(t('Your rider confirmed they are in the car.'));
+    announcedConfirm.current = riderConfirmed;
+  }, [loaded, riderConfirmed]);
+  // The rider said "My driver isn't here", which undid the arrival (the server also sends a notification).
+  const arrivalDisputed = trip?.status === 'assigned' && Boolean(handshake?.arrivalDisputedAt);
+
   const tripCode = trip?.publicCode;
   useEffect(() => {
     if (!tripCode || (tracking.status !== 'completed' && tracking.status !== 'cancelled')) return;
@@ -101,11 +119,22 @@ export function DriverActiveTripPage() {
     if (!action) return;
     setMutating(true);
     try {
-      if (trip.status === 'assigned') await tripsApi.markArrived(trip.publicCode, geolocation.position);
-      else if (trip.status === 'arrived') await tripsApi.startTrip(trip.publicCode);
+      if (trip.status === 'arrived') {
+        const result = await tripsApi.startTrip(trip.publicCode);
+        if (result.status !== 'in_progress') {
+          tracking.patchHandshake({ startRequestedAt: result.startRequestedAt ?? new Date().toISOString() });
+          toast.info(t('Asked {0} to confirm they are in the car. The trip starts when they do.', trip.passenger.name));
+          return;
+        }
+      } else if (trip.status === 'assigned') await tripsApi.markArrived(trip.publicCode, geolocation.position);
       else await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position);
 
-      toast.success(action.next === 'completed' ? t('Trip completed.') : t('Trip is now {0}.', action.next.replace('_', ' ')));
+      if (action.next === 'arrived') tracking.patchHandshake({ startRequestedAt: null, pickupConfirmedAt: null });
+      toast.success(
+        action.next === 'completed' ? t('Trip completed.')
+          : action.next === 'in_progress' ? t('Trip started.')
+            : t('Marked as arrived. Your rider will confirm when they are in the car.'),
+      );
       if (action.next === 'completed') {
         navigate(`/driver/trips/${trip.publicCode}`, { replace: true });
       } else {
@@ -172,7 +201,7 @@ export function DriverActiveTripPage() {
   const action = actionFor(trip.status);
   const driverPosition = geolocation.position ?? trip.pickup;
   const nextStop = trip.status === 'in_progress' ? trip.stops.find((stop) => !stop.arrivedAt) : undefined;
-  const heading = trip.status !== 'in_progress' ? t('Head to pickup') : nextStop ? t('Drive to stop {0}', nextStop.order) : t('Drive to dropoff');
+  const heading = trip.status === 'arrived' ? t('At the pickup') : trip.status !== 'in_progress' ? t('Head to pickup') : nextStop ? t('Drive to stop {0}', nextStop.order) : t('Drive to dropoff');
   const destination = trip.status !== 'in_progress' ? trip.pickup.address : nextStop ? nextStop.address : trip.dropoff.address;
 
   // The server refuses arrival/stop/complete outside the radius; lock the slider here too so the driver sees
@@ -184,6 +213,8 @@ export function DriverActiveTripPage() {
   const lockedReason = metersLeft != null && metersLeft > trip.arrivalRadiusMeters
     ? t(trip.status === 'assigned' ? '{0} to the pickup' : nextStop ? '{0} to stop {1}' : '{0} to the drop-off', formatMeters(metersLeft), nextStop?.order)
     : null;
+  // Starting is never GPS-locked (it happens at the pickup), but it waits for the rider once asked.
+  const startLockedReason = awaitingRider ? t('Waiting for {0} to confirm…', trip.passenger.name) : null;
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
@@ -211,6 +242,32 @@ export function DriverActiveTripPage() {
             </div>
           </Card>
 
+          {nextStop
+            ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} lockedReason={lockedReason} onConfirm={() => void reachStop(nextStop.order)} />
+            : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} lockedReason={trip.status === 'arrived' ? startLockedReason : lockedReason} onConfirm={advanceTrip} />}
+          {trip.status === 'arrived' && (
+            <p role="status" className={`rounded-xl p-3 text-sm ${riderConfirmed ? 'bg-cholo-50 font-medium text-ink-900' : 'bg-surface-alt text-ink-500'}`}>
+              {riderConfirmed
+                ? t('{0} confirmed they are in the car. Slide to start the trip.', trip.passenger.name)
+                : awaitingRider
+                  ? t('{0} needs to confirm in their app that they are in the car. The trip starts as soon as they do.', trip.passenger.name)
+                  : t('The trip starts only after {0} confirms in their app that they are in the car.', trip.passenger.name)}
+            </p>
+          )}
+          {trip.status === 'in_progress' && (nextStop || lockedReason) && (stopRequestedAt ? (
+            <div role="status" className="space-y-2 rounded-xl bg-marigold-500/15 p-3 text-sm">
+              <p><span className="font-semibold">{t('The rider asked to stop here.')}</span> {t('They pay for the distance driven so far.')}</p>
+              <Button onClick={() => setEndEarlyOpen(true)} className="w-full">{t('End trip here')}</Button>
+            </div>
+          ) : (
+            <p className="text-center text-sm text-ink-500">{t('Rider wants to get out early? They need to tap "Stop here" in their app first.')}</p>
+          ))}
+          {arrivalDisputed && (
+            <p role="alert" className="rounded-xl bg-danger-600/10 p-3 text-sm text-danger-600">
+              {t('Your rider says you are not at the pickup. Go to the pickup point and mark arrival again.')}
+            </p>
+          )}
+
           {geolocation.state === 'denied' && (
             <p className="rounded-xl bg-danger-600/10 p-3 text-sm text-danger-600">{t('Location permission is required for live passenger tracking.')}</p>
           )}
@@ -225,17 +282,6 @@ export function DriverActiveTripPage() {
               ))}
             </ol>
           )}
-          {nextStop
-            ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} lockedReason={lockedReason} onConfirm={() => void reachStop(nextStop.order)} />
-            : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} lockedReason={trip.status === 'arrived' ? null : lockedReason} onConfirm={advanceTrip} />}
-          {trip.status === 'in_progress' && (nextStop || lockedReason) && (stopRequestedAt ? (
-            <div role="status" className="space-y-2 rounded-xl bg-marigold-500/15 p-3 text-sm">
-              <p><span className="font-semibold">{t('The rider asked to stop here.')}</span> {t('They pay for the distance driven so far.')}</p>
-              <Button onClick={() => setEndEarlyOpen(true)} className="w-full">{t('End trip here')}</Button>
-            </div>
-          ) : (
-            <p className="text-center text-sm text-ink-500">{t('Rider wants to get out early? They need to tap "Stop here" in their app first.')}</p>
-          ))}
           {(trip.status === 'assigned' || trip.status === 'arrived') && (
             <Button variant="ghost" onClick={() => setCancelOpen(true)} className="w-full text-danger-600">{t('Cancel trip')}</Button>
           )}
