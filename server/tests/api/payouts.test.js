@@ -245,8 +245,10 @@ test('POST /driver/payout-accounts masks the account number and never stores it 
   assert.equal(body.accountType, 'bkash');
   assert.equal(body.isVerified, true);
 
-  const { rows } = await pool.query(`SELECT * FROM driver_payout_accounts WHERE id = $1`, [body.id]);
-  assert.equal(Object.keys(rows[0]).some((column) => column.toLowerCase().includes('account_no') && column !== 'account_no_masked'), false);
+  // Drivers only ever get the masked copy back; the full number is kept for finance's payout queue.
+  assert.equal(JSON.stringify(body).includes('01712345678'), false);
+  const { rows } = await pool.query(`SELECT account_no FROM driver_payout_accounts WHERE id = $1`, [body.id]);
+  assert.equal(rows[0].account_no, '01712345678');
 });
 
 test('POST /driver/payout-accounts requires bankName for a bank account', async (t) => {

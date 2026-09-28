@@ -15,6 +15,8 @@ export interface EarningTripRow {
   netEarning: string;
   settlementStatus: 'pending' | 'settled' | 'withheld';
   earnedAt: string;
+  /** How the rider paid: cash goes to the driver's hand, anything else through the app into the wallet. */
+  paymentMethod?: 'cash' | 'wallet' | 'bkash' | 'nagad' | 'card';
 }
 
 export type PayoutAccountType = 'bkash' | 'nagad' | 'bank';
@@ -51,5 +53,7 @@ export interface WithdrawalQueueRow extends Withdrawal {
   driverName: string;
   driverPhone: string;
   accountName: string;
+  /** The full payout number, for finance only (null for accounts added before it was kept). */
+  accountNo?: string | null;
   bankName: string | null;
 }

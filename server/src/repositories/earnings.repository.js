@@ -33,9 +33,10 @@ export async function listTripsForDriver(driverId, { from, to }, client = pool) 
     `SELECT de.id, t.trip_code AS "tripCode", de.gross_fare AS "grossFare",
             de.commission_pct AS "commissionPct", de.commission_amount AS "commissionAmount",
             de.net_earning AS "netEarning", de.settlement_status AS "settlementStatus",
-            de.earned_at AS "earnedAt"
+            de.earned_at AS "earnedAt", rr.payment_intent AS "paymentMethod"
      FROM driver_earnings de
      JOIN trips t ON t.id = de.trip_id
+     JOIN ride_requests rr ON rr.id = t.request_id
      WHERE de.driver_id = $1 AND de.earned_at::date BETWEEN $2 AND $3
      ORDER BY de.earned_at DESC`,
     [driverId, from, to],
