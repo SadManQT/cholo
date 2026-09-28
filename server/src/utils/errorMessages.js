@@ -32,6 +32,7 @@ export const ERROR_MESSAGES = Object.freeze({
   DRIVER_NOT_FOUND: 'The driver profile was not found.',
   DRIVER_ALREADY_REVIEWED: 'This driver application has already been reviewed.',
   DOCS_NOT_APPROVED: 'All required driver documents must be approved first.',
+  DOCUMENT_FILE_REQUIRED: 'Choose a photo or PDF of the document.',
   DOCUMENT_NOT_FOUND: 'The document was not found.',
   DOCUMENT_ALREADY_REVIEWED: 'This document has already been reviewed.',
   DOCUMENT_EXPIRED: 'An expired document cannot be approved.',

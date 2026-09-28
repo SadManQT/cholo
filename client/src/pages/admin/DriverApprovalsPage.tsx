@@ -4,7 +4,7 @@ import * as adminApi from '../../api/admin.api';
 import { expiryFlag } from '../../utils/documents';
 import { FileIcon } from '../../components/layout/icons';
 import { Button, Card, Dialog, EmptyState, Skeleton, StatePill, toast } from '../../components/ui';
-import type { DriverApplication, ReviewDocument, VehicleApplication } from '../../types/admin.types';
+import type { DriverApplication, PendingDocument, ReviewDocument, VehicleApplication } from '../../types/admin.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatDate, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
@@ -112,6 +112,7 @@ const cardMotion = (index: number) => ({
 export function DriverApprovalsPage({ documentsOnly = false }: { documentsOnly?: boolean }) {
   const [drivers, setDrivers] = useState<DriverApplication[]>([]);
   const [vehicles, setVehicles] = useState<VehicleApplication[]>([]);
+  const [pendingDocs, setPendingDocs] = useState<PendingDocument[]>([]);
   const [tab, setTab] = useState<'drivers' | 'vehicles'>('drivers');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,15 +122,19 @@ export function DriverApprovalsPage({ documentsOnly = false }: { documentsOnly?:
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [driverResult, vehicleResult] = await Promise.all([adminApi.listDriverApplications(), adminApi.listVehicleApplications()]);
-      setDrivers(driverResult.data);
-      setVehicles(vehicleResult.data);
+      if (documentsOnly) {
+        setPendingDocs(await adminApi.listPendingDocuments());
+      } else {
+        const [driverResult, vehicleResult] = await Promise.all([adminApi.listDriverApplications(), adminApi.listVehicleApplications()]);
+        setDrivers(driverResult.data);
+        setVehicles(vehicleResult.data);
+      }
     } catch (thrown) {
       setError(getApiErrorMessage(thrown, 'Could not load approval queues.'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [documentsOnly]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -173,11 +178,6 @@ export function DriverApprovalsPage({ documentsOnly = false }: { documentsOnly?:
     }
   }
 
-  const pendingDocs = [
-    ...drivers.flatMap((driver) => driver.documents.filter((doc) => doc.status === 'pending').map((doc) => ({ doc, owner: driver.fullName, detail: driver.phone, vehicle: false }))),
-    ...vehicles.flatMap((vehicle) => vehicle.documents.filter((doc) => doc.status === 'pending').map((doc) => ({ doc, owner: vehicle.driverName, detail: vehicle.registrationNo, vehicle: true }))),
-  ];
-
   const header = documentsOnly
     ? { title: 'Document review', hint: `${pendingDocs.length} document${pendingDocs.length === 1 ? '' : 's'} waiting. Check each one against the details on file.` }
     : { title: 'Driver approvals', hint: 'Approve a driver or vehicle once every required document is approved.' };
@@ -206,11 +206,11 @@ export function DriverApprovalsPage({ documentsOnly = false }: { documentsOnly?:
       ) : documentsOnly ? (
         pendingDocs.length === 0 ? <EmptyState title="Nothing to review" hint="New uploads from drivers appear here." /> : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pendingDocs.map(({ doc, owner, detail, vehicle }) => (
-              <Card key={`${vehicle ? 'v' : 'd'}-${doc.id}`} className="p-3">
-                <p className="text-sm font-semibold">{owner}</p>
-                <p className="text-xs text-ink-500">{detail}</p>
-                <DocumentGrid single documents={[doc]} vehicle={vehicle} busy={busy} onApprove={(d, v) => void approveDocument(d, v)} onReject={setRejecting} />
+            {pendingDocs.map((doc) => (
+              <Card key={`${doc.vehicle ? 'v' : 'd'}-${doc.id}`} className="p-3">
+                <p className="text-sm font-semibold">{doc.owner}</p>
+                <p className="text-xs text-ink-500">{doc.detail} · submitted {formatDateTime(doc.uploadedAt)}</p>
+                <DocumentGrid single documents={[doc]} vehicle={doc.vehicle} busy={busy} onApprove={(d, v) => void approveDocument(d, v)} onReject={setRejecting} />
               </Card>
             ))}
           </div>

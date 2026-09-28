@@ -15,6 +15,7 @@ import type {
   VehicleApplication,
   Zone,
   ZoneType,
+  PendingDocument,
 } from '../types/admin.types';
 import type { TicketDetail, TicketPriority, TicketStatus, TicketSummary } from '../types/support.types';
 
@@ -36,6 +37,12 @@ export async function getAnalytics(params: { month: string; minTrips: number }) 
 /** Top drivers and riders by completed trips. `days` omitted = all time. */
 export async function getLeaderboard(params: { days?: number; cityId?: number }) {
   const response = await apiClient.get<ApiSuccess<Leaderboard>>('/admin/leaderboard', { params });
+  return response.data.data;
+}
+
+/** Every document whose latest copy awaits review, for any driver or vehicle. */
+export async function listPendingDocuments() {
+  const response = await apiClient.get<ApiSuccess<PendingDocument[]>>('/admin/documents/pending');
   return response.data.data;
 }
 
