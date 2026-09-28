@@ -55,6 +55,7 @@ export const ERROR_MESSAGES = Object.freeze({
   OUTSIDE_SERVICE_AREA: 'Cholo rides are currently available only within Bangladesh. Choose a location inside Bangladesh.',
   GEO_PROVIDER_UNAVAILABLE: 'The mapping service is temporarily unavailable. Please try again.',
   ACTIVE_REQUEST_EXISTS: 'You already have an active ride request.',
+  UNPAID_TRIP: 'Pay for your last trip before booking a new one.',
   RIDE_REQUEST_NOT_FOUND: 'The ride request was not found.',
   ALREADY_MATCHED: 'A driver has already accepted this request.',
   PROMO_INVALID: 'That promo code is not valid for this ride.',

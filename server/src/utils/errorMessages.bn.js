@@ -57,6 +57,7 @@ export const ERROR_MESSAGES_BN = Object.freeze({
   OUTSIDE_SERVICE_AREA: 'Cholo রাইড এখন শুধু বাংলাদেশের ভেতরে পাওয়া যায়। বাংলাদেশের ভেতরের একটি জায়গা বেছে নিন।',
   GEO_PROVIDER_UNAVAILABLE: 'মানচিত্র সেবা সাময়িকভাবে বন্ধ। আবার চেষ্টা করুন।',
   ACTIVE_REQUEST_EXISTS: 'আপনার একটি রাইডের অনুরোধ ইতিমধ্যে চালু আছে।',
+  UNPAID_TRIP: 'নতুন রাইড বুক করার আগে আগের ট্রিপের ভাড়া পরিশোধ করুন।',
   RIDE_REQUEST_NOT_FOUND: 'রাইডের অনুরোধটি পাওয়া যায়নি।',
   ALREADY_MATCHED: 'একজন ড্রাইভার ইতিমধ্যে এই অনুরোধ গ্রহণ করেছেন।',
   PROMO_INVALID: 'এই রাইডের জন্য প্রোমো কোডটি বৈধ নয়।',

@@ -8,6 +8,7 @@ export async function listTrips(params: {
   limit?: number;
   status?: TripStatus | 'active';
   role?: ParticipantRole;
+  paymentStatus?: 'unpaid' | 'paid' | 'refunded';
 } = {}) {
   const response = await apiClient.get<ApiSuccess<TripSummary[]>>('/trips', { params });
   return { data: response.data.data, meta: response.data.meta };

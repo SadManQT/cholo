@@ -65,6 +65,9 @@ export async function createRequest(passengerId, dto) {
   try {
     request = await withTransaction(async (client) => {
       await ridesRepo.lockPassengerBooking(passengerId, client);
+      // A finished trip has to be paid for before the next one can be booked.
+      const unpaid = await ridesRepo.findUnpaidTrip(passengerId, client);
+      if (unpaid) throw new AppError(409, 'UNPAID_TRIP', { tripCode: unpaid.tripCode, totalFare: unpaid.totalFare });
       if (scheduledFor) {
         if (await ridesRepo.countUpcomingScheduled(passengerId, client) >= MAX_UPCOMING_SCHEDULED) {
           throw new AppError(409, 'TOO_MANY_SCHEDULED_RIDES');
@@ -204,7 +207,8 @@ export async function expireStaleRequests() {
 
 /**
  * Scheduled rides: remind the rider 30 minutes ahead, and start the normal search 10 minutes ahead.
- * A rider already on another trip keeps the booking pending; it expires 15 minutes after pickup time.
+ * A rider already on another trip, or owing for a finished one, keeps the booking pending; it expires 15
+ * minutes after pickup time.
  */
 export async function dispatchScheduledRequests() {
   const reminders = await withTransaction(async (client) => {
@@ -228,7 +232,8 @@ export async function dispatchScheduledRequests() {
       const request = await ridesRepo.findScheduledForUpdate(candidate.id, client);
       if (request?.status !== 'pending') return null;
       if (await ridesRepo.hasActiveTrip(request.passengerId, client)
-        || await ridesRepo.hasSearchingRequest(request.passengerId, client)) return null;
+        || await ridesRepo.hasSearchingRequest(request.passengerId, client)
+        || await ridesRepo.findUnpaidTrip(request.passengerId, client)) return null;
 
       await ridesRepo.startScheduledSearch(request.id, REQUEST_EXPIRY_MINUTES, client);
       const offers = await dispatchService.fanOutOffers({

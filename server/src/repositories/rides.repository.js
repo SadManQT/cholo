@@ -201,6 +201,19 @@ export async function hasActiveTrip(passengerId, client = pool) {
   return rowCount > 0;
 }
 
+/** The rider's oldest finished trip that still hasn't been paid (cash trips are paid at drop-off). */
+export async function findUnpaidTrip(passengerId, client = pool) {
+  const { rows } = await client.query(
+    `SELECT trip_code AS "tripCode", total_fare AS "totalFare"
+     FROM trips
+     WHERE passenger_id = $1 AND status = 'completed' AND payment_status = 'unpaid' AND total_fare > 0
+     ORDER BY completed_at
+     LIMIT 1`,
+    [passengerId],
+  );
+  return rows[0] ?? null;
+}
+
 export async function expireStaleRequests(client = pool) {
   const { rows } = await client.query(
     `UPDATE ride_requests

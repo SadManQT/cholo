@@ -27,7 +27,7 @@ import type {
   SocketTripStatus,
   VehicleCategory,
 } from '../../types/ride.types';
-import { getApiErrorCode, getApiErrorMessage } from '../../utils/apiError';
+import { getApiErrorCode, getApiErrorMessage, getUnpaidTrip } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
 import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
@@ -157,6 +157,8 @@ function PlaceShortcuts({ saved, recent, target, onPick }: {
 export function BookRidePage() {
   const navigate = useNavigate();
   const [checkingTrip, setCheckingTrip] = useState(true);
+  // A finished trip that still isn't paid for: the server refuses new bookings until it is.
+  const [unpaidTrip, setUnpaidTrip] = useState<{ tripCode: string; totalFare: string } | null>(null);
   const { socket, connectionState } = useSocket();
   const geolocation = useGeolocation();
   const requestCurrentLocation = geolocation.request;
@@ -215,16 +217,27 @@ export function BookRidePage() {
     void loadReferences();
   }, [loadReferences]);
 
-  // While a ride is under way, Book always shows that ride instead of the booking form.
+  // While a ride is under way, Book always shows that ride instead of the booking form; while the last
+  // trip is unpaid, it asks for that payment first.
   useEffect(() => {
     let cancelled = false;
-    tripsApi.listTrips({ status: 'active', role: 'passenger', limit: 1 })
-      .then(({ data }) => {
+    async function check() {
+      try {
+        const active = await tripsApi.listTrips({ status: 'active', role: 'passenger', limit: 1 });
         if (cancelled) return;
-        if (data[0]) navigate(`/trips/${data[0].publicCode}/live`, { replace: true });
-        else setCheckingTrip(false);
-      })
-      .catch(() => { if (!cancelled) setCheckingTrip(false); });
+        if (active.data[0]) {
+          navigate(`/trips/${active.data[0].publicCode}/live`, { replace: true });
+          return;
+        }
+        const unpaid = await tripsApi.listTrips({ status: 'completed', role: 'passenger', paymentStatus: 'unpaid', limit: 1 });
+        const owed = unpaid.data.find((trip) => Number(trip.totalFare) > 0);
+        if (!cancelled && owed) setUnpaidTrip({ tripCode: owed.publicCode, totalFare: owed.totalFare });
+      } catch {
+        // The server still refuses the booking; the form's error handling covers it.
+      }
+      if (!cancelled) setCheckingTrip(false);
+    }
+    void check();
     return () => { cancelled = true; };
   }, [navigate]);
 
@@ -470,7 +483,9 @@ export function BookRidePage() {
       setRideRequest(created);
       toast.success(t('Looking for a nearby driver.'));
     } catch (error) {
-      toast.error(getApiErrorMessage(error, t('Could not request this ride.')));
+      const unpaid = getUnpaidTrip(error);
+      if (unpaid) setUnpaidTrip(unpaid);
+      else toast.error(getApiErrorMessage(error, t('Could not request this ride.')));
     } finally {
       setSubmitting(false);
     }
@@ -496,6 +511,19 @@ export function BookRidePage() {
     : null, [geolocation.position]);
 
   if (checkingTrip) return <FullScreenSpinner />;
+  if (unpaidTrip) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center p-4">
+        <div role="alert" className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
+          <p className="text-lg font-bold text-ink-900">{t('Pay for your last trip first')}</p>
+          <p className="mt-2 text-sm text-ink-500">
+            {t('Trip {0} ({1}) is still unpaid. Pay for it to book your next ride.', unpaidTrip.tripCode, formatBDT(unpaidTrip.totalFare))}
+          </p>
+          <Button className="mt-5 w-full" onClick={() => navigate(`/trips/${unpaidTrip.tripCode}`)}>{t('Pay now')}</Button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
