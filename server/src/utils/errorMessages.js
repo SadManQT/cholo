@@ -84,6 +84,7 @@ export const ERROR_MESSAGES = Object.freeze({
   INSUFFICIENT_BALANCE: 'Your wallet balance is not enough to cover this withdrawal.',
   WITHDRAWAL_NOT_FOUND: 'That withdrawal was not found.',
   WITHDRAWAL_ALREADY_REVIEWED: 'This withdrawal has already been reviewed.',
+  WITHDRAWAL_NOT_APPROVED: 'Only an approved withdrawal can be marked paid or failed.',
   FORBIDDEN_ACCESS_LEVEL: 'Your admin account does not have access to do that.',
   USER_NOT_FOUND: 'That user account was not found.',
   USER_DELETED: 'A deleted account cannot be changed.',

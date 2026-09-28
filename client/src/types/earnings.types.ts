@@ -41,6 +41,8 @@ export interface Withdrawal {
   rejectionReason: string | null;
   requestedAt: string;
   processedAt: string | null;
+  /** The bKash/Nagad/bank transaction reference finance recorded when it was paid. */
+  payoutReference?: string | null;
   accountType: PayoutAccountType;
   accountNoMasked: string;
 }

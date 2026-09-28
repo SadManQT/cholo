@@ -168,6 +168,24 @@ export async function rejectWithdrawal(id: string, reason: string) {
   return response.data.data;
 }
 
+/** Finance sent the money: approved → paid. */
+export async function markWithdrawalPaid(id: string, reference?: string) {
+  const response = await apiClient.post<ApiSuccess<{ id: string; status: WithdrawalStatus }>>(
+    `/admin/withdrawals/${id}/paid`,
+    reference ? { reference } : {},
+  );
+  return response.data.data;
+}
+
+/** The payout bounced: approved → failed, and the amount goes back to the driver's wallet. */
+export async function markWithdrawalFailed(id: string, reason: string) {
+  const response = await apiClient.post<ApiSuccess<{ id: string; status: WithdrawalStatus }>>(
+    `/admin/withdrawals/${id}/failed`,
+    { reason },
+  );
+  return response.data.data;
+}
+
 export async function startDisputeReview(id: string) {
   const response = await apiClient.post<ApiSuccess<unknown>>(`/admin/disputes/${id}/review`);
   return response.data.data;

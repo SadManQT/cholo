@@ -23,6 +23,10 @@ export const rejectApplicationSchema = z.object({
   reason: z.string().trim().min(1).max(255),
 });
 
+export const withdrawalPaidSchema = z.object({
+  reference: z.string().trim().min(1).max(120).optional(),
+});
+
 export const withdrawalQueueQuerySchema = z.object({
   status: z.enum(['requested', 'approved', 'processing', 'paid', 'rejected', 'failed']).optional(),
   page: z.coerce.number().int().positive().default(1),
