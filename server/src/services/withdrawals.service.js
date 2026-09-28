@@ -13,27 +13,15 @@ export async function requestWithdrawal(driverId, { amount, payoutAccountId }) {
   if (!account) throw new AppError(404, 'PAYOUT_ACCOUNT_NOT_FOUND');
   if (!account.isVerified) throw new AppError(409, 'PAYOUT_ACCOUNT_UNVERIFIED');
 
-  return withTransaction(async (client) => {
-    const wallet = await walletRepo.getByUserIdForUpdate(driverId, client);
-    if (Number(wallet.balance) < amount) throw new AppError(422, 'INSUFFICIENT_BALANCE');
-
-    const withdrawal = await withdrawalsRepo.insert(
-      { driverId, payoutAccountId, amount, fee: WITHDRAWAL_FEE },
-      client,
-    );
-
-    await walletRepo.insertTransaction({
-      walletId: wallet.id,
-      txnType: 'withdrawal',
-      direction: 'debit',
-      amount,
-      referenceType: 'withdrawal',
-      referenceId: withdrawal.id,
-      idempotencyKey: `withdrawal-request-${withdrawal.id}`,
-    }, client);
-
-    return { ...withdrawal, accountType: account.accountType, accountNoMasked: account.accountNoMasked };
+  const withdrawal = await withTransaction((client) => withdrawalsRepo.request(
+    { driverId, payoutAccountId, amount, fee: WITHDRAWAL_FEE },
+    client,
+  )).catch((error) => {
+    if (error.message === 'INSUFFICIENT_BALANCE') throw new AppError(422, 'INSUFFICIENT_BALANCE');
+    throw error;
   });
+
+  return { ...withdrawal, accountType: account.accountType, accountNoMasked: account.accountNoMasked };
 }
 
 export async function listWithdrawals(driverId, query) {

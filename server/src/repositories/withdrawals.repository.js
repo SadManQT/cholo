@@ -1,11 +1,15 @@
 import { pool } from '../config/db.js';
 
-export async function insert({ driverId, payoutAccountId, amount, fee }, client) {
-  const { rows } = await client.query(
-    `INSERT INTO withdrawals (driver_id, payout_account_id, amount, fee)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, public_id AS "publicId", amount, fee, status, requested_at AS "requestedAt"`,
+// The stored procedure checks the balance, inserts the withdrawal and debits the wallet (migration 0009).
+export async function request({ driverId, payoutAccountId, amount, fee }, client) {
+  const called = await client.query(
+    `CALL sp_request_withdrawal($1, $2, $3, $4, NULL)`,
     [driverId, payoutAccountId, amount, fee],
+  );
+  const { rows } = await client.query(
+    `SELECT id, public_id AS "publicId", amount, fee, status, requested_at AS "requestedAt"
+     FROM withdrawals WHERE id = $1`,
+    [called.rows[0].o_withdrawal_id],
   );
 
   return rows[0];
