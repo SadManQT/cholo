@@ -76,7 +76,7 @@ export async function apply(input: { nidNumber: string; licenseNumber: string; l
 }
 
 export interface DocumentInput {
-  fileUrl: string;
+  fileUrl?: string;
   docNumber?: string;
   issueDate?: string;
   expiryDate?: string;

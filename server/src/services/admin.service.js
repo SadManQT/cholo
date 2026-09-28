@@ -189,6 +189,10 @@ export async function listAuditLogs(query) {
   };
 }
 
+export async function listPendingDocuments() {
+  return documentsRepo.listPendingForReview();
+}
+
 export async function listDrivers(query) {
   const { status, page, limit } = query;
   const { rows, total } = await adminRepo.listDriverApplications({
