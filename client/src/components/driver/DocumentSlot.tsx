@@ -3,7 +3,7 @@ import { ACCEPTED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, uploadFile } from '../../api/u
 import type { DocumentInput } from '../../api/driver.api';
 import type { DriverDocument } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
-import { expiryFlag } from '../../utils/documents';
+import { expiryFlag, maxExpiryDate } from '../../utils/documents';
 import { dhakaDate } from '../../utils/format';
 import { FileIcon } from '../layout/icons';
 import { Button, Input, StatePill, toast } from '../ui';
@@ -17,10 +17,12 @@ interface DocumentSlotProps {
   latest: DriverDocument | undefined;
   askNumber?: boolean;
   askExpiry?: boolean;
+  /** Longest validity the document can legally have, in years from today. */
+  maxExpiryYears?: number;
   onSubmit: (input: DocumentInput) => Promise<void>;
 }
 
-export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry = false, onSubmit }: DocumentSlotProps) {
+export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry = false, maxExpiryYears = 20, onSubmit }: DocumentSlotProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [docNumber, setDocNumber] = useState('');
@@ -28,6 +30,7 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const flag = latest ? expiryFlag(latest.expiryDate) : null;
+  const maxExpiry = maxExpiryDate(maxExpiryYears);
   const canReplace = !latest || latest.status !== 'pending';
 
   function pick(next: File | undefined) {
@@ -41,6 +44,8 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
   async function submit() {
     if (!file) return setError(t('Choose a photo or PDF of the document.'));
     if (askExpiry && !expiryDate) return setError(t('Enter the expiry date printed on the document.'));
+    if (expiryDate && expiryDate <= dhakaDate()) return setError(t('This document has already expired.'));
+    if (expiryDate && expiryDate > maxExpiry) return setError(t('{0} is valid for at most {1} years. Check the expiry date.', label, maxExpiryYears));
     setBusy(true);
     setError(null);
     try {
@@ -95,7 +100,7 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
               {askNumber && <Input label={t('Document number')} value={docNumber} onChange={(event) => setDocNumber(event.target.value)} />}
               {askExpiry && (
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-900">{t('Expiry date')}
-                  <input type="date" value={expiryDate} min={dhakaDate(1)} max={dhakaDate(20 * 365)} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
+                  <input type="date" value={expiryDate} min={dhakaDate(1)} max={maxExpiry} onChange={(event) => setExpiryDate(event.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" />
                 </label>
               )}
             </div>

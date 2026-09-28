@@ -5,10 +5,12 @@ import { DocumentSlot } from '../../components/driver/DocumentSlot';
 import { EmptyState, Skeleton, StatePill } from '../../components/ui';
 import type { DriverDocType, DriverStatus } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { LICENSE_MAX_YEARS } from '../../utils/documents';
 import { t } from '../../i18n';
 
-const DRIVER_DOCS: { type: DriverDocType; label: string; hint: string; askNumber?: boolean; askExpiry?: boolean }[] = [
-  { type: 'license', label: t('Driving license'), hint: t('Both sides, all text readable.'), askNumber: true, askExpiry: true },
+const DRIVER_DOCS: { type: DriverDocType; label: string; hint: string; askNumber?: boolean; askExpiry?: boolean; maxExpiryYears?: number }[] = [
+  // BRTA driving licences last at most 10 years (non-professional; professional ones 5).
+  { type: 'license', label: t('Driving license'), hint: t('Both sides, all text readable.'), askNumber: true, askExpiry: true, maxExpiryYears: LICENSE_MAX_YEARS },
   { type: 'nid', label: t('National ID'), hint: t('Front of your NID card.'), askNumber: true },
   { type: 'photo', label: t('Profile photo'), hint: t('A clear, recent photo of your face.') },
   { type: 'police_clearance', label: t('Police clearance'), hint: t('Issued within the last 6 months.'), askExpiry: true },
@@ -74,6 +76,7 @@ export function DriverDocumentsPage() {
             hint={doc.hint}
             askNumber={doc.askNumber}
             askExpiry={doc.askExpiry}
+            maxExpiryYears={doc.maxExpiryYears}
             latest={latest.get(doc.type)}
             onSubmit={async (input) => { await driverApi.addDocument(doc.type, input); await load(); }}
           />

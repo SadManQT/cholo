@@ -30,6 +30,20 @@ test('impossible and absurd calendar dates are rejected', () => {
   assert.ok(docDates(dhakaDate(-365), '9999-01-01') > 0, 'expires in year 9999');
 });
 
+test('driving licenses cannot outlast the 10-year BRTA validity', () => {
+  const apply = { nidNumber: '1234567890', licenseNumber: 'DK-1' };
+  assert.ok(ok(applyDriverSchema, { ...apply, licenseExpiry: dhakaDate(365 * 10 - 5) }));
+  assert.ok(!ok(applyDriverSchema, { ...apply, licenseExpiry: dhakaDate(365 * 11) }));
+
+  const issues = (docType, issueDate, expiryDate) => createDriverDocumentSchema
+    .safeParse({ docType, fileUrl: 'x', issueDate, expiryDate }).error?.issues
+    .filter((issue) => issue.path[0] === 'expiryDate').length ?? 0;
+  assert.equal(issues('license', undefined, dhakaDate(365 * 10 - 5)), 0);
+  assert.ok(issues('license', undefined, dhakaDate(365 * 12)) > 0, '12 years from today');
+  assert.ok(issues('license', dhakaDate(-365 * 3), dhakaDate(365 * 8)) > 0, '11 years after issue');
+  assert.equal(issues('police_clearance', undefined, dhakaDate(365 * 12)), 0, 'other documents keep the wider cap');
+});
+
 test('date ranges must be in order, bounded and not in the future', () => {
   assert.ok(ok(earningsQuerySchema, { from: dhakaDate(-7), to: dhakaDate() }));
   assert.ok(!ok(earningsQuerySchema, { from: dhakaDate(), to: dhakaDate(-7) }));
