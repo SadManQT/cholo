@@ -1,4 +1,4 @@
-import { afterCommit } from '../config/db.js';
+import { afterCommit, withTransaction } from '../config/db.js';
 import * as notificationsRepo from '../repositories/notifications.repository.js';
 import { getIO } from '../sockets/index.js';
 import { userRoom } from '../sockets/rooms.js';
@@ -29,5 +29,5 @@ export async function listMine(userId, query) {
 }
 
 export async function markRead(userId, ids) {
-  return { updated: await notificationsRepo.markRead(userId, ids) };
+  return { updated: await withTransaction((client) => notificationsRepo.markRead(userId, ids, client)) };
 }

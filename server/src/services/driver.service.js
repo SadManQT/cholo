@@ -103,7 +103,7 @@ export async function listVehicles(userId) {
 }
 
 export async function updateVehicle(userId, vehicleId, fields) {
-  const updated = await vehiclesRepo.update(vehicleId, userId, fields);
+  const updated = await withTransaction((client) => vehiclesRepo.update(vehicleId, userId, fields, client));
   if (!updated) throw new AppError(404, 'VEHICLE_NOT_FOUND');
   return vehiclesRepo.findByIdForDriver(vehicleId, userId);
 }

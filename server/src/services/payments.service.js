@@ -83,7 +83,7 @@ export async function handleReturn(publicId, result, body) {
       logger.error('Payment return settlement failed; waiting for IPN', error, { publicId });
     });
   } else if (result !== 'success') {
-    await paymentsRepo.markFailedIfInitiated(publicId);
+    await withTransaction((client) => paymentsRepo.markFailedIfInitiated(publicId, client));
   }
   return `${env.CLIENT_ORIGIN[0]}/payments/${publicId}?result=${result}`;
 }

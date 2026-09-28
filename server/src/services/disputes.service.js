@@ -27,13 +27,13 @@ export async function createDispute(userId, input) {
   if (await disputesRepo.hasOpenDispute(trip.id, userId)) {
     throw new AppError(409, 'DUPLICATE_OPEN_DISPUTE');
   }
-  return disputesRepo.insert({
+  return withTransaction((client) => disputesRepo.insert({
     tripId: trip.id,
     raisedBy: userId,
     disputeType: input.disputeType,
     description: input.description,
     disputedAmount: input.disputedAmount,
-  });
+  }, client));
 }
 
 export async function listMine(userId, query) {

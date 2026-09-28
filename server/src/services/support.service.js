@@ -52,7 +52,10 @@ export async function addUserMessage(userId, ticketId, input) {
   const ticket = await supportRepo.findOwned(ticketId, userId);
   if (!ticket) throw new AppError(404, 'TICKET_NOT_FOUND');
   if (['resolved', 'closed'].includes(ticket.status)) throw new AppError(409, 'TICKET_CLOSED');
-  return supportRepo.insertMessage({ ...input, ticketId, senderId: userId, isInternalNote: false });
+  return withTransaction((client) => supportRepo.insertMessage(
+    { ...input, ticketId, senderId: userId, isInternalNote: false },
+    client,
+  ));
 }
 
 export async function listQueue(adminId, query) {

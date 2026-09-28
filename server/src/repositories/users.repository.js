@@ -70,14 +70,14 @@ const PROFILE_COLUMNS = Object.freeze({
   preferredLanguage: 'preferred_language',
 });
 
-export async function updateProfile(userId, fields) {
+export async function updateProfile(userId, fields, client = pool) {
   const entries = Object.entries(fields).filter(([key]) => key in PROFILE_COLUMNS);
   if (entries.length === 0) return;
 
   const setClause = entries.map(([key], index) => `${PROFILE_COLUMNS[key]} = $${index + 2}`).join(', ');
   const values = entries.map(([, value]) => value);
 
-  await pool.query(`UPDATE users SET ${setClause} WHERE id = $1`, [userId, ...values]);
+  await client.query(`UPDATE users SET ${setClause} WHERE id = $1`, [userId, ...values]);
 }
 
 export async function findPasswordHashById(userId) {

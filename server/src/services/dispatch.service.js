@@ -59,7 +59,7 @@ export async function fanOutOffers(
 // drivers who haven't seen them yet, widening the radius each round. The request-expiry job
 // still ends the search after REQUEST_EXPIRY_MINUTES.
 export async function redispatchStaleRequests() {
-  await offersRepo.timeOutStalePending(OFFER_TIMEOUT_SECONDS);
+  await withTransaction((client) => offersRepo.timeOutStalePending(OFFER_TIMEOUT_SECONDS, client));
   const requests = await offersRepo.findRequestsNeedingRedispatch(OFFER_TIMEOUT_SECONDS);
   let offered = 0;
 
@@ -116,12 +116,12 @@ export async function respondToOffer(driverId, offerId, response) {
     throw new AppError(409, 'ALREADY_TAKEN');
   }
   if (isExpired(offer.offeredAt)) {
-    await offersRepo.markResponse(offerId, 'timed_out');
+    await withTransaction((client) => offersRepo.markResponse(offerId, 'timed_out', client));
     throw new AppError(410, 'OFFER_EXPIRED');
   }
 
   if (response === 'rejected') {
-    const applied = await offersRepo.markResponse(offerId, 'rejected');
+    const applied = await withTransaction((client) => offersRepo.markResponse(offerId, 'rejected', client));
     if (!applied) throw new AppError(409, 'ALREADY_TAKEN');
     return { id: offerId, response: 'rejected' };
   }

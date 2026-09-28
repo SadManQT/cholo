@@ -1,3 +1,4 @@
+import { withTransaction } from '../config/db.js';
 import * as paymentsRepo from '../repositories/payments.repository.js';
 import * as usersRepo from '../repositories/users.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
@@ -30,7 +31,7 @@ export async function listTransactions(userId, query) {
 export async function initiateTopup(userId, { amount, method }) {
   await requireWallet(userId);
 
-  const payment = await paymentsRepo.insertPayment({
+  const payment = await withTransaction((client) => paymentsRepo.insertPayment({
     purpose: 'wallet_topup',
     tripId: null,
     payerId: userId,
@@ -38,7 +39,7 @@ export async function initiateTopup(userId, { amount, method }) {
     gateway: paymentGateway.activeGateway(),
     amount,
     status: 'initiated',
-  });
+  }, client));
 
   const payer = await usersRepo.findById(userId);
   const session = await paymentGateway.createSession({

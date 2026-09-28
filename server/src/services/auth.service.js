@@ -41,23 +41,27 @@ function toPublicUser(user, roles) {
 
 async function mintSession(userId, device) {
   const roles = await rolesRepo.findRoleNamesForUser(userId);
-  const sessionId = await sessionsRepo.createSession({
-    userId,
-    deviceType: device.deviceType,
-    deviceName: device.deviceName,
-    ipAddress: device.ipAddress,
-    userAgent: device.userAgent,
+  const refreshToken = generateRefreshToken();
+
+  // The session and its refresh token are saved together: never a session nobody can refresh.
+  const sessionId = await withTransaction(async (client) => {
+    const createdId = await sessionsRepo.createSession({
+      userId,
+      deviceType: device.deviceType,
+      deviceName: device.deviceName,
+      ipAddress: device.ipAddress,
+      userAgent: device.userAgent,
+    }, client);
+    await sessionsRepo.createRefreshToken({
+      userId,
+      sessionId: createdId,
+      tokenHash: hashRefreshToken(refreshToken),
+      expiresAt: refreshTokenExpiresAt(),
+    }, client);
+    return createdId;
   });
 
   const accessToken = signAccessToken({ userId, roles, sessionId });
-  const refreshToken = generateRefreshToken();
-
-  await sessionsRepo.createRefreshToken({
-    userId,
-    sessionId,
-    tokenHash: hashRefreshToken(refreshToken),
-    expiresAt: refreshTokenExpiresAt(),
-  });
 
   const user = await usersRepo.findById(userId);
   return { accessToken, refreshToken, user: toPublicUser(user, roles) };
@@ -106,13 +110,13 @@ export async function resendOtp({ phone, purpose }) {
   }
 
   const otp = generateOtp();
-  await otpRepo.insert({
+  await withTransaction((client) => otpRepo.insert({
     userId: user.id,
     phone,
     otpHash: hashOtp(otp),
     purpose,
     expiresAt: otpExpiresAt(),
-  });
+  }, client));
   sendOtpSms(phone, otp);
 }
 
@@ -161,7 +165,7 @@ export async function login({ phone, password }, device) {
     throw new AppError(401, 'BAD_CREDENTIALS');
   }
   if (user.status === 'suspended' && user.suspendedUntil && user.suspendedUntil <= new Date()) {
-    await adminRepo.reinstateExpiredSuspensions(pool, user.id);
+    await withTransaction((client) => adminRepo.reinstateExpiredSuspensions(client, user.id));
     user.status = 'active';
   }
   if (user.status === 'suspended') {
@@ -255,13 +259,17 @@ export async function refresh(rawRefreshToken) {
 }
 
 export async function logout(sessionId) {
-  await sessionsRepo.revokeActiveForSession(sessionId);
-  await sessionsRepo.endSession(sessionId);
+  await withTransaction(async (client) => {
+    await sessionsRepo.revokeActiveForSession(sessionId, client);
+    await sessionsRepo.endSession(sessionId, client);
+  });
 }
 
 export async function logoutAll(userId) {
-  await sessionsRepo.revokeActiveForUser(userId);
-  await sessionsRepo.endAllSessionsForUser(userId);
+  await withTransaction(async (client) => {
+    await sessionsRepo.revokeActiveForUser(userId, client);
+    await sessionsRepo.endAllSessionsForUser(userId, client);
+  });
 }
 
 export async function requestPasswordReset({ phone }) {
@@ -269,7 +277,10 @@ export async function requestPasswordReset({ phone }) {
   if (!user || user.status === 'deleted') throw new AppError(404, 'ACCOUNT_NOT_FOUND');
 
   const otp = generateOtp();
-  await otpRepo.insert({ userId: user.id, phone, otpHash: hashOtp(otp), purpose: 'password_reset', expiresAt: otpExpiresAt() });
+  await withTransaction((client) => otpRepo.insert(
+    { userId: user.id, phone, otpHash: hashOtp(otp), purpose: 'password_reset', expiresAt: otpExpiresAt() },
+    client,
+  ));
   sendOtpSms(phone, otp);
 }
 

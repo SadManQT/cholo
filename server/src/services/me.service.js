@@ -39,7 +39,7 @@ export async function getMe(userId) {
 }
 
 export async function updateMe(userId, fields) {
-  await usersRepo.updateProfile(userId, fields);
+  await withTransaction((client) => usersRepo.updateProfile(userId, fields, client));
   return getMe(userId);
 }
 
@@ -52,10 +52,12 @@ export async function changePassword(userId, sessionId, { currentPassword, newPa
   }
 
   const newPasswordHash = await hashPassword(newPassword);
-  await usersRepo.updatePasswordHash(userId, newPasswordHash);
-
-  await sessionsRepo.revokeActiveForUserExceptSession(userId, sessionId);
-  await sessionsRepo.endAllSessionsForUserExceptSession(userId, sessionId);
+  // New password and "sign out your other devices" succeed or fail together.
+  await withTransaction(async (client) => {
+    await usersRepo.updatePasswordHash(userId, newPasswordHash, client);
+    await sessionsRepo.revokeActiveForUserExceptSession(userId, sessionId, client);
+    await sessionsRepo.endAllSessionsForUserExceptSession(userId, sessionId, client);
+  });
 }
 
 const MAX_SAVED_PLACES = 10;
@@ -75,17 +77,20 @@ export async function listPlaces(userId) {
 
 export async function addPlace(userId, input) {
   if (await placesRepo.countSaved(userId) >= MAX_SAVED_PLACES) throw new AppError(409, 'PLACE_LIMIT_REACHED');
-  return placesRepo.insertSaved(userId, input).catch(uniqueViolation('PLACE_LABEL_TAKEN'));
+  return withTransaction((client) => placesRepo.insertSaved(userId, input, client))
+    .catch(uniqueViolation('PLACE_LABEL_TAKEN'));
 }
 
 export async function updatePlace(userId, id, input) {
-  const place = await placesRepo.updateSaved(userId, id, input).catch(uniqueViolation('PLACE_LABEL_TAKEN'));
+  const place = await withTransaction((client) => placesRepo.updateSaved(userId, id, input, client))
+    .catch(uniqueViolation('PLACE_LABEL_TAKEN'));
   if (!place) throw new AppError(404, 'PLACE_NOT_FOUND');
   return place;
 }
 
 export async function removePlace(userId, id) {
-  if (!await placesRepo.deleteSaved(userId, id)) throw new AppError(404, 'PLACE_NOT_FOUND');
+  const deleted = await withTransaction((client) => placesRepo.deleteSaved(userId, id, client));
+  if (!deleted) throw new AppError(404, 'PLACE_NOT_FOUND');
 }
 
 export const listContacts = (userId) => placesRepo.listContacts(userId);
@@ -94,11 +99,13 @@ export async function addContact(userId, input) {
   if ((await placesRepo.listContacts(userId)).length >= MAX_EMERGENCY_CONTACTS) {
     throw new AppError(409, 'CONTACT_LIMIT_REACHED');
   }
-  return placesRepo.insertContact(userId, input).catch(uniqueViolation('CONTACT_EXISTS'));
+  return withTransaction((client) => placesRepo.insertContact(userId, input, client))
+    .catch(uniqueViolation('CONTACT_EXISTS'));
 }
 
 export async function removeContact(userId, id) {
-  if (!await placesRepo.deleteContact(userId, id)) throw new AppError(404, 'CONTACT_NOT_FOUND');
+  const deleted = await withTransaction((client) => placesRepo.deleteContact(userId, id, client));
+  if (!deleted) throw new AppError(404, 'CONTACT_NOT_FOUND');
 }
 
 export const listFavoriteDrivers = (userId) => socialRepo.listFavoriteDrivers(userId);
@@ -106,10 +113,11 @@ export const listFavoriteDrivers = (userId) => socialRepo.listFavoriteDrivers(us
 export async function addFavoriteDriver(userId, driverPublicId) {
   const driverId = await socialRepo.findRiddenDriverId(userId, driverPublicId);
   if (!driverId) throw new AppError(422, 'FAVORITE_NOT_ALLOWED');
-  await socialRepo.addFavoriteDriver(userId, driverId);
+  await withTransaction((client) => socialRepo.addFavoriteDriver(userId, driverId, client));
 }
 
-export const removeFavoriteDriver = (userId, driverPublicId) => socialRepo.removeFavoriteDriver(userId, driverPublicId);
+export const removeFavoriteDriver = (userId, driverPublicId) =>
+  withTransaction((client) => socialRepo.removeFavoriteDriver(userId, driverPublicId, client));
 
 export async function getReferral(userId) {
   const summary = await socialRepo.getReferralSummary(userId);
@@ -164,7 +172,7 @@ export async function startTwoFactorSetup(userId) {
   const twoFactor = await requireAdminTwoFactor(userId);
   if (twoFactor.enabledAt) throw new AppError(409, 'TOTP_ALREADY_ENABLED');
   const secret = generateTotpSecret();
-  await adminRepo.setTwoFactor(userId, { secret, enabledAt: null });
+  await withTransaction((client) => adminRepo.setTwoFactor(userId, { secret, enabledAt: null }, client));
   const user = await usersRepo.findById(userId);
   const url = otpauthUrl(secret, user.phone);
   return { secret, otpauthUrl: url, qrDataUrl: await QRCode.toDataURL(url, { margin: 1, width: 220 }) };
@@ -175,7 +183,7 @@ export async function enableTwoFactor(userId, { code }) {
   if (twoFactor.enabledAt) throw new AppError(409, 'TOTP_ALREADY_ENABLED');
   if (!twoFactor.secret) throw new AppError(409, 'TOTP_NOT_SET_UP');
   if (!verifyTotp(twoFactor.secret, code)) throw new AppError(422, 'TOTP_INVALID');
-  await adminRepo.setTwoFactor(userId, { secret: twoFactor.secret, enabledAt: new Date() });
+  await withTransaction((client) => adminRepo.setTwoFactor(userId, { secret: twoFactor.secret, enabledAt: new Date() }, client));
   return { enabled: true };
 }
 
@@ -183,6 +191,6 @@ export async function disableTwoFactor(userId, { code }) {
   const twoFactor = await requireAdminTwoFactor(userId);
   if (!twoFactor.enabledAt) return { enabled: false };
   if (!verifyTotp(twoFactor.secret, code)) throw new AppError(422, 'TOTP_INVALID');
-  await adminRepo.setTwoFactor(userId, { secret: null, enabledAt: null });
+  await withTransaction((client) => adminRepo.setTwoFactor(userId, { secret: null, enabledAt: null }, client));
   return { enabled: false };
 }
