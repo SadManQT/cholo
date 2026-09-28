@@ -10,6 +10,7 @@ const { pool } = await import('../../src/config/db.js');
 const { env } = await import('../../src/config/env.js');
 const { logger } = await import('../../src/utils/logger.js');
 const { signAccessToken } = await import('../../src/utils/tokens.js');
+const { haversineDistanceKm, pathDistanceKm } = await import('../../src/utils/haversine.js');
 
 let server;
 let baseUrl;
@@ -296,6 +297,62 @@ test('"End trip here": refused until the rider asks, then charges the route actu
   assert.ok(inbox.some((row) => row.title === 'Your trip ended before the planned drop-off'));
   const { rows: audit } = await db.query(`SELECT action FROM audit_logs WHERE action = 'TRIP_ENDED_EARLY' AND actor_id = $1`, [driver.userId]);
   assert.equal(audit.length, 1);
+});
+
+async function startedTripWithStopRequest() {
+  const rider = await createUser();
+  const driver = await createOnlineDriver({ lat: PICKUP.lat, lng: PICKUP.lng });
+  await book(rider);
+  const offer = (await pendingOffersFor(driver.userId))[0];
+  const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
+  const code = accepted.data.trip.publicCode;
+  await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
+  await call('POST', `/trips/${code}/start`, { token: driver.token });
+  await riderConfirmsPickup(code);
+  await call('POST', `/trips/${code}/stop-request`, { token: rider.token });
+  const { rows } = await db.query(`SELECT id FROM trips WHERE trip_code = $1`, [code]);
+  return { driver, code, tripId: rows[0].id };
+}
+
+async function drive(tripId, points) {
+  for (const [index, point] of points.entries()) {
+    await db.query(
+      `INSERT INTO trip_location_pings (trip_id, lat, lng, recorded_at) VALUES ($1, $2, $3, now() + make_interval(secs => $4))`,
+      [tripId, point.lat, point.lng, index + 1],
+    );
+  }
+}
+
+// Points evenly spaced on the straight line between two places.
+const line = (from, to, steps) => Array.from({ length: steps + 1 }, (_, i) => ({
+  lat: from.lat + ((to.lat - from.lat) * i) / steps, lng: from.lng + ((to.lng - from.lng) * i) / steps,
+}));
+
+test('"End trip here" charges the GPS distance actually driven, not the planned route', async () => {
+  const { driver, code, tripId } = await startedTripWithStopRequest();
+  const midway = { lat: 23.7700, lng: 90.3900 };
+  await drive(tripId, line(PICKUP, midway, 10));
+  const ended = await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, ...midway } });
+  assert.equal(ended.status, 200);
+
+  const straightKm = haversineDistanceKm(PICKUP.lat, PICKUP.lng, midway.lat, midway.lng);
+  const { rows } = await db.query(`SELECT actual_distance_km::float8 AS km FROM trips WHERE id = $1`, [tripId]);
+  assert.ok(Math.abs(rows[0].km - straightKm) < 0.05, `charged ${rows[0].km} km for ~${straightKm.toFixed(2)} km driven (route says 9.21)`);
+});
+
+test('"End trip here": a long detour is capped at the route plus 25%', async () => {
+  const { driver, code, tripId } = await startedTripWithStopRequest();
+  const midway = { lat: 23.7700, lng: 90.3900 };
+  const faraway = { lat: 23.9500, lng: 90.5500 };
+  await drive(tripId, [...line(PICKUP, faraway, 5), ...line(faraway, midway, 5)]);
+  await call('POST', `/trips/${code}/complete`, { token: driver.token, body: { endEarly: true, ...midway } });
+  const { rows } = await db.query(`SELECT actual_distance_km::float8 AS km FROM trips WHERE id = $1`, [tripId]);
+  assert.equal(rows[0].km, 11.51);
+});
+
+test('pathDistanceKm ignores GPS jitter while standing still', () => {
+  const parked = Array.from({ length: 50 }, (_, i) => ({ lat: PICKUP.lat + (i % 2) * 0.00005, lng: PICKUP.lng }));
+  assert.equal(pathDistanceKm(parked), 0);
 });
 
 test('"End trip here" at the drop-off is just a normal completion', async () => {
