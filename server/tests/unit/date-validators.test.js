@@ -48,7 +48,8 @@ test('date ranges must be in order, bounded and not in the future', () => {
   assert.ok(ok(earningsQuerySchema, { from: dhakaDate(-7), to: dhakaDate() }));
   assert.ok(!ok(earningsQuerySchema, { from: dhakaDate(), to: dhakaDate(-7) }));
   assert.ok(!ok(earningsQuerySchema, { from: '1900-01-01', to: dhakaDate() }));
-  assert.ok(!ok(earningsQuerySchema, { from: dhakaDate(), to: dhakaDate(30) }));
+  // A phone clock slightly ahead of Dhaka time must not fail the request: the end date is clamped to today.
+  assert.equal(earningsQuerySchema.parse({ from: dhakaDate(), to: dhakaDate(30) }).to, dhakaDate());
 
   assert.ok(ok(exportQuerySchema, { from: dhakaDate(-30), to: dhakaDate() }));
   assert.ok(!ok(exportQuerySchema, { from: '2026-13-45', to: dhakaDate() }));

@@ -5,7 +5,8 @@ import * as driverApi from '../../api/driver.api';
 import * as walletApi from '../../api/wallet.api';
 import { Button, Card, EmptyState, Input, Skeleton, toast } from '../../components/ui';
 import type { PayoutAccount, PayoutAccountType, Withdrawal, WithdrawalStatus } from '../../types/earnings.types';
-import type { Wallet } from '../../types/wallet.types';
+import type { Wallet, WalletTransaction } from '../../types/wallet.types';
+import { WalletTxnRow } from '../../components/wallet/WalletTxnRow';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime } from '../../utils/format';
 import { EASE_OUT } from '../../utils/motion';
@@ -49,6 +50,7 @@ export function WithdrawalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [activity, setActivity] = useState<WalletTransaction[]>([]);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [accountType, setAccountType] = useState<PayoutAccountType>('bkash');
   const [accountName, setAccountName] = useState('');
@@ -70,6 +72,7 @@ export function WithdrawalsPage() {
         driverApi.listWithdrawals({ limit: 20 }),
       ]);
       setWallet(nextWallet);
+      walletApi.listTransactions({ limit: 8 }).then((result) => setActivity(result.data)).catch(() => {});
       setAccounts(nextAccounts);
       setWithdrawals(nextWithdrawals.data);
       setPayoutAccountId((current) => current || nextAccounts[0]?.id || '');
@@ -143,6 +146,7 @@ export function WithdrawalsPage() {
     } finally {
       // The balance changed (held) or the server knows better (frozen, short): show what it says now.
       walletApi.getWallet().then(setWallet).catch(() => {});
+      walletApi.listTransactions({ limit: 8 }).then((result) => setActivity(result.data)).catch(() => {});
       setSubmitting(false);
     }
   }
@@ -221,7 +225,7 @@ export function WithdrawalsPage() {
                 required
               />
               {canWithdraw && (
-                <button type="button" onClick={() => setAmount(String(Math.floor(balance * 100) / 100))} className="mt-1.5 text-sm font-semibold text-cholo-700 hover:underline">
+                <button type="button" onClick={() => setAmount((Math.floor(Math.round(balance * 100)) / 100).toFixed(2).replace(/\.?0+$/, ''))} className="mt-1.5 text-sm font-semibold text-cholo-700 hover:underline">
                   {t('Withdraw all ({0})', formatBDT(balance))}
                 </button>
               )}
@@ -299,6 +303,15 @@ export function WithdrawalsPage() {
           </div>
         )}
       </Card>
+
+      {activity.length > 0 && (
+        <>
+          <h2 className="mb-3 font-semibold">{t('Recent wallet activity')}</h2>
+          <div className="mb-5 space-y-2">
+            {activity.map((txn) => <WalletTxnRow key={txn.id} txn={txn} />)}
+          </div>
+        </>
+      )}
 
       <h2 className="mb-3 font-semibold">{t('History')}</h2>
       {withdrawals.length === 0 ? (

@@ -454,3 +454,32 @@ test('GET /trips/:code exposes the receipt link once the trip is completed', asy
   assert.equal(data.receipt.receiptNo, response.data.receiptNo);
   assert.ok(data.receipt.issuedAt);
 });
+
+test('a promo that covers the whole fare still completes: paid, no zero payment row, driver earns their share', async (t) => {
+  const promo = await createPromo({ promoType: 'percentage', value: 100 });
+  const setup = await bookAndComplete(t, { promoCode: promo.code });
+  assert.equal(setup.response.data.fare.total, '0.00');
+  assert.equal(setup.response.data.payment.status, 'paid');
+
+  const { rows: [trip] } = await pool.query(`SELECT id, payment_status FROM trips WHERE trip_code = $1`, [setup.tripCode]);
+  assert.equal(trip.payment_status, 'paid');
+  const { rows: payments } = await pool.query(`SELECT 1 FROM payments WHERE trip_id = $1`, [trip.id]);
+  assert.equal(payments.length, 0, 'nothing was collected, so there is no payment to record');
+
+  const { rows: [earning] } = await pool.query(`SELECT gross_fare, commission_amount, net_earning FROM driver_earnings WHERE trip_id = $1`, [trip.id]);
+  assert.ok(Number(earning.gross_fare) > 0, 'the driver is paid on the undiscounted fare');
+  assert.equal(Math.round((Number(earning.gross_fare) - Number(earning.commission_amount)) * 100), Math.round(Number(earning.net_earning) * 100));
+  const { rows: [credit] } = await pool.query(
+    `SELECT wt.txn_type, wt.direction FROM wallet_transactions wt JOIN wallets w ON w.id = wt.wallet_id
+     WHERE w.user_id = $1 AND wt.reference_id = $2 AND wt.reference_type = 'trip'`,
+    [setup.driver.userId, trip.id],
+  );
+  assert.deepEqual({ ...credit }, { txn_type: 'trip_earning', direction: 'credit' });
+});
+
+test('driver earnings rows say how the rider paid, so the app can split cash from in-app', async (t) => {
+  const setup = await bookAndComplete(t);
+  const response = await request('GET', '/driver/earnings', { accessToken: setup.driver.accessToken });
+  const { data } = await response.json();
+  assert.equal(data.trips.find((row) => row.tripCode === setup.tripCode).paymentMethod, 'cash');
+});

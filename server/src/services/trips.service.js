@@ -332,13 +332,17 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       fare.totalFare = round2(preDiscountTotal - redemption.discountAmount);
     }
 
-    const isCash = trip.paymentIntent === 'cash';
+    // A promo can cover the whole fare. Nothing is collected, so there is no payment row (amounts must be
+    // positive); the trip is simply paid, and the driver still earns their share of the undiscounted fare,
+    // funded by the platform.
+    const freeRide = Number(fare.totalFare) === 0;
+    const isCash = trip.paymentIntent === 'cash' && !freeRide;
 
     const updated = await tripsRepo.completeTrip(trip.id, {
       actualDistanceKm: distanceKm,
       actualDurationMin: durationMin,
       fare,
-      paymentStatus: isCash ? 'paid' : 'unpaid',
+      paymentStatus: isCash || freeRide ? 'paid' : 'unpaid',
     }, client);
 
     await driversRepo.updateAvailability(driverId, { status: 'online' }, client);
@@ -363,6 +367,8 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
         status: 'succeeded',
       }, client);
       await settleDriverEarnings(trip, fare.totalFare, client);
+    } else if (freeRide) {
+      await settleDriverEarnings(trip, preDiscountTotal, client, { platformCollected: true });
     }
 
     // Wallet trips settle themselves at drop-off, like cash. If the final fare came out higher than the

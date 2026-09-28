@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as meApi from '../../api/me.api';
+import * as walletApi from '../../api/wallet.api';
 import { ACCEPTED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, uploadFile } from '../../api/uploads.api';
 import { BanknoteIcon, CarIcon, FileIcon, LifebuoyIcon, PinIcon, SirenIcon, TagIcon } from '../../components/layout/icons';
 import {
@@ -144,6 +145,12 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
   });
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' });
 
+  // The wallet in `user` is a snapshot from sign-in; trips, withdrawals and refunds move it afterwards.
+  const [liveWallet, setLiveWallet] = useState<{ balance: string } | null>(null);
+  useEffect(() => {
+    walletApi.getWallet().then(setLiveWallet).catch(() => setLiveWallet(null));
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     setForm({ fullName: user.fullName, email: user.email ?? '', preferredLanguage: user.preferredLanguage });
@@ -265,8 +272,20 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
             <div className="mt-2 flex flex-wrap gap-2">{user.roles.map((role) => <StatePill key={role} state={role.toLowerCase()} />)}</div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-ink-500">{t('Wallet')}</p>
-            <p className="text-lg font-bold tabular-nums">{formatBDT(user.wallet.balance)}</p>
+            {(() => {
+              const balance = Number((liveWallet ?? user.wallet).balance);
+              return balance < 0 ? (
+                <>
+                  <p className="text-xs text-ink-500">{t('You owe Cholo')}</p>
+                  <p className="text-lg font-bold tabular-nums text-danger-600">{formatBDT(-balance)}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-ink-500">{t('Wallet')}</p>
+                  <p className="text-lg font-bold tabular-nums">{formatBDT(balance)}</p>
+                </>
+              );
+            })()}
           </div>
         </div>
       </Card>
