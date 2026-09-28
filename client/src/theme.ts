@@ -10,14 +10,17 @@ const THEME_COLORS: Record<Theme, string> = { light: '#0E7A5F', dark: '#0A131B' 
 const media = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-color-scheme: dark)') : undefined;
 const listeners = new Set<() => void>();
 
+// Light is the default; dark, or following the device, is something the rider picks in Account.
+const DEFAULT_PREFERENCE: ThemePreference = 'light';
+
 function readPreference(): ThemePreference {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
   } catch {
     // Storage blocked (private mode).
   }
-  return 'system';
+  return DEFAULT_PREFERENCE;
 }
 
 let preference = readPreference();
@@ -42,8 +45,7 @@ media?.addEventListener('change', () => { if (preference === 'system') apply(); 
 export function setThemePreference(next: ThemePreference) {
   preference = next;
   try {
-    if (next === 'system') localStorage.removeItem(STORAGE_KEY);
-    else localStorage.setItem(STORAGE_KEY, next);
+    localStorage.setItem(STORAGE_KEY, next);
   } catch {
     // Storage blocked: the choice still applies for this visit.
   }

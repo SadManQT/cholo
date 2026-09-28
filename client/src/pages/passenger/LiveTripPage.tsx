@@ -307,7 +307,14 @@ export function LiveTripPage() {
               </p>
             ))}
             <p className="mt-2"><span className="font-semibold">{t('B')}</span> {trip.dropoff.address || t('Dropoff')}</p>
-            <p className="mt-3 border-t border-border pt-3 font-semibold">{t('Estimated {0}', formatBDT(trip.estimate.fare))}</p>
+            {stopRequestedAt ? (
+              <p className="mt-3 border-t border-border pt-3 text-ink-500">
+                <span className="font-semibold text-ink-900">{t('You pay for the distance driven')}</span>{' '}
+                {t('(the full-route estimate was {0}).', formatBDT(trip.estimate.fare))}
+              </p>
+            ) : (
+              <p className="mt-3 border-t border-border pt-3 font-semibold">{t('Estimated {0}', formatBDT(trip.estimate.fare))}</p>
+            )}
           </div>
 
           {tracking.status === 'in_progress' && (stopRequestedAt ? (

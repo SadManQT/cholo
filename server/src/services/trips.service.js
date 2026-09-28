@@ -262,6 +262,9 @@ async function currentPosition(driverId, reported, client) {
 // position the driver's phone sent during the ride, to where it stopped. Without enough GPS points it falls
 // back to the road route to that spot. A detour can't inflate the bill past the route plus DETOUR_ALLOWANCE.
 const DETOUR_ALLOWANCE = 1.25;
+// With the arrival check turned off (ARRIVAL_RADIUS_METERS=0), this close to the drop-off still counts as
+// arriving there, so a rider who asked to stop just short of it pays the normal fare, not a sliver less.
+const AT_DROPOFF_METERS = 150;
 async function distanceDriven(trip, pickup, endedAt, routeKm, client) {
   const pings = trip.startedAt ? await tripsRepo.listPingsSince(trip.id, trip.startedAt, client) : [];
   if (pings.length < 2) return routeKm;
@@ -281,13 +284,19 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
     // pickup → stops already reached → here, and record it for admins. At the drop-off it is a normal
     // completion. Away from the drop-off the rider must have asked first (requestEarlyStop), so a driver
     // can't cut a trip short on their own.
+    //
+    // Once the rider has asked to stop, the trip is billed that way however the driver ends it: a plain
+    // "Complete trip" away from the drop-off is an early end too, so the rider is never charged for the
+    // part of the route they didn't ride. Without a live position, the last GPS point of the ride is used.
     let endedAt = null;
-    if (endEarly) {
-      const here = await currentPosition(driverId, reported, client);
+    const stopRequested = Boolean(trip.earlyStopRequestedAt);
+    if (endEarly || stopRequested) {
+      const here = await currentPosition(driverId, reported, client)
+        ?? (stopRequested && trip.startedAt ? await tripsRepo.findLastPingSince(trip.id, trip.startedAt, client) : null);
       if (!here) throw new AppError(422, 'LOCATION_NEEDED_TO_ARRIVE');
       const metersToDropoff = haversineDistanceKm(here.lat, here.lng, dropoff.lat, dropoff.lng) * 1000;
-      if (metersToDropoff > (env.ARRIVAL_RADIUS_METERS || 0)) {
-        if (!trip.earlyStopRequestedAt) throw new AppError(409, 'EARLY_STOP_NOT_REQUESTED');
+      if (metersToDropoff > (env.ARRIVAL_RADIUS_METERS || AT_DROPOFF_METERS)) {
+        if (!stopRequested) throw new AppError(409, 'EARLY_STOP_NOT_REQUESTED');
         endedAt = here;
       }
     } else {

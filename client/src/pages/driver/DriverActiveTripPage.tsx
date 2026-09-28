@@ -17,8 +17,21 @@ import { useRideTracking } from '../../hooks/useRideTracking';
 import type { TripDetail, TripStatus } from '../../types/ride.types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { EASE_OUT } from '../../utils/motion';
+import { formatBDT } from '../../utils/format';
 import { distanceKm, formatMeters } from '../../utils/geo';
 import { t } from '../../i18n';
+
+/** What the driver should do about money once a trip ends: collect cash, or nothing (paid in the app). */
+function completionMessage(result: tripsApi.TripCompletion) {
+  const amount = formatBDT(result.fare.total);
+  if (result.payment.method === 'cash') {
+    return result.endedEarly
+      ? t('Trip ended early. Collect {0} in cash, for the distance driven.', amount)
+      : t('Trip completed. Collect {0} in cash.', amount);
+  }
+  if (result.payment.status === 'paid') return t('Trip completed. {0} was paid in the app.', amount);
+  return t('Trip completed. The rider pays {0} in the app.', amount);
+}
 
 function actionFor(status: TripStatus) {
   if (status === 'assigned') return { label: t('mark arrived'), next: 'arrived' as const };
@@ -118,6 +131,7 @@ export function DriverActiveTripPage() {
     const action = actionFor(trip.status);
     if (!action) return;
     setMutating(true);
+    let completion: tripsApi.TripCompletion | null = null;
     try {
       if (trip.status === 'arrived') {
         const result = await tripsApi.startTrip(trip.publicCode);
@@ -127,11 +141,11 @@ export function DriverActiveTripPage() {
           return;
         }
       } else if (trip.status === 'assigned') await tripsApi.markArrived(trip.publicCode, geolocation.position);
-      else await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position);
+      else completion = await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position);
 
       if (action.next === 'arrived') tracking.patchHandshake({ startRequestedAt: null, pickupConfirmedAt: null });
       toast.success(
-        action.next === 'completed' ? t('Trip completed.')
+        completion ? completionMessage(completion)
           : action.next === 'in_progress' ? t('Trip started.')
             : t('Marked as arrived. Your rider will confirm when they are in the car.'),
       );
@@ -169,7 +183,7 @@ export function DriverActiveTripPage() {
     setMutating(true);
     try {
       const result = await tripsApi.completeTrip(trip.publicCode, 0, geolocation.position, { endEarly: true });
-      toast.success(result.endedEarly ? t('Trip ended here. The rider pays for the distance driven.') : t('Trip completed.'));
+      toast.success(completionMessage(result));
       navigate(`/driver/trips/${trip.publicCode}`, { replace: true });
     } catch (thrown) {
       toast.error(getApiErrorMessage(thrown, t('Trip status could not be updated.')));
@@ -242,7 +256,12 @@ export function DriverActiveTripPage() {
             </div>
           </Card>
 
-          {nextStop
+          {trip.status === 'in_progress' && stopRequestedAt ? (
+            <div role="status" className="space-y-2 rounded-xl bg-marigold-500/15 p-3 text-sm">
+              <p><span className="font-semibold">{t('The rider asked to stop here.')}</span> {t('They pay for the distance driven so far.')}</p>
+              <Button onClick={() => setEndEarlyOpen(true)} className="w-full">{t('End trip here')}</Button>
+            </div>
+          ) : nextStop
             ? <SlideToConfirm key={`stop-${nextStop.order}`} label={t('reached stop {0}', nextStop.order)} loading={mutating} lockedReason={lockedReason} onConfirm={() => void reachStop(nextStop.order)} />
             : action && <SlideToConfirm key={trip.status} label={action.label} loading={mutating} lockedReason={trip.status === 'arrived' ? startLockedReason : lockedReason} onConfirm={advanceTrip} />}
           {trip.status === 'arrived' && (
@@ -254,14 +273,9 @@ export function DriverActiveTripPage() {
                   : t('The trip starts only after {0} confirms in their app that they are in the car.', trip.passenger.name)}
             </p>
           )}
-          {trip.status === 'in_progress' && (nextStop || lockedReason) && (stopRequestedAt ? (
-            <div role="status" className="space-y-2 rounded-xl bg-marigold-500/15 p-3 text-sm">
-              <p><span className="font-semibold">{t('The rider asked to stop here.')}</span> {t('They pay for the distance driven so far.')}</p>
-              <Button onClick={() => setEndEarlyOpen(true)} className="w-full">{t('End trip here')}</Button>
-            </div>
-          ) : (
+          {trip.status === 'in_progress' && !stopRequestedAt && (nextStop || lockedReason) && (
             <p className="text-center text-sm text-ink-500">{t('Rider wants to get out early? They need to tap "Stop here" in their app first.')}</p>
-          ))}
+          )}
           {arrivalDisputed && (
             <p role="alert" className="rounded-xl bg-danger-600/10 p-3 text-sm text-danger-600">
               {t('Your rider says you are not at the pickup. Go to the pickup point and mark arrival again.')}

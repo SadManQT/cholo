@@ -22,9 +22,9 @@ export function ThemeSwitch({ className = '' }: { className?: string }) {
 }
 
 const OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: t('System') },
   { value: 'light', label: t('Light') },
   { value: 'dark', label: t('Dark') },
+  { value: 'system', label: t('System') },
 ];
 
 /** System / Light / Dark picker for the Account page. Saved on this device only. */
