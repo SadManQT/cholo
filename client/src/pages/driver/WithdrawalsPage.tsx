@@ -183,6 +183,11 @@ export function WithdrawalsPage() {
             {t('You owe {0} in commission from cash trips. It comes out of your next in-app earnings.', formatBDT(-balance))}
           </p>
         )}
+        {balance < 0 && (
+          <a href={`/wallet?amount=${Math.max(10, Math.ceil(-balance))}`} className="mt-3 inline-flex h-10 items-center rounded-xl bg-white px-4 text-sm font-semibold text-cholo-700 hover:bg-white/90">
+            {t('Pay dues now')}
+          </a>
+        )}
       </div>
 
       {frozen && (

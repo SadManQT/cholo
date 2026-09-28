@@ -16,7 +16,7 @@ const TRIP_FOR_UPDATE_COLUMNS = `
   t.passenger_id AS "passengerId", t.request_id AS "requestId", t.status,
   t.assigned_at AS "assignedAt", t.arrived_at AS "arrivedAt",
   t.started_at AS "startedAt", t.completed_at AS "completedAt",
-  t.total_fare AS "totalFare", t.payment_status AS "paymentStatus",
+  t.total_fare AS "totalFare", t.discount_amount AS "discountAmount", t.payment_status AS "paymentStatus",
   rr.pickup_lat::float8 AS "pickupLat", rr.pickup_lng::float8 AS "pickupLng",
   rr.dropoff_lat::float8 AS "dropoffLat", rr.dropoff_lng::float8 AS "dropoffLng",
   rr.city_id AS "cityId", rr.category_id AS "categoryId",

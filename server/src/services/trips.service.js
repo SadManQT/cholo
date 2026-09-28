@@ -187,9 +187,17 @@ export async function arriveAtStop(driverId, tripCode, stopOrder, location) {
   return result.stop;
 }
 
-export async function settleDriverEarnings(trip, grossFare, client, { platformCollected = false } = {}) {
+/**
+ * Records the driver's earning and moves their wallet. Promos are funded by the platform: the driver earns
+ * on the undiscounted fare (paid + discount). Cash: the driver kept `paid` in hand, so the wallet moves by
+ * discount − commission (a debit when commission is larger, a credit when the promo was). App-paid: the
+ * wallet is credited the full net earning.
+ */
+export async function settleDriverEarnings(trip, paidAmount, client, { platformCollected = false, discount } = {}) {
   const commission = await pricingRepo.getCurrentCommission(trip.categoryId, trip.cityId, client);
   if (!commission) throw new AppError(422, 'NO_COMMISSION_RULE_FOR_MARKET');
+  const promoSubsidy = round2(Number(discount ?? trip.discountAmount ?? 0));
+  const grossFare = round2(Number(paidAmount) + promoSubsidy);
 
   const { commissionAmount, netEarning } = computeCommission({
     grossFare,
@@ -207,19 +215,23 @@ export async function settleDriverEarnings(trip, grossFare, client, { platformCo
   }, client);
 
   const driverWallet = await walletRepo.getByUserId(trip.driverId, client);
-  await walletRepo.insertTransaction(platformCollected ? {
+  const walletDelta = platformCollected ? netEarning : round2(promoSubsidy - commissionAmount);
+  if (walletDelta === 0) return;
+  // Amounts in the ledger are always positive; the direction carries the sign.
+  await walletRepo.insertTransaction(walletDelta > 0 ? {
     walletId: driverWallet.id,
     txnType: 'trip_earning',
     direction: 'credit',
-    amount: netEarning,
+    amount: walletDelta,
     referenceType: 'trip',
     referenceId: trip.id,
     idempotencyKey: `earning-trip-${trip.id}`,
+    ...(platformCollected ? {} : { note: 'Promo discount paid by Cholo, less commission' }),
   } : {
     walletId: driverWallet.id,
     txnType: 'commission',
     direction: 'debit',
-    amount: commissionAmount,
+    amount: -walletDelta,
     referenceType: 'trip',
     referenceId: trip.id,
     idempotencyKey: `commission-trip-${trip.id}`,
@@ -366,9 +378,9 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
         amount: fare.totalFare,
         status: 'succeeded',
       }, client);
-      await settleDriverEarnings(trip, fare.totalFare, client);
+      await settleDriverEarnings(trip, fare.totalFare, client, { discount: fare.discountAmount });
     } else if (freeRide) {
-      await settleDriverEarnings(trip, preDiscountTotal, client, { platformCollected: true });
+      await settleDriverEarnings(trip, 0, client, { platformCollected: true, discount: fare.discountAmount });
     }
 
     // Wallet trips settle themselves at drop-off, like cash. If the final fare came out higher than the
@@ -377,7 +389,7 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
     if (trip.paymentIntent === 'wallet' && Number(fare.totalFare) > 0) {
       const wallet = await walletRepo.getByUserIdForUpdate(trip.passengerId, client);
       if (wallet?.status === 'active' && Number(wallet.balance) >= Number(fare.totalFare)) {
-        paymentStatus = (await chargeWalletForTrip(trip, wallet, Number(fare.totalFare), client)).paymentStatus;
+        paymentStatus = (await chargeWalletForTrip(trip, wallet, Number(fare.totalFare), client, fare.discountAmount)).paymentStatus;
       } else {
         await notificationsService.notify(trip.passengerId, {
           category: 'payment',
@@ -483,7 +495,7 @@ async function loadPayableTrip(passengerId, tripCode, client) {
 const GATEWAY_METHODS = ['bkash', 'nagad', 'card'];
 
 /** Debits the rider's (already locked) wallet for a trip, marks it paid and pays the driver their share. */
-async function chargeWalletForTrip(trip, wallet, amount, client) {
+async function chargeWalletForTrip(trip, wallet, amount, client, discount) {
   await paymentsRepo.insertPayment({
     purpose: 'trip',
     tripId: trip.id,
@@ -505,7 +517,7 @@ async function chargeWalletForTrip(trip, wallet, amount, client) {
   }, client);
 
   const updated = await tripsRepo.markPaid(trip.id, client);
-  await settleDriverEarnings(trip, amount, client, { platformCollected: true });
+  await settleDriverEarnings(trip, amount, client, { platformCollected: true, discount });
   return updated;
 }
 
@@ -614,6 +626,23 @@ export async function cancelTrip(userId, tripCode, { reasonCode, reasonText }) {
     }, client);
 
     await ridesRepo.markCancelled(trip.requestId, client);
+
+    // The fee is taken from the rider's wallet (it may go below zero; they then have to top up before the
+    // next booking) and goes to the driver, who drove to the pickup for nothing.
+    if (Number(feeCharged) > 0) {
+      const riderWallet = await walletRepo.getByUserIdForUpdate(trip.passengerId, client);
+      await walletRepo.insertTransaction({
+        walletId: riderWallet.id, txnType: 'trip_payment', direction: 'debit', amount: feeCharged,
+        referenceType: 'trip', referenceId: trip.id, idempotencyKey: `cancel-fee-${trip.id}`,
+        note: `Cancellation fee for ${trip.tripCode}`,
+      }, client);
+      const driverWallet = await walletRepo.getByUserId(trip.driverId, client);
+      await walletRepo.insertTransaction({
+        walletId: driverWallet.id, txnType: 'trip_earning', direction: 'credit', amount: feeCharged,
+        referenceType: 'trip', referenceId: trip.id, idempotencyKey: `cancel-fee-earning-${trip.id}`,
+        note: `Cancellation fee for ${trip.tripCode}`,
+      }, client);
+    }
 
     await driversRepo.updateAvailability(trip.driverId, { status: 'online' }, client);
 
