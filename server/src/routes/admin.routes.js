@@ -38,6 +38,7 @@ import {
   userDecisionSchema,
   userListQuerySchema,
   vehicleQueueQuerySchema,
+  withdrawalPaidSchema,
   withdrawalQueueQuerySchema,
 } from '../validators/admin.schema.js';
 import { idParamsSchema } from '../validators/driver.schema.js';
@@ -111,6 +112,21 @@ router.post(
   validate(idParamsSchema, 'params'),
   validate(rejectApplicationSchema),
   adminController.rejectWithdrawal,
+);
+
+router.post(
+  '/withdrawals/:id/paid',
+  adminMutationLimiter,
+  validate(idParamsSchema, 'params'),
+  validate(withdrawalPaidSchema),
+  adminController.markWithdrawalPaid,
+);
+router.post(
+  '/withdrawals/:id/failed',
+  adminMutationLimiter,
+  validate(idParamsSchema, 'params'),
+  validate(rejectApplicationSchema),
+  adminController.markWithdrawalFailed,
 );
 
 router.get('/users', validate(userListQuerySchema, 'query'), adminController.listUsers);

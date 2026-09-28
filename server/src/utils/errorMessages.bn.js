@@ -86,6 +86,7 @@ export const ERROR_MESSAGES_BN = Object.freeze({
   INSUFFICIENT_BALANCE: 'এই উত্তোলনের জন্য ওয়ালেটে যথেষ্ট টাকা নেই।',
   WITHDRAWAL_NOT_FOUND: 'উত্তোলনটি পাওয়া যায়নি।',
   WITHDRAWAL_ALREADY_REVIEWED: 'এই উত্তোলন আগেই রিভিউ করা হয়েছে।',
+  WITHDRAWAL_NOT_APPROVED: 'শুধু অনুমোদিত উত্তোলনকে পরিশোধিত বা ব্যর্থ চিহ্নিত করা যায়।',
   FORBIDDEN_ACCESS_LEVEL: 'আপনার অ্যাডমিন অ্যাকাউন্টে এটি করার অনুমতি নেই।',
   USER_NOT_FOUND: 'ব্যবহারকারীর অ্যাকাউন্টটি পাওয়া যায়নি।',
   USER_DELETED: 'মুছে ফেলা অ্যাকাউন্ট বদলানো যায় না।',

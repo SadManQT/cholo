@@ -10,65 +10,84 @@ import { staggerDelaySeconds } from '../../utils/stagger';
 
 const ACCOUNT_TYPE_LABELS = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank' } as const;
 
+// A withdrawal moves requested → approved (finance checks it) → paid (finance sent the money). Rejecting a
+// request, or marking an approved payout failed, returns the amount to the driver's wallet.
+type Stage = 'requested' | 'approved';
+const STAGES: { value: Stage; label: string; hint: string; empty: string }[] = [
+  { value: 'requested', label: 'To review', hint: 'New requests. Approve to send, or reject with a reason.', empty: 'Every requested withdrawal has been reviewed.' },
+  { value: 'approved', label: 'To pay out', hint: 'Approved: send the money, then mark it paid (or failed if it bounced).', empty: 'No approved withdrawals are waiting to be paid.' },
+];
+
+type Pending = { id: string; kind: 'reject' | 'paid' | 'failed' } | null;
+
 export function PayoutsPage() {
+  const [stage, setStage] = useState<Stage>('requested');
   const [rows, setRows] = useState<WithdrawalQueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [pending, setPending] = useState<Pending>(null);
+  const [note, setNote] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await adminApi.listWithdrawalQueue({ status: 'requested', limit: 50 });
+      const result = await adminApi.listWithdrawalQueue({ status: stage, limit: 50 });
       setRows(result.data);
     } catch (thrown) {
       setError(getApiErrorMessage(thrown, 'Could not load the payout queue.'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [stage]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  async function handleApprove(id: string) {
+  function openForm(id: string, kind: 'reject' | 'paid' | 'failed') {
+    setPending({ id, kind });
+    setNote('');
+  }
+
+  async function act(id: string, action: () => Promise<unknown>, message: string, fallback: string) {
     setActioningId(id);
     try {
-      await adminApi.approveWithdrawal(id);
+      await action();
       setRows((current) => current.filter((row) => row.id !== id));
-      toast.success('Withdrawal approved.');
+      setPending(null);
+      setNote('');
+      toast.success(message);
     } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not approve that withdrawal.'));
+      toast.error(getApiErrorMessage(thrown, fallback));
     } finally {
       setActioningId(null);
     }
   }
 
-  async function handleReject(id: string) {
-    if (!rejectReason.trim()) return;
-    setActioningId(id);
-    try {
-      await adminApi.rejectWithdrawal(id, rejectReason.trim());
-      setRows((current) => current.filter((row) => row.id !== id));
-      setRejectingId(null);
-      setRejectReason('');
-      toast.success('Withdrawal rejected — the hold was reversed.');
-    } catch (thrown) {
-      toast.error(getApiErrorMessage(thrown, 'Could not reject that withdrawal.'));
-    } finally {
-      setActioningId(null);
-    }
-  }
+  const current = STAGES.find((item) => item.value === stage)!;
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-5">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">Withdrawals</h1>
-        <p className="text-sm text-ink-500">Requested payouts awaiting finance review.</p>
+        <p className="text-sm text-ink-500">{current.hint}</p>
+      </div>
+
+      <div role="tablist" aria-label="Withdrawal stage" className="mb-4 inline-flex rounded-xl border border-border bg-surface-alt p-1">
+        {STAGES.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            role="tab"
+            aria-selected={stage === item.value}
+            onClick={() => { setStage(item.value); setPending(null); }}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${stage === item.value ? 'bg-surface text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-900'}`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -76,11 +95,14 @@ export function PayoutsPage() {
       ) : error && rows.length === 0 ? (
         <EmptyState title="Queue did not load" hint={error} action={{ label: 'Retry', onClick: load }} />
       ) : rows.length === 0 ? (
-        <EmptyState title="Nothing to review" hint="Every requested withdrawal has been reviewed." />
+        <EmptyState title="Nothing here" hint={current.empty} />
       ) : (
         <div className="space-y-3">
           <AnimatePresence>
-          {rows.map((row, index) => (
+          {rows.map((row, index) => {
+            const form = pending?.id === row.id ? pending.kind : null;
+            const busy = actioningId === row.id;
+            return (
             <motion.div
               key={row.id}
               layout
@@ -96,55 +118,67 @@ export function PayoutsPage() {
                     {ACCOUNT_TYPE_LABELS[row.accountType]} · {row.accountName} · {row.accountNoMasked}
                     {row.bankName ? ` · ${row.bankName}` : ''}
                   </p>
-                  <p className="text-xs text-ink-500">Requested {formatDateTime(row.requestedAt)}</p>
+                  <p className="text-xs text-ink-500">
+                    Requested {formatDateTime(row.requestedAt)}
+                    {row.processedAt && stage === 'approved' ? ` · approved ${formatDateTime(row.processedAt)}` : ''}
+                  </p>
                 </div>
                 <p className="text-xl font-bold tabular-nums">{formatBDT(row.amount)}</p>
               </div>
 
-              {rejectingId === row.id ? (
+              {form ? (
                 <div className="mt-3 space-y-2 border-t border-border pt-3">
                   <Input
-                    label="Rejection reason"
-                    value={rejectReason}
-                    onChange={(event) => setRejectReason(event.target.value)}
-                    placeholder="e.g. Account details could not be verified"
+                    label={form === 'paid' ? 'Transaction reference (optional)' : form === 'failed' ? 'Why it failed' : 'Rejection reason'}
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder={form === 'paid' ? 'e.g. bKash TrxID 9ABC1D2EF' : form === 'failed' ? 'e.g. bKash number is not registered' : 'e.g. Account details could not be verified'}
                   />
+                  {form !== 'paid' && <p className="text-xs text-ink-500">The {formatBDT(row.amount)} goes back to the driver's wallet, and they're told why.</p>}
                   <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => { setRejectingId(null); setRejectReason(''); }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(row.id)}
-                      loading={actioningId === row.id}
-                      disabled={!rejectReason.trim()}
-                    >
-                      Confirm reject
-                    </Button>
+                    <Button variant="secondary" onClick={() => { setPending(null); setNote(''); }}>Cancel</Button>
+                    {form === 'paid' ? (
+                      <Button loading={busy} onClick={() => void act(row.id, () => adminApi.markWithdrawalPaid(row.id, note.trim() || undefined), 'Marked paid. The driver has been told.', 'Could not mark it paid.')}>
+                        Confirm paid
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="danger"
+                        loading={busy}
+                        disabled={!note.trim()}
+                        onClick={() => void act(
+                          row.id,
+                          () => (form === 'failed' ? adminApi.markWithdrawalFailed(row.id, note.trim()) : adminApi.rejectWithdrawal(row.id, note.trim())),
+                          form === 'failed' ? 'Marked failed — the amount is back in the driver\'s wallet.' : 'Withdrawal rejected — the hold was reversed.',
+                          form === 'failed' ? 'Could not mark it failed.' : 'Could not reject that withdrawal.',
+                        )}
+                      >
+                        {form === 'failed' ? 'Confirm failed' : 'Confirm reject'}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 flex gap-2 border-t border-border pt-3">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setRejectingId(row.id)}
-                    disabled={actioningId === row.id}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    onClick={() => handleApprove(row.id)}
-                    loading={actioningId === row.id}
-                  >
-                    Approve
-                  </Button>
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                  {stage === 'requested' ? (
+                    <>
+                      <Button variant="secondary" onClick={() => openForm(row.id, 'reject')} disabled={busy}>Reject</Button>
+                      <Button loading={busy} onClick={() => void act(row.id, () => adminApi.approveWithdrawal(row.id), 'Approved. It\'s now under "To pay out".', 'Could not approve that withdrawal.')}>
+                        Approve
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="secondary" onClick={() => openForm(row.id, 'failed')} disabled={busy}>Payout failed</Button>
+                      <Button onClick={() => openForm(row.id, 'paid')} disabled={busy}>Mark paid</Button>
+                    </>
+                  )}
                 </div>
               )}
             </Card>
             </motion.div>
-          ))}
+            );
+          })}
           </AnimatePresence>
         </div>
       )}

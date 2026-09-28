@@ -4,6 +4,7 @@ import * as auditRepo from '../repositories/audit.repository.js';
 import * as payoutAccountsRepo from '../repositories/payoutAccounts.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
 import * as withdrawalsRepo from '../repositories/withdrawals.repository.js';
+import * as notificationsService from './notifications.service.js';
 import { AppError } from '../utils/AppError.js';
 
 const WITHDRAWAL_FEE = 0;
@@ -18,6 +19,7 @@ export async function requestWithdrawal(driverId, { amount, payoutAccountId }) {
     client,
   )).catch((error) => {
     if (error.message === 'INSUFFICIENT_BALANCE') throw new AppError(422, 'INSUFFICIENT_BALANCE');
+    if (error.message === 'WALLET_FROZEN') throw new AppError(409, 'WALLET_FROZEN');
     throw error;
   });
 
@@ -47,6 +49,29 @@ export async function listQueue(query) {
   return { data, meta: { page: query.page, limit: query.limit, total } };
 }
 
+const taka = (amount) => `৳${Number(amount).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+
+function tellDriver(withdrawal, title, body, client) {
+  return notificationsService.notify(withdrawal.driverId, {
+    category: 'payment', title, body, payload: { withdrawalId: String(withdrawal.id) },
+  }, client);
+}
+
+/** Puts a withdrawn amount back in the driver's wallet (rejected, or the payout failed). */
+async function returnHold(withdrawal, idempotencyKey, note, client) {
+  const wallet = await walletRepo.getByUserId(withdrawal.driverId, client);
+  await walletRepo.insertTransaction({
+    walletId: wallet.id,
+    txnType: 'adjustment',
+    direction: 'credit',
+    amount: withdrawal.amount,
+    referenceType: 'withdrawal',
+    referenceId: withdrawal.id,
+    idempotencyKey,
+    note,
+  }, client);
+}
+
 export async function approveWithdrawal(adminId, withdrawalId, ipAddress) {
   await requireFinanceLevel(adminId);
 
@@ -56,6 +81,8 @@ export async function approveWithdrawal(adminId, withdrawalId, ipAddress) {
     if (withdrawal.status !== 'requested') throw new AppError(409, 'WITHDRAWAL_ALREADY_REVIEWED');
 
     const updated = await withdrawalsRepo.markApproved(withdrawalId, adminId, client);
+    await tellDriver(withdrawal, 'Withdrawal approved',
+      `Your ${taka(withdrawal.amount)} withdrawal was approved and is being sent to your payout account.`, client);
     await auditRepo.insert({
       actorId: adminId,
       actorRole: 'ADMIN',
@@ -80,18 +107,9 @@ export async function rejectWithdrawal(adminId, withdrawalId, reason, ipAddress)
     if (withdrawal.status !== 'requested') throw new AppError(409, 'WITHDRAWAL_ALREADY_REVIEWED');
 
     const updated = await withdrawalsRepo.markRejected(withdrawalId, adminId, reason, client);
-
-    const wallet = await walletRepo.getByUserId(withdrawal.driverId, client);
-    await walletRepo.insertTransaction({
-      walletId: wallet.id,
-      txnType: 'adjustment',
-      direction: 'credit',
-      amount: withdrawal.amount,
-      referenceType: 'withdrawal',
-      referenceId: withdrawal.id,
-      idempotencyKey: `withdrawal-reject-${withdrawal.id}`,
-      note: 'Withdrawal rejected — hold reversed',
-    }, client);
+    await returnHold(withdrawal, `withdrawal-reject-${withdrawal.id}`, 'Withdrawal rejected — hold reversed', client);
+    await tellDriver(withdrawal, 'Withdrawal rejected',
+      `Your ${taka(withdrawal.amount)} withdrawal was not approved: ${reason}. The money is back in your wallet.`, client);
 
     await auditRepo.insert({
       actorId: adminId,
@@ -104,6 +122,49 @@ export async function rejectWithdrawal(adminId, withdrawalId, reason, ipAddress)
       newValue: { status: 'rejected', reason },
     }, client);
 
+    return updated;
+  });
+}
+
+/** Finance has sent the money (approved → paid). */
+export async function markWithdrawalPaid(adminId, withdrawalId, reference, ipAddress) {
+  await requireFinanceLevel(adminId);
+
+  return withTransaction(async (client) => {
+    const withdrawal = await withdrawalsRepo.findByIdForUpdate(withdrawalId, client);
+    if (!withdrawal) throw new AppError(404, 'WITHDRAWAL_NOT_FOUND');
+    if (withdrawal.status !== 'approved') throw new AppError(409, 'WITHDRAWAL_NOT_APPROVED');
+
+    const updated = await withdrawalsRepo.markPaid(withdrawalId, adminId, reference, client);
+    await tellDriver(withdrawal, 'Withdrawal paid',
+      `${taka(withdrawal.amount)} was sent to your payout account${reference ? ` (reference ${reference})` : ''}.`, client);
+    await auditRepo.insert({
+      actorId: adminId, actorRole: 'ADMIN', ipAddress, action: 'WITHDRAWAL_PAID',
+      entityType: 'withdrawals', entityId: withdrawalId,
+      oldValue: { status: withdrawal.status }, newValue: { status: 'paid', reference: reference ?? null },
+    }, client);
+    return updated;
+  });
+}
+
+/** The payout didn't go through (approved → failed): the money goes back to the driver's wallet. */
+export async function markWithdrawalFailed(adminId, withdrawalId, reason, ipAddress) {
+  await requireFinanceLevel(adminId);
+
+  return withTransaction(async (client) => {
+    const withdrawal = await withdrawalsRepo.findByIdForUpdate(withdrawalId, client);
+    if (!withdrawal) throw new AppError(404, 'WITHDRAWAL_NOT_FOUND');
+    if (withdrawal.status !== 'approved') throw new AppError(409, 'WITHDRAWAL_NOT_APPROVED');
+
+    const updated = await withdrawalsRepo.markFailed(withdrawalId, adminId, reason, client);
+    await returnHold(withdrawal, `withdrawal-failed-${withdrawal.id}`, 'Payout failed — amount returned', client);
+    await tellDriver(withdrawal, 'Withdrawal could not be paid',
+      `We couldn't send your ${taka(withdrawal.amount)} withdrawal: ${reason}. The money is back in your wallet; check your payout account and try again.`, client);
+    await auditRepo.insert({
+      actorId: adminId, actorRole: 'ADMIN', ipAddress, action: 'WITHDRAWAL_FAILED',
+      entityType: 'withdrawals', entityId: withdrawalId,
+      oldValue: { status: withdrawal.status }, newValue: { status: 'failed', reason },
+    }, client);
     return updated;
   });
 }

@@ -31,6 +31,17 @@ function WithdrawalStatusBadge({ status }: { status: WithdrawalStatus }) {
 
 const ACCOUNT_TYPE_LABELS: Record<PayoutAccountType, string> = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank' };
 
+const MIN_WITHDRAWAL = 50;
+
+/** What each stage means for the driver's money. */
+const STATUS_NOTES: Partial<Record<WithdrawalStatus, string>> = {
+  requested: t('Waiting for review. The amount is held from your wallet.'),
+  approved: t('Approved — the money is being sent to your account.'),
+  processing: t('Approved — the money is being sent to your account.'),
+  rejected: t('Not approved. The amount is back in your wallet.'),
+  failed: t('The payout didn’t go through. The amount is back in your wallet.'),
+};
+
 export function WithdrawalsPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [accounts, setAccounts] = useState<PayoutAccount[]>([]);
@@ -108,20 +119,30 @@ export function WithdrawalsPage() {
     }
   }
 
+  const balance = Number(wallet?.balance ?? 0);
+  const frozen = wallet?.status === 'frozen';
+  const amountNumber = Number(amount);
+  const amountError = !amount ? null
+    : !Number.isFinite(amountNumber) || amountNumber <= 0 ? t('Enter an amount.')
+      : amountNumber < MIN_WITHDRAWAL ? t('The minimum withdrawal is {0}.', formatBDT(MIN_WITHDRAWAL))
+        : amountNumber > balance ? t('You can withdraw up to {0}.', formatBDT(Math.max(0, balance)))
+          : null;
+  const canWithdraw = !frozen && balance >= MIN_WITHDRAWAL;
+
   async function handleRequestWithdrawal(event: FormEvent) {
     event.preventDefault();
-    const amountNumber = Number(amount);
+    if (!amount || amountError || !canWithdraw) return;
     setSubmitting(true);
     try {
       const created = await driverApi.requestWithdrawal({ amount: amountNumber, payoutAccountId });
       setWithdrawals((current) => [created, ...current]);
       setAmount('');
-      const nextWallet = await walletApi.getWallet();
-      setWallet(nextWallet);
       toast.success(t('Withdrawal requested — a finance admin will review it.'));
     } catch (thrown) {
       toast.error(getApiErrorMessage(thrown, t('Could not request that withdrawal.')));
     } finally {
+      // The balance changed (held) or the server knows better (frozen, short): show what it says now.
+      walletApi.getWallet().then(setWallet).catch(() => {});
       setSubmitting(false);
     }
   }
@@ -151,9 +172,20 @@ export function WithdrawalsPage() {
       </div>
 
       <div className="mb-5 rounded-xl bg-cholo-700 p-5 text-white">
-        <p className="text-sm text-white/80">{t('Available balance')}</p>
-        <p className="mt-1 text-4xl font-bold tabular-nums">{formatBDT(wallet?.balance)}</p>
+        <p className="text-sm text-white/80">{t('Available to withdraw')}</p>
+        <p className="mt-1 text-4xl font-bold tabular-nums">{formatBDT(Math.max(0, balance))}</p>
+        {balance < 0 && (
+          <p className="mt-2 text-sm text-white/85">
+            {t('You owe {0} in commission from cash trips. It comes out of your next in-app earnings.', formatBDT(-balance))}
+          </p>
+        )}
       </div>
+
+      {frozen && (
+        <p role="alert" className="mb-5 rounded-xl bg-danger-600/10 p-4 text-sm text-danger-600">
+          {t('Your wallet is frozen, so withdrawals are paused. Contact support to unfreeze it.')}
+        </p>
+      )}
 
       <Card className="mb-5">
         <h2 className="mb-3 font-semibold">{t('Request a withdrawal')}</h2>
@@ -177,16 +209,29 @@ export function WithdrawalsPage() {
               </select>
             </label>
             {}
-            <Input
-              label={t('Amount (৳)')}
-              inputMode="decimal"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder={t('Minimum ৳50')}
-              required
-            />
-            <p className="text-xs text-ink-500">{t('Fee: ৳0.00 — you\'ll receive the full amount.')}</p>
-            <Button type="submit" loading={submitting} className="w-full">{t('Request withdrawal')}</Button>
+            <div>
+              <Input
+                label={t('Amount (৳)')}
+                inputMode="decimal"
+                value={amount}
+                error={amountError ?? undefined}
+                disabled={!canWithdraw}
+                onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/^(\d*\.\d{0,2}).*$/, '$1'))}
+                placeholder={t('Minimum ৳50')}
+                required
+              />
+              {canWithdraw && (
+                <button type="button" onClick={() => setAmount(String(Math.floor(balance * 100) / 100))} className="mt-1.5 text-sm font-semibold text-cholo-700 hover:underline">
+                  {t('Withdraw all ({0})', formatBDT(balance))}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-ink-500">
+              {canWithdraw
+                ? t('Fee: ৳0.00 — you\'ll receive the full amount. It\'s held from your wallet until finance reviews it.')
+                : frozen ? t('Withdrawals are paused while your wallet is frozen.') : t('You need at least {0} to withdraw.', formatBDT(MIN_WITHDRAWAL))}
+            </p>
+            <Button type="submit" loading={submitting} disabled={!canWithdraw || !amount || Boolean(amountError)} className="w-full">{t('Request withdrawal')}</Button>
           </form>
         )}
       </Card>
@@ -272,6 +317,10 @@ export function WithdrawalsPage() {
                 </div>
                 <WithdrawalStatusBadge status={withdrawal.status} />
               </div>
+              {STATUS_NOTES[withdrawal.status] && <p className="mt-2 text-xs text-ink-500">{STATUS_NOTES[withdrawal.status]}</p>}
+              {withdrawal.status === 'paid' && withdrawal.payoutReference && (
+                <p className="mt-2 text-xs text-ink-500">{t('Transaction reference: {0}', withdrawal.payoutReference)}</p>
+              )}
               {withdrawal.rejectionReason && (
                 <p className="mt-2 text-sm text-danger-600">{t('Reason:')} {withdrawal.rejectionReason}</p>
               )}

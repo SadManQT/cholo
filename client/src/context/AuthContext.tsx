@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import * as authApi from '../api/auth.api';
@@ -18,6 +19,9 @@ function syncLanguage(me: User) {
   }
 }
 
+const STARTUP_RETRIES = 12;
+const STARTUP_RETRY_MS = 5_000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,15 +30,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => setUser(null));
   }, []);
 
+  // Who is signed in. A sleeping API (free hosting) answers 502/503/504 or not at all while it wakes, so keep
+  // trying for about a minute instead of treating that as "signed out"; a 401/403 means signed out.
   useEffect(() => {
-    meApi
-      .getMe()
-      .then((me) => {
-        setUser(me);
-        syncLanguage(me);
-      })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    async function bootstrap() {
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          const me = await meApi.getMe();
+          if (cancelled) return;
+          setUser(me);
+          syncLanguage(me);
+          break;
+        } catch (error) {
+          const status = isAxiosError(error) ? error.response?.status : undefined;
+          const waking = status === undefined || status === 502 || status === 503 || status === 504;
+          if (cancelled) return;
+          if (!waking || attempt >= STARTUP_RETRIES) {
+            setUser(null);
+            break;
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, STARTUP_RETRY_MS));
+        }
+      }
+      if (!cancelled) setLoading(false);
+    }
+    void bootstrap();
+    return () => { cancelled = true; };
   }, []);
 
   async function loadFullProfile() {

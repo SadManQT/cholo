@@ -99,6 +99,16 @@ export const rejectWithdrawal = asyncHandler(async (request, response) => {
   response.json({ success: true, data });
 });
 
+export const markWithdrawalPaid = asyncHandler(async (request, response) => {
+  const data = await withdrawalsService.markWithdrawalPaid(request.user.id, request.params.id, request.body.reference, request.ip);
+  response.json({ success: true, data });
+});
+
+export const markWithdrawalFailed = asyncHandler(async (request, response) => {
+  const data = await withdrawalsService.markWithdrawalFailed(request.user.id, request.params.id, request.body.reason, request.ip);
+  response.json({ success: true, data });
+});
+
 export const getStats = asyncHandler(async (request, response) => {
   const data = await adminService.getStats(request.query);
   response.json({ success: true, data });
