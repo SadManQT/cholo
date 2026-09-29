@@ -10,6 +10,7 @@ import { UpcomingFeatures } from '../../components/marketing/UpcomingFeatures';
 import type { UpcomingFeature } from '../../components/marketing/UpcomingFeatures';
 import { EASE_IN_OUT } from '../../utils/motion';
 import { t } from '../../i18n';
+import { CholoLogo } from '../../components/brand/CholoLogo';
 import { LanguageSwitch } from '../../components/layout/LanguageSwitch';
 import { ThemeSwitch } from '../../components/layout/ThemeSwitch';
 
@@ -107,7 +108,9 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-surface-alt text-ink-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6">
-        <span className="text-xl font-bold text-cholo-700">Cholo</span>
+        <Link to="/welcome" aria-label={t('Cholo home')} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700">
+          <CholoLogo className="h-11 sm:h-14" />
+        </Link>
         <div className="flex items-center gap-3 sm:gap-4">
           <ThemeSwitch />
           <LanguageSwitch />

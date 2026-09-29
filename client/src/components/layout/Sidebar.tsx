@@ -1,3 +1,4 @@
+import { CholoLogo } from '../brand/CholoLogo';
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LogoutIcon } from './icons';
@@ -39,11 +40,8 @@ export function Sidebar({ sections, user, onSignOut }: SidebarProps) {
     <>
       <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-surface">
         <div className="flex items-center gap-2 px-5 pb-4 pt-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-cholo-700 text-sm font-black text-white">{t('C')}</span>
-          <div className="leading-tight">
-            <p className="font-bold text-ink-900">{t('Cholo')}</p>
-            <p className="text-xs text-ink-500">{t('Operations')}</p>
-          </div>
+          <CholoLogo className="h-10" label={t('Cholo')} />
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{t('Operations')}</p>
         </div>
         <nav aria-label={t('Admin')} className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
           {sections.map((section) => (
@@ -78,7 +76,7 @@ export function Sidebar({ sections, user, onSignOut }: SidebarProps) {
       </aside>
       <div className="sticky top-0 z-20 border-b border-border bg-surface md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="font-bold text-ink-900">{t('Cholo')} <span className="font-normal text-ink-500">{t('Operations')}</span></span>
+          <span className="flex items-center gap-2"><CholoLogo className="h-8" label={t('Cholo')} /><span className="text-sm text-ink-500">{t('Operations')}</span></span>
           <button type="button" onClick={onSignOut} className="text-sm font-medium text-ink-500 hover:text-danger-600">{t('Sign out')}</button>
         </div>
         <nav aria-label={t('Admin')} className="flex gap-1 overflow-x-auto px-2 pb-2">
