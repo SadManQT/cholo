@@ -47,6 +47,14 @@ export const analyticsQuerySchema = z.object({
   minTrips: z.coerce.number().int().min(1).max(1000).default(2),
 });
 
+export const commissionReportQuerySchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  cityId: z.coerce.number().int().positive().optional(),
+})
+  .refine(({ from, to }) => from <= to, { path: ['to'], message: 'End date must be on or after the start' })
+  .refine(({ from, to }) => (new Date(to) - new Date(from)) / 86_400_000 <= 366, { path: ['from'], message: 'Choose at most one year at a time' });
+
 export const leaderboardQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(3650).optional(),
   cityId: z.coerce.number().int().positive().optional(),

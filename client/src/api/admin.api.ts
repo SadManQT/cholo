@@ -33,6 +33,29 @@ export async function getAnalytics(params: { month: string; minTrips: number }) 
   return response.data.data;
 }
 
+export interface CommissionMeasures {
+  rides: number;
+  grossTotal: number;
+  commissionTotal: number;
+  driverTotal: number;
+  avgFare: number;
+  avgCommission: number;
+  promoTotal: number;
+  distanceKm: number;
+}
+
+export interface CommissionReport {
+  totals: CommissionMeasures & { drivers: number };
+  byMethod: (CommissionMeasures & { method: 'cash' | 'app' })[];
+  daily: (CommissionMeasures & { day: string })[];
+  byCategory: (CommissionMeasures & { category: string })[];
+}
+
+export async function getCommissionReport(params: { from: string; to: string; cityId?: number }) {
+  const response = await apiClient.get<ApiSuccess<CommissionReport>>('/admin/commissions', { params });
+  return response.data.data;
+}
+
 export async function getLeaderboard(params: { days?: number; cityId?: number }) {
   const response = await apiClient.get<ApiSuccess<Leaderboard>>('/admin/leaderboard', { params });
   return response.data.data;

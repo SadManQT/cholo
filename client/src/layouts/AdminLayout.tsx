@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import {
-  BadgeCheckIcon, BanknoteIcon, BellIcon, BoltIcon, FileIcon, FlagIcon, GiftIcon, GridIcon, LifebuoyIcon, ListIcon, MapIcon, ScaleIcon,
+  BadgeCheckIcon, BanknoteIcon, BellIcon, BoltIcon, CoinIcon, FileIcon, FlagIcon, GiftIcon, GridIcon, LifebuoyIcon, ListIcon, MapIcon, ScaleIcon,
   ShieldIcon, SirenIcon, TagIcon, UsersIcon,
 } from '../components/layout/icons';
 import { Sidebar } from '../components/layout/Sidebar';
@@ -18,6 +18,7 @@ export function AdminLayout() {
     { title: 'Overview', items: [
       { to: '/admin', label: 'Dashboard', icon: <GridIcon />, end: true },
       { to: '/admin/analytics', label: 'Analytics', icon: <ListIcon /> },
+      { to: '/admin/commissions', label: 'Commissions', icon: <CoinIcon /> },
       { to: '/admin/notifications', label: 'Notifications', icon: <BellIcon />, badge: unread },
     ] },
     { title: 'Drivers', items: [

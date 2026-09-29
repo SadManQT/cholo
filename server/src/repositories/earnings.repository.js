@@ -80,3 +80,29 @@ export async function getStatementForMonth(driverId, month, client = pool) {
   );
   return rows[0];
 }
+
+export async function getCommissionReport({ from, to, cityId }, client = pool) {
+  const params = [from, to, cityId ?? null];
+  const base = `
+    FROM driver_earnings de
+    JOIN trips t ON t.id = de.trip_id
+    JOIN ride_requests rr ON rr.id = t.request_id
+    JOIN vehicle_categories vc ON vc.id = rr.category_id
+    WHERE de.earned_at::date BETWEEN $1 AND $2 AND ($3::int IS NULL OR rr.city_id = $3)`;
+  const measures = `
+    count(*)::int AS "rides",
+    COALESCE(sum(de.gross_fare), 0)::float8 AS "grossTotal",
+    COALESCE(sum(de.commission_amount), 0)::float8 AS "commissionTotal",
+    COALESCE(sum(de.net_earning), 0)::float8 AS "driverTotal",
+    COALESCE(avg(de.gross_fare), 0)::float8 AS "avgFare",
+    COALESCE(avg(de.commission_amount), 0)::float8 AS "avgCommission",
+    COALESCE(sum(t.discount_amount), 0)::float8 AS "promoTotal",
+    COALESCE(sum(t.actual_distance_km), 0)::float8 AS "distanceKm"`;
+  const [totals, byMethod, daily, byCategory] = await Promise.all([
+    client.query(`SELECT ${measures}, count(DISTINCT de.driver_id)::int AS "drivers" ${base}`, params),
+    client.query(`SELECT CASE WHEN rr.payment_intent = 'cash' THEN 'cash' ELSE 'app' END AS "method", ${measures} ${base} GROUP BY 1`, params),
+    client.query(`SELECT de.earned_at::date::text AS "day", ${measures} ${base} GROUP BY 1 ORDER BY 1 DESC`, params),
+    client.query(`SELECT vc.name AS "category", ${measures} ${base} GROUP BY vc.name ORDER BY "commissionTotal" DESC`, params),
+  ]);
+  return { totals: totals.rows[0], byMethod: byMethod.rows, daily: daily.rows, byCategory: byCategory.rows };
+}
