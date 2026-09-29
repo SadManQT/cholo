@@ -8,6 +8,7 @@ Cholo (চলো) is a ride-sharing platform for Bangladesh: passenger app, driv
 - `server/` — Node 20+ Express API in plain JavaScript (ES modules), PostgreSQL via `pg`, Socket.io, Zod validators. Layers: `routes/` → `controllers/` → `services/` → `repositories/`.
 - `database/` — `schema.sql` (base schema), numbered `migrations/NNNN_*.sql` (applied in order by `server/scripts/db-init.js`), `seeds/`.
 - `docs/` — HTML product and technical docs.
+- `simulator/` — Dhaka Digital Twin, a Python agent-based simulator (`dhaka_twin` package). It runs locally against an in-process model of the platform, or live against the real API and sockets. See `simulator/README.md`.
 
 ## Commands
 
@@ -25,7 +26,17 @@ cd client && npm run lint        # oxlint
 cd client && npm run build       # tsc -b && vite build
 ```
 
-CI (`.github/workflows/ci.yml`) runs server tests against Postgres 16 and client lint + build.
+```bash
+# Simulator
+cd simulator && pip install -e ".[dev,osm]"
+pytest -q
+dhaka-twin compare --scenario weekday          # dispatch policies on the same seed
+dhaka-twin run --scenario friday --dashboard   # live map at http://127.0.0.1:8765
+```
+
+CI (`.github/workflows/ci.yml`) runs server tests against Postgres 16, client lint + build, and the simulator's tests plus a short policy comparison.
+
+When dispatch, fares, offer timing or trip transitions change on the server, update the mirror in `simulator/dhaka_twin/backends/local.py` and `dispatch/policies.py` (`cholo-v1`) so local simulations stay faithful.
 
 ## Conventions
 

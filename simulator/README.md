@@ -88,6 +88,26 @@ Each run writes a directory under `runs/` (for example `runs/2026-09-29_weekday_
 
 Add a policy by subclassing `DispatchPolicy` in `dhaka_twin/dispatch/policies.py` and registering it in `POLICIES`.
 
+### First results
+
+These runs used the offline skeleton graph, 1,000 drivers, seed 42 and the default (uncalibrated) parameters. The weekday runs 06:00 to 24:00 and the monsoon-rain run 15:00 to 21:00. Treat them as simulated, not as measurements of Cholo:
+
+| | Weekday, `cholo-v1` | Weekday, `batched-eta` | Rain, `cholo-v1` | Rain, `batched-eta` |
+|---|---:|---:|---:|---:|
+| Ride requests (identical) | 11,815 | 11,815 | 6,333 | 6,333 |
+| Completion rate | 61.3% | 86.1% | 37.8% | 60.0% |
+| Median pickup wait | 534 s | 192 s | 576 s | 244 s |
+| Offers per request | 44.5 | 1.5 | 28.7 | 1.2 |
+| Accepts that lost the race | 235,249 | 14 | 68,701 | 21 |
+| Empty share of driven km | 62.6% | 48.8% | 60.8% | 40.1% |
+
+What stands out about today's dispatcher:
+
+- Broadcasting to everyone within 5 km means the fastest responder wins, not the nearest driver. Pickups are long, and riders cancel while waiting.
+- Most accepts fail because another driver got there first.
+- With 5,000 drivers, every booking fans out to about 700 offers, each an offer row and a socket message.
+- `batched-eta` matches a little more slowly (median 10 s against 4 s) and lets more requests expire when supply is tight. It is a trade-off to tune, not a free win.
+
 ## Live mode: drive the real Cholo stack
 
 The simulated agents log in, open their own Socket.io connections and call the same endpoints as the web app. That covers booking, offers over `offer:new`, accept, arrive (with the 300 m check), start, rider pickup confirmation, complete, cancel and rating. Location updates go over `location:update` at the app's cadence (10 s idle, 3.5 s on a trip).
@@ -114,7 +134,7 @@ Notes:
 - **Seeded accounts.** Riders use phones `0130xxxxxxx` and drivers `0140xxxxxxx`, all with the password `DhakaTwin#2026` (change it with `--sim-password`). Drivers come approved, with an approved vehicle: 45% bikes, 15% CNG, 33% cars, 7% premium. Everyone gets a large wallet balance, so commission debt never locks a driver out. The accounts use a cheap bcrypt hash, so logging in thousands of agents costs the server almost nothing. Re-running the seed command is safe.
 - **`RATE_LIMIT_ALLOWLIST`** is a server setting added for load tests. Listed client IPs skip every rate limiter. It is empty by default. Without it, one machine can book only 30 rides an hour in total.
 - **Time.** The server's timers are wall-clock (15 s offers, 5 min expiry), so live runs use `--speed 1`.
-- **Cleanup.** On exit, idle drivers go offline and open searches are cancelled. Trips still under way when a run stops are closed the next time those accounts are used, as are leftovers from an interrupted run.
+- **Cleanup.** At start, every simulator driver is logged in, any leftover trip is closed and the driver is set offline, so no ghost drivers from an earlier run receive offers. On exit, open trips are closed, drivers go offline and open searches are cancelled. Rider accounts still stuck in an old ride are set aside.
 - **Load-test results.** `summary.json` records every endpoint's request count, status codes and p50/p95 latency, plus socket event counts.
 
 ## How it works

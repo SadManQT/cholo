@@ -176,7 +176,28 @@ class CholoBackend:
             d.gender = seeded_gender(d.id)
             self.drivers[d.id] = Account(driver_phone(d.id), "driver", agent_id=d.id)
         self.free_riders.extend(range(1, self.rider_accounts + 1))
+        await self._reset_drivers()
         log.info("cholo backend ready: %s, city %s, categories %s", self.base, self.city_id, self.categories)
+
+    async def _reset_drivers(self) -> None:
+        """Start from a clean slate: close leftover trips and set every simulator driver offline.
+
+        Otherwise drivers left online by an earlier run keep receiving offers they never answer.
+        This also logs every driver in up front, so going online later is a single call.
+        """
+        started = time.monotonic()
+        gate = asyncio.Semaphore(self.max_concurrency)
+
+        async def reset(acct: Account) -> None:
+            async with gate:
+                try:
+                    await self._clean_driver(acct)
+                    await self._call("PUT", "/driver/availability", acct, {"status": "offline"})
+                except ApiError as exc:
+                    self.errors[f"reset_{exc.code}"] += 1
+
+        await asyncio.gather(*(reset(a) for a in self.drivers.values()))
+        log.info("reset %d simulator drivers in %.1fs", len(self.drivers), time.monotonic() - started)
 
     async def close(self) -> None:
         self._closing = True
@@ -185,8 +206,8 @@ class CholoBackend:
             await asyncio.wait(pending, timeout=15)
         cleanup = []
         for acct in self.drivers.values():
-            if acct.token and acct.online:
-                cleanup.append(self._quiet(self._call("PUT", "/driver/availability", acct, {"status": "offline"})))
+            if acct.token and (acct.online or acct.trip_code):
+                cleanup.append(self._quiet(self._sign_off(acct)))
         for acct in self.riders.values():
             if acct.token and acct.request_id and not acct.trip_code and not acct.ended:
                 cleanup.append(self._quiet(self._call("DELETE", f"/ride-requests/{acct.request_id}", acct)))
@@ -198,6 +219,12 @@ class CholoBackend:
         if self.session is not None:
             await self.session.close()
             await self.ws_session.close()
+
+    async def _sign_off(self, acct: Account) -> None:
+        """Close the driver's open trip (so the next run starts clean) and go offline."""
+        if acct.trip_code:
+            await self._clean_driver(acct)
+        await self._call("PUT", "/driver/availability", acct, {"status": "offline"})
 
     @staticmethod
     async def _quiet(coro) -> None:
@@ -431,10 +458,18 @@ class CholoBackend:
         task.add_done_callback(self._tasks.discard)
 
     async def _do_RequestRide(self, cmd: RequestRide) -> None:
-        if not self.free_riders:
-            self._fail(cmd.rider_id, "rider", "RequestRide", "NO_FREE_RIDER_ACCOUNT")
-            return
-        slot = self.free_riders.popleft()
+        # An account can stay blocked by a ride still in progress from an earlier run
+        # (only its driver can finish it); set such accounts aside and use another.
+        for _attempt in range(3):
+            if not self.free_riders:
+                self._fail(cmd.rider_id, "rider", "RequestRide", "NO_FREE_RIDER_ACCOUNT")
+                return
+            outcome = await self._request_with_slot(cmd, self.free_riders.popleft())
+            if outcome != "blocked":
+                return
+        self._fail(cmd.rider_id, "rider", "RequestRide", "ACTIVE_REQUEST_EXISTS")
+
+    async def _request_with_slot(self, cmd: RequestRide, slot: int) -> str:
         acct = Account(rider_phone(slot), "rider", agent_id=cmd.rider_id, active=True)
         self.riders[cmd.rider_id] = acct
         self.rider_slot[cmd.rider_id] = slot
@@ -459,17 +494,21 @@ class CholoBackend:
                 data = await self._call("POST", "/ride-requests", acct, body)
         except (ApiError, Exception) as e:  # noqa: BLE001
             code = e.code if isinstance(e, ApiError) else type(e).__name__
-            self._fail(cmd.rider_id, "rider", "RequestRide", code)
             acct.ended = True
             self.riders.pop(cmd.rider_id, None)
             self.rider_slot.pop(cmd.rider_id, None)
             await self._disconnect(acct)
             self.free_riders.append(slot)
-            return
+            if code in ("ACTIVE_REQUEST_EXISTS", "UNPAID_TRIP", "OUTSTANDING_BALANCE"):
+                self.errors["rider_account_set_aside"] += 1
+                return "blocked"
+            self._fail(cmd.rider_id, "rider", "RequestRide", code)
+            return "failed"
         acct.request_id = data["publicId"]
         acct.next_poll_s = self.world.now_s + POLL_EVERY_S if self.world else 0.0
         quote = data.get("quote") or {}
         self._emit(RequestPlaced(cmd.rider_id, acct.request_id, float(quote.get("estFare") or 0)))
+        return "placed"
 
     async def _clean_rider(self, acct: Account) -> None:
         for req in await self._call("GET", "/ride-requests", acct) or []:
