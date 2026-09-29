@@ -1,0 +1,7 @@
+# Simulation output and downloaded road graphs
+runs/
+data/cache/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.venv/

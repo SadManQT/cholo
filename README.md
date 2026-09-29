@@ -28,6 +28,21 @@ A ride-sharing platform for Bangladesh — passenger app, driver app and admin c
 
 **Tech:** React + TypeScript + Vite, Node.js/Express, PostgreSQL, Socket.io, Leaflet/OpenStreetMap.
 
+## Dhaka Digital Twin
+
+[`simulator/`](simulator/README.md) is an agent-based simulation of Dhaka. Thousands of virtual riders and drivers move on the road network, and demand follows office hours, Friday prayers, rain, the Eid exodus, cricket at Mirpur and hartals. It can:
+
+- replay a run on a live map,
+- compare dispatch policies on the same random seed,
+- write trip, GPS and hexagon-demand datasets for ML,
+- drive the real API and Socket.io server as a load test.
+
+```bash
+cd simulator && pip install -e ".[dev,osm]"
+dhaka-twin run --scenario monsoon-rain --dashboard     # live map at http://127.0.0.1:8765
+dhaka-twin compare --scenario weekday                  # cholo-v1 vs batched-eta, same riders
+```
+
 ## Installation
 
 **Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/), or Node.js 20+ and PostgreSQL 16.

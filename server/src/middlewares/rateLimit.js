@@ -5,6 +5,17 @@ import { AppError } from '../utils/AppError.js';
 
 const isTest = env.NODE_ENV === 'test';
 
+function withoutIpv4Prefix(ip) {
+  return typeof ip === 'string' && ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+}
+
+export function createAllowlistSkip(allowlist) {
+  const allowed = new Set(allowlist.map(withoutIpv4Prefix));
+  return (request) => allowed.size > 0 && allowed.has(withoutIpv4Prefix(request.ip));
+}
+
+const skipAllowlisted = createAllowlistSkip(env.RATE_LIMIT_ALLOWLIST);
+
 function phoneAndIpKey(request) {
   return `${ipKeyGenerator(request.ip)}:${request.body?.phone ?? 'unknown'}`;
 }
@@ -18,6 +29,7 @@ export function createRateLimiter(options) {
     standardHeaders: true,
     legacyHeaders: false,
     handler: rejectWithRateLimited,
+    skip: skipAllowlisted,
     ...options,
   });
 }

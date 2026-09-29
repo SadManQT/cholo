@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dhaka-twin"
+version = "0.1.0"
+description = "Agent-based digital twin of Dhaka for the Cholo ride-sharing platform"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.24",
+  "h3>=4.0",
+  "python-igraph>=0.11",
+  "aiohttp>=3.9",
+  "python-socketio[asyncio_client]>=5.10",
+  "bcrypt>=4.0",
+  "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+osm = ["osmnx>=1.9"]
+dev = ["pytest>=8", "networkx>=3", "shapely>=2"]
+
+[project.scripts]
+dhaka-twin = "dhaka_twin.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["dhaka_twin*"]
+
+[tool.setuptools.package-data]
+dhaka_twin = ["dashboard/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

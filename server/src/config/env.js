@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,6 +41,10 @@ const envSchema = z.object({
   SUPABASE_BUCKET: z.string().default('uploads'),
   ARRIVAL_RADIUS_METERS: z.coerce.number().int().min(0).max(5_000).default(300),
   COMMISSION_DEBT_LIMIT: z.coerce.number().min(0).max(1_000_000).default(500),
+  // Client IPs exempt from every rate limiter, for load tests such as the Dhaka twin simulator.
+  RATE_LIMIT_ALLOWLIST: z.string().default('')
+    .transform((value) => value.split(',').map((ip) => ip.trim()).filter(Boolean))
+    .refine((ips) => ips.every((ip) => isIP(ip) !== 0), 'RATE_LIMIT_ALLOWLIST must be a comma-separated list of IP addresses'),
 });
 
 function formatIssues(issues) {

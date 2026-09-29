@@ -1,0 +1,25 @@
+{
+  "name": "rainy-match-friday",
+  "description": "A Friday T20 at Mirpur with an evening downpour: Jumu'ah, crowds and flooded streets in one day.",
+  "start": "2026-10-09T11:00:00+06:00",
+  "duration_s": 43200,
+  "drivers": 2000,
+  "daily_requests": 24000,
+  "seed": 2026,
+  "auto_friday_prayer": true,
+  "events": [
+    {
+      "kind": "cricket",
+      "start": "2026-10-09T15:00:00+06:00",
+      "end": "2026-10-09T18:30:00+06:00",
+      "intensity": 1.0,
+      "params": { "attendance": 25000, "ride_hail_share": 0.08 }
+    },
+    {
+      "kind": "rain",
+      "start": "2026-10-09T18:00:00+06:00",
+      "end": "2026-10-09T19:30:00+06:00",
+      "intensity": 0.8
+    }
+  ]
+}
