@@ -1,6 +1,6 @@
 import { divIcon } from 'leaflet';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MapContainer, Marker, Polygon, Polyline, Tooltip, useMapEvents } from 'react-leaflet';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MapContainer, Marker, Polygon, Polyline, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import * as adminApi from '../../api/admin.api';
 import * as referenceApi from '../../api/reference.api';
 import { VectorTileLayer } from '../../components/map/MapView';
@@ -9,8 +9,8 @@ import type { Zone, ZoneType } from '../../types/admin.types';
 import type { LatLng } from '../../types/geo.types';
 import type { City } from '../../types/ride.types';
 import { getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
+import { cityCenter, DHAKA_CENTER, pickCityId } from '../../utils/cities';
 
-const DHAKA: [number, number] = [23.7806, 90.4079];
 
 const ZONE_STYLE: Record<ZoneType, { color: string; label: string; hint: string }> = {
   regular: { color: '#0C684F', label: 'Regular', hint: 'Normal service area.' },
@@ -29,6 +29,16 @@ const vertexIcon = divIcon({
 function toPoints(zone: Zone): LatLng[] {
   const ring = zone.boundary?.coordinates[0] ?? [];
   return ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }));
+}
+
+function FitToZones({ zones, fallback }: { zones: Zone[]; fallback: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    const points = zones.flatMap(toPoints);
+    if (points.length) map.fitBounds(points.map((point) => [point.lat, point.lng] as [number, number]), { padding: [24, 24], maxZoom: 14 });
+    else map.setView(fallback, 12);
+  }, [map, zones, fallback]);
+  return null;
 }
 
 function DrawHandler({ onAdd }: { onAdd: (point: LatLng) => void }) {
@@ -54,15 +64,19 @@ export function ZonesPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState<Zone | null>(null);
+  const requestRef = useRef(0);
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const nextCities = cities.length ? cities : await referenceApi.listCities();
       setCities(nextCities);
-      const selected = cityId ?? nextCities[0]?.id ?? null;
+      const selected = cityId ?? pickCityId(nextCities, null) ?? null;
       setCityId(selected);
-      setZones(selected ? await adminApi.listZones(selected) : []);
+      const request = ++requestRef.current;
+      const nextZones = selected ? await adminApi.listZones(selected) : [];
+      if (request !== requestRef.current) return;
+      setZones(nextZones.filter((zone) => Number(zone.cityId) === selected));
     } catch (thrown) {
       setError(getApiErrorMessage(thrown, 'Could not load zones.'));
     } finally {
@@ -72,10 +86,7 @@ export function ZonesPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const mapCenter = useMemo<[number, number]>(() => {
-    const first = zones[0] ? toPoints(zones[0])[0] : null;
-    return first ? [first.lat, first.lng] : DHAKA;
-  }, [zones]);
+  const center = cityCenter(cities.find((city) => city.id === cityId)?.name) ?? DHAKA_CENTER;
 
   async function save() {
     if (!draft || !cityId) return;
@@ -127,7 +138,7 @@ export function ZonesPage() {
         </div>
         <div className="flex gap-2">
           {cities.length > 1 && (
-            <select aria-label="City" value={cityId ?? ''} onChange={(event) => { setCityId(Number(event.target.value)); setDraft(null); }} className="h-11 rounded-xl border border-border bg-surface px-3">
+            <select aria-label="City" value={cityId ?? ''} onChange={(event) => { setCityId(Number(event.target.value)); setZones([]); setDraft(null); setErrors({}); }} className="h-11 rounded-xl border border-border bg-surface px-3">
               {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
             </select>
           )}
@@ -137,8 +148,9 @@ export function ZonesPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <div className="relative isolate h-[520px] overflow-hidden rounded-2xl border border-border">
-          <MapContainer key={cityId ?? 'none'} center={mapCenter} zoom={12} className="h-full w-full" zoomControl>
+          <MapContainer center={center} zoom={12} className="h-full w-full" zoomControl>
             <VectorTileLayer />
+            <FitToZones zones={zones} fallback={center} />
             {zones.filter((zone) => zone.id !== draft?.id).map((zone) => (
               <Polygon
                 key={zone.id}

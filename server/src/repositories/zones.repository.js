@@ -62,3 +62,16 @@ export async function findRestrictedAt(cityId, pickup, dropoff, client = pool) {
   );
   return rows;
 }
+
+export async function findCityAt(point, client = pool) {
+  const { rows } = await client.query(
+    `SELECT z.city_id AS "cityId"
+     FROM zones z JOIN cities c ON c.id = z.city_id AND c.is_active
+     WHERE z.is_active AND z.boundary_geojson IS NOT NULL
+       AND fn_point_in_ring($1, $2, z.boundary_geojson -> 'coordinates' -> 0)
+     ORDER BY (z.zone_type = 'restricted'), z.id
+     LIMIT 1`,
+    [point.lat, point.lng],
+  );
+  return rows[0]?.cityId ?? null;
+}
