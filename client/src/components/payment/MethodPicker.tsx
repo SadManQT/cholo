@@ -16,7 +16,6 @@ interface MethodPickerProps {
   methods: PayMethod[];
   value: PayMethod;
   onChange: (method: PayMethod) => void;
-  /** Methods that can't be chosen right now, with the reason shown in place of the hint. */
   disabledReason?: Partial<Record<PayMethod, string>>;
   hints?: Partial<Record<PayMethod, string>>;
   walletBalance?: string;

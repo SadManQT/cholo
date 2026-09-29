@@ -16,14 +16,6 @@ const THUMB_SIZE_PX = 48;
 const THUMB_MARGIN_PX = 4;
 const CONFIRM_AT = 0.85;
 
-/**
- * Drag to the end to confirm. The drag can start anywhere on the track and moves the thumb by how far the
- * finger travels (it never jumps to the finger), so a tap can't confirm. Releasing early, or the browser
- * taking the touch over (pointercancel), springs back. Keyboard users focus the thumb and press Enter/Space.
- *
- * The thumb, fill and label are moved by writing transforms straight to the DOM once per frame, not through
- * React state, so dragging stays smooth even while the trip page re-renders for GPS and socket updates.
- */
 export function SlideToConfirm({ label, loading = false, lockedReason = null, onConfirm }: SlideToConfirmProps) {
   const reduceMotion = useReducedMotion();
   const [dragging, setDragging] = useState(false);

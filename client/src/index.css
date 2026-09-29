@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  /* Palette as RGB channels so Tailwind's opacity modifiers (bg-cholo-700/30) keep working. */
   :root {
     color-scheme: light;
     --c-cholo-50: 233 245 241;
