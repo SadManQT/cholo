@@ -36,6 +36,7 @@ import { EASE_OUT } from '../../utils/motion';
 import { isWithinBangladeshBounds, SERVICE_AREA_NOTICE } from '../../utils/serviceArea';
 import { staggerStyle } from '../../utils/stagger';
 import { t } from '../../i18n';
+import { pickCityId } from '../../utils/cities';
 
 const ACTIVE_REQUEST_KEY = 'cholo.activeRideRequest';
 type LocationField = 'pickup' | 'dropoff';
@@ -327,7 +328,7 @@ export function BookRidePage() {
     async function loadQuotes() {
       setQuotesLoading(true);
       setQuoteError(null);
-      const cityId = cities[0].id;
+      const cityId = pickCityId(cities, pickup)!;
       const results = await Promise.allSettled(
         categories.map((category) => ridesApi.getQuote({
           cityId,
@@ -478,7 +479,7 @@ export function BookRidePage() {
     setSubmitting(true);
     try {
       const created = await ridesApi.createRequest({
-        cityId: cities[0].id,
+        cityId: pickCityId(cities, pickup)!,
         categoryId: selectedCategoryId,
         pickup,
         dropoff,

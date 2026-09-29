@@ -35,16 +35,18 @@ async function buildQuote({ cityId, categoryId, pickup, dropoff, stops = [] }) {
   return { distanceKm, durationMin, surgeMultiplier, ...fare };
 }
 
-export async function quote({ cityId, categoryId, pickup, dropoff, stops }) {
+export async function quote({ cityId: requestedCityId, categoryId, pickup, dropoff, stops }) {
+  const cityId = await zonesService.resolveCityId(requestedCityId, pickup);
   const built = await buildQuote({ cityId, categoryId, pickup, dropoff, stops });
   return { cityId, categoryId, currency: 'BDT', ...built };
 }
 
 export async function createRequest(passengerId, dto) {
   const {
-    cityId, categoryId, pickup, dropoff, stops = [],
+    cityId: requestedCityId, categoryId, pickup, dropoff, stops = [],
     paymentIntent, promoCode, womenOnly, scheduledFor,
   } = dto;
+  const cityId = await zonesService.resolveCityId(requestedCityId, pickup);
 
   const built = await buildQuote({ cityId, categoryId, pickup, dropoff, stops });
   const estFare = built.totalFare;

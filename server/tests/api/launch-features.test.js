@@ -379,3 +379,29 @@ test('an abandoned gateway attempt older than 30 minutes no longer blocks paying
   );
   assert.equal((await call('POST', `/trips/${trip.tripCode}/pay`, { token: rider.token, body: { method: 'wallet' } })).status, 201);
 });
+
+test('rides are priced in the city whose zone contains the pickup, whatever city the client sent', async () => {
+  const { resolveCityId } = await import('../../src/services/zones.service.js');
+  const admin = await createUser(['ADMIN'], { admin: true });
+  const { rows: [dhaka] } = await db.query(`SELECT id FROM cities WHERE name = 'Dhaka'`);
+  const { rows: [sylhet] } = await db.query(
+    `INSERT INTO cities (name) VALUES ('Sylhet Test') ON CONFLICT (name) DO UPDATE SET is_active = true RETURNING id`,
+  );
+  const zone = await call('POST', '/admin/zones', {
+    token: admin.token,
+    body: {
+      cityId: sylhet.id, name: 'Sylhet Test City', zoneType: 'regular',
+      points: [{ lat: 24.85, lng: 91.81 }, { lat: 24.85, lng: 91.91 }, { lat: 24.95, lng: 91.91 }, { lat: 24.95, lng: 91.81 }],
+    },
+  });
+  assert.equal(zone.status, 201);
+  const zoneId = (await zone.json()).data.id;
+
+  assert.equal(Number(await resolveCityId(dhaka.id, { lat: 24.89, lng: 91.87 })), Number(sylhet.id));
+  assert.equal(Number(await resolveCityId(dhaka.id, { lat: 23.75, lng: 90.39 })), Number(dhaka.id));
+
+  await db.query(`UPDATE cities SET is_active = false WHERE id = $1`, [sylhet.id]);
+  assert.equal(Number(await resolveCityId(dhaka.id, { lat: 24.89, lng: 91.87 })), Number(dhaka.id));
+
+  assert.equal((await call('DELETE', `/admin/zones/${zoneId}`, { token: admin.token })).status, 204);
+});

@@ -62,6 +62,10 @@ export async function deleteZone(adminId, id, ipAddress) {
   });
 }
 
+export async function resolveCityId(cityId, pickup) {
+  return (await zonesRepo.findCityAt(pickup)) ?? cityId;
+}
+
 export async function assertBookable(cityId, pickup, dropoff) {
   const [blocked] = await zonesRepo.findRestrictedAt(cityId, pickup, dropoff);
   if (blocked) {
