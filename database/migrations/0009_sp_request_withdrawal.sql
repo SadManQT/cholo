@@ -1,11 +1,3 @@
--- sp_request_withdrawal — a driver cashes out. Three steps that must happen together:
---   1. lock the driver's wallet and check there is enough money,
---   2. record the withdrawal request,
---   3. take the money out of the wallet (a ledger debit; trg_apply_wallet_txn then updates wallets.balance).
--- It changes several tables in one workflow, so it is a procedure, called as
---   CALL sp_request_withdrawal(driver, payout_account, amount, fee, NULL)
--- inside the server's transaction (withTransaction in withdrawals.service.js), which COMMITs all of it or
--- ROLLs BACK all of it. The new withdrawal's id comes back through the INOUT parameter.
 CREATE OR REPLACE PROCEDURE sp_request_withdrawal(
     p_driver_id         BIGINT,
     p_payout_account_id BIGINT,
@@ -18,8 +10,6 @@ DECLARE
     v_wallet_id BIGINT;
     v_balance   NUMERIC(12,2);
 BEGIN
-    -- FOR UPDATE: a second withdrawal for the same driver waits here, so two requests can't both spend
-    -- the same balance.
     SELECT id, balance INTO v_wallet_id, v_balance
     FROM wallets
     WHERE user_id = p_driver_id

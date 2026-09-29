@@ -33,7 +33,6 @@ export function EarningsPage() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
-    // Never leave the previous range's numbers on screen under the new range's label.
     setDaily([]);
     setTrips([]);
     try {
@@ -63,8 +62,6 @@ export function EarningsPage() {
     { gross: 0, commission: 0, net: 0, trips: 0 },
   );
 
-  // Cash trips: the driver kept the fare in hand and the commission was taken from the wallet. App trips:
-  // the rider paid through Cholo and the net earning was credited to the wallet.
   const cash = trips.filter((row) => row.paymentMethod === 'cash');
   const app = trips.filter((row) => row.paymentMethod !== 'cash');
   const sum = (rows: EarningTripRow[], key: 'grossFare' | 'commissionAmount' | 'netEarning') => rows.reduce((total, row) => total + Number(row[key]), 0);

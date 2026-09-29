@@ -38,7 +38,6 @@ export function BikeRiderIllustration({ className = '' }: { className?: string }
 
   return (
     <div ref={wrapperRef} className={className}>
-      {}
       <svg viewBox="0 0 500 320" className="h-full w-full" role="img" aria-label={t('Illustration of a rider on a bike')}>
       <motion.g style={{ x: glideX }}>
         <ellipse cx={250} cy={296} rx={190} ry={12} fill="#0B1F2E" opacity={0.08} />
@@ -47,7 +46,6 @@ export function BikeRiderIllustration({ className = '' }: { className?: string }
           animate={{ y: reduceMotion ? 0 : [0, -6, 0] }}
           transition={reduceMotion ? { duration: 0 } : { duration: 2.2, repeat: Infinity, ease: EASE_IN_OUT }}
         >
-          {}
           <g fill="none" stroke="#0E7A5F" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round">
             <line x1={BOTTOM_BRACKET.x} y1={BOTTOM_BRACKET.y} x2={SEAT.x} y2={SEAT.y} />
             <line x1={BOTTOM_BRACKET.x} y1={BOTTOM_BRACKET.y} x2={HEAD_TUBE_TOP.x} y2={HEAD_TUBE_TOP.y} />
@@ -56,27 +54,20 @@ export function BikeRiderIllustration({ className = '' }: { className?: string }
             <line x1={SEAT.x} y1={SEAT.y} x2={REAR_WHEEL.cx} y2={REAR_WHEEL.cy} />
             <line x1={HEAD_TUBE_TOP.x} y1={HEAD_TUBE_TOP.y} x2={FRONT_WHEEL.cx} y2={FRONT_WHEEL.cy} />
           </g>
-          {}
           <g fill="none" stroke="#0B1F2E" strokeWidth={6} strokeLinecap="round">
             <line x1={SEAT.x - 14} y1={SEAT.y - 4} x2={SEAT.x + 10} y2={SEAT.y - 6} />
             <line x1={HEAD_TUBE_TOP.x} y1={HEAD_TUBE_TOP.y} x2={HEAD_TUBE_TOP.x + 18} y2={HEAD_TUBE_TOP.y - 28} />
             <line x1={HEAD_TUBE_TOP.x + 18} y1={HEAD_TUBE_TOP.y - 28} x2={HEAD_TUBE_TOP.x + 34} y2={HEAD_TUBE_TOP.y - 22} />
           </g>
-          {}
           <circle cx={BOTTOM_BRACKET.x} cy={BOTTOM_BRACKET.y} r={8} fill="#0B1F2E" />
 
           <Wheel cx={REAR_WHEEL.cx} cy={REAR_WHEEL.cy} spin={!reduceMotion} />
           <Wheel cx={FRONT_WHEEL.cx} cy={FRONT_WHEEL.cy} spin={!reduceMotion} />
 
-          {}
           <g strokeLinecap="round">
-            {}
             <line x1={SEAT.x + 6} y1={SEAT.y - 4} x2={296} y2={108} stroke="#F5A623" strokeWidth={13} />
-            {}
             <line x1={296} y1={108} x2={360} y2={133} stroke="#0B1F2E" strokeWidth={7} />
-            {}
             <line x1={SEAT.x + 10} y1={SEAT.y + 2} x2={BOTTOM_BRACKET.x} y2={BOTTOM_BRACKET.y - 2} stroke="#0B1F2E" strokeWidth={10} />
-            {}
             <circle cx={306} cy={85} r={17} fill="#0B1F2E" />
             <path d="M 291 78 A 17 17 0 0 1 321 78" fill="#F5A623" />
           </g>

@@ -283,7 +283,6 @@ test('leaderboard ranks drivers and riders by completed trips, admins only', asy
   assert.equal((await supertest(app).get('/api/v1/admin/leaderboard')).status, 401);
   assert.equal((await supertest(app).get('/api/v1/admin/leaderboard').set('Authorization', `Bearer ${passenger.token}`)).status, 403);
 
-  // Two completed trips by the same driver and rider.
   const first = await createTrip('completed');
   const { rows: [request] } = await client.query(
     `INSERT INTO ride_requests (passenger_id, city_id, category_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng,

@@ -102,7 +102,6 @@ export function TripDetailPage({ driverMode = false }: { driverMode?: boolean })
         <StatusBadge status={trip.status} />
       </div>
 
-      {/* Ended early: show the ride as it happened (to where it stopped), not the planned route. */}
       <MapView
         pickup={trip.pickup}
         dropoff={trip.endedEarly ? { lat: trip.endedEarly.lat, lng: trip.endedEarly.lng } : trip.dropoff}

@@ -75,8 +75,6 @@ export async function resolveDispute(adminId, disputeId, input, ipAddress) {
         idempotencyKey: `dispute-refund-${dispute.id}`,
         note: `Refund for ${dispute.disputeNo}`,
       }, client);
-      // The driver gives back their share of what is refunded (the net-to-gross ratio of this trip's earning);
-      // the platform absorbs its commission share.
       const earning = await disputesRepo.findEarningForTrip(dispute.tripId, client);
       if (earning && Number(earning.grossFare) > 0) {
         const clawback = Math.round((input.refundAmount * Number(earning.netEarning) / Number(earning.grossFare)) * 100) / 100;

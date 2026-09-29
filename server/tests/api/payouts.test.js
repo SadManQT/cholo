@@ -45,7 +45,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -193,7 +192,6 @@ async function createPayoutAccount(driverAccessToken, overrides = {}) {
   return (await response.json()).data;
 }
 
-
 test('GET /driver/earnings returns daily aggregates (v_driver_daily_earnings) and per-trip rows for a completed trip', async (t) => {
   const { tripCode, driver } = await createAssignedTrip(t);
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
@@ -231,7 +229,6 @@ test('GET /driver/earnings requires a bearer token', async () => {
   assert.equal(response.status, 401);
 });
 
-
 test('POST /driver/payout-accounts masks the account number and never stores it raw', async (t) => {
   const driver = await createOnlineDriver(t, { lat: PICKUP.lat, lng: PICKUP.lng });
 
@@ -245,7 +242,6 @@ test('POST /driver/payout-accounts masks the account number and never stores it 
   assert.equal(body.accountType, 'bkash');
   assert.equal(body.isVerified, true);
 
-  // Drivers only ever get the masked copy back; the full number is kept for finance's payout queue.
   assert.equal(JSON.stringify(body).includes('01712345678'), false);
   const { rows } = await pool.query(`SELECT account_no FROM driver_payout_accounts WHERE id = $1`, [body.id]);
   assert.equal(rows[0].account_no, '01712345678');
@@ -306,7 +302,6 @@ test('DELETE /driver/payout-accounts/:id by a non-owner gets 404 (no existence l
   assert.equal(response.status, 404);
   assert.equal((await response.json()).error.code, 'PAYOUT_ACCOUNT_NOT_FOUND');
 });
-
 
 test('POST /driver/withdrawals debits the wallet immediately (holds funds at request time, not approval)', async (t) => {
   const { driver, walletBalance } = await createDriverWithBalance(t);
@@ -389,7 +384,6 @@ test('GET /driver/withdrawals lists the caller\'s own request history', async (t
   assert.equal(body.data[0].accountType, 'bkash');
   assert.equal(body.meta.total, 1);
 });
-
 
 test('GET /admin/withdrawals is visible to ANY admin (no access-level restriction on the list itself)', async (t) => {
   const { driver } = await createDriverWithBalance(t);

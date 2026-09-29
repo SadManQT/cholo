@@ -6,8 +6,6 @@ import { dhakaDateInYears, isoDate, pastMonth } from './dates.js';
 
 const today = () => dhakaDate();
 
-// A document can't be issued in the future or before its holder could plausibly have it, and must not
-// already be expired or claim to last longer than any Bangladeshi licence, NID or vehicle paper does.
 const issueDate = isoDate
   .refine((value) => value <= today(), 'Issue date cannot be in the future')
   .refine((value) => value >= dhakaDateInYears(-60), 'Issue date is too far in the past');
@@ -15,8 +13,6 @@ const expiryDate = isoDate
   .refine((value) => value > today(), 'This document has already expired')
   .refine((value) => value <= dhakaDateInYears(20), 'Expiry date is too far in the future');
 
-// BRTA issues driving licences for at most 10 years (non-professional; professional ones last 5), so a
-// licence expiring later than that from today — or from its issue date — can't be genuine.
 export const LICENSE_MAX_YEARS = 10;
 const LICENSE_TOO_LONG = `A Bangladeshi driving license is valid for at most ${LICENSE_MAX_YEARS} years`;
 
@@ -43,7 +39,6 @@ const documentDates = (schema) => schema
   );
 
 const documentFields = {
-  // Optional only when editing a copy that is still waiting for review (the service enforces it).
   fileUrl: z.string().max(2048).refine(isOwnFileUrl, 'Upload the file with the document form').optional(),
   docNumber: z.string().trim().min(1).max(60).optional(),
   issueDate: issueDate.optional(),
@@ -102,7 +97,6 @@ export const respondToOfferSchema = z.object({
 
 export const earningsQuerySchema = z.object({
   from: isoDate.default(() => dhakaDate(-29)),
-  // A phone clock a little ahead of Dhaka time must not make the request fail: clamp to today.
   to: isoDate.default(today).transform((value) => (value > today() ? today() : value)),
 })
   .refine(({ from, to }) => from <= to, { path: ['to'], message: 'End date must be on or after the start' })

@@ -45,7 +45,6 @@ export async function listTripsForDriver(driverId, { from, to }, client = pool) 
   return rows;
 }
 
-// Monthly statements are computed from the earnings ledger (Dhaka months, via the session time zone).
 export async function listMonthlyForDriver(driverId, months, client = pool) {
   const { rows } = await client.query(
     `SELECT to_char(date_trunc('month', earned_at), 'YYYY-MM') AS month,

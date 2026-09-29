@@ -165,7 +165,6 @@ export async function updateAvailability(
   return rows[0];
 }
 
-/** The driver's last reported position, if it is recent enough to trust for an arrival check. */
 export async function findFreshLocation(driverId, maxAgeSeconds, client = pool) {
   const { rows } = await client.query(
     `SELECT current_lat::float8 AS lat, current_lng::float8 AS lng FROM driver_availability

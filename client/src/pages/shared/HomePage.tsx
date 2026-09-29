@@ -117,7 +117,6 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        {}
         <section className="relative grid gap-10 py-10 md:py-16 lg:grid-cols-2">
           <div>
             <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">

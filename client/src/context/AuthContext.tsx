@@ -8,8 +8,6 @@ import type { User } from '../types/user.types';
 import { AuthContext } from './auth';
 import { language, setLanguage, storedLanguage } from '../i18n';
 
-// A language picked on this device wins and is saved to the profile; otherwise the profile's choice applies
-// (which reloads the page once into that language).
 function syncLanguage(me: User) {
   const chosenHere = storedLanguage();
   if (chosenHere && chosenHere !== me.preferredLanguage) {
@@ -30,8 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => setUser(null));
   }, []);
 
-  // Who is signed in. A sleeping API (free hosting) answers 502/503/504 or not at all while it wakes, so keep
-  // trying for about a minute instead of treating that as "signed out"; a 401/403 means signed out.
   useEffect(() => {
     let cancelled = false;
     async function bootstrap() {

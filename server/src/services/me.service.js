@@ -52,7 +52,6 @@ export async function changePassword(userId, sessionId, { currentPassword, newPa
   }
 
   const newPasswordHash = await hashPassword(newPassword);
-  // New password and "sign out your other devices" succeed or fail together.
   await withTransaction(async (client) => {
     await usersRepo.updatePasswordHash(userId, newPasswordHash, client);
     await sessionsRepo.revokeActiveForUserExceptSession(userId, sessionId, client);
@@ -124,10 +123,6 @@ export async function getReferral(userId) {
   return { ...summary, bonus: REFERRAL_BONUS };
 }
 
-/**
- * Deleting keeps trips, payments and ratings (accounting and the other party's history need them) but
- * anonymises the person and ends every session. Money left in the wallet is not paid out automatically.
- */
 export async function deleteAccount(userId, { password }) {
   const user = await usersRepo.findPasswordHashById(userId);
   if (!await verifyPassword(password, user?.passwordHash)) throw new AppError(401, 'CURRENT_PASSWORD_INVALID');
@@ -167,7 +162,6 @@ export async function getTwoFactorStatus(userId) {
   return { enabled: Boolean(twoFactor.enabledAt), enabledAt: twoFactor.enabledAt ?? null };
 }
 
-/** Starts (or restarts) setup: a fresh secret that only takes effect once a code from it is confirmed. */
 export async function startTwoFactorSetup(userId) {
   const twoFactor = await requireAdminTwoFactor(userId);
   if (twoFactor.enabledAt) throw new AppError(409, 'TOTP_ALREADY_ENABLED');

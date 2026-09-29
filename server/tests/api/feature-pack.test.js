@@ -51,7 +51,6 @@ before(async () => {
     if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
       osrmUrls.push(url);
       const coordinates = url.split('/route/v1/driving/')[1].split('?')[0].split(';');
-      // 9.21 km for a direct trip, plus 3 km per extra stop.
       const distance = 9210 + (coordinates.length - 2) * 3000;
       return {
         ok: true,
@@ -94,7 +93,6 @@ function call(method, path, { body, token, raw, contentType } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -201,7 +199,6 @@ test('re-dispatch: an unanswered offer times out and the ride goes to the next d
   const { body } = await book(rider);
   assert.equal((await pendingOffersFor(first.userId)).length, 1);
 
-  // A second driver comes online 6 km away: outside round 1's 5 km, inside round 2's 7.5 km.
   const second = await createOnlineDriver({ lat: 23.8465, lng: 90.4078 });
   assert.equal(await dispatchService.redispatchStaleRequests(), 0, 'nothing happens while the first offer is live');
 

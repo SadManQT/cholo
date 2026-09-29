@@ -16,12 +16,9 @@ interface MethodPickerProps {
   methods: PayMethod[];
   value: PayMethod;
   onChange: (method: PayMethod) => void;
-  /** Methods that can't be chosen right now, with the reason shown in place of the hint. */
   disabledReason?: Partial<Record<PayMethod, string>>;
-  /** Replaces a method's default hint (e.g. "Paid automatically at drop-off"). */
   hints?: Partial<Record<PayMethod, string>>;
   walletBalance?: string;
-  /** Where "Top up" goes when the wallet is short; shown under the wallet option. */
   topUpHref?: string;
 }
 

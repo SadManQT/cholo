@@ -18,7 +18,6 @@ const HEADLINES: Record<SharedTrip['status'], string> = {
   cancelled: 'This trip was cancelled',
 };
 
-/** Public: what a rider's family sees from a share link. No login, no phone numbers. */
 export function SharedTripPage() {
   const { token } = useParams();
   const [trip, setTrip] = useState<SharedTrip | null>(null);

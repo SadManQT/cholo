@@ -1,5 +1,3 @@
-// Every palette colour is a CSS variable (RGB channels, see src/index.css) so the whole UI switches
-// between the light and dark themes by toggling the `dark` class on <html>.
 const token = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
 
 export default {

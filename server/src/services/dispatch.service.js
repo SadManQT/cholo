@@ -21,8 +21,6 @@ function radiusForRound(round) {
   return Math.min(DISPATCH_RADIUS_KM + RADIUS_STEP_KM * (round - 1), MAX_DISPATCH_RADIUS_KM);
 }
 
-// Round 1 goes to the rider's favourite drivers alone when any are nearby; if none of them
-// accepts, the re-dispatch sweep offers the ride to everyone else in the next round.
 export async function fanOutOffers(
   { requestId, passengerId = null, categoryId, pickupLat, pickupLng, womenOnly, round = 1 },
   client,
@@ -56,9 +54,6 @@ export async function fanOutOffers(
   }));
 }
 
-// Runs every few seconds: expires unanswered offers, then offers still-searching requests to
-// drivers who haven't seen them yet, widening the radius each round. The request-expiry job
-// still ends the search after REQUEST_EXPIRY_MINUTES.
 export async function redispatchStaleRequests() {
   await withTransaction((client) => offersRepo.timeOutStalePending(OFFER_TIMEOUT_SECONDS, client));
   const requests = await offersRepo.findRequestsNeedingRedispatch(OFFER_TIMEOUT_SECONDS);

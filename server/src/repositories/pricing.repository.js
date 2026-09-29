@@ -26,7 +26,6 @@ export async function getCurrentCommission(categoryId, cityId, client = pool) {
   return rows[0];
 }
 
-// The highest live surge for the pickup's zone (and category, when the row names one).
 export async function getActiveSurgeMultiplier(cityId, categoryId, pickup, client = pool) {
   const { rows } = await client.query(
     `SELECT multiplier::float8 AS multiplier

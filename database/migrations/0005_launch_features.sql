@@ -1,6 +1,3 @@
--- Launch features: timed suspensions, dispute review timestamps, notification inbox index.
--- Idempotent so db-init can run it against both fresh and existing databases.
-
 ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_until TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS suspension_reason VARCHAR(255);
 
@@ -9,13 +6,10 @@ ALTER TABLE disputes ADD COLUMN IF NOT EXISTS review_started_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_suspended_until ON users (suspended_until) WHERE status = 'suspended';
 
--- Rejections must tell the driver why; until now only the audit log kept the reason.
 ALTER TABLE vehicle_documents ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(255);
 ALTER TABLE driver_profiles ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(255);
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(255);
 
--- Zones: boundary_geojson holds a GeoJSON Polygon ({"type":"Polygon","coordinates":[[[lng,lat],...]]}).
--- Ray-casting point-in-polygon in SQL so every query that stores a position can tag its zone inline.
 CREATE OR REPLACE FUNCTION fn_point_in_ring(p_lat NUMERIC, p_lng NUMERIC, p_ring JSONB)
 RETURNS BOOLEAN LANGUAGE plpgsql IMMUTABLE AS $$
 DECLARE
@@ -38,7 +32,6 @@ BEGIN
     RETURN inside;
 END $$;
 
--- Restricted zones win when zones overlap, so a restricted area inside a regular one still blocks bookings.
 CREATE OR REPLACE FUNCTION fn_zone_at(p_lat NUMERIC, p_lng NUMERIC, p_city_id SMALLINT DEFAULT NULL)
 RETURNS BIGINT LANGUAGE sql STABLE AS $$
     SELECT id FROM zones

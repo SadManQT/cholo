@@ -3,10 +3,8 @@ import { dhakaDate, formatDate } from './format';
 
 const EXPIRING_SOON_DAYS = 30;
 
-/** BRTA issues driving licences for at most 10 years (non-professional; professional ones last 5). */
 export const LICENSE_MAX_YEARS = 10;
 
-/** Latest date (YYYY-MM-DD, Dhaka) a document valid for `years` can expire, matching the server's cap. */
 export const maxExpiryDate = (years: number) => dhakaDate(Math.round(years * 365.25));
 
 export const licenseMaxExpiry = () => maxExpiryDate(LICENSE_MAX_YEARS);

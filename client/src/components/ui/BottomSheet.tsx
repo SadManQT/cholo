@@ -16,7 +16,6 @@ const SNAP_ORDER: SnapPoint[] = ['peek', 'half', 'full'];
 const DISMISS_DRAG_PX = 80;
 const FLICK_VELOCITY_PX_S = 500;
 const ENTRANCE_DURATION_S = 0.35;
-// Every sheet renders inside a layout with the fixed h-16 BottomTabs bar; the sheet sits above it.
 const TAB_BAR_PX = 64;
 
 function rubberBand(overshoot: number, dimension = 220, factor = 0.55) {
@@ -184,7 +183,6 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
       <div
         role="dialog"
         aria-modal={snapPoint === 'full'}
-        // Size the box itself (not a translate) so content below the fold is never pushed off-screen.
         style={{ height: `${Math.max(heightPx, 0)}px` }}
         className={`fixed inset-x-0 bottom-16 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
       >

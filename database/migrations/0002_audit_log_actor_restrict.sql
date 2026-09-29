@@ -1,4 +1,3 @@
--- Keep immutable audit rows from being removed through a user cascade.
 BEGIN;
 
 ALTER TABLE audit_logs

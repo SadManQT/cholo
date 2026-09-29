@@ -36,8 +36,6 @@ export async function insertDriverDocument(
   return rows[0];
 }
 
-// Editing: while the newest copy of a document type is still waiting for review, a resubmission replaces
-// it in place (same row, fresh upload time) instead of piling up versions. A null field keeps its value.
 export async function updatePendingDriverDocument(
   { driverId, docType, docNumber, fileUrl, issueDate, expiryDate },
   client = pool,
@@ -145,7 +143,6 @@ export async function updatePendingVehicleDocument(
   return rows[0];
 }
 
-/** Every document whose newest copy is waiting for review, for any driver or active vehicle, oldest first. */
 export async function listPendingForReview(client = pool) {
   const { rows } = await client.query(
     `WITH latest_driver AS (
@@ -231,7 +228,6 @@ export async function reviewVehicleDocument(
   return rows[0];
 }
 
-/** Flips approved documents past their expiry date to 'expired' and returns who owns them. */
 export async function expireLapsedDocuments(client = pool) {
   const { rows } = await client.query(
     `WITH driver_docs AS (
@@ -250,7 +246,6 @@ export async function expireLapsedDocuments(client = pool) {
   return rows;
 }
 
-/** Approved documents that expire exactly `days` from today — the job runs daily, so each is warned once. */
 export async function findExpiringOn(days, client = pool) {
   const { rows } = await client.query(
     `SELECT driver_id AS "driverId", doc_type::text AS "docType", expiry_date::text AS "expiryDate"

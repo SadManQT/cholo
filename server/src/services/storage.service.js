@@ -5,12 +5,6 @@ import { join } from 'node:path';
 import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
 
-// Two kinds of stored file:
-//  - public (profile photos): a permanent URL anyone can open, returned as-is.
-//  - private (driver and vehicle documents): stored as "private://documents/<name>" and only ever handed
-//    out as a short-lived signed link to /api/v1/uploads/private/<name>, which the API checks and serves.
-// Supabase Storage in production (a public bucket plus a private "documents" bucket), local disk in dev.
-
 export const PRIVATE_PREFIX = 'private://documents/';
 const PRIVATE_BUCKET = 'documents';
 const PRIVATE_DIR = `${env.UPLOAD_DIR}-private`;
@@ -26,7 +20,6 @@ const serviceHeaders = () => ({
 
 let privateBucketReady = null;
 
-// Creates the private bucket the first time it's needed; "already exists" is success.
 function ensurePrivateBucket() {
   privateBucketReady ??= fetch(`${supabaseBase()}/storage/v1/bucket`, {
     method: 'POST',
@@ -77,7 +70,6 @@ export async function storeFile(name, body, contentType, { isPrivate = false } =
   return `${env.PUBLIC_API_ORIGIN}/uploads/${name}`;
 }
 
-/** Files a document may point at: our private refs, or (older documents) our own public storage. */
 export function isOwnFileUrl(value) {
   if (value.startsWith(PRIVATE_PREFIX)) return NAME_PATTERN.test(value.slice(PRIVATE_PREFIX.length));
   const publicPrefixes = [`${env.PUBLIC_API_ORIGIN}/uploads/`];
@@ -94,7 +86,6 @@ export function signPrivateUrl(ref) {
   return `${env.PUBLIC_API_ORIGIN}/api/v1/uploads/private/${name}?expires=${expires}&signature=${signature(name, expires)}`;
 }
 
-/** Replaces every private ref in a response body with a fresh signed link. */
 export function signPrivateRefs(value) {
   if (typeof value === 'string') return value.startsWith(PRIVATE_PREFIX) ? signPrivateUrl(value) : value;
   if (Array.isArray(value)) return value.map(signPrivateRefs);
@@ -106,7 +97,6 @@ export function signPrivateRefs(value) {
 
 const CONTENT_TYPES = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf' };
 
-/** Checks a signed link and returns the file's bytes. */
 export async function readPrivateFile(name, { expires, signature: given }) {
   const expiresAt = Number(expires);
   const expected = signature(name, expiresAt);

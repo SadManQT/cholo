@@ -21,7 +21,6 @@ import { formatBDT } from '../../utils/format';
 import { distanceKm, formatMeters } from '../../utils/geo';
 import { t } from '../../i18n';
 
-/** What the driver should do about money once a trip ends: collect cash, or nothing (paid in the app). */
 function completionMessage(result: tripsApi.TripCompletion) {
   const amount = formatBDT(result.fare.total);
   if (result.payment.method === 'cash') {
@@ -74,8 +73,6 @@ export function DriverActiveTripPage() {
     void loadTrip();
   }, [loadTrip]);
 
-  // Follow status changes pushed by the server. Reacting to `trip` as well made the page and the tracking
-  // hook correct each other forever when the page opened on a trip past "assigned" (a reload mid-trip).
   const lastTrackedStatus = useRef(tracking.status);
   useEffect(() => {
     if (lastTrackedStatus.current === tracking.status) return;
@@ -84,7 +81,6 @@ export function DriverActiveTripPage() {
     if (tracking.status === 'cancelled') toast.info(t('The trip was cancelled. Opening its details.'));
   }, [tracking.status]);
 
-  // The rider tapped "Stop here": tell the driver once, the moment it arrives.
   const stopRequestedAt = trip?.earlyStopRequestedAt ?? tracking.earlyStopRequestedAt;
   const announcedStop = useRef(stopRequestedAt);
   useEffect(() => {
@@ -93,14 +89,12 @@ export function DriverActiveTripPage() {
     toast.info(t('Your rider wants to get out here. You can end the trip where you are.'));
   }, [stopRequestedAt]);
 
-  // Starting needs the rider's agreement (so a driver can't start a ride from somewhere else).
   const handshake = tracking.handshake ?? (trip && {
     startRequestedAt: trip.startRequestedAt, pickupConfirmedAt: trip.pickupConfirmedAt, arrivalDisputedAt: trip.arrivalDisputedAt,
   });
   const riderConfirmed = trip?.status === 'arrived' && Boolean(handshake?.pickupConfirmedAt);
   const awaitingRider = trip?.status === 'arrived' && !riderConfirmed && Boolean(handshake?.startRequestedAt);
 
-  // Announce the rider's answer as it happens, not what was already true when the page opened.
   const loaded = Boolean(trip);
   const announcedConfirm = useRef<boolean | undefined>(undefined);
   useEffect(() => {
@@ -108,7 +102,6 @@ export function DriverActiveTripPage() {
     if (riderConfirmed && announcedConfirm.current === false) toast.success(t('Your rider confirmed they are in the car.'));
     announcedConfirm.current = riderConfirmed;
   }, [loaded, riderConfirmed]);
-  // The rider said "My driver isn't here", which undid the arrival (the server also sends a notification).
   const arrivalDisputed = trip?.status === 'assigned' && Boolean(handshake?.arrivalDisputedAt);
 
   const tripCode = trip?.publicCode;
@@ -177,7 +170,6 @@ export function DriverActiveTripPage() {
     }
   }
 
-  // The rider asked to get out before the drop-off: they pay for the route actually driven.
   async function endTripHere() {
     if (!trip) return;
     setMutating(true);
@@ -218,8 +210,6 @@ export function DriverActiveTripPage() {
   const heading = trip.status === 'arrived' ? t('At the pickup') : trip.status !== 'in_progress' ? t('Head to pickup') : nextStop ? t('Drive to stop {0}', nextStop.order) : t('Drive to dropoff');
   const destination = trip.status !== 'in_progress' ? trip.pickup.address : nextStop ? nextStop.address : trip.dropoff.address;
 
-  // The server refuses arrival/stop/complete outside the radius; lock the slider here too so the driver sees
-  // how far is left. Starting the trip happens at the pickup, so it is never locked.
   const target = trip.status === 'assigned' ? trip.pickup : trip.status === 'in_progress' ? (nextStop ?? trip.dropoff) : null;
   const metersLeft = target && geolocation.position && trip.arrivalRadiusMeters
     ? Math.round(distanceKm(geolocation.position, target) * 1000)
@@ -227,7 +217,6 @@ export function DriverActiveTripPage() {
   const lockedReason = metersLeft != null && metersLeft > trip.arrivalRadiusMeters
     ? t(trip.status === 'assigned' ? '{0} to the pickup' : nextStop ? '{0} to stop {1}' : '{0} to the drop-off', formatMeters(metersLeft), nextStop?.order)
     : null;
-  // Starting is never GPS-locked (it happens at the pickup), but it waits for the rider once asked.
   const startLockedReason = awaitingRider ? t('Waiting for {0} to confirm…', trip.passenger.name) : null;
 
   return (

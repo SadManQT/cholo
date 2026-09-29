@@ -9,7 +9,6 @@ import { LICENSE_MAX_YEARS } from '../../utils/documents';
 import { t } from '../../i18n';
 
 const DRIVER_DOCS: { type: DriverDocType; label: string; hint: string; askNumber?: boolean; askExpiry?: boolean; maxExpiryYears?: number }[] = [
-  // BRTA driving licences last at most 10 years (non-professional; professional ones 5).
   { type: 'license', label: t('Driving license'), hint: t('Both sides, all text readable.'), askNumber: true, askExpiry: true, maxExpiryYears: LICENSE_MAX_YEARS },
   { type: 'nid', label: t('National ID'), hint: t('Front of your NID card.'), askNumber: true },
   { type: 'photo', label: t('Profile photo'), hint: t('A clear, recent photo of your face.') },
@@ -41,7 +40,6 @@ export function DriverDocumentsPage() {
   if (error) return <EmptyState title={t('Documents did not load')} hint={error} action={{ label: t('Retry'), onClick: () => void load() }} />;
   if (!status) return <main className="mx-auto max-w-3xl space-y-3 p-4"><Skeleton variant="card" /><Skeleton variant="card" /></main>;
 
-  // Newest upload per type wins; the API returns documents newest first.
   const latest = new Map<string, (typeof status.documents)[number]>();
   for (const document of status.documents) if (!latest.has(document.docType)) latest.set(document.docType, document);
   const approvedCount = DRIVER_DOCS.filter((doc) => latest.get(doc.type)?.status === 'approved').length;

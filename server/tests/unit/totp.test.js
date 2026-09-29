@@ -3,7 +3,6 @@ import { test } from 'node:test';
 
 import { base32Decode, base32Encode, totpCode, verifyTotp } from '../../src/utils/totp.js';
 
-// RFC 6238 appendix B, SHA-1 seed "12345678901234567890".
 const RFC_SECRET = base32Encode(Buffer.from('12345678901234567890'));
 
 test('totpCode matches the RFC 6238 SHA-1 test vectors (last 6 digits)', () => {

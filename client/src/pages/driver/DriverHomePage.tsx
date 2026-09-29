@@ -90,7 +90,6 @@ export function DriverHomePage() {
         try {
           location = await geolocation.request();
         } catch (locationError) {
-          // With a last known position the server can still dispatch; without one, explain how to fix it.
           if (status.currentLat == null || status.currentLng == null) {
             toast.error(t(locationHelp(locationError)));
             return;
@@ -154,7 +153,6 @@ export function DriverHomePage() {
     }
   }
 
-  // While online, follow the device and keep the server's dispatch position fresh (every ~10 s).
   const isOnline = status?.availabilityStatus === 'online';
   useEffect(() => setWatching(isOnline), [isOnline]);
   useEffect(() => {

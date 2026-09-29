@@ -9,9 +9,6 @@ import type { LatLng, RouteResult } from '../../types/geo.types';
 import { t } from '../../i18n';
 import { useTheme } from '../../theme';
 
-// Navigating away mid-zoom leaves Leaflet's zoom/pan animation steps running against a removed map; they read
-// the removed pane's position and throw "Cannot read properties of undefined (reading '_leaflet_pos')".
-// A removed map has no pane, so those late steps get (0, 0) and do nothing.
 type MapInternals = { _mapPane?: HTMLElement; _getMapPanePos: () => L.Point };
 const mapProto = L.Map.prototype as unknown as MapInternals;
 const originalGetMapPanePos = mapProto._getMapPanePos;
@@ -55,7 +52,6 @@ export function VectorTileLayer() {
 
     glMap.on('style.load', () => restyleLabels(glMap));
     if (glMap.isStyleLoaded()) restyleLabels(glMap);
-    // If the dark style can't be fetched, fall back to the light map rather than a blank one.
     if (theme === 'dark') {
       glMap.once('error', () => { if (!glMap.isStyleLoaded()) glMap.setStyle(VECTOR_STYLE_URLS.light); });
     }
@@ -103,7 +99,6 @@ const markerIcon = (kind: PinKind | 'user') => {
       + '<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z" fill="currentColor" stroke="#fff" stroke-width="1.5"/>'
       + `<circle cx="12" cy="12" r="${kind === 'driver' ? 4.5 : 6.5}" fill="#fff"/>${glyph}</svg>`,
     iconSize: [PIN_WIDTH, PIN_HEIGHT],
-    // Anchor at the pin's tip so it points at the exact coordinate.
     iconAnchor: [PIN_WIDTH / 2, PIN_HEIGHT],
   });
 };
@@ -112,8 +107,6 @@ interface ViewportControllerProps {
   points: LatLng[];
 }
 
-// Refit only when the points themselves change; parents re-render often (typing, polling) and a refit on
-// every render snapped the map back while the user was panning.
 function ViewportController({ points }: ViewportControllerProps) {
   const map = useMap();
   const pointsKey = points.map((point) => `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`).join(';');
@@ -157,7 +150,6 @@ interface MapViewProps {
 
 export function MapView({ pickup, dropoff, stops = [], driver, user, sos, onMapClick, className = '' }: MapViewProps) {
   const [roadRoute, setRoadRoute] = useState<RouteResult | null>(null);
-  // Callers rebuild the stops array every render; key the route fetch on its contents instead.
   const stopsKey = stops.map((stop) => `${stop.lat},${stop.lng}`).join(';');
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeUnavailable, setRouteUnavailable] = useState(false);

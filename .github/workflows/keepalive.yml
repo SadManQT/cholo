@@ -1,7 +1,5 @@
 name: Keep the API awake
 
-# Render's free plan sleeps after 15 idle minutes (the next rider then waits ~50 s), and Supabase's free plan
-# pauses after a quiet week. /health touches both. GitHub may delay scheduled runs by a few minutes.
 on:
   schedule:
     - cron: '*/10 * * * *'

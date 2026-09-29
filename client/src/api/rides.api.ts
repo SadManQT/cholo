@@ -31,7 +31,6 @@ export async function cancelRequest(publicId: string) {
   return response.data.data;
 }
 
-/** The rider's live search (if any) and upcoming scheduled rides. */
 export async function listActiveRequests() {
   const response = await apiClient.get<ApiSuccess<RideRequest[]>>('/ride-requests');
   return response.data.data;

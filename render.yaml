@@ -10,13 +10,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Supabase Postgres (free, doesn't expire). Use the Session pooler connection string — Render has no
-      # IPv6, and Supabase's direct connection is IPv6-only. Don't add ?sslmode=…; DATABASE_SSL handles TLS.
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_SSL
         value: "true"
-      # Supabase Storage for driver documents and profile photos (Render's disk is wiped on every restart).
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -33,7 +30,6 @@ services:
         value: 15m
       - key: REFRESH_TTL_DAYS
         value: 30
-      # Photon allows search-as-you-type; the public Nominatim server's usage policy forbids it.
       - key: GEO_PROVIDER
         value: photon
       - key: OSRM_BASE_URL
@@ -42,10 +38,8 @@ services:
         value: https://photon.komoot.io
       - key: NOMINATIM_BASE_URL
         value: https://nominatim.openstreetmap.org
-      # Only when OSRM_BASE_URL / PHOTON_BASE_URL point at your own servers (see docs/maps-scaling-tutorial.html).
       - key: GEO_UPSTREAM_TOKEN
         sync: false
-      # Drivers must be this close to the pickup, a stop or the drop-off to slide. 0 turns it off.
       - key: ARRIVAL_RADIUS_METERS
         value: "300"
       - key: PAYMENT_GATEWAY

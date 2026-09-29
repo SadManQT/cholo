@@ -1,6 +1,5 @@
 import { pool } from '../config/db.js';
 
-// The stored procedure checks the balance, inserts the withdrawal and debits the wallet (migration 0009).
 export async function request({ driverId, payoutAccountId, amount, fee }, client) {
   const called = await client.query(
     `CALL sp_request_withdrawal($1, $2, $3, $4, NULL)`,
@@ -58,7 +57,6 @@ export async function markApproved(withdrawalId, adminId, client) {
   return rows[0];
 }
 
-/** Finance sent the money: approved → paid, with the bKash/Nagad/bank transaction reference if given. */
 export async function markPaid(withdrawalId, adminId, reference, client) {
   const { rows } = await client.query(
     `UPDATE withdrawals SET status = 'paid', processed_by = $2, processed_at = now(), gateway_ref = $3
@@ -70,7 +68,6 @@ export async function markPaid(withdrawalId, adminId, reference, client) {
   return rows[0];
 }
 
-/** The payout bounced (wrong number, closed account): approved → failed; the caller returns the money. */
 export async function markFailed(withdrawalId, adminId, reason, client) {
   const { rows } = await client.query(
     `UPDATE withdrawals

@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  /* Palette as RGB channels so Tailwind's opacity modifiers (bg-cholo-700/30) keep working. */
   :root {
     color-scheme: light;
     --c-cholo-50: 233 245 241;
@@ -24,7 +23,6 @@
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  /* Dark theme: navy surfaces, light ink, and brand colours lifted enough to read on them. */
   :root.dark {
     color-scheme: dark;
     --c-cholo-50: 16 48 40;

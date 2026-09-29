@@ -115,7 +115,6 @@ export async function updateReport(adminId, id, { status, note }, ipAddress) {
 function csvCell(value) {
   if (value == null) return '';
   const text = value instanceof Date ? value.toISOString() : String(value);
-  // Leading =,+,-,@ would run as a formula in Excel; prefix with a quote to keep it text.
   const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }

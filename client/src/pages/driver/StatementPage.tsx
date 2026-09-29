@@ -7,7 +7,6 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { formatBDT, formatDateTime, formatMonth } from '../../utils/format';
 import { t } from '../../i18n';
 
-/** A printable earnings statement; "Print" doubles as "Save as PDF" in every browser. */
 export function StatementPage() {
   const { month = '' } = useParams();
   const [statement, setStatement] = useState<Statement | null>(null);

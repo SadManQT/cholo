@@ -1,6 +1,5 @@
 import { pool } from '../config/db.js';
 
-
 export async function getAccessLevel(userId, client = pool) {
   const { rows } = await client.query(
     `SELECT access_level AS "accessLevel" FROM admin_profiles WHERE user_id = $1`,
@@ -107,9 +106,6 @@ export async function getRevenueTrend(cityId, client = pool) {
   return rows;
 }
 
-// Top drivers and riders over completed trips.
-// $1 = only trips completed on or after this time, $2 = city id, or NULL for every city.
-// COALESCE($2, r.city_id) means "use $2 if given, otherwise match any city" (Oracle calls it NVL).
 export async function getTopDrivers({ since, cityId }, client = pool) {
   const { rows } = await client.query(
     `SELECT u.public_id AS "publicId",
@@ -211,7 +207,6 @@ export async function setUserStatus(userId, status, client, { until = null, reas
   return rows[0];
 }
 
-/** Lifts every time-limited suspension whose end has passed (optionally just one user's). */
 export async function reinstateExpiredSuspensions(client = pool, userId = null) {
   const { rows } = await client.query(
     `UPDATE users SET status = 'active', suspended_until = NULL, suspension_reason = NULL

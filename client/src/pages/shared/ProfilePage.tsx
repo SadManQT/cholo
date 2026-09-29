@@ -145,7 +145,6 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
   });
   const [password, setPassword] = useState({ current: '', next: '', confirm: '' });
 
-  // The wallet in `user` is a snapshot from sign-in; trips, withdrawals and refunds move it afterwards.
   const [liveWallet, setLiveWallet] = useState<{ balance: string } | null>(null);
   useEffect(() => {
     walletApi.getWallet().then(setLiveWallet).catch(() => setLiveWallet(null));

@@ -86,7 +86,6 @@ export async function markStarted(tripId, client) {
   return rows[0];
 }
 
-/** The driver slid "Start trip"; it starts once the rider confirms. Keeps the first request time. */
 export async function markStartRequested(tripId, client) {
   const { rows } = await client.query(
     `UPDATE trips SET start_requested_at = COALESCE(start_requested_at, now())
@@ -98,7 +97,6 @@ export async function markStartRequested(tripId, client) {
   return rows[0].startRequestedAt;
 }
 
-/** The rider confirmed they are with the driver. Keeps the first confirmation time. */
 export async function markPickupConfirmed(tripId, client) {
   const { rows } = await client.query(
     `UPDATE trips SET pickup_confirmed_at = COALESCE(pickup_confirmed_at, now())
@@ -110,7 +108,6 @@ export async function markPickupConfirmed(tripId, client) {
   return rows[0].pickupConfirmedAt;
 }
 
-/** The rider says the driver is not at the pickup: undo the arrival so the driver must arrive again. */
 export async function undoArrival(tripId, client) {
   const { rows } = await client.query(
     `UPDATE trips
@@ -423,7 +420,6 @@ export async function markStopArrived(tripId, stopOrder, client) {
   return rows[0];
 }
 
-// What a family member sees through a share link: no phone numbers, no passenger details.
 export async function findSharedView(tripId, client = pool) {
   const { rows } = await client.query(
     `SELECT t.trip_code AS "tripCode", t.status, t.assigned_at AS "assignedAt",
@@ -457,7 +453,6 @@ export async function findSharedView(tripId, client = pool) {
   return rows[0];
 }
 
-/** The driver's last saved position since the trip started, or null. */
 export async function findLastPingSince(tripId, since, client) {
   const { rows } = await client.query(
     `SELECT lat::float8 AS lat, lng::float8 AS lng FROM trip_location_pings
@@ -467,7 +462,6 @@ export async function findLastPingSince(tripId, since, client) {
   return rows[0] ?? null;
 }
 
-/** The driver's saved positions since the trip started, oldest first: the path actually driven. */
 export async function listPingsSince(tripId, since, client) {
   const { rows } = await client.query(
     `SELECT lat::float8 AS lat, lng::float8 AS lng FROM trip_location_pings
@@ -493,7 +487,6 @@ export async function markEndedEarly(tripId, { lat, lng }, client) {
   );
 }
 
-// Returns the time the rider asked to stop; the first request wins, a repeat changes nothing.
 export async function markEarlyStopRequested(tripId, client) {
   const { rows } = await client.query(
     `UPDATE trips SET early_stop_requested_at = COALESCE(early_stop_requested_at, now())
