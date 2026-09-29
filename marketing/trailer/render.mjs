@@ -29,7 +29,7 @@ if (mode === 'preview') {
     await stage.screenshot({ path: path.join(dir, 'prev', `t${t}.jpg`), type: 'jpeg', quality: 80 });
   }
 } else {
-  const fps = 30, total = 72, out = process.argv[3];
+  const fps = 30, total = 78, out = process.argv[3];
   const ff = spawn(process.env.FFMPEG, ['-y', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-', '-i', path.join(dir, 'music.wav'),
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   for (let i = 0; i < fps * total; i++) {
