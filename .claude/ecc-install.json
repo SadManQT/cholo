@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "target": "claude-project",
+  "profile": "minimal",
+  "modules": [
+    "skill-react-patterns",
+    "skill-react-performance",
+    "skill-react-testing",
+    "skill-vite-patterns",
+    "skill-frontend-a11y",
+    "skill-api-design",
+    "skill-postgres-patterns",
+    "skill-database-migrations",
+    "skill-docker-patterns",
+    "skill-deployment-patterns",
+    "skill-search-first"
+  ]
+}
