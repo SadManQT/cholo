@@ -51,7 +51,6 @@ before(async () => {
     if (typeof url === 'string' && url.startsWith(env.OSRM_BASE_URL)) {
       osrmUrls.push(url);
       const coordinates = url.split('/route/v1/driving/')[1].split('?')[0].split(';');
-      // 9.21 km for a direct trip, plus 3 km per extra stop.
       const distance = 9210 + (coordinates.length - 2) * 3000;
       return {
         ok: true,
@@ -94,7 +93,6 @@ function call(method, path, { body, token, raw, contentType } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -195,7 +193,6 @@ async function acceptAndComplete(driver, offerId) {
   return tripCode;
 }
 
-
 test('drivers can only mark arrival, reach a stop and complete within 300 m of the place', async () => {
   const rider = await createUser();
   const driver = await createOnlineDriver({ lat: 23.80, lng: 90.41 });
@@ -204,7 +201,6 @@ test('drivers can only mark arrival, reach a stop and complete within 300 m of t
   const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
   const code = accepted.data.trip.publicCode;
 
-  // The online position is ~1 km from the pickup and fresh: refused, with the distance.
   const far = await call('POST', `/trips/${code}/arrived`, { token: driver.token });
   assert.equal(far.status, 422);
   const farBody = (await far.json()).error;
@@ -212,11 +208,9 @@ test('drivers can only mark arrival, reach a stop and complete within 300 m of t
   assert.ok(farBody.details.distanceMeters > 800);
   assert.equal(farBody.details.radiusMeters, 300);
 
-  // A stale position counts as no position.
   await db.query(`UPDATE driver_availability SET last_ping_at = now() - interval '10 minutes' WHERE driver_id = $1`, [driver.userId]);
   assert.equal((await (await call('POST', `/trips/${code}/arrived`, { token: driver.token })).json()).error.code, 'LOCATION_NEEDED_TO_ARRIVE');
 
-  // Reported 100 m from the pickup: accepted, and it becomes the driver's position.
   assert.equal((await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: { lat: PICKUP.lat + 0.0009, lng: PICKUP.lng } })).status, 200);
   await riderConfirmsPickup(code);
   assert.equal((await call('POST', `/trips/${code}/start`, { token: driver.token })).status, 200);
@@ -240,7 +234,6 @@ test('"Stop here": only the rider can ask, only during the ride, and the driver 
   const accepted = await (await call('POST', `/driver/offers/${offer.id}/respond`, { token: driver.token, body: { response: 'accepted' } })).json();
   const code = accepted.data.trip.publicCode;
 
-  // Not riding yet: nothing to stop.
   assert.equal((await (await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).json()).error.code, 'BAD_TRANSITION');
   await call('POST', `/trips/${code}/arrived`, { token: driver.token, body: PICKUP });
   await riderConfirmsPickup(code);
@@ -254,7 +247,6 @@ test('"Stop here": only the rider can ask, only during the ride, and the driver 
   assert.equal(asked.status, 200);
   const askedAt = (await asked.json()).data.earlyStopRequestedAt;
   assert.ok(askedAt);
-  // Asking twice keeps the first time and doesn't notify the driver again.
   assert.equal((await (await call('POST', `/trips/${code}/stop-request`, { token: rider.token })).json()).data.earlyStopRequestedAt, askedAt);
   const { rows: inbox } = await db.query(
     `SELECT title FROM notifications WHERE user_id = $1 AND title = 'Your rider wants to get out here'`,
@@ -323,7 +315,6 @@ async function drive(tripId, points) {
   }
 }
 
-// Points evenly spaced on the straight line between two places.
 const line = (from, to, steps) => Array.from({ length: steps + 1 }, (_, i) => ({
   lat: from.lat + ((to.lat - from.lat) * i) / steps, lng: from.lng + ((to.lng - from.lng) * i) / steps,
 }));

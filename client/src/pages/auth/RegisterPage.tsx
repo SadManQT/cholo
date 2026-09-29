@@ -12,7 +12,6 @@ const MAX_PASSWORD_LENGTH = 72;
 type Field = 'fullName' | 'phone' | 'password';
 type FieldErrors = Partial<Record<Field, string>>;
 
-// Mirrors server/src/validators/auth.schema.js so users see the real reason before submitting.
 function validateField(field: Field, value: string): string | undefined {
   if (field === 'fullName') {
     if (!value.trim()) return t('Enter your full name');

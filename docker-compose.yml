@@ -9,11 +9,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
-      # named volume: the actual data directory, survives `docker compose down`
       - cholo_pgdata:/var/lib/postgresql/data
-      # bind mount: runs once against an EMPTY data dir (first boot only).
-      # `docker compose down -v` wipes the volume to force a clean re-init
-      # after editing database/schema.sql.
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seeds/seed.reference.sql:/docker-entrypoint-initdb.d/02-seed-reference.sql:ro
     healthcheck:

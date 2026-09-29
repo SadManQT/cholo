@@ -8,8 +8,6 @@ import type { User } from '../types/user.types';
 import { AuthContext } from './auth';
 import { language, setLanguage, storedLanguage } from '../i18n';
 
-// A language picked on this device wins and is saved to the profile; otherwise the profile's choice applies
-// (which reloads the page once into that language).
 function syncLanguage(me: User) {
   const chosenHere = storedLanguage();
   if (chosenHere && chosenHere !== me.preferredLanguage) {

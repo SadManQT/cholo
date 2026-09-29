@@ -29,7 +29,6 @@ export function InviteFriendsCard() {
         toast.success(t('Invite copied. Paste it into any chat.'));
       }
     } catch {
-      // The user closed the share sheet.
     }
   }
 

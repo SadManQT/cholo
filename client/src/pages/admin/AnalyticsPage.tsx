@@ -7,7 +7,6 @@ import { dhakaDate, formatBDT, formatDate, formatMonth } from '../../utils/forma
 
 type Row = AnalyticsReport['rows'][number];
 
-// Validated pair (CVD-safe on the white surface): blue = drivers' share, green = Cholo's commission.
 const DRIVER_COLOR = '#2a78d6';
 const PLATFORM_COLOR = '#1baf7a';
 
@@ -45,7 +44,6 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint: strin
   );
 }
 
-/** Ranked horizontal bars: label on the left, value on the right, bar underneath. */
 function BarList({ items }: { items: Array<{ key: string; label: string; value: number; display: string; detail?: string }> }) {
   if (items.length === 0) return <NoData />;
   const max = Math.max(...items.map((item) => item.value), 1);
@@ -70,7 +68,6 @@ function BarList({ items }: { items: Array<{ key: string; label: string; value: 
   );
 }
 
-/** Vertical columns over time. Each column may be split into stacked segments (bottom first). */
 function ColumnChart({ columns, label }: {
   label: string;
   columns: Array<{ key: string; label: string; value: string; segments: Array<{ value: number; color: string }>; tooltip: string[] }>;

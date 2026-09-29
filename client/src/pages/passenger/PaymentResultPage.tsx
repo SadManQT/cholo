@@ -12,8 +12,6 @@ const POLL_MS = 2_000;
 
 const MAX_POLLS = 15;
 
-// Where the gateway sends the rider back. The server settles the payment (verified with SSLCommerz) before
-// redirecting here; if its confirmation lags, poll briefly for the IPN to land.
 export function PaymentResultPage() {
   const { publicId = '' } = useParams();
   const [searchParams] = useSearchParams();
@@ -41,7 +39,6 @@ export function PaymentResultPage() {
   try {
     returnTo = sessionStorage.getItem(TOPUP_RETURN_KEY);
   } catch {
-    // Storage blocked: fall back to the wallet.
   }
   const backTo = payment?.purpose === 'trip' && payment.tripCode
     ? { to: `/trips/${payment.tripCode}`, label: t('Back to your trip') }
@@ -85,7 +82,7 @@ export function PaymentResultPage() {
             <h1 className="text-2xl font-bold">{title}</h1>
             <p className="mt-1 text-ink-500">{body}</p>
           </div>
-          <Link to={backTo.to} onClick={() => { try { sessionStorage.removeItem(TOPUP_RETURN_KEY); } catch { /* ignore */ } }} className="inline-flex h-11 items-center rounded-xl bg-cholo-700 px-5 font-semibold text-white hover:bg-cholo-800">{backTo.label}</Link>
+          <Link to={backTo.to} onClick={() => { try { sessionStorage.removeItem(TOPUP_RETURN_KEY); } catch { } }} className="inline-flex h-11 items-center rounded-xl bg-cholo-700 px-5 font-semibold text-white hover:bg-cholo-800">{backTo.label}</Link>
         </>
       )}
     </main>

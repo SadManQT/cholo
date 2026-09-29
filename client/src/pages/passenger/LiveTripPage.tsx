@@ -69,8 +69,6 @@ export function LiveTripPage() {
     };
   }, [socket]);
 
-  // Follow server-pushed status changes only; also reacting to `trip` made the page and the tracking hook
-  // correct each other forever when it opened on a trip already past "assigned".
   const lastTrackedStatus = useRef(tracking.status);
   useEffect(() => {
     if (lastTrackedStatus.current === tracking.status) return;
@@ -87,8 +85,6 @@ export function LiveTripPage() {
     return () => window.clearTimeout(timer);
   }, [code, navigate, tracking.status]);
 
-  // The trip only starts once the rider agrees they are in the car, so a driver can't claim a pickup
-  // they never made. Whoever acts second (driver's "Start trip" or this confirmation) starts it.
   const handshake = tracking.handshake ?? (trip && {
     startRequestedAt: trip.startRequestedAt, pickupConfirmedAt: trip.pickupConfirmedAt, arrivalDisputedAt: trip.arrivalDisputedAt,
   });
@@ -146,7 +142,6 @@ export function LiveTripPage() {
     }
   }
 
-  // Getting out before the drop-off: the rider asks first, then the driver can end the trip where they are.
   async function requestStop() {
     if (!code) return;
     setMutating(true);
@@ -162,7 +157,6 @@ export function LiveTripPage() {
     }
   }
 
-  // Family can follow the trip without an account. The share sheet on phones, the clipboard elsewhere.
   async function shareTrip() {
     if (!code || !trip) return;
     setSharing(true);

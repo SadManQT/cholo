@@ -14,7 +14,6 @@ type LoginResult =
   | { accessToken: string; user: SessionUser; twoFactorRequired?: undefined }
   | { twoFactorRequired: true; challengeToken: string };
 
-/** Returns a challenge token when the account needs an authenticator code, otherwise signs in. */
 export async function login(phone: string, password: string): Promise<{ challengeToken: string } | null> {
   const { data } = await apiClient.post<ApiSuccess<LoginResult>>('/auth/login', { phone, password });
   if (data.data.twoFactorRequired) return { challengeToken: data.data.challengeToken };

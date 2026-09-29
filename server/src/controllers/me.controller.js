@@ -65,7 +65,6 @@ export const getReferral = asyncHandler(async (request, response) => {
 });
 
 export const deleteAccount = asyncHandler(async (request, response) => {
-  // The refresh token is revoked, so the leftover cookie can no longer mint a session.
   await meService.deleteAccount(request.user.id, request.body);
   response.status(204).end();
 });

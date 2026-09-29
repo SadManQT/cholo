@@ -15,7 +15,6 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().max(65_535).default(3000),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').url('DATABASE_URL must be a valid URL'),
-  // One or more comma-separated client URLs (e.g. production + a custom domain). The first is used for redirects.
   CLIENT_ORIGIN: z.string().default('http://localhost:5173')
     .transform((value) => value.split(',').map((origin) => origin.trim().replace(/\/$/, '')).filter(Boolean))
     .pipe(z.array(z.string().url('CLIENT_ORIGIN must be a valid URL (comma-separate several)')).min(1)),
@@ -27,8 +26,6 @@ const envSchema = z.object({
   OSRM_BASE_URL: z.string().url().default('https://router.project-osrm.org'),
   NOMINATIM_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
   PHOTON_BASE_URL: z.string().url().default('https://photon.komoot.io'),
-  // Only for your own routing/geocoding servers: sent as "Authorization: Bearer …" so they can reject
-  // everyone else. Leave unset with the public servers, or the token would leak to them.
   GEO_UPSTREAM_TOKEN: z.preprocess(emptyToUndefined, z.string().min(16).optional()),
 
   PAYMENT_GATEWAY: z.enum(['sslcommerz']).default('sslcommerz'),
@@ -37,17 +34,11 @@ const envSchema = z.object({
   SSLCOMMERZ_STORE_PASSWORD: z.string().default('qwerty'),
   PUBLIC_API_ORIGIN: z.string().url().default('http://localhost:3000'),
   UPLOAD_DIR: z.string().default(resolve(currentDirectory, '../../uploads')),
-  // Hosted Postgres (Supabase) requires TLS; local Docker Postgres does not.
   DATABASE_SSL: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
-  // When set, uploads go to Supabase Storage instead of the local disk (Render's disk is wiped on restart).
   SUPABASE_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   SUPABASE_SERVICE_ROLE_KEY: z.preprocess(emptyToUndefined, z.string().min(20).optional()),
   SUPABASE_BUCKET: z.string().default('uploads'),
-  // Drivers can only mark arrival, reach a stop or complete a trip within this distance of the place.
-  // 0 turns the check off. one radius for all three; tune per place type if GPS in dense areas fights it.
   ARRIVAL_RADIUS_METERS: z.coerce.number().int().min(0).max(5_000).default(300),
-  // A driver who owes more than this in commission from cash trips can't go online or accept rides until they
-  // pay it down (top up the wallet). 0 turns the limit off.
   COMMISSION_DEBT_LIMIT: z.coerce.number().min(0).max(1_000_000).default(500),
 });
 

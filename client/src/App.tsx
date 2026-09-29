@@ -55,7 +55,6 @@ function App() {
     <>
       <Suspense fallback={<FullScreenSpinner />}>
         <Routes>
-        {}
         <Route path="/welcome" element={<HomePage />} />
         <Route path="/share/:token" element={<SharedTripPage />} />
 
@@ -67,7 +66,6 @@ function App() {
           <Route path="/reset" element={<Navigate to="/forgot-password" replace />} />
         </Route>
 
-        {}
         <Route
           path="/driver/apply"
           element={

@@ -9,7 +9,6 @@ async function requireZoneAdmin(adminId, client) {
   if (!['super', 'ops'].includes(level)) throw new AppError(403, 'FORBIDDEN_ACCESS_LEVEL');
 }
 
-// Admins draw an open ring of points; GeoJSON wants it closed, as [lng, lat] pairs.
 function toPolygon(points) {
   if (!points) return undefined;
   const ring = points.map(({ lat, lng }) => [lng, lat]);

@@ -1,4 +1,3 @@
-# Logs
 logs
 *.log
 npm-debug.log*
@@ -12,12 +11,8 @@ dist
 dist-ssr
 *.local
 
-# Same convention as server/ — .env.example is committed, .env is not
-# (nothing here is actually secret, VITE_* vars ship to the bundle either
-# way, but one gitignore rule for "local env overrides" beats two conventions).
 .env
 
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea

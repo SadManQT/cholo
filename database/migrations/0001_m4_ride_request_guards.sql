@@ -1,5 +1,3 @@
--- Bring databases created before M4 up to the current schema.
--- Safe to run after schema.sql as well as against an older persistent volume.
 BEGIN;
 
 DROP FUNCTION IF EXISTS fn_current_pricing(SMALLINT, SMALLINT, TIMESTAMPTZ);

@@ -17,7 +17,6 @@ interface DocumentSlotProps {
   latest: DriverDocument | undefined;
   askNumber?: boolean;
   askExpiry?: boolean;
-  /** Longest validity the document can legally have, in years from today. */
   maxExpiryYears?: number;
   onSubmit: (input: DocumentInput) => Promise<void>;
 }
@@ -32,7 +31,6 @@ export function DocumentSlot({ label, hint, latest, askNumber = false, askExpiry
   const [editing, setEditing] = useState(false);
   const flag = latest ? expiryFlag(latest.expiryDate) : null;
   const maxExpiry = maxExpiryDate(maxExpiryYears);
-  // A copy still waiting for review is edited in place (new file optional); once reviewed, a new copy is uploaded.
   const pending = latest?.status === 'pending';
   const formOpen = pending ? editing : Boolean(file);
 

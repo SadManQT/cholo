@@ -108,9 +108,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-surface-alt text-ink-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6">
-        <Link to="/welcome" aria-label={t('Cholo home')} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700">
-          <CholoLogo className="h-11 sm:h-14" />
-        </Link>
+        <span className="text-xl font-bold text-cholo-700">Cholo</span>
         <div className="flex items-center gap-3 sm:gap-4">
           <ThemeSwitch />
           <LanguageSwitch />
@@ -120,7 +118,6 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        {}
         <section className="relative grid gap-10 py-10 md:py-16 lg:grid-cols-2">
           <div>
             <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">

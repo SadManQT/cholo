@@ -47,6 +47,5 @@ export const exportCsv = asyncHandler(async (request, response) => {
   const csv = await marketplaceService.exportCsv(request.user.id, kind, { from, to }, request.ip);
   response.set('Content-Type', 'text/csv; charset=utf-8');
   response.set('Content-Disposition', `attachment; filename="cholo-${kind}-${from}-to-${to}.csv"`);
-  // BOM so Excel opens Bangla names and ৳ correctly.
   response.send(`﻿${csv}`);
 });

@@ -5,8 +5,6 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-// Chrome fires beforeinstallprompt once, often before any account screen mounts, so capture it at startup
-// (main.tsx imports this module) and let components subscribe.
 let deferred: BeforeInstallPromptEvent | null = null;
 let installed = typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches;
 const listeners = new Set<() => void>();

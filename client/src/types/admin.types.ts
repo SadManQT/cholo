@@ -25,7 +25,6 @@ export interface ReviewDocument {
   rejectionReason: string | null;
 }
 
-/** A document whose newest copy is waiting for review, with who it belongs to. */
 export interface PendingDocument extends ReviewDocument {
   vehicle: boolean;
   owner: string;
@@ -164,7 +163,6 @@ export interface SosAlert {
   triggeredByPhone: string;
   tripCode: string | null;
   acknowledgedByName: string | null;
-  /** Latest GPS ping of the linked trip, if any — the rider's live position. */
   liveLat: number | null;
   liveLng: number | null;
   liveAt: string | null;
@@ -208,7 +206,6 @@ export interface Leaderboard {
   riders: TopRider[];
 }
 
-/** One analytics report and the rows it returned. */
 export interface AnalyticsReport {
   id: string;
   title: string;

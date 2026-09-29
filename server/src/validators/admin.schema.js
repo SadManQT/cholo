@@ -222,8 +222,6 @@ export const createSurgeSchema = z.object({
   categoryId: z.coerce.number().int().positive().nullable().optional(),
   multiplier: z.number().min(1.1, 'Surge starts at 1.1×').max(3, 'Surge is capped at 3×'),
   reason: z.enum(['demand', 'weather', 'event', 'peak_hour']),
-  // Surge is a short-term lever: it may start up to an hour back (to cover a spike already underway)
-  // and is planned at most 30 days ahead.
   startsAt: dateTimeWithin(1 / 8760, 30 / 365.25).optional(),
   endsAt: dateTimeWithin(10, 60 / 365.25).nullable().optional(),
 }).refine((data) => !data.endsAt || new Date(data.endsAt) > new Date(data.startsAt ?? Date.now()), {

@@ -34,7 +34,6 @@ const ACCOUNT_TYPE_LABELS: Record<PayoutAccountType, string> = { bkash: 'bKash',
 
 const MIN_WITHDRAWAL = 50;
 
-/** What each stage means for the driver's money. */
 const STATUS_NOTES: Partial<Record<WithdrawalStatus, string>> = {
   requested: t('Waiting for review. The amount is held from your wallet.'),
   approved: t('Approved — the money is being sent to your account.'),
@@ -144,7 +143,6 @@ export function WithdrawalsPage() {
     } catch (thrown) {
       toast.error(getApiErrorMessage(thrown, t('Could not request that withdrawal.')));
     } finally {
-      // The balance changed (held) or the server knows better (frozen, short): show what it says now.
       walletApi.getWallet().then(setWallet).catch(() => {});
       walletApi.listTransactions({ limit: 8 }).then((result) => setActivity(result.data)).catch(() => {});
       setSubmitting(false);
@@ -217,7 +215,6 @@ export function WithdrawalsPage() {
                 ))}
               </select>
             </label>
-            {}
             <div>
               <Input
                 label={t('Amount (৳)')}

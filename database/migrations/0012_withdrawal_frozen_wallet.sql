@@ -1,5 +1,3 @@
--- sp_request_withdrawal (0009) now also refuses a frozen wallet: freezing a wallet has to stop money
--- leaving it, not only trip payments and top-ups. Same signature, so the server call is unchanged.
 CREATE OR REPLACE PROCEDURE sp_request_withdrawal(
     p_driver_id         BIGINT,
     p_payout_account_id BIGINT,
@@ -13,8 +11,6 @@ DECLARE
     v_balance   NUMERIC(12,2);
     v_status    wallet_status;
 BEGIN
-    -- FOR UPDATE: a second withdrawal for the same driver waits here, so two requests can't both spend
-    -- the same balance.
     SELECT id, balance, status INTO v_wallet_id, v_balance, v_status
     FROM wallets
     WHERE user_id = p_driver_id

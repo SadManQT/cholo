@@ -3,8 +3,6 @@ import { t } from '../../i18n';
 
 const SLOW_AFTER_MS = 4_000;
 
-// The API sleeps when nobody has used it for a while (free hosting) and takes up to a minute to wake. After a
-// few seconds say so, so a first load doesn't look like a broken site.
 export function FullScreenSpinner() {
   const [slow, setSlow] = useState(false);
   useEffect(() => {

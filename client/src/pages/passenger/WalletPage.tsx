@@ -20,7 +20,6 @@ export function WalletPage() {
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
-  // Arriving from a trip that the wallet doesn't cover: pre-fill the shortfall and come back to that trip.
   const [searchParams] = useSearchParams();
   const neededAmount = Number(searchParams.get('amount')) || undefined;
   const returnTo = searchParams.get('returnTo');

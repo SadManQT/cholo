@@ -3,7 +3,6 @@ import { useTheme } from '../../theme';
 import type { ThemePreference } from '../../theme';
 import { MoonIcon, SunIcon } from './icons';
 
-/** One-tap light ⇄ dark toggle for the welcome and sign-in screens. */
 export function ThemeSwitch({ className = '' }: { className?: string }) {
   const { theme, setPreference } = useTheme();
   const next = theme === 'dark' ? 'light' : 'dark';
@@ -27,7 +26,6 @@ const OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: t('System') },
 ];
 
-/** System / Light / Dark picker for the Account page. Saved on this device only. */
 export function ThemePicker() {
   const { preference, setPreference } = useTheme();
   return (

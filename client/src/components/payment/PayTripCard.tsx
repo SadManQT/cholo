@@ -24,8 +24,6 @@ const CONTINUE_LABEL: Record<Exclude<PayMethod, 'cash' | 'wallet'>, string> = {
   card: t('Continue to card payment'),
 };
 
-// Shown to the passenger for a completed trip that isn't settled yet. Wallet trips are charged at drop-off,
-// so this appears for pay-later methods, or when the wallet didn't cover the final fare.
 export function PayTripCard({ tripCode, total, preferred, onPaid }: PayTripCardProps) {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [walletLoaded, setWalletLoaded] = useState(false);
@@ -48,7 +46,6 @@ export function PayTripCard({ tripCode, total, preferred, onPaid }: PayTripCardP
         : shortBy > 0 ? t('Balance {0}, {1} short', formatBDT(wallet.balance), formatBDT(shortBy))
           : null;
 
-  // Never leave an unusable wallet selected (the rider booked with wallet but the balance no longer covers it).
   useEffect(() => {
     if (walletLoaded && walletReason && method === 'wallet') setMethod('bkash');
   }, [walletLoaded, walletReason, method]);

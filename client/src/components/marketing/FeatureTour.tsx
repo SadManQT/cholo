@@ -65,7 +65,6 @@ export function FeatureTour({ features }: FeatureTourProps) {
     <div ref={sectionRef} className="relative">
       {sectionInView && (
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-gradient-to-br from-cholo-50 via-surface-alt to-cholo-50">
-          {}
           <div className="absolute inset-0 hidden items-center justify-center pl-[38%] lg:flex">
             <AnimatePresence mode="wait">
               <motion.div

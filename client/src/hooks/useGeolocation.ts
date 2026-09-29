@@ -28,7 +28,6 @@ const FALLBACK_GEO_OPTIONS: PositionOptions = {
   maximumAge: 5 * 60_000,
 };
 
-/** What to tell someone whose location could not be read, by the browser's error code. */
 export function locationHelp(error: unknown) {
   const code = (error as GeolocationPositionError | undefined)?.code;
   if (code === 1) return 'Location is blocked for Cholo. Click the location icon in the address bar, choose Allow, then try again.';
@@ -63,7 +62,6 @@ export function useGeolocation({ watch = false }: { watch?: boolean } = {}) {
       setError(geolocationError.message || 'Could not read your location.');
       reject(geolocationError);
     };
-    // Laptops without GPS often time out asking for a precise fix; a Wi-Fi-level fix is plenty for Cholo.
     navigator.geolocation.getCurrentPosition(succeed, (firstError) => {
       if (firstError.code === firstError.PERMISSION_DENIED) return fail(firstError);
       navigator.geolocation.getCurrentPosition(succeed, fail, FALLBACK_GEO_OPTIONS);
@@ -84,7 +82,6 @@ export function useGeolocation({ watch = false }: { watch?: boolean } = {}) {
         setState(stateForError(geolocationError));
         setError(geolocationError.message || 'Could not read your location.');
       },
-      // No timeout: a watch should wait for the next fix, not error every 12 s on a laptop without GPS.
       { enableHighAccuracy: true, maximumAge: 5_000 },
     );
 

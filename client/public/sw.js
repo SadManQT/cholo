@@ -1,6 +1,3 @@
-// Cholo service worker: makes the app installable and opens instantly on repeat visits.
-// Only this site's own files are cached. API calls go to another origin and are never touched,
-// so ride, payment and wallet data is always live.
 const CACHE = 'cholo-shell-v1';
 
 self.addEventListener('install', (event) => {
@@ -21,7 +18,6 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Pages: network first so a deploy shows up immediately; the cached shell only when offline.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -35,7 +31,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Built assets have content hashes in their names, so a cached copy is never stale.
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith(
       caches.match(request).then((cached) => cached ?? fetch(request).then((response) => {

@@ -1,9 +1,5 @@
 import { pool } from '../config/db.js';
 
-// Ten admin reports, each one plain SQL. The admin Analytics page shows each question, its answer and
-// the exact SQL below. $1 is a value sent separately from the SQL, like :month in Oracle; `params`
-// says what it is for each report (the chosen month, or the minimum number of trips).
-
 export const REPORTS = [
   {
     id: 'peak-hour',

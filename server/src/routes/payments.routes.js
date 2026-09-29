@@ -7,8 +7,6 @@ import { paymentPublicIdParamsSchema, paymentReturnQuerySchema } from '../valida
 
 const router = Router();
 
-// The gateway sends the customer's browser here (SSLCommerz uses a POST form), so no bearer token: it only
-// verifies with the gateway and redirects back to the client.
 router.all(
   '/:publicId/return',
   express.urlencoded({ extended: true }),

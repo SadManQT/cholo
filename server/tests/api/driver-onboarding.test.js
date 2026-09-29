@@ -243,7 +243,6 @@ test('driver document uploads preserve history and reject invalid date ranges', 
       expiryDate: '2035-01-01',
     },
   });
-  // Once reviewed, a new upload is a new version (a still-pending copy would be edited in place instead).
   await databaseClient.query(`UPDATE driver_documents SET status = 'approved' WHERE driver_id = $1`, [driver.userId]);
   const second = await request('POST', '/driver/documents', {
     accessToken: driver.driverToken,
@@ -297,7 +296,6 @@ test('a document waiting for review is edited in place, and the admin queue show
   const list = await (await request('GET', '/driver/documents', { accessToken: driver.driverToken })).json();
   assert.equal(list.data.length, 1);
 
-  // An already-approved driver's new upload still reaches the review queue.
   await databaseClient.query(`UPDATE driver_profiles SET verification_status = 'approved' WHERE user_id = $1`, [driver.userId]);
   await databaseClient.query(`UPDATE driver_documents SET status = 'approved' WHERE driver_id = $1`, [driver.userId]);
   const renewed = await (await request('POST', '/driver/documents', {

@@ -21,7 +21,6 @@ let phoneCounter = 0;
 before(async () => {
   db = await pool.connect();
   await db.query('BEGIN');
-  // Each bare query gets its own savepoint so an expected constraint error (a 409) doesn't abort the test transaction.
   mock.method(pool, 'query', async (sql, values) => {
     await db.query('SAVEPOINT launch_query');
     try {

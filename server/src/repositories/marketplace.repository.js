@@ -1,7 +1,5 @@
 import { pool } from '../config/db.js';
 
-// Admin-managed marketplace levers: promo codes, surge rules and finance exports.
-
 const ADMIN_PROMO_COLUMNS = `
   p.id, p.code, p.description, p.promo_type AS "promoType", p.value::float8 AS value,
   p.max_discount::float8 AS "maxDiscount", p.min_fare::float8 AS "minFare",
@@ -128,7 +126,6 @@ export async function zoneExists(zoneId, client = pool) {
   return rowCount > 0;
 }
 
-// Finance exports. Each returns flat rows whose keys become the CSV header. Dates are Dhaka days.
 const EXPORT_QUERIES = Object.freeze({
   trips: `
     SELECT t.trip_code AS "tripCode", t.status, c.name AS city, vc.name AS category,

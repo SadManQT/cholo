@@ -57,7 +57,6 @@ function tellDriver(withdrawal, title, body, client) {
   }, client);
 }
 
-/** Puts a withdrawn amount back in the driver's wallet (rejected, or the payout failed). */
 async function returnHold(withdrawal, idempotencyKey, note, client) {
   const wallet = await walletRepo.getByUserId(withdrawal.driverId, client);
   await walletRepo.insertTransaction({
@@ -126,7 +125,6 @@ export async function rejectWithdrawal(adminId, withdrawalId, reason, ipAddress)
   });
 }
 
-/** Finance has sent the money (approved → paid). */
 export async function markWithdrawalPaid(adminId, withdrawalId, reference, ipAddress) {
   await requireFinanceLevel(adminId);
 
@@ -147,7 +145,6 @@ export async function markWithdrawalPaid(adminId, withdrawalId, reference, ipAdd
   });
 }
 
-/** The payout didn't go through (approved → failed): the money goes back to the driver's wallet. */
 export async function markWithdrawalFailed(adminId, withdrawalId, reason, ipAddress) {
   await requireFinanceLevel(adminId);
 

@@ -50,7 +50,6 @@ export async function findById(id, client = pool) {
   return rows[0];
 }
 
-/** Restricted zone names containing either point, if any. */
 export async function findRestrictedAt(cityId, pickup, dropoff, client = pool) {
   const { rows } = await client.query(
     `SELECT name,

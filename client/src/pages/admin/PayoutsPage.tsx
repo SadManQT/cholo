@@ -10,8 +10,6 @@ import { staggerDelaySeconds } from '../../utils/stagger';
 
 const ACCOUNT_TYPE_LABELS = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank' } as const;
 
-// A withdrawal moves requested → approved (finance checks it) → paid (finance sent the money). Rejecting a
-// request, or marking an approved payout failed, returns the amount to the driver's wallet.
 type Stage = 'requested' | 'approved';
 const STAGES: { value: Stage; label: string; hint: string; empty: string }[] = [
   { value: 'requested', label: 'To review', hint: 'New requests. Approve to send, or reject with a reason.', empty: 'Every requested withdrawal has been reviewed.' },

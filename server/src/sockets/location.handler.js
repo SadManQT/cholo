@@ -19,7 +19,6 @@ export function registerLocationHandler(io, socket) {
 
     const tripId = await tripsRepo.findActiveTripIdForUser(socket.user.id);
     if (!tripId) {
-      // Online and waiting: keep the dispatch position fresh so offers go to where the driver is now.
       await withTransaction((client) => driversRepo.updateLocation(socket.user.id, parsed.data, client));
       return;
     }
