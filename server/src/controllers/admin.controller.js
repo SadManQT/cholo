@@ -1,3 +1,4 @@
+import * as earningsRepo from '../repositories/earnings.repository.js';
 import * as adminService from '../services/admin.service.js';
 import * as withdrawalsService from '../services/withdrawals.service.js';
 import * as disputesService from '../services/disputes.service.js';
@@ -224,6 +225,11 @@ export const updateZone = asyncHandler(async (request, response) => {
 export const deleteZone = asyncHandler(async (request, response) => {
   await zonesService.deleteZone(request.user.id, request.params.id, request.ip);
   response.status(204).end();
+});
+
+export const getCommissionReport = asyncHandler(async (request, response) => {
+  const data = await earningsRepo.getCommissionReport(request.query);
+  response.json({ success: true, data });
 });
 
 export const getLeaderboard = asyncHandler(async (request, response) => {

@@ -7,6 +7,7 @@ import app from '../../src/app.js';
 import { pool } from '../../src/config/db.js';
 import { env } from '../../src/config/env.js';
 import { signAccessToken } from '../../src/utils/tokens.js';
+import { dhakaDate } from '../../src/utils/dhakaDate.js';
 
 let server;
 let baseUrl;
@@ -1103,4 +1104,34 @@ test('a driver owing more than the commission limit cannot go online or accept a
   await creditWallet(driver.userId, env.COMMISSION_DEBT_LIMIT + 1);
   const back = await request('PUT', '/driver/availability', { accessToken: driver.accessToken, body: { status: 'online', currentLat: PICKUP.lat, currentLng: PICKUP.lng } });
   assert.equal(back.status, 200);
+});
+
+test('admin commission report sums the ledger for the chosen days', async (t) => {
+  const setup = await createAssignedTrip(t);
+  await completeAssignedTrip(setup.tripCode, setup.driver.accessToken);
+  seed += 1;
+  const { rows: [admin] } = await pool.query(
+    `INSERT INTO users (full_name, phone, password_hash, phone_verified_at) VALUES ('Report Admin', $1, 'x', now()) RETURNING id`,
+    [`013${String(seed).slice(-8)}`],
+  );
+  await pool.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE name = 'ADMIN'`, [admin.id]);
+  await pool.query(`INSERT INTO admin_profiles (user_id, designation, access_level) VALUES ($1, 'Finance', 'finance')`, [admin.id]);
+  const token = signAccessToken({ userId: admin.id, roles: ['ADMIN'], sessionId: admin.id });
+
+  const today = dhakaDate();
+  const response = await request('GET', `/admin/commissions?from=${today}&to=${today}`, { accessToken: token });
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  const { rows: [expected] } = await pool.query(
+    `SELECT count(*)::int AS rides, sum(commission_amount)::float8 AS commission, sum(gross_fare)::float8 AS gross
+     FROM driver_earnings WHERE earned_at::date = $1`, [today],
+  );
+  assert.equal(data.totals.rides, expected.rides);
+  assert.equal(Math.round(data.totals.commissionTotal * 100), Math.round(expected.commission * 100));
+  assert.equal(Math.round(data.totals.grossTotal * 100), Math.round(expected.gross * 100));
+  assert.equal(data.daily[0].day, today);
+  assert.ok(data.byCategory.length >= 1 && data.byMethod.some((row) => row.method === 'cash'));
+
+  const bad = await request('GET', `/admin/commissions?from=${today}&to=2020-01-01`, { accessToken: token });
+  assert.equal(bad.status, 422);
 });

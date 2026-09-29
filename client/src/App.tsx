@@ -47,6 +47,7 @@ const SurgePage = lazy(() => import('./pages/admin/SurgePage').then((module) => 
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage').then((module) => ({ default: module.ReportsPage })));
 const StatementsPage = lazy(() => import('./pages/driver/StatementsPage').then((module) => ({ default: module.StatementsPage })));
 const StatementPage = lazy(() => import('./pages/driver/StatementPage').then((module) => ({ default: module.StatementPage })));
+const CommissionsPage = lazy(() => import('./pages/admin/CommissionsPage').then((module) => ({ default: module.CommissionsPage })));
 const AnalyticsPage = lazy(() => import('./pages/admin/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })));
 const ZonesPage = lazy(() => import('./pages/admin/ZonesPage').then((module) => ({ default: module.ZonesPage })));
 
@@ -137,6 +138,7 @@ function App() {
           <Route path="surge" element={<SurgePage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="commissions" element={<CommissionsPage />} />
           <Route path="account" element={<ProfilePage adminMode />} />
           <Route path="payouts" element={<PayoutsPage />} />
           <Route path="disputes" element={<DisputesPage />} />
