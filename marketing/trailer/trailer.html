@@ -42,6 +42,11 @@ html,body{margin:0;background:#000}
 .bl li{display:flex;align-items:center;gap:18px;font-size:27px;font-weight:600;margin-bottom:20px;color:#fff}
 .ck{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(251,191,46,.16);border:2px solid rgba(251,191,46,.55)}
 .ck svg{width:22px;height:22px;stroke:var(--gold);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.redt{background:linear-gradient(180deg,#FFD1D1 0%,#F87171 50%,#DC2626 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.redset .ck{background:rgba(220,38,38,.18);border-color:rgba(248,113,113,.7)}
+.redset .ck svg{stroke:#FCA5A5}
+.redset .eyebrow{color:#FCA5A5}
+.redset .eyebrow .n{border-color:rgba(252,165,165,.6)}
 .pinkset .ck{background:rgba(240,80,140,.16);border-color:rgba(244,114,182,.6)}
 .pinkset .ck svg{stroke:#F9A8D4}
 .pinkset .eyebrow{color:#F9A8D4}
@@ -70,6 +75,7 @@ html,body{margin:0;background:#000}
   <div id="bgbase"></div>
   <div class="blob" id="b1" style="width:900px;height:900px;background:#0f7a5b;opacity:.45"></div>
   <div class="blob" id="b2" style="width:700px;height:700px;background:#FBBF2E;opacity:.14"></div>
+  <div class="blob" id="b4" style="width:1000px;height:1000px;background:#DC2626;opacity:0"></div>
   <div class="blob" id="b3" style="width:800px;height:800px;background:#F0508C;opacity:0"></div>
   <div id="dots"></div>
   <div id="streaks"></div>
@@ -138,12 +144,12 @@ const VEH={
   car:`<svg viewBox="0 0 48 32" style="width:100%;height:100%"><path d="M7 19l4-8c1-2 3-3 5-3h15c2 0 4 1 5 3l4 8h1c2 0 3 1 3 3v3c0 1-1 2-2 2H5c-1 0-2-1-2-2v-3c0-2 1-3 3-3z" fill="#0C684F"/><path d="M13 11h9v7H10zM25 11h7c1 0 2 1 2 1l3 6H25z" fill="#CFFAE6"/><circle cx="14" cy="27" r="4.5" fill="#0E261F"/><circle cx="35" cy="27" r="4.5" fill="#0E261F"/><circle cx="14" cy="27" r="1.8" fill="#9CA3AF"/><circle cx="35" cy="27" r="1.8" fill="#9CA3AF"/></svg>`,
 };
 
-function tbHTML({id,num,eyebrow,hl,sub,bullets=[],x,y,w=820,pink=false,align='left'}){
+function tbHTML({id,num,eyebrow,hl,sub,bullets=[],x,y,w=820,pink=false,red=false,align='left'}){
   const lines=hl.split('|').map(l=>{
-    const g=l.startsWith('~'), pk=l.startsWith('^'); const txt=(g||pk)?l.slice(1):l;
-    return `<span class="ln">${txt.split(' ').map(w=>`<span class="wm"><span class="wi anim-w ${g?'goldt':pk?'pinkt':''}">${w}</span></span>`).join(' ')}</span>`;
+    const g=l.startsWith('~'), pk=l.startsWith('^'), rd=l.startsWith('!'); const txt=(g||pk||rd)?l.slice(1):l;
+    return `<span class="ln">${txt.split(' ').map(w=>`<span class="wm"><span class="wi anim-w ${g?'goldt':pk?'pinkt':rd?'redt':''}">${w}</span></span>`).join(' ')}</span>`;
   }).join('');
-  return `<div class="tb ${pink?'pinkset':''}" id="${id}" style="left:${x}px;top:${y}px;width:${w}px;text-align:${align}">
+  return `<div class="tb ${pink?'pinkset':red?'redset':''}" id="${id}" style="left:${x}px;top:${y}px;width:${w}px;text-align:${align}">
     <div class="eyebrow anim"><span class="n">${num}</span>${eyebrow}</div>
     <h2 class="hl">${lines}</h2>
     ${sub?`<p class="sub anim">${sub}</p>`:''}
@@ -420,10 +426,62 @@ add(36,42,`
   $$('.orb6').forEach((o,i)=>{const k=P(lt,1.2+i*.3,1.8+i*.3,E.back);S(o,{s:k,op:k>0?1:0,y:Math.sin(lt*1.8+i*1.7)*10,x:Math.cos(lt*1.3+i)*6})});
 });
 
+
+/* ---------- S6b SOS ---------- */
+const SOSR=[['Ammu','Live location sent','ok'],['Abbu','Live location sent','ok'],['Rafi (brother)','Live location sent','ok'],['চলো Safety Team','Calling you now…','call'],['Police · 999','Nearest station alerted','ok'],['Audio recording','Started automatically','rec']];
+add(42,48,`
+ <div class="abs" id="ph6bw" style="left:230px;top:125px">${phoneHTML('ph6b',`
+   <div class="abs" style="inset:0;background:linear-gradient(180deg,#FFF1F1,#fff)"></div>
+   <div class="abs" style="left:0;right:0;top:92px;text-align:center">
+     <div style="font-weight:900;font-size:26px;color:#7F1D1D">Emergency</div>
+     <div style="font-size:15px;color:#991B1B;margin-top:4px">Press SOS if you feel unsafe</div>
+   </div>
+   <div class="abs" id="sr0" style="left:187px;top:420px;width:0;height:0">
+     ${[0,1,2].map(i=>`<div class="rip abs" style="left:-130px;top:-130px;width:260px;height:260px;border-radius:50%;border:4px solid #F87171"></div>`).join('')}
+     <div id="sbtn" class="abs" style="left:-115px;top:-115px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F87171,#DC2626 55%,#991B1B);box-shadow:0 30px 60px -10px rgba(220,38,38,.6),inset 0 -8px 20px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:64px;letter-spacing:2px">SOS</div>
+   </div>
+   <div class="abs" style="left:0;right:0;top:600px;text-align:center;font-size:15px;color:#7F1D1D;font-weight:700">Your contacts · Safety team · Police</div>
+   <div id="sflood" class="abs" style="inset:0;background:linear-gradient(180deg,#B91C1C,#7F1D1D);z-index:30;padding:86px 22px 0">
+     <div class="row" style="justify-content:space-between;color:#fff"><div><div style="font-size:14px;letter-spacing:3px;font-weight:800;opacity:.8">SOS ACTIVE</div><div style="font-size:23px;font-weight:900;white-space:nowrap">Help is on the way</div></div>
+     <div id="stime" style="font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;background:rgba(0,0,0,.25);padding:8px 12px;border-radius:12px">00:00</div></div>
+     <div class="row" style="gap:10px;margin:16px 0 14px;color:#FEE2E2;font-size:15px;font-weight:700"><span id="sdot" style="width:10px;height:10px;border-radius:50%;background:#FECACA"></span>Sharing live location · Gulshan Ave</div>
+     ${SOSR.map(([n,s,k])=>`<div class="srow row" style="gap:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:8px 12px;margin-bottom:7px;color:#fff">
+       <div class="av" style="width:34px;height:34px;background:rgba(255,255,255,.2);font-size:14px">${n==='Audio recording'?'●':n[0]}</div>
+       <div style="flex:1"><div style="font-weight:800;font-size:16px">${n}</div><div style="font-size:13px;opacity:.8">${s}</div></div>
+       <div class="sst" style="width:30px;height:30px;border-radius:50%;background:${k==='ok'?'#fff':k==='call'?'#FBBF2E':'#FCA5A5'};display:flex;align-items:center;justify-content:center">${k==='ok'?ic('check','width:18px;height:18px;stroke:#B91C1C;stroke-width:3.4'):k==='call'?ic('headset','width:16px;height:16px;stroke:#7F1D1D;stroke-width:2.6'):'<span style="width:10px;height:10px;border-radius:50%;background:#7F1D1D"></span>'}</div></div>`).join('')}
+     <div id="smap" style="position:relative;height:150px;border-radius:16px;overflow:hidden;margin-top:4px;background:#FDE8E8">
+       <svg viewBox="0 0 330 150" style="position:absolute;inset:0;width:100%;height:100%"><g fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"><path d="M-10 90h350"/><path d="M120 -10v170"/><path d="M-10 30 C80 40 200 10 340 50"/><path d="M250 -10v170"/></g></svg>
+       <div id="spr" class="abs" style="left:150px;top:60px;width:60px;height:60px;border-radius:50%;background:rgba(220,38,38,.35)"></div>
+       <div class="abs" style="left:170px;top:80px;width:20px;height:20px;border-radius:50%;background:#DC2626;border:4px solid #fff"></div>
+       <div class="abs" style="left:10px;bottom:8px;font-size:12px;font-weight:800;color:#7F1D1D;background:#fff;padding:4px 10px;border-radius:999px">LIVE · updating every second</div>
+     </div>
+   </div>
+ `)}</div>
+ ${tbHTML({id:'tb6b',num:'06',eyebrow:'SOS · one tap',hl:'In danger?|!One tap. Help is here.',sub:'Hit SOS and your loved ones instantly get your live location and an alert that you’re in danger. Our 24/7 safety team calls you and the nearest police are alerted in seconds.',bullets:['Family alerted with your live location','24/7 safety team calls you instantly','Police 999 alerted automatically','Audio recording starts on its own'],x:830,y:210,red:true,w:1000})}
+ <div class="card" id="sms6b" style="left:1370px;top:60px;width:500px;padding:20px 22px;border-radius:24px;border-left:8px solid #DC2626">
+   <div class="row" style="gap:10px;font-size:14px;font-weight:900;letter-spacing:2px;color:#DC2626"><span style="width:10px;height:10px;border-radius:50%;background:#DC2626"></span>চলো SOS ALERT · NOW</div>
+   <div style="font-weight:900;font-size:22px;margin-top:8px">Nusrat needs help right now!</div>
+   <div style="font-size:16px;color:#5E6C65;margin-top:4px">Live location: Gulshan Avenue, Dhaka · Car Tha 11-2345</div>
+ </div>
+ <div class="pill" id="pol6b" style="left:830px;top:70px;border-color:rgba(248,113,113,.6);background:rgba(220,38,38,.25)">${ic('shield','stroke:#FCA5A5')}Police 999 alerted in seconds</div>
+`,(lt)=>{
+  animTB($('#tb6b'),lt,.3);
+  const kp=P(lt,.05,.9,E.out5); S($('#ph6bw'),{y:(1-kp)*500,ry:L(25,8,kp),rx:L(10,3,kp),op:kp});
+  $$('.rip').forEach((r,i)=>{const c=((lt*1.1+i/3)%1);S(r,{s:.9+c*.9,op:(1-c)*.8*(lt<1.8?1:0)})});
+  const press=lt>1.1&&lt<1.4?.88:1; S($('#sbtn'),{s:press*(1+.04*Math.sin(lt*9)*(lt<1.1?1:0))});
+  const kf=P(lt,1.35,1.95,E.inOut); $('#sflood').style.clipPath=`circle(${kf*140}% at 50% 50%)`; $('#sflood').style.opacity=kf>0?1:0;
+  const secs=Math.floor(clamp(lt-1.6,0,99)*1); $('#stime').textContent=`00:0${Math.min(9,secs)}`;
+  $('#sdot').style.opacity=.4+.6*Math.abs(Math.sin(lt*5));
+  $$('.srow').forEach((r,i)=>{const k=P(lt,2.0+i*.28,2.45+i*.28,E.out5);S(r,{x:(1-k)*60,op:k});S($('.sst',r),{s:P(lt,2.25+i*.28,2.6+i*.28,E.back)})});
+  {const km=P(lt,3.7,4.2);S($('#smap'),{y:(1-km)*30,op:km});const c=(lt*1.2)%1;S($('#spr'),{s:.5+c*1.4,op:1-c});}
+  const ks=P(lt,2.4,2.95,E.back); S($('#sms6b'),{y:(1-ks)*-60+Math.sin(lt*14)*(lt>2.4&&lt<3.0?4:0),s:L(.9,1,ks),op:clamp(ks*2)});
+  const kpo=P(lt,3.3,3.8,E.back); S($('#pol6b'),{s:kpo,op:kpo>0?1:0,y:Math.sin(lt*2)*6});
+});
+
 /* ---------- S7 payments ---------- */
 const PAY=[['৳','Cash','#F2A81D','#0E261F'],['b','bKash','#E2136E','#fff'],['N','Nagad','#F6921E','#fff'],['▭','Card','#111827','#fff'],['W','Cholo Wallet','#0C684F','#fff']];
-add(42,48,`
- <div class="center" id="t7a" style="top:120px"><span class="eyebrow"><span class="n">06</span>Pay your way</span></div>
+add(48,54,`
+ <div class="center" id="t7a" style="top:120px"><span class="eyebrow"><span class="n">07</span>Pay your way</span></div>
  <div class="center" id="t7b" style="top:180px;font-size:100px;font-weight:900;letter-spacing:-3px">Cash or cashless. <span class="goldt">Your call.</span></div>
  ${PAY.map(([m,n,bg,fg],i)=>`<div class="abs tile7" style="left:${338+i*256}px;top:400px;width:220px;height:230px;border-radius:40px;background:${bg};color:${fg};display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 40px 70px -30px rgba(0,0,0,.7),inset 0 0 0 1.5px rgba(255,255,255,.18)">
    <div style="font-size:84px;font-weight:900;line-height:1">${m}</div><div style="font-size:24px;font-weight:800;margin-top:18px">${n}</div></div>`).join('')}
@@ -443,8 +501,8 @@ add(42,48,`
 
 /* ---------- S8 drive & earn ---------- */
 const SPK='M0 120 C30 110 50 100 70 104 S110 80 140 84 S190 50 220 60 S270 20 310 26';
-add(48,54,`
- ${tbHTML({id:'tb8',num:'07',eyebrow:'Drive with চলো',hl:'Take trips.|~Earn more.',sub:'Keep more of every fare, withdraw to bKash or Nagad any day, and drive when it suits you.',bullets:['Low, transparent commission','Withdraw to bKash &amp; Nagad any day','Rider heat-map and bonuses'],x:150,y:230,w:900})}
+add(54,60,`
+ ${tbHTML({id:'tb8',num:'08',eyebrow:'Drive with চলো',hl:'Take trips.|~Earn more.',sub:'Keep more of every fare, withdraw to bKash or Nagad any day, and drive when it suits you.',bullets:['Low, transparent commission','Withdraw to bKash &amp; Nagad any day','Rider heat-map and bonuses'],x:150,y:230,w:900})}
  <div class="abs" id="ph8w" style="left:1240px;top:125px">${phoneHTML('ph8',`
    <div class="abs" style="left:24px;right:24px;top:72px">
      <div class="row" style="justify-content:space-between"><div style="font-weight:800;font-size:22px">Earnings</div>
@@ -477,9 +535,9 @@ add(48,54,`
 });
 
 /* ---------- S9 compare ---------- */
-const CMP=[['Made for Bangladesh, fully in Bangla',1,0],['Cash, bKash, Nagad &amp; wallet',1,0],['Women Ride with women drivers',1,0],['Passenger-confirmed pickup',1,0],['Lower commission for drivers',1,0],['Bike, CNG &amp; car in one app',1,0]];
-add(54,60,`
- <div class="center" id="t9a" style="top:90px"><span class="eyebrow"><span class="n">08</span>Why চলো</span></div>
+const CMP=[['Made for Bangladesh, fully in Bangla',1,0],['Cash, bKash, Nagad &amp; wallet',1,0],['Women Ride with women drivers',1,0],['Passenger-confirmed pickup',1,0],['Lower commission for drivers',1,0],['One-tap SOS to family &amp; police',1,0]];
+add(60,66,`
+ <div class="center" id="t9a" style="top:90px"><span class="eyebrow"><span class="n">09</span>Why চলো</span></div>
  <div class="center" id="t9b" style="top:150px;font-size:96px;font-weight:900;letter-spacing:-3px">Easier than <span class="goldt">the rest.</span></div>
  <div class="glass" id="tbl9" style="left:310px;top:330px;width:1300px;height:640px;padding:26px 50px">
    <div class="row" style="height:70px;font-size:20px;letter-spacing:3px;font-weight:700;color:rgba(255,255,255,.55)"><div style="flex:1">FEATURE</div><div style="width:220px;text-align:center"><img src="logo.svg" style="height:56px;vertical-align:middle"></div><div style="width:220px;text-align:center">OTHER APPS</div></div>
@@ -499,7 +557,7 @@ add(54,60,`
 
 /* ---------- S10 feature grid ---------- */
 const FT=[['pkg','Parcel delivery'],['cal','Scheduled rides'],['plane','Airport transfers'],['users','Shared rides · split fare'],['gift','Rewards &amp; referrals'],['tag','Promo codes'],['globe','Bangla &amp; English'],['moon','Light &amp; dark mode'],['nav','Live GPS tracking'],['star','Ratings you can trust'],['headset','24/7 support'],['brief','চলো for Business']];
-add(60,65,`
+add(66,71,`
  <div class="center" id="t10" style="top:110px;font-size:96px;font-weight:900;letter-spacing:-3px">And <span class="goldt">so much more.</span></div>
  ${FT.map(([i,n],k)=>`<div class="glass ft10" style="left:${238+(k%4)*370}px;top:${300+Math.floor(k/4)*205}px;width:334px;height:172px;border-radius:30px;padding:28px 28px;display:flex;flex-direction:column;justify-content:space-between">
    <div style="width:60px;height:60px;border-radius:18px;background:rgba(251,191,46,.16);display:flex;align-items:center;justify-content:center">${ic(i,'width:32px;height:32px;stroke:#FBBF2E;stroke-width:2')}</div>
@@ -510,7 +568,7 @@ add(60,65,`
 });
 
 /* ---------- S11 outro ---------- */
-add(65,72,`
+add(71,78,`
  <div class="abs" id="o1" style="left:560px;top:190px;width:800px;height:296px">
    <img src="logo.svg" style="width:800px;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.5))">
    <div id="o1s" class="abs" style="inset:0;-webkit-mask:url(logo.svg) center/100% 100% no-repeat;mask:url(logo.svg) center/100% 100% no-repeat;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);background-size:300% 100%"></div>
@@ -529,23 +587,25 @@ add(65,72,`
   const c=P(lt,2.2,2.9,E.out5);S($('#o4'),{y:(1-c)*40,op:c});
 },{fade:false});
 
-const TOTAL=72;
+const TOTAL=78;
 const root=$('#scenes');
 SC.forEach((s,i)=>{const d=document.createElement('section');d.className='scene';d.id='sc'+i;d.innerHTML=s.html;root.appendChild(d);s.el=d;});
 const st=$('#streaks');
 const STK=[...Array(9)].map(()=>({y:rnd()*1080,w:200+rnd()*380,sp:500+rnd()*900,off:rnd()*4000,o:.25+rnd()*.5}));
 STK.forEach(()=>{const d=document.createElement('div');d.className='streak';st.appendChild(d)});
 const CUTS=SC.slice(1).map(s=>s.a);
-const LABELS={1:'',2:'BOOK',3:'WOMEN RIDE',4:'PEAK HOURS',5:'FAVOURITES',6:'SAFETY',7:'PAYMENTS',8:'DRIVERS',9:'WHY চলো',10:'MORE'};
+const LABELS={1:'',2:'BOOK',3:'WOMEN RIDE',4:'PEAK HOURS',5:'FAVOURITES',6:'SAFETY',7:'SOS',8:'PAYMENTS',9:'DRIVERS',10:'WHY চলো',11:'MORE'};
 
 window.render=function(t){
   S($('#b1'),{x:-200+Math.sin(t*.25)*260,y:-250+Math.cos(t*.2)*160});
   S($('#b2'),{x:1250+Math.cos(t*.22)*240,y:450+Math.sin(t*.3)*160});
   const pink=P(t,18,18.8)*(1-P(t,23.4,24.2));
   S($('#b3'),{x:1000+Math.sin(t*.3)*120,y:200,op:pink*.35});
-  $('#b2').style.opacity=.14*(1-pink);
+  const red=P(t,42,42.6)*(1-P(t,47.4,48.2));
+  S($('#b4'),{x:-100+Math.sin(t*.8)*80,y:100,op:red*(.45+.15*Math.sin(t*6))});
+  $('#b2').style.opacity=.14*(1-pink)*(1-red);
   $('#dots').style.transform=`translate(${-(t*18)%46}px,${-(t*9)%46}px)`;
-  [...st.children].forEach((el,i)=>{const s=STK[i];const x=((t*s.sp+s.off)%(1920+s.w*2))-s.w;el.style.width=s.w+'px';S(el,{x,y:s.y+Math.sin(t*.5+i)*20,r:-8,op:s.o*(t>64.5&&t<66?0:1)})});
+  [...st.children].forEach((el,i)=>{const s=STK[i];const x=((t*s.sp+s.off)%(1920+s.w*2))-s.w;el.style.width=s.w+'px';S(el,{x,y:s.y+Math.sin(t*.5+i)*20,r:-8,op:s.o*(t>70.5&&t<72?0:1)})});
   let sw=-1;CUTS.forEach(c=>{if(t>c-.35&&t<c+.35)sw=(t-(c-.35))/.7});
   $('#sweep').style.display=sw>=0?'block':'none'; if(sw>=0) S($('#sweep'),{x:L(-500,2200,E.inOut(sw)),r:18});
   SC.forEach((s,i)=>{
@@ -554,11 +614,11 @@ window.render=function(t){
     if(s.fade){const ki=P(lt,0,.45),ko=P(lt,d-.45,d,E.in);s.el.style.opacity=ki*(1-ko);S(s.el,{s:L(1.035,1,P(lt,0,.7))*(1-ko*.04)});}
     s.u(lt,d,s.el);
   });
-  const wmOn=P(t,6,6.6)*(1-P(t,64.4,65));
+  const wmOn=P(t,6,6.6)*(1-P(t,70.4,71));
   $('#wm').style.opacity=wmOn*.95;
   let lab='';SC.forEach((s,i)=>{if(t>=s.a&&t<s.b)lab=LABELS[i]||''});
   $('#wmtxt').textContent=lab; $('#wmtxt').style.opacity=wmOn;
-  $('#black').style.opacity=Math.max(1-P(t,0,.8,E.lin),P(t,70.6,72,E.lin));
+  $('#black').style.opacity=Math.max(1-P(t,0,.8,E.lin),P(t,76.6,78,E.lin));
 };
 document.fonts.ready.then(()=>{window.READY=true;render(0)});
 </script>

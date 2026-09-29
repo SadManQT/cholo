@@ -1,5 +1,5 @@
 import numpy as np, wave
-SR=44100; T=72; N=SR*T; BPM=120; BEAT=60/BPM
+SR=44100; T=78; N=SR*T; BPM=120; BEAT=60/BPM
 rng=np.random.default_rng(3)
 t=np.arange(N)/SR
 def lp(x,fc,order=1):
@@ -46,7 +46,7 @@ def hat(d=30):
     L=int(0.12*SR); x=np.arange(L)/SR; return hp(rng.standard_normal(L),7000)*np.exp(-x*d)*0.18
 K,C,H=kick(),clap(),hat()
 drums=np.zeros(N); duck=np.ones(N)
-def active(tm): return (6<=tm<64.5) and not (59.5<=tm<60)
+def active(tm): return (6<=tm<70.5) and not (65.5<=tm<66)
 for i in range(int(T/BEAT)):
     tm=i*BEAT
     if active(tm):
@@ -56,7 +56,7 @@ for i in range(int(T/BEAT)):
         if tm>=8: place(drums,H,tm+BEAT/2,1.0)
         if tm>=18: place(drums,hat(60),tm+BEAT/4,0.5); place(drums,hat(60),tm+3*BEAT/4,0.5)
 # snare roll before 60 and 65
-for a,b in ((58.0,60.0),(63.0,65.0)):
+for a,b in ((64.0,66.0),(69.0,71.0)):
     k=0; tm=a
     while tm<b:
         g=0.25+0.6*(tm-a)/(b-a); place(drums,C,tm,g); tm+=0.25 if tm<a+1 else 0.125; k+=1
@@ -73,24 +73,29 @@ def whoosh():
     L=int(0.8*SR); x=np.arange(L)/SR; e=np.sin(np.pi*x/0.8)**3
     return bp(rng.standard_normal(L),500,4000)*e*0.22
 place(fx,riser(3.0),3.0,1.0); place(fx,impact(),6.0,1.0)
-for c in (10,18,24,30,36,42,48,54,60): place(fx,whoosh(),c-0.45,1.0)
-place(fx,riser(2.0),63.0,1.0); place(fx,impact(),65.0,1.0)
+for c in (10,18,24,30,36,42,48,54,60,66): place(fx,whoosh(),c-0.45,1.0)
+place(fx,riser(2.0),69.0,1.0); place(fx,impact(),71.0,1.0)
+def ping(f,d=0.35):
+    L=int(d*SR); x=np.arange(L)/SR; return (np.sin(2*np.pi*f*x)+0.3*np.sin(2*np.pi*2*f*x))*np.exp(-x*9)*np.minimum(1,x/0.004)*0.28
+place(fx,impact()*0.6,43.2,1.0)
+for k in range(6): place(fx,ping(1318.5 if k%2==0 else 987.8),43.3+k*0.26,1.0)
+for k in range(6): place(fx,ping(1760,0.2)*0.6,44.3+k*0.28,1.0)
 # shimmer bells at logo moments
 def bell(f,d=2.5):
     L=int(d*SR); x=np.arange(L)/SR
     return sum(np.sin(2*np.pi*f*r*x)*np.exp(-x*(2+i*1.5))*a for i,(r,a) in enumerate([(1,1),(2.01,.4),(3.0,.25),(4.2,.12)]))*0.12
-for i,m in enumerate([81,84,88,93]): place(fx,bell(note(m)),1.4+i*0.18,1); place(fx,bell(note(m)),66.4+i*0.18,1)
+for i,m in enumerate([81,84,88,93]): place(fx,bell(note(m)),1.4+i*0.18,1); place(fx,bell(note(m)),72.4+i*0.18,1)
 # arrangement gains
 g_pad=np.clip(t/4,0,1)*np.where(t<65,1,1)
-g_arp=np.clip((t-10)/1,0,1)*(t<64.5)
-g_bass=np.clip((t-6)/0.1,0,1)*(t<64.5)
-end=np.clip((72-t)/2.5,0,1)
+g_arp=np.clip((t-10)/1,0,1)*(t<70.5)
+g_bass=np.clip((t-6)/0.1,0,1)*(t<70.5)
+end=np.clip((78-t)/2.5,0,1)
 # outro sustained chord
-out=np.zeros(N); s=int(65*SR); tt=t[s:]-65
+out=np.zeros(N); s=int(71*SR); tt=t[s:]-71
 for m in [45,57,60,64,71,76]:
     for d in (-0.06,0,0.06): out[s:]+=saw(note(m+d),tt)*0.11*np.exp(-tt*0.18)
 out=lp(out,1400,2)
-mix=pad*g_pad*duck*(t<65)+bass*g_bass*duck+arp*g_arp*duck*0.9+drums+fx+out
+mix=pad*g_pad*duck*(t<71)+bass*g_bass*duck+arp*g_arp*duck*0.9+drums+fx+out
 # reverb (synthetic IR) on a send
 L=int(2.2*SR); x=np.arange(L)/SR; ir=rng.standard_normal(L)*np.exp(-x*3.2); ir=lp(ir,5000); ir/=np.sqrt(np.sum(ir**2))
 send=pad*g_pad*0.5+arp*g_arp+fx*0.4+out
