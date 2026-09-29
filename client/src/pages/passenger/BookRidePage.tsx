@@ -529,7 +529,7 @@ export function BookRidePage() {
   if (checkingTrip) return <FullScreenSpinner />;
   if (unpaidTrip) {
     return (
-      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center p-4">
+      <main className="flex min-h-[calc(100dvh-var(--app-chrome))] items-center justify-center p-4">
         <div role="alert" className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
           <p className="text-lg font-bold text-ink-900">{t('Pay for your last trip first')}</p>
           <p className="mt-2 text-sm text-ink-500">
@@ -542,7 +542,7 @@ export function BookRidePage() {
   }
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
+    <main className="relative h-[calc(100dvh-var(--app-chrome))] overflow-hidden lg:pr-[420px]">
       <ConnectionPill state={connectionState} />
       <MapView
         pickup={pickup}
@@ -564,7 +564,7 @@ export function BookRidePage() {
         open
         snapPoint={snapPoint}
         onSnapPointChange={setSnapPoint}
-        className="lg:!top-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
+        className="lg:!top-[var(--app-chrome)] lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
       >
         {referenceLoading ? (
           <div className="space-y-3 py-2">

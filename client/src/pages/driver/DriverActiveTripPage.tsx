@@ -200,7 +200,7 @@ export function DriverActiveTripPage() {
     }
   }
 
-  if (loading) return <div className="h-[calc(100dvh-4rem)]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={2} /></div></div>;
+  if (loading) return <div className="h-[calc(100dvh-var(--app-chrome))]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={2} /></div></div>;
   if (error) return <EmptyState title={t('Active trip did not load')} hint={error} action={{ label: t('Retry'), onClick: loadTrip }} />;
   if (!trip) return <EmptyState title={t('No active trip')} hint={t('Accept a ride offer from Driver Home to start.')} action={{ label: t('Driver home'), onClick: () => navigate('/driver') }} />;
 
@@ -220,7 +220,7 @@ export function DriverActiveTripPage() {
   const startLockedReason = awaitingRider ? t('Waiting for {0} to confirm…', trip.passenger.name) : null;
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
+    <main className="relative h-[calc(100dvh-var(--app-chrome))] overflow-hidden lg:pr-[420px]">
       <ConnectionPill state={tracking.connectionState} />
       <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} driver={driverPosition} className="h-full" />
 
@@ -228,7 +228,7 @@ export function DriverActiveTripPage() {
         open
         snapPoint={snapPoint}
         onSnapPointChange={setSnapPoint}
-        className="lg:!top-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
+        className="lg:!top-[var(--app-chrome)] lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
       >
         <div className="space-y-4 pb-2">
           <div className="flex items-start justify-between gap-3">

@@ -16,6 +16,7 @@ import { ThemeSwitch } from '../../components/layout/ThemeSwitch';
 
 const CTA_BASE = 'inline-flex h-12 items-center justify-center rounded-xl px-6 text-base font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-cholo-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700 focus-visible:ring-offset-2';
 const CTA_PRIMARY = `${CTA_BASE} bg-cholo-700 text-white hover:bg-cholo-800`;
+const CTA_GOLD = `${CTA_BASE} cholo-gold font-bold`;
 const CTA_SECONDARY = `${CTA_BASE} border border-border bg-surface text-ink-900 hover:bg-surface-alt`;
 const CTA_ON_DARK = `${CTA_BASE} border border-white/40 bg-white/10 text-white hover:bg-white/20 focus-visible:ring-offset-cholo-700`;
 
@@ -109,7 +110,7 @@ export function HomePage() {
     <div className="min-h-screen bg-surface-alt text-ink-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6">
         <Link to="/welcome" aria-label={t('Cholo home')} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700">
-          <CholoLogo className="h-11 sm:h-14" />
+          <CholoLogo className="h-14 sm:h-16 lg:h-[4.5rem]" />
         </Link>
         <div className="flex items-center gap-3 sm:gap-4">
           <ThemeSwitch />
@@ -129,7 +130,7 @@ export function HomePage() {
               {t('Book a bike, CNG, or car in seconds. Track it live. Pay however you like. Cholo is Bangladesh-first, built for real roads and real riders.')}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className={CTA_PRIMARY}>{t('Ride with Cholo')}</Link>
+              <Link to="/register" className={CTA_GOLD}>{t('Ride with Cholo')}</Link>
               <Link to="/register?intent=driver" className={CTA_SECONDARY}>{t('Drive with Cholo')}</Link>
             </div>
 

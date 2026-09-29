@@ -16,7 +16,6 @@ const SNAP_ORDER: SnapPoint[] = ['peek', 'half', 'full'];
 const DISMISS_DRAG_PX = 80;
 const FLICK_VELOCITY_PX_S = 500;
 const ENTRANCE_DURATION_S = 0.35;
-const TAB_BAR_PX = 64;
 
 function rubberBand(overshoot: number, dimension = 220, factor = 0.55) {
   return (overshoot * dimension * factor) / (dimension + factor * overshoot);
@@ -42,7 +41,10 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
   const didMountSnap = useRef(false);
 
   function heightPxFor(point: SnapPoint) {
-    return SNAP_FRACTIONS[point] * (window.innerHeight - TAB_BAR_PX);
+    const root = document.documentElement;
+    const chromeRem = parseFloat(getComputedStyle(root).getPropertyValue('--app-chrome')) || 4;
+    const chromePx = chromeRem * parseFloat(getComputedStyle(root).fontSize);
+    return SNAP_FRACTIONS[point] * (window.innerHeight - chromePx);
   }
 
   useEffect(() => {
@@ -184,7 +186,7 @@ export function BottomSheet({ open, snapPoint, onSnapPointChange, onClose, child
         role="dialog"
         aria-modal={snapPoint === 'full'}
         style={{ height: `${Math.max(heightPx, 0)}px` }}
-        className={`fixed inset-x-0 bottom-16 z-50 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
+        className={`fixed inset-x-0 bottom-16 z-50 md:bottom-0 flex flex-col rounded-t-2xl bg-surface shadow-lg lg:!transform-none ${className}`}
       >
         <div
           onPointerDown={handlePointerDown}

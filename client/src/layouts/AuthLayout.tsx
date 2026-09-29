@@ -13,7 +13,7 @@ export function AuthLayout() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface-alt p-4">
       <Link to="/welcome" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cholo-700" aria-label={t('Cholo home')}>
-        <CholoLogo className="h-14 sm:h-16" />
+        <CholoLogo className="h-16 sm:h-20" />
       </Link>
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-lg sm:p-8">
         <AnimatePresence mode="wait" initial={false}>

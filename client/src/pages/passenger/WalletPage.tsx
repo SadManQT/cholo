@@ -66,7 +66,7 @@ export function WalletPage() {
   }, [loadPage, loading, loadingMore, page, total, transactions.length]);
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
+    <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5">
         <h1 className="text-2xl font-bold">{t('Wallet')}</h1>
         <p className="text-sm text-ink-500">{t('Your balance and every transaction that moved it.')}</p>

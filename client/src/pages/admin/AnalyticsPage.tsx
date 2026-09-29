@@ -169,7 +169,7 @@ function Dashboard({ reports, month }: { reports: Record<string, Row[]>; month: 
               key: String(row.month),
               label: shortMonth(String(row.month)),
               value: compactTaka(num(row.gross_revenue)),
-              segments: [{ value: num(row.gross_revenue), color: '#0E7A5F' }],
+              segments: [{ value: num(row.gross_revenue), color: '#0C684F' }],
               tooltip: [formatBDT(num(row.gross_revenue)), trips(num(row.completed_trips)), `Avg fare ${formatBDT(num(row.average_fare))}`],
             }))}
           />

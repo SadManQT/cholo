@@ -4,7 +4,7 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 export type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'cholo.theme';
-const THEME_COLORS: Record<Theme, string> = { light: '#0E7A5F', dark: '#0A131B' };
+const THEME_COLORS: Record<Theme, string> = { light: '#0C684F', dark: '#0B1411' };
 
 const media = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-color-scheme: dark)') : undefined;
 const listeners = new Set<() => void>();

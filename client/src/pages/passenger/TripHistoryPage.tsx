@@ -78,7 +78,7 @@ export function TripHistoryPage({ driverMode = false }: { driverMode?: boolean }
   const detailPath = driverMode ? '/driver/trips' : '/trips';
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
+    <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5">
         <h1 className="text-2xl font-bold">{t('Your trips')}</h1>
         <p className="text-sm text-ink-500">{t('Active rides and past receipts in one place.')}</p>

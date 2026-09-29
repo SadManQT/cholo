@@ -46,7 +46,7 @@ export function Toaster() {
   const items = useSyncExternalStore(subscribeToToasts, getToastSnapshot);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-4 sm:left-auto sm:right-4 sm:top-auto sm:items-end">
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+8.75rem)] z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-4 sm:left-auto sm:right-4 sm:top-auto sm:items-end">
       <AnimatePresence>
         {items.map((item) => (
           <ToastRow key={item.id} item={item} />

@@ -203,7 +203,7 @@ export function LiveTripPage() {
   }
 
   if (!code) return <EmptyState title={t('Invalid trip link')} hint={t('This trip code is missing.')} />;
-  if (loading) return <div className="h-[calc(100dvh-4rem)]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={3} /></div></div>;
+  if (loading) return <div className="h-[calc(100dvh-var(--app-chrome))]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={3} /></div></div>;
   if (error || !trip) return <EmptyState title={t('Trip did not load')} hint={error ?? t('Trip not found.')} action={{ label: t('Retry'), onClick: loadTrip }} />;
 
   const driverPosition = tracking.driverPosition ?? trip.pickup;
@@ -212,14 +212,14 @@ export function LiveTripPage() {
   const vehicleName = [trip.vehicle.color, trip.vehicle.brand, trip.vehicle.model].filter(Boolean).join(' ') || trip.categoryName;
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden lg:pr-[420px]">
+    <main className="relative h-[calc(100dvh-var(--app-chrome))] overflow-hidden lg:pr-[420px]">
       <ConnectionPill state={tracking.connectionState} />
       <MapView pickup={trip.pickup} dropoff={trip.dropoff} stops={trip.stops} driver={driverPosition} className="h-full" />
 
       <Button
         variant="danger"
         onClick={() => setConfirmation('sos')}
-        className="fixed right-4 top-4 z-[500] h-14 w-14 rounded-full px-0 shadow-lg lg:right-[436px]"
+        className="fixed right-4 top-[calc(var(--app-header)+1rem)] z-[500] h-14 w-14 rounded-full px-0 shadow-lg lg:right-[436px]"
         aria-label={t('Send SOS alert')}
       >
         {t('SOS')}
@@ -229,7 +229,7 @@ export function LiveTripPage() {
         open
         snapPoint={snapPoint}
         onSnapPointChange={setSnapPoint}
-        className="lg:!top-0 lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
+        className="lg:!top-[var(--app-chrome)] lg:!left-auto lg:!right-0 lg:!h-auto lg:!w-[420px] lg:rounded-none lg:border-l lg:border-border"
       >
         <div className="space-y-4 pb-2">
           <div className="flex items-start justify-between gap-3">

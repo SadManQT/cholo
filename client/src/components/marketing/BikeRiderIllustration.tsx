@@ -46,7 +46,7 @@ export function BikeRiderIllustration({ className = '' }: { className?: string }
           animate={{ y: reduceMotion ? 0 : [0, -6, 0] }}
           transition={reduceMotion ? { duration: 0 } : { duration: 2.2, repeat: Infinity, ease: EASE_IN_OUT }}
         >
-          <g fill="none" stroke="#0E7A5F" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round">
+          <g fill="none" stroke="#0C684F" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round">
             <line x1={BOTTOM_BRACKET.x} y1={BOTTOM_BRACKET.y} x2={SEAT.x} y2={SEAT.y} />
             <line x1={BOTTOM_BRACKET.x} y1={BOTTOM_BRACKET.y} x2={HEAD_TUBE_TOP.x} y2={HEAD_TUBE_TOP.y} />
             <line x1={SEAT.x} y1={SEAT.y} x2={HEAD_TUBE_TOP.x} y2={HEAD_TUBE_TOP.y} />

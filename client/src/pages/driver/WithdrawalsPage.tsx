@@ -151,7 +151,7 @@ export function WithdrawalsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl space-y-3 px-4 py-5 md:px-6">
+      <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl space-y-3 px-4 py-5 md:px-6">
         <Skeleton variant="card" className="h-24" />
         <Skeleton variant="card" /><Skeleton variant="card" />
       </main>
@@ -160,14 +160,14 @@ export function WithdrawalsPage() {
 
   if (error && !wallet) {
     return (
-      <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
+      <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl px-4 py-5 md:px-6">
         <EmptyState title={t('Withdrawals did not load')} hint={error} action={{ label: t('Retry'), onClick: load }} />
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
+    <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5">
         <h1 className="text-2xl font-bold">{t('Withdrawals')}</h1>
         <p className="text-sm text-ink-500">{t('Cash out to bKash, Nagad, or your bank.')}</p>

@@ -13,7 +13,7 @@ import { getApiErrorMessage, getApiFieldErrors } from '../../utils/apiError';
 const DHAKA: [number, number] = [23.7806, 90.4079];
 
 const ZONE_STYLE: Record<ZoneType, { color: string; label: string; hint: string }> = {
-  regular: { color: '#0E7A5F', label: 'Regular', hint: 'Normal service area.' },
+  regular: { color: '#0C684F', label: 'Regular', hint: 'Normal service area.' },
   airport: { color: '#2563EB', label: 'Airport', hint: 'Airport pickup rules apply.' },
   station: { color: '#7C3AED', label: 'Station', hint: 'Bus or rail station.' },
   restricted: { color: '#DC2626', label: 'Restricted', hint: 'Rides cannot start or end here.' },

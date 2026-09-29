@@ -171,7 +171,7 @@ export function DriverHomePage() {
     return null;
   }, [geolocation.position, status]);
 
-  if (loading) return <div className="h-[calc(100dvh-4rem)]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={2} /></div></div>;
+  if (loading) return <div className="h-[calc(100dvh-var(--app-chrome))]"><Skeleton variant="map-placeholder" className="h-2/3" /><div className="space-y-3 p-4"><Skeleton variant="card" /><Skeleton lines={2} /></div></div>;
   if (error || !status) return <EmptyState title={t('Driver home did not load')} hint={error ?? t('Driver profile not found.')} action={{ label: t('Retry'), onClick: loadHome }} />;
 
   const online = status.availabilityStatus === 'online';
@@ -182,7 +182,7 @@ export function DriverHomePage() {
   const ready = setupSteps.every((step) => step.done);
 
   return (
-    <main className="relative h-[calc(100dvh-4rem)] overflow-hidden">
+    <main className="relative h-[calc(100dvh-var(--app-chrome))] overflow-hidden">
       <ConnectionPill state={connectionState} />
       <MapView driver={mapPosition} className="h-full" />
 
