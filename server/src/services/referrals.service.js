@@ -2,10 +2,8 @@ import * as socialRepo from '../repositories/social.repository.js';
 import * as walletRepo from '../repositories/wallet.repository.js';
 import { notify } from './notifications.service.js';
 
-// one flat bonus for both sides; move to a settings table if marketing wants to tune it.
 export const REFERRAL_BONUS = 50;
 
-/** Called inside trip completion: the referred rider's first completed trip pays both people once. */
 export async function rewardReferralOnFirstTrip(trip, client) {
   const referral = await socialRepo.findPendingReferralForUpdate(trip.passengerId, client);
   if (!referral) return;

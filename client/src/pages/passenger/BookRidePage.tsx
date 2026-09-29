@@ -110,7 +110,6 @@ function StopField({ index, value, onChange, onRemove }: {
   );
 }
 
-// datetime-local works in local wall-clock time, which for riders is Dhaka time.
 function toLocalInputValue(date: Date) {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
@@ -160,7 +159,6 @@ function PlaceShortcuts({ saved, recent, target, onPick }: {
 export function BookRidePage() {
   const navigate = useNavigate();
   const [checkingTrip, setCheckingTrip] = useState(true);
-  // A finished trip that still isn't paid for: the server refuses new bookings until it is.
   const [unpaidTrip, setUnpaidTrip] = useState<{ tripCode: string; totalFare: string } | null>(null);
   const { socket, connectionState } = useSocket();
   const geolocation = useGeolocation();
@@ -199,7 +197,6 @@ export function BookRidePage() {
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
   const selectedQuote = selectedCategoryId ? quotes[selectedCategoryId] : undefined;
 
-  // Wallet rides are charged at drop-off, so the wallet can only be chosen when it covers the fare.
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const loadWallet = useCallback(() => {
     walletApi.getWallet().then(setWallet).catch(() => setWallet(null));
@@ -238,8 +235,6 @@ export function BookRidePage() {
     void loadReferences();
   }, [loadReferences]);
 
-  // While a ride is under way, Book always shows that ride instead of the booking form; while the last
-  // trip is unpaid, it asks for that payment first.
   useEffect(() => {
     let cancelled = false;
     async function check() {
@@ -254,7 +249,6 @@ export function BookRidePage() {
         const owed = unpaid.data.find((trip) => Number(trip.totalFare) > 0);
         if (!cancelled && owed) setUnpaidTrip({ tripCode: owed.publicCode, totalFare: owed.totalFare });
       } catch {
-        // The server still refuses the booking; the form's error handling covers it.
       }
       if (!cancelled) setCheckingTrip(false);
     }
@@ -262,7 +256,6 @@ export function BookRidePage() {
     return () => { cancelled = true; };
   }, [navigate]);
 
-  // Restores a live search after a reload, and also from another tab or device (session storage is per tab).
   useEffect(() => {
     const storedPublicId = sessionStorage.getItem(ACTIVE_REQUEST_KEY);
     const restore = storedPublicId

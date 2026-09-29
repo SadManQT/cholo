@@ -20,7 +20,6 @@ export async function insert({ tripId, raterId, rateeId, raterRole, score, comme
   return rows[0];
 }
 
-/** Recomputes the ratee's average from the ratings table so it can never drift from the source rows. */
 export async function refreshAverage(rateeId, raterRole, client) {
   const table = raterRole === 'passenger' ? 'driver_profiles' : 'passenger_profiles';
   await client.query(

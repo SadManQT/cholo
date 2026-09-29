@@ -14,7 +14,6 @@ import * as zonesService from './zones.service.js';
 
 const REQUEST_EXPIRY_MINUTES = 5;
 const MAX_UPCOMING_SCHEDULED = 3;
-// Scheduled rides start looking for a driver this long before pickup time.
 const SCHEDULE_DISPATCH_LEAD_MINUTES = 10;
 const SCHEDULE_REMINDER_LEAD_MINUTES = 30;
 
@@ -66,15 +65,12 @@ export async function createRequest(passengerId, dto) {
   try {
     request = await withTransaction(async (client) => {
       await ridesRepo.lockPassengerBooking(passengerId, client);
-      // A finished trip has to be paid for before the next one can be booked.
       const unpaid = await ridesRepo.findUnpaidTrip(passengerId, client);
       if (unpaid) throw new AppError(409, 'UNPAID_TRIP', { tripCode: unpaid.tripCode, totalFare: unpaid.totalFare });
-      // A wallet below zero means money is owed (a cancellation fee, or commission for a driver who also rides).
       const payerWallet = await walletRepo.getByUserId(passengerId, client);
       if (payerWallet && Number(payerWallet.balance) < 0) {
         throw new AppError(409, 'OUTSTANDING_BALANCE', { balance: payerWallet.balance });
       }
-      // Paying by wallet means the fare is taken at drop-off, so the balance has to cover the estimate now.
       if (paymentIntent === 'wallet') {
         const wallet = await walletRepo.getByUserId(passengerId, client);
         if (wallet?.status !== 'active') throw new AppError(409, 'WALLET_FROZEN');
@@ -182,7 +178,6 @@ function toRequestStatus(request) {
   };
 }
 
-/** The rider's live search (if any) and upcoming scheduled rides, soonest first. */
 export async function listActiveRequests(passengerId) {
   const rows = await ridesRepo.listActiveForPassenger(passengerId);
   return rows.map(toRequestStatus);
@@ -219,11 +214,6 @@ export async function expireStaleRequests() {
   });
 }
 
-/**
- * Scheduled rides: remind the rider 30 minutes ahead, and start the normal search 10 minutes ahead.
- * A rider already on another trip, or owing for a finished one, keeps the booking pending; it expires 15
- * minutes after pickup time.
- */
 export async function dispatchScheduledRequests() {
   const reminders = await withTransaction(async (client) => {
     const due = await ridesRepo.claimScheduledReminders(SCHEDULE_REMINDER_LEAD_MINUTES, client);

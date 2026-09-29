@@ -3,14 +3,12 @@ import { useSyncExternalStore } from 'react';
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type Theme = 'light' | 'dark';
 
-// Keep in sync with the inline script in index.html, which applies the theme before first paint.
 const STORAGE_KEY = 'cholo.theme';
 const THEME_COLORS: Record<Theme, string> = { light: '#0E7A5F', dark: '#0A131B' };
 
 const media = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-color-scheme: dark)') : undefined;
 const listeners = new Set<() => void>();
 
-// Light is the default; dark, or following the device, is something the rider picks in Account.
 const DEFAULT_PREFERENCE: ThemePreference = 'light';
 
 function readPreference(): ThemePreference {
@@ -18,7 +16,6 @@ function readPreference(): ThemePreference {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
   } catch {
-    // Storage blocked (private mode).
   }
   return DEFAULT_PREFERENCE;
 }
@@ -47,7 +44,6 @@ export function setThemePreference(next: ThemePreference) {
   try {
     localStorage.setItem(STORAGE_KEY, next);
   } catch {
-    // Storage blocked: the choice still applies for this visit.
   }
   apply();
 }
@@ -57,7 +53,6 @@ function subscribe(listener: () => void) {
   return () => { listeners.delete(listener); };
 }
 
-/** The saved preference (system, light or dark) and the theme actually showing. */
 export function useTheme() {
   const current = useSyncExternalStore(subscribe, () => theme);
   const saved = useSyncExternalStore(subscribe, () => preference);

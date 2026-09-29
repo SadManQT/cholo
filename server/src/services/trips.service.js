@@ -54,10 +54,6 @@ function assertTransition(trip, expectedStatus) {
 
 const FRESH_LOCATION_SECONDS = 120;
 
-/**
- * Refuses an arrival-type action unless the driver is within ARRIVAL_RADIUS_METERS of the place. Uses the
- * position sent with the request, else the last socket ping if it is under two minutes old.
- */
 async function assertNear(driverId, place, reported, code, client) {
   const radius = env.ARRIVAL_RADIUS_METERS;
   if (!radius) return;
@@ -92,11 +88,6 @@ async function announceStart(trip, started) {
   return started;
 }
 
-/**
- * The driver slides "Start trip". A driver's word alone can't start a ride (they could claim to be at a
- * pickup they are nowhere near), so the rider has to agree they are in the car: if they already confirmed,
- * the trip starts now; otherwise the request waits for the rider's confirmation (confirmPickup).
- */
 export async function markStarted(driverId, tripCode) {
   const result = await withTransaction(async (client) => {
     await attributeTo(driverId, client);
@@ -122,10 +113,6 @@ export async function markStarted(driverId, tripCode) {
   return { tripCode: trip.tripCode, status: trip.status, startRequestedAt, awaitingRider: true };
 }
 
-/**
- * The rider confirms they are with the driver. If the driver already asked to start, the trip starts now;
- * otherwise the driver's next "Start trip" starts it straight away.
- */
 export async function confirmPickup(passengerId, tripCode) {
   const result = await withTransaction(async (client) => {
     await attributeTo(passengerId, client);
@@ -142,10 +129,6 @@ export async function confirmPickup(passengerId, tripCode) {
   return { tripCode: trip.tripCode, status: trip.status, pickupConfirmedAt };
 }
 
-/**
- * The rider says the driver is not at the pickup. The arrival is undone, so the trip can't start and the
- * driver has to reach the pickup and mark arrival again. Logged for admins in case of repeat offenders.
- */
 export async function disputeArrival(passengerId, tripCode) {
   const result = await withTransaction(async (client) => {
     await attributeTo(passengerId, client);
@@ -187,12 +170,6 @@ export async function arriveAtStop(driverId, tripCode, stopOrder, location) {
   return result.stop;
 }
 
-/**
- * Records the driver's earning and moves their wallet. Promos are funded by the platform: the driver earns
- * on the undiscounted fare (paid + discount). Cash: the driver kept `paid` in hand, so the wallet moves by
- * discount − commission (a debit when commission is larger, a credit when the promo was). App-paid: the
- * wallet is credited the full net earning.
- */
 export async function settleDriverEarnings(trip, paidAmount, client, { platformCollected = false, discount } = {}) {
   const commission = await pricingRepo.getCurrentCommission(trip.categoryId, trip.cityId, client);
   if (!commission) throw new AppError(422, 'NO_COMMISSION_RULE_FOR_MARKET');
@@ -217,7 +194,6 @@ export async function settleDriverEarnings(trip, paidAmount, client, { platformC
   const driverWallet = await walletRepo.getByUserId(trip.driverId, client);
   const walletDelta = platformCollected ? netEarning : round2(promoSubsidy - commissionAmount);
   if (walletDelta === 0) return;
-  // Amounts in the ledger are always positive; the direction carries the sign.
   await walletRepo.insertTransaction(walletDelta > 0 ? {
     walletId: driverWallet.id,
     txnType: 'trip_earning',
@@ -261,7 +237,6 @@ async function redeemPromoIfApplicable(trip, preDiscountTotal, client) {
   return { promoId: promo.id, discountAmount: computeDiscount(promo, preDiscountTotal) };
 }
 
-/** Where the driver is now: the position sent with the request, else a ping under two minutes old. */
 async function currentPosition(driverId, reported, client) {
   if (reported) {
     await driversRepo.updateLocation(driverId, reported, client);
@@ -270,12 +245,7 @@ async function currentPosition(driverId, reported, client) {
   return driversRepo.findFreshLocation(driverId, FRESH_LOCATION_SECONDS, client);
 }
 
-// Ended early, the rider pays for the distance actually covered: the GPS path from pickup, through every
-// position the driver's phone sent during the ride, to where it stopped. Without enough GPS points it falls
-// back to the road route to that spot. A detour can't inflate the bill past the route plus DETOUR_ALLOWANCE.
 const DETOUR_ALLOWANCE = 1.25;
-// With the arrival check turned off (ARRIVAL_RADIUS_METERS=0), this close to the drop-off still counts as
-// arriving there, so a rider who asked to stop just short of it pays the normal fare, not a sliver less.
 const AT_DROPOFF_METERS = 150;
 async function distanceDriven(trip, pickup, endedAt, routeKm, client) {
   const pings = trip.startedAt ? await tripsRepo.listPingsSince(trip.id, trip.startedAt, client) : [];
@@ -292,14 +262,6 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
     assertTransition(trip, 'in_progress');
     const dropoff = { lat: trip.dropoffLat, lng: trip.dropoffLng };
 
-    // "End trip here": the rider asked to get out before the drop-off. Charge the route actually driven,
-    // pickup → stops already reached → here, and record it for admins. At the drop-off it is a normal
-    // completion. Away from the drop-off the rider must have asked first (requestEarlyStop), so a driver
-    // can't cut a trip short on their own.
-    //
-    // Once the rider has asked to stop, the trip is billed that way however the driver ends it: a plain
-    // "Complete trip" away from the drop-off is an early end too, so the rider is never charged for the
-    // part of the route they didn't ride. Without a live position, the last GPS point of the ride is used.
     let endedAt = null;
     const stopRequested = Boolean(trip.earlyStopRequestedAt);
     if (endEarly || stopRequested) {
@@ -333,7 +295,6 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       distanceKm,
       durationMin,
       waitingMinutes: waitingMin,
-      // The surge the rider agreed to at booking, not whatever is live at drop-off.
       surgeMultiplier: trip.surgeMultiplier ?? 1,
     });
 
@@ -344,9 +305,6 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       fare.totalFare = round2(preDiscountTotal - redemption.discountAmount);
     }
 
-    // A promo can cover the whole fare. Nothing is collected, so there is no payment row (amounts must be
-    // positive); the trip is simply paid, and the driver still earns their share of the undiscounted fare,
-    // funded by the platform.
     const freeRide = Number(fare.totalFare) === 0;
     const isCash = trip.paymentIntent === 'cash' && !freeRide;
 
@@ -383,8 +341,6 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
       await settleDriverEarnings(trip, 0, client, { platformCollected: true, discount: fare.discountAmount });
     }
 
-    // Wallet trips settle themselves at drop-off, like cash. If the final fare came out higher than the
-    // balance (a longer route, waiting time), the trip stays due and the rider pays it another way.
     let paymentStatus = updated.paymentStatus;
     if (trip.paymentIntent === 'wallet' && Number(fare.totalFare) > 0) {
       const wallet = await walletRepo.getByUserIdForUpdate(trip.passengerId, client);
@@ -454,7 +410,6 @@ export async function completeTrip(driverId, tripCode, { waitingMin = 0, lat, ln
   return response;
 }
 
-/** The rider asks to get out before the drop-off. The driver is told, and may then end the trip there. */
 export async function requestEarlyStop(passengerId, tripCode) {
   const result = await withTransaction(async (client) => {
     await attributeTo(passengerId, client);
@@ -494,7 +449,6 @@ async function loadPayableTrip(passengerId, tripCode, client) {
 
 const GATEWAY_METHODS = ['bkash', 'nagad', 'card'];
 
-/** Debits the rider's (already locked) wallet for a trip, marks it paid and pays the driver their share. */
 async function chargeWalletForTrip(trip, wallet, amount, client, discount) {
   await paymentsRepo.insertPayment({
     purpose: 'trip',
@@ -627,8 +581,6 @@ export async function cancelTrip(userId, tripCode, { reasonCode, reasonText }) {
 
     await ridesRepo.markCancelled(trip.requestId, client);
 
-    // The fee is taken from the rider's wallet (it may go below zero; they then have to top up before the
-    // next booking) and goes to the driver, who drove to the pickup for nothing.
     if (Number(feeCharged) > 0) {
       const riderWallet = await walletRepo.getByUserIdForUpdate(trip.passengerId, client);
       await walletRepo.insertTransaction({
@@ -851,7 +803,6 @@ export async function createShareLink(userId, tripCode) {
   if (!trip || Number(trip.passengerId) !== userId) throw new AppError(404, 'TRIP_NOT_FOUND');
   if (!['assigned', 'arrived', 'in_progress'].includes(trip.status)) throw new AppError(409, 'TRIP_CLOSED');
 
-  // The token outlives any realistic trip; the view itself stops an hour after the trip ends.
   const token = signScoped(SHARE_PURPOSE, { tid: Number(trip.id) }, '24h');
   return { url: `${env.CLIENT_ORIGIN[0]}/share/${token}`, token };
 }

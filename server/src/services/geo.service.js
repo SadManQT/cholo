@@ -4,8 +4,6 @@ import { isRouteInsideBangladesh } from '../utils/bangladeshBoundary.js';
 import * as osmProvider from './providers/osm.provider.js';
 import * as photonProvider from './providers/photon.provider.js';
 
-// per-process memory cache (one Render instance). Popular searches and repeated quotes for the
-// same trip stop hitting the map servers; move to Redis/Postgres if you run several API instances.
 const CACHE_TTL_MS = 10 * 60_000;
 const CACHE_MAX_ENTRIES = 1_000;
 const cache = new Map();
@@ -114,7 +112,6 @@ export async function route(from, to, stops = []) {
 async function computeRoute(from, to, stops) {
   const provider = currentProvider();
   if (stops.length > 0) {
-    // Multi-stop trips follow the rider's order; OSRM returns no alternatives with waypoints.
     const routed = await provider.route(from, to, { via: stops });
     if (!isRouteInsideBangladesh(routed.path)) throw new AppError(422, 'DOMESTIC_ROUTE_NOT_FOUND');
     return { distanceKm: routed.distanceKm, durationMin: routed.durationMin, path: routed.path, alternatives: [] };

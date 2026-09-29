@@ -23,7 +23,6 @@ export function setUnauthorizedHandler(handler: () => void) {
 export const apiClient = axios.create({
   baseURL: env.apiUrl,
   withCredentials: true,
-  // The API answers errors in the rider's chosen language.
   headers: { 'Accept-Language': language },
 });
 

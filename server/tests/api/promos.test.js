@@ -46,7 +46,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -186,7 +185,6 @@ async function dhakaCityId() {
   return rows[0].id;
 }
 
-
 test('POST /promos/validate requires a bearer token', async () => {
   const response = await request('POST', '/promos/validate', {
     body: { code: 'X', cityId: 1, categoryId: 3, estFare: 100 },
@@ -300,7 +298,6 @@ test('POST /promos/validate: first_ride_only is 422 PROMO_NOT_APPLICABLE for a p
   assert.equal((await response.json()).error.code, 'PROMO_NOT_APPLICABLE');
 });
 
-
 test('GET /promos/available requires a bearer token', async () => {
   const response = await request('GET', '/promos/available?cityId=1');
   assert.equal(response.status, 401);
@@ -329,7 +326,6 @@ test('GET /promos/available lists active campaigns for the city, excluding inact
   assert.ok(!codes.includes(expired.code));
   assert.equal(codes.length, new Set(codes).size);
 });
-
 
 test('a valid promo reduces the completed trip total and creates a promo_redemptions row', async (t) => {
   const promo = await createPromo({ promoType: 'fixed_amount', value: 50 });
@@ -410,7 +406,6 @@ test('a promo that expires between booking and completion silently applies no di
   );
   assert.equal(rows[0].n, 0);
 });
-
 
 test('every completed trip gets a numbered receipt row matching the fare breakdown', async (t) => {
   const { tripCode, passenger, response } = await bookAndComplete(t, {});

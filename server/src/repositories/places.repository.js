@@ -40,7 +40,6 @@ export async function deleteSaved(userId, id, client = pool) {
   return rowCount > 0;
 }
 
-/** Distinct recent pickup and drop-off points from the passenger's own ride requests, newest first. */
 export async function listRecent(userId, limit, client = pool) {
   const { rows } = await client.query(
     `SELECT address, lat, lng, max(used_at) AS "usedAt" FROM (

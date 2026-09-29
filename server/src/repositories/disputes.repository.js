@@ -115,7 +115,6 @@ export async function startReview(disputeId, client) {
   return rows[0];
 }
 
-/** The driver's earning for a trip (who, and the net/gross split used to share a refund). */
 export async function findEarningForTrip(tripId, client) {
   const { rows } = await client.query(
     `SELECT driver_id AS "driverId", gross_fare AS "grossFare", net_earning AS "netEarning"

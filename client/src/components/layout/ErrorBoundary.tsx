@@ -6,7 +6,6 @@ interface State {
   error: Error | null;
 }
 
-// A render error anywhere would otherwise leave a blank white page.
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null };
 

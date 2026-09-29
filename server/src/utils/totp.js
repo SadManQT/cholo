@@ -1,6 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
-// RFC 6238 time-based codes (30 s, 6 digits, SHA-1): what Google Authenticator, Authy and 1Password expect.
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const STEP_SECONDS = 30;
 
@@ -37,7 +36,6 @@ export function totpCode(secret, time = Date.now()) {
   return String(binary % 1_000_000).padStart(6, '0');
 }
 
-/** Accepts the current code and one step either side, for phones whose clocks drift a little. */
 export function verifyTotp(secret, code, time = Date.now()) {
   if (!/^\d{6}$/.test(code ?? '')) return false;
   return [-1, 0, 1].some((drift) => timingSafeEqual(

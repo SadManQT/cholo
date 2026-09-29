@@ -52,7 +52,6 @@ export async function getStats(query) {
   return { ...stats, trend };
 }
 
-/** Runs all ten analytics reports and returns each with its SQL, so the page can show how it was worked out. */
 export async function getAnalytics({ month = dhakaDate().slice(0, 7), minTrips }) {
   return Promise.all(analyticsRepo.REPORTS.map(async (report) => ({
     id: report.id,
@@ -61,7 +60,6 @@ export async function getAnalytics({ month = dhakaDate().slice(0, 7), minTrips }
   })));
 }
 
-// Rows arrive best first, so the rank is just the position in the list.
 const ranked = (rows) => rows.map((row, index) => ({ rank: index + 1, ...row, completedTrips: Number(row.completedTrips) }));
 
 export async function getLeaderboard({ days, cityId }) {

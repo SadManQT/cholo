@@ -6,7 +6,6 @@ import { formatBDT, formatDateTime } from '../../utils/format';
 import { Button, Card, toast } from '../ui';
 import { t } from '../../i18n';
 
-/** Scheduled rides that haven't started searching yet, with a cancel button. Renders nothing when empty. */
 export function UpcomingRides() {
   const [upcoming, setUpcoming] = useState<RideRequest[]>([]);
   const [cancelling, setCancelling] = useState<string | null>(null);

@@ -73,10 +73,6 @@ export async function handleWebhook(gatewayName, body) {
   });
 }
 
-/**
- * Settles a successful return immediately (verified with the gateway, same as the IPN, and idempotent) so the
- * customer doesn't wait on a delayed IPN; marks failed/cancelled attempts so the customer can retry.
- */
 export async function handleReturn(publicId, result, body) {
   if (result === 'success' && body?.val_id) {
     await handleWebhook(paymentGateway.activeGateway(), body).catch((error) => {

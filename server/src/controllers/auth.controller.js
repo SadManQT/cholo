@@ -15,8 +15,6 @@ function deviceFromRequest(request) {
   };
 }
 
-// In production the client (Vercel) and API (Render) are different sites, so a strict cookie would never
-// reach /auth/refresh and every reload would sign the user out. None requires Secure, which production sets.
 const COOKIE_SAME_SITE = env.NODE_ENV === 'production' ? 'none' : 'strict';
 
 function setRefreshCookie(response, refreshToken) {

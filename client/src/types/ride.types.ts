@@ -239,13 +239,9 @@ export interface TripDetail {
   stops: TripStop[];
   arrivalRadiusMeters: number;
   endedEarly: { at: string; lat: number; lng: number } | null;
-  /** When the rider tapped "Stop here"; only then may the driver end the trip away from the drop-off. */
   earlyStopRequestedAt: string | null;
-  /** The driver slid "Start trip"; it starts once the rider confirms they are in the car. */
   startRequestedAt: string | null;
-  /** The rider confirmed they are with the driver; the driver's next "Start trip" starts it. */
   pickupConfirmedAt: string | null;
-  /** The last time the rider said the driver was not at the pickup (the arrival was undone). */
   arrivalDisputedAt: string | null;
   driverIsFavorite: boolean;
   reportedByMe: boolean;
@@ -281,7 +277,6 @@ export interface SocketTripStatus {
   arrivalDisputedAt?: string;
 }
 
-/** Both sides agreeing the rider is in the car before a trip starts. */
 export interface PickupHandshake {
   startRequestedAt: string | null;
   pickupConfirmedAt: string | null;

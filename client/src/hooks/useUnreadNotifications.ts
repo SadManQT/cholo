@@ -6,8 +6,6 @@ import { useSocket } from '../context/socket';
 const POLL_MS = 60_000;
 export const NOTIFICATIONS_CHANGED = 'cholo:notifications-changed';
 
-// The server pushes `notification:new` over the socket the moment one is saved; the poll is a fallback
-// for when the socket is down.
 export function useUnreadNotifications() {
   const { socket } = useSocket();
   const [unread, setUnread] = useState(0);

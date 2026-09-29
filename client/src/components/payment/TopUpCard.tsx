@@ -13,9 +13,7 @@ const MIN = 10;
 const MAX = 25_000;
 
 interface TopUpCardProps {
-  /** Pre-filled amount, e.g. what a trip is short by. */
   initialAmount?: number;
-  /** Where to send the rider after the top-up succeeds (the trip they're topping up to pay). */
   returnTo?: string | null;
 }
 
@@ -39,7 +37,6 @@ export function TopUpCard({ initialAmount, returnTo }: TopUpCardProps = {}) {
         if (returnTo) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
         else sessionStorage.removeItem(TOPUP_RETURN_KEY);
       } catch {
-        // Storage blocked: the result page falls back to the wallet.
       }
       window.location.assign(redirectUrl);
     } catch (thrown) {

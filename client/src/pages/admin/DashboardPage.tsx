@@ -15,7 +15,6 @@ const EXPORTS: Array<{ kind: ExportKind; label: string }> = [
   { kind: 'withdrawals', label: 'Withdrawals' },
 ];
 
-/** CSV downloads for finance and university reporting. The API allows super and finance admins only. */
 function ExportsCard() {
   const [from, setFrom] = useState(dhakaDate(-29));
   const [to, setTo] = useState(dhakaDate());
@@ -94,7 +93,6 @@ function RankTable({ title, rows, moneyLabel, money }: {
   );
 }
 
-/** Top drivers and riders by completed trips, ties broken by money earned or spent. */
 function LeaderboardCard({ cityId }: { cityId?: number }) {
   const [days, setDays] = useState<number | undefined>(30);
   const [board, setBoard] = useState<Leaderboard | null>(null);
@@ -201,7 +199,6 @@ export function DashboardPage() {
           {stats.trend.map((row) => (
             <div key={row.month} className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <span className="text-xs font-semibold tabular-nums">{formatBDT(row.grossRevenue)}</span>
-              {}
               <div className="h-40 w-full">
                 <div
                   className="h-full w-full origin-bottom rounded-t-lg bg-cholo-700 transition-transform duration-300 ease-cholo-out"

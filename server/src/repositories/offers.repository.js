@@ -129,8 +129,6 @@ export async function timeOutStalePending(offerTimeoutSeconds, client = pool) {
   return rowCount;
 }
 
-// Searching requests nobody is currently looking at: no pending offer left, and the last round
-// (if any) has had its full answer window.
 export async function findRequestsNeedingRedispatch(offerTimeoutSeconds, client = pool) {
   const { rows } = await client.query(
     `SELECT rr.id, rr.public_id AS "publicId", rr.passenger_id AS "passengerId",

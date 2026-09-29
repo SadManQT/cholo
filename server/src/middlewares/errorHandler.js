@@ -14,7 +14,6 @@ const postgresErrors = Object.freeze({
   ECONNREFUSED: { status: 503, code: 'DATABASE_UNAVAILABLE' },
 });
 
-// The web app sends Accept-Language: bn when the rider has chosen Bangla.
 function messageFor(request, code) {
   const english = ERROR_MESSAGES[code] ?? code;
   return request?.acceptsLanguages('en', 'bn') === 'bn' ? ERROR_MESSAGES_BN[code] ?? english : english;

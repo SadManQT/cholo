@@ -67,7 +67,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -172,7 +171,6 @@ async function completeAssignedTrip(tripCode, driverAccessToken) {
   return (await response.json()).data;
 }
 
-
 test('POST /wallet/topup creates an initiated payment and returns a redirect URL', async () => {
   const passenger = await createPassenger();
 
@@ -215,7 +213,6 @@ test('POST /wallet/topup requires a bearer token', async () => {
   assert.equal(response.status, 401);
 });
 
-
 test('POST /trips/:tripCode/pay with method=bkash creates an initiated payment and returns pending_redirect', async (t) => {
   const { tripCode, passenger, driver } = await createAssignedTrip(t);
   await completeAssignedTrip(tripCode, driver.accessToken);
@@ -234,7 +231,6 @@ test('POST /trips/:tripCode/pay with method=bkash creates an initiated payment a
   const { rows: tripRows } = await pool.query(`SELECT payment_status FROM trips WHERE trip_code = $1`, [tripCode]);
   assert.equal(tripRows[0].payment_status, 'unpaid');
 });
-
 
 test('webhook settles a gateway trip payment: payment succeeded, trip paid, driver_earnings + commission debit', async (t) => {
   const { tripCode, passenger, driver } = await createAssignedTrip(t);
@@ -405,7 +401,6 @@ test('webhook rejects a verified transaction whose amount doesn\'t match the pay
   const { rows: paymentRows } = await pool.query(`SELECT status FROM payments WHERE public_id = $1`, [tranId]);
   assert.equal(paymentRows[0].status, 'initiated');
 });
-
 
 test('GET /payments/:publicId returns the payer\'s own payment', async () => {
   const passenger = await createPassenger();

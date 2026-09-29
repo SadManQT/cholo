@@ -3,10 +3,6 @@ import * as notificationsRepo from '../repositories/notifications.repository.js'
 import { getIO } from '../sockets/index.js';
 import { userRoom } from '../sockets/rooms.js';
 
-/**
- * Queue an in-app notification; pass the caller's transaction client so it commits with the change it
- * describes. Once committed, the user's open tabs get `notification:new` and refresh their inbox badge.
- */
 export async function notify(userId, notification, client) {
   await notificationsRepo.insert({ userId, ...notification }, client);
   afterCommit(client, () => {

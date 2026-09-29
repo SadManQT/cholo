@@ -1,5 +1,3 @@
-// Bangla versions of ERROR_MESSAGES, sent when the request prefers Bangla (Accept-Language: bn).
-// A code missing here falls back to the English message.
 export const ERROR_MESSAGES_BN = Object.freeze({
   VALIDATION_FAILED: 'অনুরোধে ভুল তথ্য আছে।',
   NOT_FOUND: 'যা খুঁজছেন তা পাওয়া যায়নি।',

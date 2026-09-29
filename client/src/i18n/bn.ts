@@ -1,5 +1,3 @@
-// Bangla interface text, keyed by the English string used in the code (see t() in ./index.ts).
-// A missing entry falls back to English. Keys are exact, including punctuation.
 export const bn: Record<string, string> = {
   "Join me on Cholo": "Cholo-তে আমার সাথে যোগ দিন",
   "Invite copied. Paste it into any chat.": "আমন্ত্রণ কপি হয়েছে। যেকোনো চ্যাটে পেস্ট করুন।",

@@ -167,7 +167,6 @@ export async function listVehicleDocuments(userId, vehicleId) {
   return documentsRepo.listVehicleDocumentsForDriver(vehicleId, userId);
 }
 
-/** Refuses work while the driver owes more commission than COMMISSION_DEBT_LIMIT (a negative wallet). */
 export async function assertCommissionDebtWithinLimit(driverId, client) {
   const limit = env.COMMISSION_DEBT_LIMIT;
   if (!limit) return;

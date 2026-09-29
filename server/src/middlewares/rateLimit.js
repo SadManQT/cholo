@@ -37,7 +37,6 @@ const phoneKey = (request) => `phone:${request.body?.phone ?? 'unknown'}`;
 
 const perIpAndPhone = (limit) => [
   createRateLimiter({ windowMs: 15 * MINUTE, limit: isTest ? 1000 : limit, keyGenerator: phoneAndIpKey, skipSuccessfulRequests: true }),
-  // Caps guesses on one account no matter how many IP addresses they come from.
   createRateLimiter({ windowMs: 15 * MINUTE, limit: isTest ? 1000 : limit * 3, keyGenerator: phoneKey, skipSuccessfulRequests: true }),
 ];
 

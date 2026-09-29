@@ -1,7 +1,5 @@
 import { pool } from '../config/db.js';
 
-// Favourite drivers, referrals and user reports: the rider-to-rider/driver relationships.
-
 export async function listFavoriteDrivers(passengerId, client = pool) {
   const { rows } = await client.query(
     `SELECT u.public_id AS id, u.full_name AS name, u.photo_url AS "photoUrl",
@@ -16,7 +14,6 @@ export async function listFavoriteDrivers(passengerId, client = pool) {
   return rows;
 }
 
-/** A rider can only favourite a driver who has completed a trip with them. */
 export async function findRiddenDriverId(passengerId, driverPublicId, client = pool) {
   const { rows } = await client.query(
     `SELECT u.id FROM users u

@@ -40,7 +40,6 @@ export const markArrived = asyncHandler(async (request, response) => {
 
 export const markStarted = asyncHandler(async (request, response) => {
   const data = await tripsService.markStarted(request.user.id, request.params.tripCode);
-  // 202: the start is recorded but waits for the rider to confirm they are in the car.
   response.status(data.awaitingRider ? 202 : 200).json({ success: true, data });
 });
 

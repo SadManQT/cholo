@@ -28,19 +28,16 @@ export async function getStats(cityId?: number) {
   return response.data.data;
 }
 
-/** The ten SQL analytics reports, each with its SQL text. */
 export async function getAnalytics(params: { month: string; minTrips: number }) {
   const response = await apiClient.get<ApiSuccess<AnalyticsReport[]>>('/admin/analytics', { params });
   return response.data.data;
 }
 
-/** Top drivers and riders by completed trips. `days` omitted = all time. */
 export async function getLeaderboard(params: { days?: number; cityId?: number }) {
   const response = await apiClient.get<ApiSuccess<Leaderboard>>('/admin/leaderboard', { params });
   return response.data.data;
 }
 
-/** Every document whose latest copy awaits review, for any driver or vehicle. */
 export async function listPendingDocuments() {
   const response = await apiClient.get<ApiSuccess<PendingDocument[]>>('/admin/documents/pending');
   return response.data.data;
@@ -168,7 +165,6 @@ export async function rejectWithdrawal(id: string, reason: string) {
   return response.data.data;
 }
 
-/** Finance sent the money: approved → paid. */
 export async function markWithdrawalPaid(id: string, reference?: string) {
   const response = await apiClient.post<ApiSuccess<{ id: string; status: WithdrawalStatus }>>(
     `/admin/withdrawals/${id}/paid`,
@@ -177,7 +173,6 @@ export async function markWithdrawalPaid(id: string, reference?: string) {
   return response.data.data;
 }
 
-/** The payout bounced: approved → failed, and the amount goes back to the driver's wallet. */
 export async function markWithdrawalFailed(id: string, reason: string) {
   const response = await apiClient.post<ApiSuccess<{ id: string; status: WithdrawalStatus }>>(
     `/admin/withdrawals/${id}/failed`,
@@ -310,7 +305,6 @@ export async function updateReport(id: string, status: Exclude<ReportStatus, 'op
 
 export type ExportKind = 'trips' | 'payments' | 'withdrawals';
 
-/** Downloads through the authenticated client (a plain link can't carry the bearer token). */
 export async function downloadExport(kind: ExportKind, from: string, to: string) {
   const response = await apiClient.get<Blob>(`/admin/exports/${kind}.csv`, { params: { from, to }, responseType: 'blob' });
   const url = URL.createObjectURL(response.data);

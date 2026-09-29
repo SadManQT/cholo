@@ -1,10 +1,3 @@
--- seed.reference.sql — reference data every environment needs to boot the
--- app (doc 07 §2 planned layout). Idempotent: safe to re-run.
---
--- M2 needs roles for authentication. M3 adds the vehicle categories used by
--- fleet registration. M4 adds the city and the illustrative Dhaka tariff
--- card (doc 01 §6.1) that fn_current_pricing resolves for /rides/quote.
-
 INSERT INTO roles (name, description) VALUES
     ('PASSENGER', 'Books and takes rides'),
     ('DRIVER', 'Drives and fulfills ride requests'),
@@ -32,10 +25,6 @@ ON CONFLICT (name) DO UPDATE SET
     currency = EXCLUDED.currency,
     launched_at = EXCLUDED.launched_at;
 
--- Illustrative Dhaka tariff (doc 01 §6.1). effective_from is a fixed
--- timestamp, not now(), so re-running this file hits the same UNIQUE
--- (city_id, category_id, effective_from) row instead of minting a new one
--- every time.
 INSERT INTO pricing_rules
     (city_id, category_id, base_fare, per_km_rate, per_min_rate, minimum_fare, booking_fee, effective_from)
 SELECT
@@ -57,10 +46,6 @@ ON CONFLICT (city_id, category_id, effective_from) DO UPDATE SET
     minimum_fare = EXCLUDED.minimum_fare,
     booking_fee = EXCLUDED.booking_fee;
 
--- Countrywide commission (city_id NULL — doc 02-03 §8 T2's own worked
--- example uses 15.00%), one row per category. fn_current_commission's
--- city_id NULLS LAST ordering lets a city-specific override be added later
--- without touching this row.
 INSERT INTO commission_rules (category_id, city_id, commission_pct, effective_from)
 SELECT vc.id, NULL, 15.00, TIMESTAMPTZ '2026-01-01 00:00:00+06'
 FROM vehicle_categories vc

@@ -8,14 +8,12 @@ import { t } from '../../i18n';
 interface SlideToConfirmProps {
   label: string;
   loading?: boolean;
-  /** Locks the slider and shows this text instead of the label (e.g. "450 m to the pickup"). */
   lockedReason?: string | null;
   onConfirm: () => void;
 }
 
 const THUMB_SIZE_PX = 48;
 const THUMB_MARGIN_PX = 4;
-/** How far along the track (0–1) the thumb must be released to confirm. */
 const CONFIRM_AT = 0.85;
 
 /**
@@ -47,7 +45,6 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
     offsetRef.current = offset;
     const span = travel();
     if (thumbRef.current) thumbRef.current.style.transform = `translate3d(${offset}px, 0, 0)`;
-    // The fill is a full-width layer slid in from the left so it ends just past the thumb.
     if (fillRef.current) {
       fillRef.current.style.transform = `translate3d(${offset + THUMB_SIZE_PX + THUMB_MARGIN_PX * 2 - widthRef.current}px, 0, 0)`;
     }
@@ -85,17 +82,14 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
     const observer = new ResizeObserver((entries) => measure(entries[0].contentRect.width));
     observer.observe(el);
     return () => observer.disconnect();
-    // paint and travel only read refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Locked or busy mid-drag (the driver moved out of range, a request started): let go.
   useEffect(() => {
     if (!disabled) return;
     drag.current = null;
     setDragging(false);
     springBack();
-    // springBack only reads refs and stable values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled]);
 
@@ -126,7 +120,6 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
     setDragging(false);
     cancelAnimationFrame(frameRef.current);
     frameRef.current = 0;
-    // Use where the finger ended, even if the last frame hadn't painted yet.
     const offset = Math.min(travel(), Math.max(0, active.startOffset + event.clientX - active.startX));
     paint(commit ? offset : offsetRef.current);
     if (commit && !disabled && travel() > 0 && offset >= travel() * CONFIRM_AT) {
@@ -138,7 +131,6 @@ export function SlideToConfirm({ label, loading = false, lockedReason = null, on
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
-    // Also stops the button's own click on Space, which must never confirm (a tap is not a slide).
     event.preventDefault();
     if (!disabled && !event.repeat) onConfirm();
   }

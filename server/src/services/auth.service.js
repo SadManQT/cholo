@@ -43,7 +43,6 @@ async function mintSession(userId, device) {
   const roles = await rolesRepo.findRoleNamesForUser(userId);
   const refreshToken = generateRefreshToken();
 
-  // The session and its refresh token are saved together: never a session nobody can refresh.
   const sessionId = await withTransaction(async (client) => {
     const createdId = await sessionsRepo.createSession({
       userId,
@@ -71,7 +70,6 @@ export async function register({ fullName, phone, password, gender, referralCode
   const passwordHash = await hashPassword(password);
   const otp = generateOtp();
 
-  // One transaction: a failure part-way must not leave a phone number taken by an account that can't log in.
   const user = await withTransaction(async (client) => {
     const created = await usersRepo.insert({ fullName, phone, passwordHash, gender }, client).catch((error) => {
       if (error.code === '23505') throw new AppError(409, 'PHONE_TAKEN');
@@ -120,7 +118,6 @@ export async function resendOtp({ phone, purpose }) {
   sendOtpSms(phone, otp);
 }
 
-// Returns a failure instead of throwing so the attempt counter commits with the transaction.
 async function consumeOtp({ phone, otp, purpose }, client) {
   const record = await otpRepo.findLatestActiveForUpdate(phone, purpose, client);
   if (!record) {
@@ -175,7 +172,6 @@ export async function login({ phone, password }, device) {
     throw new AppError(401, 'BAD_CREDENTIALS');
   }
 
-  // Admins with an authenticator app get a 5-minute challenge instead of a session.
   const twoFactor = await adminRepo.getTwoFactor(user.id);
   if (twoFactor?.enabledAt) {
     return {
@@ -284,7 +280,6 @@ export async function requestPasswordReset({ phone }) {
   sendOtpSms(phone, otp);
 }
 
-/** Trades a correct reset code for a short-lived, single-use token that authorizes setting a new password. */
 export async function verifyPasswordResetCode({ phone, otp }) {
   const resetToken = generateRefreshToken();
   const outcome = await withTransaction(async (client) => {

@@ -11,8 +11,6 @@ interface DialogProps {
   footer?: ReactNode;
 }
 
-// Native <dialog> gives focus trapping, Escape-to-close and the top layer for free. It is portalled to <body>
-// so a parent's spacing utilities (space-y-*) can't override its centering margin.
 export function Dialog({ open, title, description, onClose, children, footer }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();

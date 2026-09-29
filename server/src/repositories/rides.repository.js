@@ -145,7 +145,6 @@ export async function findScheduledForUpdate(requestId, client) {
   return rows[0];
 }
 
-// The search runs until a few minutes after the booked pickup time, never less than the usual window.
 export async function startScheduledSearch(requestId, expiryMinutes, client) {
   await client.query(
     `UPDATE ride_requests
@@ -201,7 +200,6 @@ export async function hasActiveTrip(passengerId, client = pool) {
   return rowCount > 0;
 }
 
-/** The rider's oldest finished trip that still hasn't been paid (cash trips are paid at drop-off). */
 export async function findUnpaidTrip(passengerId, client = pool) {
   const { rows } = await client.query(
     `SELECT trip_code AS "tripCode", total_fare AS "totalFare"

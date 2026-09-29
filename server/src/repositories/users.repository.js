@@ -7,7 +7,6 @@ export async function insert({ fullName, phone, passwordHash, gender }, client =
      RETURNING id, public_id AS "publicId"`,
     [fullName, phone, passwordHash, gender ?? null],
   );
-  // 8 hex chars of the UUID; a clash (unique violation) is ~1 in 4 billion per pair of users.
   await client.query(
     `UPDATE users SET referral_code = upper(substr(replace(public_id::text, '-', ''), 1, 8)) WHERE id = $1`,
     [rows[0].id],
@@ -96,7 +95,6 @@ export async function updatePasswordHash(userId, passwordHash, client = pool) {
   );
 }
 
-// Keeps the row (trips, payments and ratings reference it) but removes personal data and frees the phone.
 export async function anonymise(userId, client) {
   await client.query(
     `UPDATE users

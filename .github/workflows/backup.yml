@@ -1,9 +1,5 @@
 name: Nightly database backup
 
-# Dumps the production database every night and keeps the file as a private workflow artifact for 30 days.
-# Turn it on by adding a repository secret named BACKUP_DATABASE_URL: the Supabase session-pooler URI,
-# with the real password (GitHub → Settings → Secrets and variables → Actions → New repository secret).
-# Without that secret the job just prints a notice.
 on:
   schedule:
     - cron: '30 20 * * *' # 02:30 in Dhaka

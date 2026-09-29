@@ -15,7 +15,6 @@ function fieldIssues(error: unknown): FieldIssue[] {
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (isAxiosError<ApiErrorBody>(error)) {
     const body = error.response?.data?.error;
-    // A field issue ("Password must be at least 8 characters") says what to fix; the code's message rarely does.
     const [first] = fieldIssues(error);
     if (first) return first.issue;
     if (body?.message) return body.message;
@@ -30,14 +29,12 @@ export function getApiErrorCode(error: unknown): string | null {
   return null;
 }
 
-/** Server validation issues keyed by field name, for showing under the matching input. */
 export function getApiFieldErrors(error: unknown): Record<string, string> {
   const result: Record<string, string> = {};
   for (const { field, issue } of fieldIssues(error)) result[field] ??= issue;
   return result;
 }
 
-/** The unpaid trip that blocks a new booking (UNPAID_TRIP), if that is why the request failed. */
 export function getUnpaidTrip(error: unknown): { tripCode: string; totalFare: string } | null {
   if (!isAxiosError<ApiErrorBody>(error) || error.response?.data?.error?.code !== 'UNPAID_TRIP') return null;
   const details = error.response.data.error.details as { tripCode?: string; totalFare?: string } | undefined;

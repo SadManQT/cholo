@@ -24,7 +24,6 @@
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  /* Dark theme: navy surfaces, light ink, and brand colours lifted enough to read on them. */
   :root.dark {
     color-scheme: dark;
     --c-cholo-50: 16 48 40;

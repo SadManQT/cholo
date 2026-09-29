@@ -1,4 +1,3 @@
-
 export function round2(amount) {
   return Math.round(amount * 100) / 100;
 }
@@ -24,8 +23,6 @@ export function quote({ tariff, distanceKm, durationMin, surgeMultiplier = 1, wa
     baseFare + distanceFare + timeFare + waitingFare + surgeAmount + bookingFee - discountAmount,
   );
 
-  // Riders pay whole taka. The rounding difference (at most ±0.50) goes into a fare line so the
-  // breakdown still adds up to the total (chk_fare_identity).
   const totalFare = Math.round(exactTotal);
   const roundingAdjustment = round2(totalFare - exactTotal);
   let adjustedBaseFare = baseFare;

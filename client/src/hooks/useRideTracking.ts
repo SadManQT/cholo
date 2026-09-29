@@ -10,12 +10,10 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
   const [driverPosition, setDriverPosition] = useState<SocketLocation | null>(null);
   const [status, setStatus] = useState<TripStatus>(initialStatus);
   const [earlyStopRequestedAt, setEarlyStopRequestedAt] = useState<string | null>(null);
-  // Null until the first poll or socket event says otherwise; pages fall back to the trip they loaded.
   const [handshake, setHandshake] = useState<PickupHandshake | null>(null);
 
   useEffect(() => setStatus(initialStatus), [initialStatus]);
 
-  /** Merge a change the page already knows about (its own action) without waiting for the socket. */
   const patchHandshake = useCallback((patch: Partial<PickupHandshake>) => {
     setHandshake((current) => ({ ...(current ?? NO_HANDSHAKE), ...patch }));
   }, []);
@@ -50,7 +48,6 @@ export function useRideTracking(tripCode: string | undefined, initialStatus: Tri
       if (payload.earlyStopRequestedAt) setEarlyStopRequestedAt(payload.earlyStopRequestedAt);
       setHandshake((current) => {
         const next = { ...(current ?? NO_HANDSHAKE) };
-        // A new arrival, or an arrival the rider disputed, starts the handshake over.
         if (payload.arrivedAt || payload.status === 'assigned') {
           next.startRequestedAt = null;
           next.pickupConfirmedAt = null;

@@ -1,6 +1,3 @@
--- Add fn_current_commission (mirrors fn_current_pricing) for M7 cash-trip
--- completion: "which commission rule applies to this category/city, right
--- now?" — with commission_rules' city_id-NULL-means-countrywide fallback.
 BEGIN;
 
 CREATE FUNCTION fn_current_commission(p_category_id SMALLINT, p_city_id SMALLINT, p_at TIMESTAMPTZ DEFAULT now())

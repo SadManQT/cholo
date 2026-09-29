@@ -8,7 +8,6 @@ export function computeDiscount(promo, fareAmount) {
   if (promo.maxDiscount != null) discount = Math.min(discount, promo.maxDiscount);
   discount = Math.min(discount, fareAmount);
 
-  // Whole taka, rounded down so a cap is never exceeded and fares stay whole after the discount.
   return Math.floor(round2(discount));
 }
 

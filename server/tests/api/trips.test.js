@@ -44,7 +44,6 @@ function request(method, path, { body, accessToken } = {}) {
   });
 }
 
-// A trip starts only once the rider confirms they are in the car (see trips.service markStarted).
 async function riderConfirmsPickup(tripCode) {
   const { rows } = await pool.query(`SELECT passenger_id FROM trips WHERE trip_code = $1`, [tripCode]);
   const userId = Number(rows[0].passenger_id);
@@ -203,7 +202,6 @@ test('the full happy path: arrived -> start -> rider confirms -> complete, with 
   assert.equal(arrived.status, 200);
   assert.equal((await arrived.json()).data.status, 'arrived');
 
-  // The driver's start waits for the rider; the rider's confirmation then starts the trip.
   const requested = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   assert.equal(requested.status, 202);
   const requestedBody = (await requested.json()).data;
@@ -457,13 +455,10 @@ test('T3: POST /trips/:tripCode/pay by a passenger who is not on the trip gets 4
   assert.equal((await response.json()).error.code, 'TRIP_NOT_FOUND');
 });
 
-
 test('two of the SAME passenger\'s trips paid the same instant, wallet funded for exactly one — ends with exactly one 201 and one 422, DB left consistent', async (t) => {
   const passenger = await createPassenger();
   const setupA = await createAssignedTrip(t, { paymentIntent: 'bkash', passenger });
   const completedA = await completeAssignedTrip(setupA.tripCode, setupA.driver.accessToken);
-  // An unpaid trip now blocks booking the next one, so two unpaid trips only exist from before that rule.
-  // Recreate that state: hide A's debt while B is booked, then restore it.
   await pool.query(`UPDATE trips SET payment_status = 'paid' WHERE trip_code = $1`, [setupA.tripCode]);
   const setupB = await createAssignedTrip(t, { paymentIntent: 'bkash', passenger });
   const completedB = await completeAssignedTrip(setupB.tripCode, setupB.driver.accessToken);
@@ -868,7 +863,6 @@ test('"My driver isn\'t here" undoes the arrival: the trip cannot start until th
   const startNow = await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken });
   assert.equal(startNow.status, 409);
 
-  // Arriving again resets the handshake; both sides still have to agree.
   await request('POST', `/trips/${tripCode}/arrived`, { accessToken: driver.accessToken });
   assert.equal((await request('POST', `/trips/${tripCode}/start`, { accessToken: driver.accessToken })).status, 202);
   const started = await riderConfirmsPickup(tripCode);
@@ -980,7 +974,6 @@ test('when the wallet no longer covers the fare at drop-off, the trip stays due 
   const { error } = await (await bookWallet(passenger)).json();
   await creditWallet(passenger.userId, Number(error.details.required));
   const setup = await createAssignedTrip(t, { paymentIntent: 'wallet', passenger });
-  // The balance drops below the fare during the trip (spent elsewhere, or the fare came out higher).
   seed += 1;
   await pool.query(
     `INSERT INTO wallet_transactions (wallet_id, txn_type, direction, amount, reference_type, idempotency_key)

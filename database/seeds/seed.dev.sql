@@ -1,5 +1,3 @@
-
--- : DemoPass123
 BEGIN;
 
 DO $$

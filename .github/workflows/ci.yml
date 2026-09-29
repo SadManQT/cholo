@@ -1,7 +1,5 @@
 name: CI
 
-# Render and Vercel deploy whatever lands on main, so every push and pull request runs the server tests
-# against a real Postgres, then lints and builds the web app.
 on:
   push:
     branches: [main]
