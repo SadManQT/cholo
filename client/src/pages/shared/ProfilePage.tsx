@@ -147,8 +147,9 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
 
   const [liveWallet, setLiveWallet] = useState<{ balance: string } | null>(null);
   useEffect(() => {
+    if (adminMode) return;
     walletApi.getWallet().then(setLiveWallet).catch(() => setLiveWallet(null));
-  }, []);
+  }, [adminMode]);
 
   useEffect(() => {
     if (!user) return;
@@ -270,7 +271,7 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
             <p className="text-sm text-ink-500">{t('{0} · Member since {1}', user.phone, formatDate(user.createdAt))}</p>
             <div className="mt-2 flex flex-wrap gap-2">{user.roles.map((role) => <StatePill key={role} state={role.toLowerCase()} />)}</div>
           </div>
-          <div className="text-right">
+          {!adminMode && <div className="text-right">
             {(() => {
               const balance = Number((liveWallet ?? user.wallet).balance);
               return balance < 0 ? (
@@ -285,7 +286,7 @@ export function ProfilePage({ driverMode = false, adminMode = false }: { driverM
                 </>
               );
             })()}
-          </div>
+          </div>}
         </div>
       </Card>
 
