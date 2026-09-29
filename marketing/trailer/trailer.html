@@ -1,0 +1,566 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:Inter;font-weight:400;src:url(fonts/inter-latin-400-normal.woff2)}
+@font-face{font-family:Inter;font-weight:500;src:url(fonts/inter-latin-500-normal.woff2)}
+@font-face{font-family:Inter;font-weight:600;src:url(fonts/inter-latin-600-normal.woff2)}
+@font-face{font-family:Inter;font-weight:700;src:url(fonts/inter-latin-700-normal.woff2)}
+@font-face{font-family:Inter;font-weight:800;src:url(fonts/inter-latin-800-normal.woff2)}
+@font-face{font-family:Inter;font-weight:900;src:url(fonts/inter-latin-900-normal.woff2)}
+@font-face{font-family:Baloo;font-weight:500;src:url(fonts/baloo-da-2-bengali-500-normal.woff2)}
+@font-face{font-family:Baloo;font-weight:700;src:url(fonts/baloo-da-2-bengali-700-normal.woff2)}
+@font-face{font-family:Baloo;font-weight:800;src:url(fonts/baloo-da-2-bengali-800-normal.woff2)}
+:root{--gold:#FBBF2E;--gold2:#FFE58A;--gold3:#E88A12;--g700:#0C684F;--g800:#0A3D30;--ink:#0E261F;--pink:#F0508C}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:#03140F;font-family:Inter,Baloo,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+.abs{position:absolute}
+.scene{position:absolute;inset:0;display:none;transform-origin:50% 50%}
+#bgbase{position:absolute;inset:0;background:radial-gradient(1400px 900px at 30% 25%,#0E5A45 0%,#073026 42%,#03140F 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(110px)}
+#dots{position:absolute;inset:-100px;background-image:radial-gradient(rgba(255,255,255,.09) 1.6px,transparent 1.8px);background-size:46px 46px}
+.streak{position:absolute;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(251,191,46,.0) 10%,rgba(255,229,138,.8) 80%,#fff);filter:blur(.4px)}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%);pointer-events:none}
+#sweep{position:absolute;top:-400px;width:360px;height:1900px;background:linear-gradient(90deg,transparent,rgba(255,229,138,.22),rgba(255,255,255,.35),rgba(255,229,138,.22),transparent);transform:rotate(18deg);filter:blur(8px);pointer-events:none}
+#black{position:absolute;inset:0;background:#000;pointer-events:none}
+#wm{position:absolute;left:64px;top:46px;width:150px}
+#wmtxt{position:absolute;right:64px;top:62px;font-size:17px;letter-spacing:5px;font-weight:600;color:rgba(255,255,255,.55)}
+
+.tb{position:absolute}
+.eyebrow{display:inline-flex;align-items:center;gap:14px;font-size:21px;font-weight:700;letter-spacing:5px;color:var(--gold);text-transform:uppercase}
+.eyebrow .n{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:2px solid rgba(251,191,46,.6);font-size:17px;letter-spacing:0}
+.hl{margin:26px 0 0;font-size:94px;line-height:1.02;font-weight:800;letter-spacing:-3px}
+.hl .ln{display:block;white-space:nowrap}
+.wm{display:inline-block;overflow:hidden;vertical-align:top;padding:0 4px 14px 0;margin-bottom:-14px}
+.wi{display:inline-block}
+.goldt{background:linear-gradient(180deg,#FFE58A 0%,#FBBF2E 55%,#E88A12 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pinkt{background:linear-gradient(180deg,#FFC2DA 0%,#F472B6 55%,#E11D74 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:30px 0 0;font-size:30px;line-height:1.42;font-weight:500;color:rgba(255,255,255,.74)}
+.bl{list-style:none;margin:38px 0 0;padding:0}
+.bl li{display:flex;align-items:center;gap:18px;font-size:27px;font-weight:600;margin-bottom:20px;color:#fff}
+.ck{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(251,191,46,.16);border:2px solid rgba(251,191,46,.55)}
+.ck svg{width:22px;height:22px;stroke:var(--gold);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pinkset .ck{background:rgba(240,80,140,.16);border-color:rgba(244,114,182,.6)}
+.pinkset .ck svg{stroke:#F9A8D4}
+.pinkset .eyebrow{color:#F9A8D4}
+.pinkset .eyebrow .n{border-color:rgba(249,168,212,.6)}
+
+.phone{position:absolute;width:400px;height:830px;border-radius:66px;background:linear-gradient(145deg,#2c3834,#0b100e 40%,#1b2320);padding:13px;box-shadow:0 80px 140px -30px rgba(0,0,0,.75),0 30px 60px -20px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.1)}
+.screen{position:relative;width:100%;height:100%;border-radius:54px;overflow:hidden;background:#fff;color:var(--ink)}
+.island{position:absolute;top:12px;left:50%;width:118px;height:34px;margin-left:-59px;background:#000;border-radius:20px;z-index:60}
+.sbar{position:absolute;top:0;left:0;right:0;height:56px;display:flex;justify-content:space-between;align-items:center;padding:6px 34px 0 38px;font-weight:700;font-size:16px;z-index:55}
+.sbar i{display:inline-block;width:26px;height:12px;border-radius:4px;border:2px solid currentColor;position:relative;opacity:.9}
+.sbar i:after{content:'';position:absolute;inset:1px;right:5px;background:currentColor;border-radius:1px}
+.glare{position:absolute;inset:0;border-radius:54px;background:linear-gradient(115deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,0) 32%);pointer-events:none;z-index:70}
+
+.card{position:absolute;background:#fff;border-radius:22px;box-shadow:0 14px 40px -12px rgba(8,40,30,.35);color:var(--ink)}
+.glass{position:absolute;background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1.5px solid rgba(255,255,255,.18);border-radius:36px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);backdrop-filter:blur(18px)}
+.pill{position:absolute;display:flex;align-items:center;gap:12px;padding:16px 26px;border-radius:999px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);font-size:24px;font-weight:700;white-space:nowrap;backdrop-filter:blur(14px);box-shadow:0 20px 40px -18px rgba(0,0,0,.6)}
+.pill svg{width:28px;height:28px;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.av{display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:800;flex:none}
+.ico{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.row{display:flex;align-items:center}
+.center{position:absolute;left:0;right:0;text-align:center}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bgbase"></div>
+  <div class="blob" id="b1" style="width:900px;height:900px;background:#0f7a5b;opacity:.45"></div>
+  <div class="blob" id="b2" style="width:700px;height:700px;background:#FBBF2E;opacity:.14"></div>
+  <div class="blob" id="b3" style="width:800px;height:800px;background:#F0508C;opacity:0"></div>
+  <div id="dots"></div>
+  <div id="streaks"></div>
+  <div id="scenes"></div>
+  <img id="wm" src="logo.svg">
+  <div id="wmtxt"></div>
+  <div id="vig"></div>
+  <div id="sweep"></div>
+  <div id="black"></div>
+</div>
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const E={
+  out:t=>1-Math.pow(1-t,3),
+  out5:t=>1-Math.pow(1-t,5),
+  inOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,
+  back:t=>{const c1=1.5,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)},
+  lin:t=>t,
+  in:t=>t*t*t,
+};
+const P=(t,a,b,e=E.out)=>e(clamp((t-a)/(b-a)));
+const L=(a,b,k)=>a+(b-a)*k;
+function S(el,o={}){
+  if(!el) return;
+  const {x=0,y=0,s=1,r=0,op,rx=0,ry=0,sx,sy}=o;
+  el.style.transform=`translate(${x}px,${y}px)`+(rx||ry?` perspective(1600px) rotateX(${rx}deg) rotateY(${ry}deg)`:'')+` rotate(${r}deg) scale(${sx??s},${sy??s})`;
+  if(op!==undefined) el.style.opacity=op;
+}
+let seed=7;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+
+const I={
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  pin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  star:'<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+  pkg:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+  plane:'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  gift:'<path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+  tag:'<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  nav:'<path d="M3 11 22 2l-9 19-2-8-8-2z"/>',
+  headset:'<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/>',
+  brief:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  id:'<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h3"/>',
+  repeat:'<path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  trend:'<path d="m23 6-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',
+  map:'<path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z"/><path d="M8 2v16M16 6v16"/>',
+  wallet:'<path d="M20 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"/><circle cx="17" cy="14" r="1.4"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+};
+const ic=(n,st='')=>`<svg viewBox="0 0 24 24" class="ico" style="${st}">${I[n]}</svg>`;
+const VEH={
+  bike:`<svg viewBox="0 0 48 32" style="width:100%;height:100%"><g fill="none" stroke="#0E261F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="22" r="7"/><circle cx="37" cy="22" r="7"/><path d="M11 22 19 11h10l8 11M19 11l-3-4h-4M29 11l-4 11H18"/></g><rect x="24" y="6" width="9" height="4" rx="2" fill="#0C684F"/></svg>`,
+  cng:`<svg viewBox="0 0 48 32" style="width:100%;height:100%"><path d="M9 6h22c5 0 9 4 9 9v9H6V9c0-2 1-3 3-3z" fill="#16A34A"/><path d="M10 10h9v7h-11v-4c0-2 1-3 2-3zM22 10h9c3 0 5 2 5 5v2H22z" fill="#DCFCE7"/><rect x="5" y="22" width="37" height="4" rx="2" fill="#0E261F"/><circle cx="12" cy="27" r="4" fill="#0E261F"/><circle cx="36" cy="27" r="4" fill="#0E261F"/></svg>`,
+  car:`<svg viewBox="0 0 48 32" style="width:100%;height:100%"><path d="M7 19l4-8c1-2 3-3 5-3h15c2 0 4 1 5 3l4 8h1c2 0 3 1 3 3v3c0 1-1 2-2 2H5c-1 0-2-1-2-2v-3c0-2 1-3 3-3z" fill="#0C684F"/><path d="M13 11h9v7H10zM25 11h7c1 0 2 1 2 1l3 6H25z" fill="#CFFAE6"/><circle cx="14" cy="27" r="4.5" fill="#0E261F"/><circle cx="35" cy="27" r="4.5" fill="#0E261F"/><circle cx="14" cy="27" r="1.8" fill="#9CA3AF"/><circle cx="35" cy="27" r="1.8" fill="#9CA3AF"/></svg>`,
+};
+
+function tbHTML({id,num,eyebrow,hl,sub,bullets=[],x,y,w=820,pink=false,align='left'}){
+  const lines=hl.split('|').map(l=>{
+    const g=l.startsWith('~'), pk=l.startsWith('^'); const txt=(g||pk)?l.slice(1):l;
+    return `<span class="ln">${txt.split(' ').map(w=>`<span class="wm"><span class="wi anim-w ${g?'goldt':pk?'pinkt':''}">${w}</span></span>`).join(' ')}</span>`;
+  }).join('');
+  return `<div class="tb ${pink?'pinkset':''}" id="${id}" style="left:${x}px;top:${y}px;width:${w}px;text-align:${align}">
+    <div class="eyebrow anim"><span class="n">${num}</span>${eyebrow}</div>
+    <h2 class="hl">${lines}</h2>
+    ${sub?`<p class="sub anim">${sub}</p>`:''}
+    ${bullets.length?`<ul class="bl">${bullets.map(b=>`<li class="anim"><span class="ck">${ic('check')}</span>${b}</li>`).join('')}</ul>`:''}
+  </div>`;
+}
+function animTB(root,lt,start=.25){
+  if(!root) return;
+  let d=start;
+  const eb=$('.eyebrow',root); const k0=P(lt,d,d+.6); S(eb,{x:(1-k0)*-30,op:k0}); d+=.15;
+  $$('.anim-w',root).forEach(w=>{const k=P(lt,d,d+.7,E.out5); w.style.transform=`translateY(${(1-k)*110}%)`; d+=.06;});
+  d+=.1;
+  $$('.sub.anim,.bl li.anim',root).forEach(el=>{const k=P(lt,d,d+.6); S(el,{y:(1-k)*28,op:k}); d+=.14;});
+}
+function phoneHTML(id,inner,{dark=false}={}){
+  return `<div class="phone" id="${id}"><div class="screen" style="${dark?'background:#0B1512;color:#EEF1E9':''}"><div class="island"></div>
+  <div class="sbar" style="color:${dark?'#EEF1E9':'#0E261F'}"><span>9:41</span><span style="display:flex;gap:8px;align-items:center"><span style="font-size:13px;letter-spacing:1px">5G</span><i></i></span></div>
+  ${inner}<div class="glare"></div></div></div>`;
+}
+function mapSVG(id,route){
+  return `<svg id="${id}" viewBox="0 0 374 804" style="position:absolute;inset:0;width:100%;height:100%">
+   <rect width="374" height="804" fill="#EEF3EA"/>
+   <path d="M-20 690 C60 650 120 700 200 660 S330 600 400 620 L400 804 L-20 804Z" fill="#CFE6F5"/>
+   <rect x="160" y="480" width="120" height="110" rx="18" fill="#D6EBCF"/>
+   <rect x="20" y="170" width="110" height="140" rx="18" fill="#D6EBCF"/>
+   <rect x="290" y="310" width="70" height="80" rx="14" fill="#E4E0D3"/>
+   <g fill="none" stroke-linecap="round">
+    <g stroke="#DCD6C6" stroke-width="20"><path d="M90 820V470q0-30 30-30h110q30 0 30-30V-20"/><path d="M-20 440h400"/><path d="M-20 330h180q30 0 50-20l90-90"/><path d="M200 820 V620"/><path d="M-20 560h120"/><path d="M180 140h210"/></g>
+    <g stroke="#fff" stroke-width="14"><path d="M90 820V470q0-30 30-30h110q30 0 30-30V-20"/><path d="M-20 440h400"/><path d="M-20 330h180q30 0 50-20l90-90"/><path d="M200 820 V620"/><path d="M-20 560h120"/><path d="M180 140h210"/></g>
+    <g stroke="#fff" stroke-width="7" opacity=".9"><path d="M30 -20V800"/><path d="M330 -20V800"/><path d="M-20 250h400"/><path d="M-20 520h400"/><path d="M150 -20V330"/></g>
+   </g>
+   ${route?`<path id="${id}-rc" d="${route}" fill="none" stroke="#0A3D30" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".25"/>
+   <path id="${id}-r" d="${route}" fill="none" stroke="#0C684F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`:''}
+  </svg>`;
+}
+const pinA=(id)=>`<div id="${id}" class="abs" style="width:0;height:0"><div class="pr abs" style="left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;background:rgba(12,104,79,.25)"></div><div class="abs" style="left:-13px;top:-13px;width:26px;height:26px;border-radius:50%;background:#0C684F;border:5px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.3)"></div></div>`;
+const pinB=(id)=>`<div id="${id}" class="abs" style="width:0;height:0"><svg class="abs" viewBox="0 0 40 52" style="left:-20px;top:-50px;width:40px;height:52px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.3))"><path d="M20 2C10 2 2 10 2 20c0 13 18 30 18 30s18-17 18-30C38 10 30 2 20 2z" fill="#F2A81D" stroke="#fff" stroke-width="3"/><circle cx="20" cy="20" r="6.5" fill="#fff"/></svg></div>`;
+
+const SC=[];
+const add=(a,b,html,u,{fade=true}={})=>SC.push({a,b,html,u,fade});
+
+/* ---------- S0 intro ---------- */
+add(0,6,`
+ <svg class="abs" id="s0route" viewBox="0 0 1920 1080" style="inset:0;width:1920px;height:1080px">
+   <path id="s0p" d="M300 820 C600 700 760 900 1000 800 S1420 660 1640 760" fill="none" stroke="url(#s0g)" stroke-width="6" stroke-linecap="round"/>
+   <defs><linearGradient id="s0g" x1="0" x2="1"><stop offset="0" stop-color="#FBBF2E" stop-opacity="0"/><stop offset=".3" stop-color="#FBBF2E"/><stop offset="1" stop-color="#FFE58A"/></linearGradient></defs>
+   <circle id="s0dot" r="12" fill="#FFE58A"/><circle id="s0dotg" r="34" fill="#FBBF2E" opacity=".25"/>
+ </svg>
+ <div class="abs" id="s0logo" style="left:510px;top:250px;width:900px;height:333px">
+   <img src="logo.svg" style="width:900px;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.5))">
+   <div id="s0shine" class="abs" style="inset:0;-webkit-mask:url(logo.svg) center/100% 100% no-repeat;mask:url(logo.svg) center/100% 100% no-repeat;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);background-size:300% 100%"></div>
+ </div>
+ <div class="center" id="s0t1" style="top:640px;font-size:34px;font-weight:600;letter-spacing:14px;color:rgba(255,255,255,.9)">BANGLADESH MOVES WITH চলো</div>
+ <div class="center" id="s0t2" style="top:705px;font-size:24px;font-weight:600;letter-spacing:8px;color:var(--gold)">RIDE &nbsp;·&nbsp; DRIVE &nbsp;·&nbsp; EARN</div>
+`,(lt,d,r)=>{
+  const k=P(lt,.2,1.7,E.out5);
+  const lg=$('#s0logo');
+  {const cr=P(lt,.25,1.35,E.inOut);lg.style.clipPath=cr>=1?'none':`inset(-120px ${(1-cr)*100}% -120px -120px)`;}
+  lg.style.filter=`blur(${(1-k)*18}px)`;
+  const zo=P(lt,5.1,6,E.in);
+  S(lg,{s:L(1.18,1,k)*(1+zo*.5),y:zo*-40,op:1-zo});
+  $('#s0shine').style.backgroundPosition=`${L(120,-60,P(lt,1.8,3.0,E.inOut))}% 0`;
+  const path=$('#s0p'),len=path.getTotalLength(),kr=P(lt,1.0,3.2,E.inOut);
+  path.style.strokeDasharray=len; path.style.strokeDashoffset=len*(1-kr);
+  const pt=path.getPointAtLength(len*kr);
+  ['#s0dot','#s0dotg'].forEach(s=>{const c=$(s);c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);c.style.opacity=kr>0&&kr<1?1:(kr>=1?1-P(lt,3.2,3.6):0)});
+  $('#s0route').style.opacity=1-zo;
+  const t1=P(lt,2.2,3.2);S($('#s0t1'),{y:(1-t1)*30,op:t1*(1-zo)});$('#s0t1').style.letterSpacing=`${L(30,14,t1)}px`;
+  const t2=P(lt,2.8,3.7);S($('#s0t2'),{y:(1-t2)*24,op:t2*(1-zo)});
+},{fade:false});
+
+/* ---------- S1 kinetic ---------- */
+const CITIES=['DHAKA','CHATTOGRAM','SYLHET','KHULNA','RAJSHAHI','BARISHAL','RANGPUR','MYMENSINGH','CUMILLA','GAZIPUR'];
+add(6,10,`
+ <div class="abs" style="left:170px;top:200px">
+  ${['One app.','Every ride.','~Every city.'].map((w,i)=>`<div class="k1 ${w[0]==='~'?'goldt':''}" style="font-size:168px;font-weight:900;letter-spacing:-6px;line-height:1.04;transform-origin:0 60%">${w.replace('~','')}</div>`).join('')}
+ </div>
+ <div class="abs" id="s1tick" style="left:0;top:880px;white-space:nowrap;font-size:30px;font-weight:700;letter-spacing:10px;color:rgba(255,255,255,.35)">${(CITIES.join('  ·  ')+'  ·  ').repeat(3)}</div>
+`,(lt)=>{
+  $$('.k1').forEach((el,i)=>{const a=.1+i*1.0;const k=P(lt,a,a+.55,E.out5);const dim=i<2?P(lt,a+1.0,a+1.4):0;
+    S(el,{x:(1-k)*-80,s:L(1.25,1,k),op:k*(1-dim*.6)}); el.style.filter=`blur(${(1-k)*14}px)`;});
+  S($('#s1tick'),{x:-lt*160,op:P(lt,.3,1)});
+});
+
+/* ---------- S2 book ---------- */
+const R2='M90 600V470q0-30 30-30h110q30 0 30-30V250q0-40 40-40';
+add(10,18,`
+ ${tbHTML({id:'tb2',num:'01',eyebrow:'Book in seconds',hl:'Where to?|~Just tap. চলো!',sub:'Bike, CNG or car. Upfront fares, zero haggling, a driver in minutes.',bullets:['Upfront fare before you book','Live driver tracking','Bike, CNG &amp; car in one app'],x:150,y:230})}
+ <div class="abs" id="ph2w" style="left:1180px;top:125px">${phoneHTML('ph2',`
+   <div class="abs" id="m2" style="inset:0">${mapSVG('mp2',R2)}${pinA('p2a')}${pinB('p2b')}
+     <div id="car2" class="abs" style="width:46px;height:30px;margin:-15px 0 0 -23px">${VEH.car}</div></div>
+   <div class="card" id="srch2" style="left:18px;right:18px;top:66px;padding:18px 20px">
+     <div class="row" style="gap:14px;font-size:16px;color:#5E6C65"><span style="width:12px;height:12px;border-radius:50%;background:#0C684F"></span>Current location · Dhanmondi 27</div>
+     <div style="height:1px;background:#EAE3D4;margin:14px 0 14px 26px"></div>
+     <div class="row" style="gap:14px;font-size:19px;font-weight:700"><span style="width:12px;height:12px;border-radius:3px;background:#F2A81D"></span><span id="typ2"></span><span id="car2c" style="width:2px;height:22px;background:#0C684F"></span></div>
+   </div>
+   <div class="card" id="sheet2" style="left:0;right:0;bottom:0;height:380px;border-radius:30px 30px 54px 54px;padding:14px 20px">
+     <div style="width:44px;height:5px;border-radius:3px;background:#E3DDD0;margin:0 auto 14px"></div>
+     <div style="font-weight:800;font-size:21px;margin-bottom:12px">Choose a ride</div>
+     ${[['bike','Bike','2 min','৳85'],['cng','CNG','4 min','৳140'],['car','Car','5 min','৳260']].map(([v,n,e,p],i)=>`
+     <div class="opt2 row" style="gap:14px;padding:11px 14px;border-radius:16px;border:2px solid #EAE3D4;margin-bottom:9px">
+       <div style="width:54px;height:36px">${VEH[v]}</div>
+       <div style="flex:1"><div style="font-weight:800;font-size:18px">${n}</div><div style="font-size:14px;color:#5E6C65">${e} away</div></div>
+       <div style="font-weight:800;font-size:19px">${p}</div></div>`).join('')}
+     <div id="btn2" style="margin-top:6px;background:#0C684F;color:#fff;border-radius:16px;padding:15px;text-align:center;font-weight:800;font-size:18px">Confirm CNG · ৳140</div>
+   </div>
+   <div class="card" id="drv2" style="left:14px;right:14px;bottom:14px;padding:20px;border-radius:26px 26px 42px 42px">
+     <div class="row" style="gap:10px;font-size:14px;font-weight:700;color:#0C684F;margin-bottom:14px"><span style="width:9px;height:9px;border-radius:50%;background:#16A34A"></span>DRIVER ON THE WAY · 3 MIN</div>
+     <div class="row" style="gap:14px"><div class="av" style="width:58px;height:58px;background:linear-gradient(135deg,#0C684F,#16A34A);font-size:20px">RH</div>
+     <div style="flex:1"><div style="font-weight:800;font-size:19px">Rahim Hossain</div><div style="font-size:14px;color:#5E6C65">★ 4.9 · Green CNG · Dhaka Metro-Tha 11-2345</div></div></div>
+   </div>
+ `)}</div>
+ <div class="pill" id="chip2" style="left:1610px;top:600px">${ic('lock')}Fare locked · ৳140</div>
+ <div class="pill" id="chip2b" style="left:1610px;top:300px">${ic('clock')}3 min away</div>
+`,(lt)=>{
+  animTB($('#tb2'),lt);
+  const kp=P(lt,.1,1.1,E.out5); S($('#ph2w'),{y:(1-kp)*500,ry:L(-25,-8,kp),rx:L(10,3,kp),op:kp});
+  const path=$('#mp2-r'),len=path.getTotalLength();
+  const a=path.getPointAtLength(0),b=path.getPointAtLength(len);
+  const scale=374/374;
+  const ka=P(lt,1.0,1.5,E.back); S($('#p2a'),{x:a.x,y:a.y,s:ka,op:ka>0?1:0});
+  const pr=$('#p2a .pr'); const pulse=(lt*1.2)%1; pr.style.transform=`scale(${.6+pulse})`; pr.style.opacity=(1-pulse)*.9;
+  const word='Gulshan 2 Circle'; const n=Math.floor(clamp((lt-1.5)/1.1)*word.length); $('#typ2').textContent=n?word.slice(0,n):'Where to?'; $('#typ2').style.color=n?'#0E261F':'#9AA59F';
+  $('#car2c').style.opacity=(Math.floor(lt*2.5)%2&&lt<3)?1:0;
+  const kb=P(lt,2.7,3.2,E.back); S($('#p2b'),{x:b.x,y:b.y,s:kb,op:kb>0?1:0});
+  const kr=P(lt,2.9,3.9,E.inOut); [path,$('#mp2-rc')].forEach(p=>{p.style.strokeDasharray=len;p.style.strokeDashoffset=len*(1-kr)});
+  const ks=P(lt,3.8,4.4,E.out5); const ksOut=P(lt,5.6,6.1,E.inOut); S($('#sheet2'),{y:(1-ks)*420+ksOut*420});
+  const sel=lt<4.7?0:1; $$('.opt2').forEach((o,i)=>{o.style.borderColor=i===sel&&lt>4.3?'#0C684F':'#EAE3D4';o.style.background=i===sel&&lt>4.3?'#EAF4EE':'#fff'});
+  const press=lt>5.2&&lt<5.45?.95:1; S($('#btn2'),{s:press});
+  const kd=P(lt,6.0,6.5,E.back); S($('#drv2'),{y:(1-kd)*300,op:kd>0?1:0});
+  const kc=P(lt,6.1,7.9,E.inOut); const cp=path.getPointAtLength(len*(1-kc*.72)); const cp2=path.getPointAtLength(len*(1-kc*.72)-4);
+  const ang=Math.atan2(cp.y-cp2.y,cp.x-cp2.x)*180/Math.PI;
+  S($('#car2'),{x:cp.x,y:cp.y,r:ang+180,op:lt>6?1:0});
+  S($('#srch2'),{y:(1-P(lt,.8,1.4,E.out5))*-160});
+  const c1=P(lt,4.2,4.8,E.back); S($('#chip2'),{s:c1,op:c1>0?1:0,y:Math.sin(lt*2)*6});
+  const c2=P(lt,6.4,7.0,E.back); S($('#chip2b'),{s:c2,op:c2>0?1:0,y:Math.sin(lt*2+1)*6});
+});
+
+/* ---------- S3 women ---------- */
+add(18,24,`
+ <div class="abs" id="ph3w" style="left:250px;top:125px">${phoneHTML('ph3',`
+   <div class="abs" style="inset:0;background:linear-gradient(180deg,#FFE4EF 0%,#FFF5F9 45%,#fff 100%)"></div>
+   <div class="abs" style="left:26px;right:26px;top:74px">
+     <div class="row" style="gap:12px"><div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#F472B6,#E11D74);display:flex;align-items:center;justify-content:center">${ic('shield','width:28px;height:28px;stroke:#fff;stroke-width:2.4')}</div>
+     <div><div style="font-weight:800;font-size:25px;color:#831843">Women Ride</div><div style="font-size:14px;color:#9D4B72">Women drivers for women riders</div></div></div>
+     <div class="card row" style="position:relative;margin-top:22px;padding:16px 18px;gap:12px;box-shadow:0 10px 30px -12px rgba(131,24,67,.3)">
+       <div style="flex:1;font-weight:700;font-size:16px">Only match me with women drivers</div>
+       <div id="tg3" style="width:56px;height:32px;border-radius:16px;background:#E5E7EB;position:relative;flex:none"><div id="tg3k" style="position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25)"></div></div>
+     </div>
+     <div id="sh3" style="margin:34px auto 8px;width:180px;height:200px;position:relative">
+       <svg viewBox="0 0 24 24" style="width:180px;height:200px;filter:drop-shadow(0 18px 24px rgba(225,29,116,.35))"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9A8D4"/><stop offset="1" stop-color="#DB2777"/></linearGradient></defs><path d="M12 22.5s8.5-4 8.5-10.5V4.8L12 1.5 3.5 4.8V12c0 6.5 8.5 10.5 8.5 10.5z" fill="url(#pg)"/><path id="ck3" d="M8 12.2l2.8 2.8L16.2 9.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+     </div>
+     <div id="wd3" class="card" style="position:relative;padding:18px;box-shadow:0 10px 30px -12px rgba(131,24,67,.35)">
+       <div class="row" style="gap:14px"><div class="av" style="width:60px;height:60px;background:linear-gradient(135deg,#F472B6,#BE185D);font-size:21px">NJ</div>
+       <div style="flex:1"><div style="font-weight:800;font-size:19px">Nusrat Jahan</div><div style="font-size:14px;color:#6B7280">★ 4.9 · 1,240 trips</div></div></div>
+       <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
+         <span style="font-size:13px;font-weight:700;color:#BE185D;background:#FCE7F3;padding:6px 12px;border-radius:999px">Verified woman driver</span>
+         <span style="font-size:13px;font-weight:700;color:#0C684F;background:#EAF4EE;padding:6px 12px;border-radius:999px">NID checked</span></div>
+     </div>
+     <div id="lv3" class="row" style="gap:10px;margin-top:16px;font-size:15px;font-weight:700;color:#831843"><span style="width:10px;height:10px;border-radius:50%;background:#E11D74"></span>Live trip shared with Ammu</div>
+   </div>
+ `)}</div>
+ ${tbHTML({id:'tb3',num:'02',eyebrow:'Women Ride',hl:'Women drivers.|^For women riders.',sub:'Choose a verified woman driver for late evenings, school runs or any trip, with full peace of mind.',bullets:['Verified women drivers','Trip shared with trusted contacts','24/7 women safety desk'],x:870,y:230,pink:true,w:960})}
+ <div class="pill" id="chip3" style="left:90px;top:760px;border-color:rgba(249,168,212,.5)">${ic('shield','stroke:#F9A8D4')}Safety first</div>
+`,(lt)=>{
+  animTB($('#tb3'),lt,.35);
+  const kp=P(lt,.1,1.1,E.out5); S($('#ph3w'),{y:(1-kp)*500,ry:L(25,8,kp),rx:L(10,3,kp),op:kp});
+  const kt=P(lt,1.2,1.6,E.inOut); $('#tg3').style.background=kt>.5?'#E11D74':'#E5E7EB'; S($('#tg3k'),{x:kt*24});
+  const ksh=P(lt,1.5,2.1,E.back); S($('#sh3'),{s:ksh,op:ksh>0?1:0});
+  const c=$('#ck3'); const cl=c.getTotalLength(); c.style.strokeDasharray=cl; c.style.strokeDashoffset=cl*(1-P(lt,2.0,2.5));
+  const kw=P(lt,2.4,3.0,E.out5); S($('#wd3'),{y:(1-kw)*60,op:kw});
+  const kl=P(lt,3.0,3.5); S($('#lv3'),{op:kl*(.6+.4*Math.abs(Math.sin(lt*3)))});
+  const c3=P(lt,3.4,4.0,E.back); S($('#chip3'),{s:c3,op:c3>0?1:0,y:Math.sin(lt*2)*6});
+});
+
+/* ---------- S4 peak ---------- */
+const DEM=[10,7,5,4,5,14,38,78,96,82,52,44,48,46,44,50,66,88,100,92,70,46,30,18];
+add(24,30,`
+ ${tbHTML({id:'tb4',num:'03',eyebrow:'Peak hours, sorted',hl:'Beat the rush.|~Know before you go.',sub:'See Dhaka’s peak times, lock a fare early and get an alert the moment prices drop.',bullets:['Peak-hour forecast','Fare lock for 10 minutes','Price-drop alerts'],x:150,y:230,w:860})}
+ <div class="glass" id="ch4" style="left:1060px;top:230px;width:720px;height:560px;padding:40px">
+   <div class="row" style="justify-content:space-between"><div><div style="font-size:18px;letter-spacing:3px;font-weight:700;color:rgba(255,255,255,.6)">DEMAND TODAY · DHAKA</div><div style="font-size:34px;font-weight:800;margin-top:6px">Rides per hour</div></div>
+   <div class="row" style="gap:10px;font-size:17px;font-weight:700"><span style="width:14px;height:14px;border-radius:4px;background:linear-gradient(#FFE58A,#E88A12)"></span>Peak</div></div>
+   <div class="abs" style="left:40px;right:40px;bottom:70px;height:300px">
+     ${DEM.map((v,i)=>`<div class="bar4 abs" style="left:${i*26.7}px;bottom:0;width:18px;height:${v*3}px;border-radius:6px 6px 3px 3px;transform-origin:50% 100%;background:${v>75?'linear-gradient(180deg,#FFE58A,#E88A12)':'linear-gradient(180deg,#34D399,#0C684F)'}"></div>`).join('')}
+     <div id="now4" class="abs" style="bottom:-10px;height:330px;width:2px;background:#fff"><div style="position:absolute;top:-34px;left:-30px;width:62px;text-align:center;font-size:15px;font-weight:800;background:#fff;color:#0E261F;border-radius:8px;padding:3px 0">NOW</div></div>
+   </div>
+   <div class="abs row" style="left:40px;right:40px;bottom:30px;justify-content:space-between;font-size:16px;color:rgba(255,255,255,.55);font-weight:600"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div>
+ </div>
+ <div class="card" id="nt4" style="left:1300px;top:120px;width:500px;padding:22px 24px;border-radius:26px">
+   <div class="row" style="gap:16px"><div style="width:54px;height:54px;border-radius:16px;background:#0C684F;display:flex;align-items:center;justify-content:center;flex:none">${ic('bell','width:28px;height:28px;stroke:#FFE58A;stroke-width:2.2')}</div>
+   <div><div style="font-weight:800;font-size:21px">Price drop on your route</div><div style="font-size:17px;color:#5E6C65;margin-top:2px">Home → Office is 20% cheaper now</div></div></div>
+ </div>
+ <div class="pill" id="chip4" style="left:1100px;top:840px">${ic('lock')}Fare locked · ৳180 · <span id="cd4" style="font-variant-numeric:tabular-nums">9:59</span></div>
+`,(lt)=>{
+  animTB($('#tb4'),lt);
+  const kc=P(lt,.2,1.0,E.out5); S($('#ch4'),{y:(1-kc)*80,op:kc,s:L(.94,1,kc)});
+  $$('.bar4').forEach((b,i)=>{const k=P(lt,.7+i*.04,1.4+i*.04,E.back); b.style.transform=`scaleY(${Math.max(0,k)})`; b.style.opacity=k>0?1:0;});
+  const kn=P(lt,1.8,4.8,E.inOut); $('#now4').style.left=`${L(6,17.3,kn)*26.7+8}px`; S($('#now4'),{op:P(lt,1.8,2.2)});
+  const kt=P(lt,3.3,3.9,E.back); S($('#nt4'),{y:(1-kt)*-60,s:L(.9,1,kt),op:clamp(kt*2)});
+  const kf=P(lt,2.6,3.2,E.back); S($('#chip4'),{s:kf,op:kf>0?1:0});
+  const secs=Math.max(0,599-Math.floor(clamp(lt-2.6,0,10)*1)); $('#cd4').textContent=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+});
+
+/* ---------- S5 favourites ---------- */
+add(30,36,`
+ ${tbHTML({id:'tb5',num:'04',eyebrow:'Your rides, your way',hl:'Favourite drivers.|~Favourite routes.',sub:'Ride again with drivers you trust, rebook daily trips in one tap and schedule rides ahead.',bullets:['Request your favourite driver','Saved routes, one-tap rebook','Schedule rides days ahead'],x:150,y:230,w:820})}
+ <div class="card fc5" style="left:1080px;top:180px;width:520px;padding:28px">
+   <div class="row" style="justify-content:space-between"><div style="font-weight:800;font-size:24px">Favourite drivers</div>${ic('heart','width:30px;height:30px;stroke:#E11D48;fill:#E11D48')}</div>
+   ${[['Rahim H.','CNG · ★ 4.9','#0C684F'],['Nusrat J.','Car · ★ 5.0','#DB2777'],['Karim U.','Bike · ★ 4.8','#E88A12']].map(([n,s,c],i)=>`
+   <div class="row fr5" style="gap:16px;margin-top:18px"><div class="av" style="width:56px;height:56px;background:${c};font-size:19px">${n.split(' ').map(x=>x[0]).join('')}</div>
+   <div style="flex:1"><div style="font-weight:800;font-size:19px">${n}</div><div style="font-size:15px;color:#5E6C65">${s}</div></div>
+   <div style="font-size:15px;font-weight:800;color:#0C684F;background:#EAF4EE;padding:9px 16px;border-radius:999px">Request</div></div>`).join('')}
+ </div>
+ <div class="card fc5" style="left:1250px;top:560px;width:540px;padding:28px">
+   <div style="font-weight:800;font-size:24px">Saved routes</div>
+   ${[['Home','Office','Gulshan 2 · 25 min'],['Home','University','Dhanmondi 32 · 15 min']].map(([a,b,s])=>`
+   <div class="row" style="gap:16px;margin-top:18px"><div style="width:52px;height:52px;border-radius:16px;background:#FFF6DC;display:flex;align-items:center;justify-content:center">${ic('pin','width:26px;height:26px;stroke:#E88A12')}</div>
+   <div style="flex:1"><div style="font-weight:800;font-size:19px">${a} → ${b}</div><div style="font-size:15px;color:#5E6C65">${s}</div></div>
+   <div class="row" style="gap:6px;font-size:15px;font-weight:800;color:#fff;background:#0C684F;padding:10px 16px;border-radius:999px">${ic('repeat','width:16px;height:16px;stroke:#fff;stroke-width:2.6')}Rebook</div></div>`).join('')}
+ </div>
+ <div class="card fc5" style="left:960px;top:690px;width:300px;padding:24px;background:#0C684F;color:#fff">
+   <div class="row" style="gap:12px">${ic('cal','width:30px;height:30px;stroke:#FFE58A')}<div style="font-weight:800;font-size:20px">Scheduled</div></div>
+   <div style="font-size:30px;font-weight:900;margin-top:14px">Tomorrow</div><div style="font-size:22px;font-weight:600;color:#FFE58A">8:30 AM · Car</div>
+ </div>
+ <div id="hearts5" class="abs" style="left:1560px;top:190px"></div>
+`,(lt)=>{
+  animTB($('#tb5'),lt);
+  $$('.fc5').forEach((c,i)=>{const k=P(lt,.4+i*.35,1.2+i*.35,E.out5);S(c,{x:(1-k)*300,y:Math.sin(lt*1.6+i*2)*8,r:L(8,[-2,2,-4][i],k),op:clamp(k*1.5)})});
+  $$('.fr5').forEach((r,i)=>{const k=P(lt,1.0+i*.15,1.5+i*.15);S(r,{x:(1-k)*30,op:k})});
+  const h=$('#hearts5'); if(!h.children.length){h.innerHTML=[0,1,2,3,4].map(()=>`<div class="abs" style="width:26px;height:26px">${ic('heart','width:26px;height:26px;stroke:#FB7185;fill:#FB7185')}</div>`).join('')}
+  [...h.children].forEach((el,i)=>{const cyc=((lt-1.5+i*.45)%2.2)/2.2;const on=lt>1.5;S(el,{x:Math.sin(cyc*6+i)*20,y:-cyc*170,s:.6+cyc*.6,op:on?Math.sin(cyc*Math.PI):0})});
+});
+
+/* ---------- S6 safety ---------- */
+const R6='M60 330h100q30 0 50-20l40-40';
+add(36,42,`
+ ${tbHTML({id:'tb6',num:'05',eyebrow:'Safety built in',hl:'No fake pickups.|~You confirm the start.',sub:'Your trip starts only after you confirm the driver is really there. SOS and live sharing are always one tap away.',bullets:['Passenger-confirmed pickup','One-tap SOS','Live trip sharing'],x:150,y:230,w:900})}
+ <div class="abs" id="ph6w" style="left:1240px;top:125px">${phoneHTML('ph6',`
+   <div class="abs" style="inset:0">${mapSVG('mp6','')}</div>
+   ${pinA('p6a')}
+   <div id="car6" class="abs" style="width:46px;height:30px;margin:-15px 0 0 -23px;left:0;top:0">${VEH.car}</div>
+   <div class="card" style="left:18px;right:18px;top:68px;padding:16px 18px" id="ban6">
+     <div class="row" style="gap:12px"><div style="width:44px;height:44px;border-radius:50%;background:#0C684F;display:flex;align-items:center;justify-content:center">${ic('pin','width:24px;height:24px;stroke:#fff')}</div>
+     <div><div style="font-weight:800;font-size:18px">Rahim says he’s arrived</div><div style="font-size:14px;color:#5E6C65">Is he really at your pickup?</div></div></div>
+   </div>
+   <div class="card" id="bot6" style="left:0;right:0;bottom:0;padding:22px 20px 30px;border-radius:30px 30px 54px 54px">
+     <div class="row" style="gap:14px;margin-bottom:18px"><div class="av" style="width:54px;height:54px;background:linear-gradient(135deg,#0C684F,#16A34A);font-size:19px">RH</div>
+     <div style="flex:1"><div style="font-weight:800;font-size:18px">Rahim Hossain</div><div style="font-size:14px;color:#5E6C65">Green CNG · Tha 11-2345</div></div>
+     <div style="font-size:14px;font-weight:900;color:#fff;background:#DC2626;padding:10px 14px;border-radius:14px">SOS</div></div>
+     <div id="sl6" style="position:relative;height:66px;border-radius:20px;background:#0C684F;overflow:hidden">
+       <div id="sl6f" class="abs" style="inset:0;background:#0A3D30"></div>
+       <div id="sl6t" class="abs" style="inset:0;display:flex;align-items:center;justify-content:center;padding-left:60px;color:#fff;font-weight:800;font-size:17px">Slide to confirm pickup</div>
+       <div id="sl6k" class="abs" style="left:5px;top:5px;width:56px;height:56px;border-radius:15px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#0C684F">→</div>
+     </div>
+   </div>
+   <div id="ok6" class="abs" style="inset:0;background:rgba(12,104,79,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:40">
+     <div id="ok6c" style="width:130px;height:130px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center">${ic('check','width:74px;height:74px;stroke:#0C684F;stroke-width:3.2')}</div>
+     <div style="font-weight:900;font-size:30px;margin-top:28px">Pickup confirmed</div><div style="font-size:18px;opacity:.85;margin-top:6px">Trip started · Enjoy the ride</div>
+   </div>
+ `)}</div>
+ <div class="pill orb6" style="left:960px;top:250px">${ic('share')}Share live trip</div>
+ <div class="pill orb6" style="left:1560px;top:400px">${ic('id')}NID-verified drivers</div>
+ <div class="pill orb6" style="left:980px;top:760px">${ic('star')}Rated every trip</div>
+`,(lt)=>{
+  animTB($('#tb6'),lt);
+  const kp=P(lt,.1,1.1,E.out5); S($('#ph6w'),{y:(1-kp)*500,ry:L(-25,-8,kp),rx:L(10,3,kp),op:kp});
+  S($('#p6a'),{x:150,y:440}); const pr=$('#p6a .pr'); const pulse=(lt*1.2)%1; pr.style.transform=`scale(${.6+pulse})`; pr.style.opacity=(1-pulse)*.9;
+  const kc=P(lt,.6,1.8,E.inOut); S($('#car6'),{x:L(262,196,kc),y:L(250,440,kc*0)+(kc<1?L(250,440,kc):440),r:kc<.99?90:0});
+  S($('#car6'),{x:kc<.55?262:L(262,196,(kc-.55)/.45),y:kc<.55?L(250,440,kc/.55):440,r:kc<.55?90:180});
+  const kb=P(lt,1.5,2.0,E.back); S($('#ban6'),{y:(1-kb)*-150});
+  const drag=P(lt,2.4,3.4,E.inOut); const tr=374-26-40-66+10; S($('#sl6k'),{x:drag*252});
+  $('#sl6f').style.transform=`translateX(${-374+66+drag*252}px)`; $('#sl6t').style.opacity=1-drag*1.3;
+  const ko=P(lt,3.45,3.8); $('#ok6').style.opacity=ko; const kk=P(lt,3.55,4.1,E.back); S($('#ok6c'),{s:kk});
+  $$('.orb6').forEach((o,i)=>{const k=P(lt,1.2+i*.3,1.8+i*.3,E.back);S(o,{s:k,op:k>0?1:0,y:Math.sin(lt*1.8+i*1.7)*10,x:Math.cos(lt*1.3+i)*6})});
+});
+
+/* ---------- S7 payments ---------- */
+const PAY=[['৳','Cash','#F2A81D','#0E261F'],['b','bKash','#E2136E','#fff'],['N','Nagad','#F6921E','#fff'],['▭','Card','#111827','#fff'],['W','Cholo Wallet','#0C684F','#fff']];
+add(42,48,`
+ <div class="center" id="t7a" style="top:120px"><span class="eyebrow"><span class="n">06</span>Pay your way</span></div>
+ <div class="center" id="t7b" style="top:180px;font-size:100px;font-weight:900;letter-spacing:-3px">Cash or cashless. <span class="goldt">Your call.</span></div>
+ ${PAY.map(([m,n,bg,fg],i)=>`<div class="abs tile7" style="left:${338+i*256}px;top:400px;width:220px;height:230px;border-radius:40px;background:${bg};color:${fg};display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 40px 70px -30px rgba(0,0,0,.7),inset 0 0 0 1.5px rgba(255,255,255,.18)">
+   <div style="font-size:84px;font-weight:900;line-height:1">${m}</div><div style="font-size:24px;font-weight:800;margin-top:18px">${n}</div></div>`).join('')}
+ <div class="glass" id="w7" style="left:460px;top:700px;width:1000px;height:200px;padding:34px 44px;display:flex;align-items:center;gap:40px">
+   <div style="flex:none;width:96px;height:96px;border-radius:28px;background:#0C684F;display:flex;align-items:center;justify-content:center">${ic('wallet','width:52px;height:52px;stroke:#FFE58A')}</div>
+   <div style="flex:1"><div style="font-size:20px;letter-spacing:3px;font-weight:700;color:rgba(255,255,255,.6)">CHOLO WALLET BALANCE</div><div id="bal7" class="goldt" style="font-size:72px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1">৳0.00</div></div>
+   <div style="display:flex;flex-direction:column;gap:12px;font-size:21px;font-weight:700">${['Top up in seconds','Pay trips instantly','Split fares with friends'].map(s=>`<div class="row w7l" style="gap:10px">${ic('check','width:22px;height:22px;stroke:#FBBF2E;stroke-width:3')}${s}</div>`).join('')}</div>
+ </div>
+`,(lt)=>{
+  const a=P(lt,.1,.6);S($('#t7a'),{y:(1-a)*20,op:a});
+  const b=P(lt,.25,1.0,E.out5);S($('#t7b'),{y:(1-b)*50,op:b}); $('#t7b').style.filter=`blur(${(1-b)*10}px)`;
+  $$('.tile7').forEach((t,i)=>{const k=P(lt,.8+i*.14,1.5+i*.14,E.back);S(t,{y:(1-k)*160+Math.sin(lt*2+i)*8,r:(1-k)*12,s:L(.6,1,k),op:clamp(k*2)})});
+  const kw=P(lt,2.0,2.7,E.out5);S($('#w7'),{y:(1-kw)*80,op:kw});
+  const v=1250*P(lt,2.4,4.2,E.out); $('#bal7').textContent='৳'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  $$('.w7l').forEach((l,i)=>{const k=P(lt,2.8+i*.2,3.3+i*.2);S(l,{x:(1-k)*20,op:k})});
+});
+
+/* ---------- S8 drive & earn ---------- */
+const SPK='M0 120 C30 110 50 100 70 104 S110 80 140 84 S190 50 220 60 S270 20 310 26';
+add(48,54,`
+ ${tbHTML({id:'tb8',num:'07',eyebrow:'Drive with চলো',hl:'Take trips.|~Earn more.',sub:'Keep more of every fare, withdraw to bKash or Nagad any day, and drive when it suits you.',bullets:['Low, transparent commission','Withdraw to bKash &amp; Nagad any day','Rider heat-map and bonuses'],x:150,y:230,w:900})}
+ <div class="abs" id="ph8w" style="left:1240px;top:125px">${phoneHTML('ph8',`
+   <div class="abs" style="left:24px;right:24px;top:72px">
+     <div class="row" style="justify-content:space-between"><div style="font-weight:800;font-size:22px">Earnings</div>
+     <div class="row" style="gap:8px;font-size:14px;font-weight:800;color:#0B1512;background:#34D399;padding:8px 14px;border-radius:999px"><span style="width:8px;height:8px;border-radius:50%;background:#0B1512"></span>ONLINE</div></div>
+     <div style="margin-top:22px;font-size:14px;letter-spacing:2px;font-weight:700;color:#98A9A0">TODAY</div>
+     <div id="e8" class="goldt" style="font-size:60px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums">৳0</div>
+     <svg viewBox="0 0 310 130" style="width:100%;height:120px;margin-top:10px;overflow:visible"><defs><linearGradient id="sg8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBBF2E" stop-opacity=".35"/><stop offset="1" stop-color="#FBBF2E" stop-opacity="0"/></linearGradient></defs>
+       <path id="sa8" d="${SPK} L310 130 L0 130Z" fill="url(#sg8)"/><path id="sp8" d="${SPK}" fill="none" stroke="#FBBF2E" stroke-width="4" stroke-linecap="round"/></svg>
+     <div class="row" style="gap:10px;margin-top:14px">${[['14','Trips'],['6h 20m','Online'],['4.95','Rating']].map(([v,l])=>`<div style="flex:1;background:#132420;border-radius:16px;padding:12px"><div style="font-weight:900;font-size:19px">${v}</div><div style="font-size:12px;color:#98A9A0">${l}</div></div>`).join('')}</div>
+     ${[['Banani → Motijheel','+৳220'],['Mirpur 10 → Farmgate','+৳165'],['Uttara → Airport','+৳310']].map(([r,v])=>`<div class="row tr8" style="justify-content:space-between;padding:14px 4px;border-bottom:1px solid #1E3530;font-size:16px"><span style="font-weight:700">${r}</span><span style="font-weight:900;color:#34D399">${v}</span></div>`).join('')}
+     <div id="wd8" style="margin-top:18px;background:#FBBF2E;color:#0B1512;border-radius:16px;padding:16px;text-align:center;font-weight:900;font-size:18px">Withdraw to bKash</div>
+   </div>
+   <div id="toast8" class="card" style="left:16px;right:16px;top:60px;padding:16px 18px;z-index:45">
+     <div class="row" style="gap:12px"><div style="width:44px;height:44px;border-radius:12px;background:#E2136E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px">b</div>
+     <div><div style="font-weight:800;font-size:17px">৳2,000 sent to bKash</div><div style="font-size:14px;color:#5E6C65">Withdrawal complete</div></div></div>
+   </div>
+ `,{dark:true})}</div>
+ <div class="pill" id="chip8" style="left:960px;top:640px">${ic('trend')}+32% this week</div>
+ <div class="pill" id="chip8b" style="left:1560px;top:830px">${ic('map')}Hot zone: Gulshan</div>
+`,(lt)=>{
+  animTB($('#tb8'),lt);
+  const kp=P(lt,.1,1.1,E.out5); S($('#ph8w'),{y:(1-kp)*500,ry:L(-25,-8,kp),rx:L(10,3,kp),op:kp});
+  const v=Math.round(2480*P(lt,1.0,3.0,E.out)); $('#e8').textContent='৳'+v.toLocaleString('en-US');
+  const sp=$('#sp8'),sl=sp.getTotalLength(); const ks=P(lt,1.0,2.6,E.inOut); sp.style.strokeDasharray=sl; sp.style.strokeDashoffset=sl*(1-ks); $('#sa8').style.opacity=P(lt,2.0,2.8);
+  $$('.tr8').forEach((r,i)=>{const k=P(lt,1.6+i*.25,2.1+i*.25);S(r,{x:(1-k)*40,op:k})});
+  const pr=lt>3.4&&lt<3.65?.95:1; S($('#wd8'),{s:pr*(1+.03*Math.sin(lt*6)*(lt<3.4&&lt>2.4?1:0))});
+  const kt=P(lt,3.7,4.2,E.back); const kto=P(lt,5.4,5.8); S($('#toast8'),{y:(1-kt)*-140-kto*140,op:kt>0?1:0});
+  const c1=P(lt,2.0,2.6,E.back); S($('#chip8'),{s:c1,op:c1>0?1:0,y:Math.sin(lt*2)*6});
+  const c2=P(lt,2.6,3.2,E.back); S($('#chip8b'),{s:c2,op:c2>0?1:0,y:Math.sin(lt*2+1)*6});
+});
+
+/* ---------- S9 compare ---------- */
+const CMP=[['Made for Bangladesh, fully in Bangla',1,0],['Cash, bKash, Nagad &amp; wallet',1,0],['Women Ride with women drivers',1,0],['Passenger-confirmed pickup',1,0],['Lower commission for drivers',1,0],['Bike, CNG &amp; car in one app',1,0]];
+add(54,60,`
+ <div class="center" id="t9a" style="top:90px"><span class="eyebrow"><span class="n">08</span>Why চলো</span></div>
+ <div class="center" id="t9b" style="top:150px;font-size:96px;font-weight:900;letter-spacing:-3px">Easier than <span class="goldt">the rest.</span></div>
+ <div class="glass" id="tbl9" style="left:310px;top:330px;width:1300px;height:640px;padding:26px 50px">
+   <div class="row" style="height:70px;font-size:20px;letter-spacing:3px;font-weight:700;color:rgba(255,255,255,.55)"><div style="flex:1">FEATURE</div><div style="width:220px;text-align:center"><img src="logo.svg" style="height:56px;vertical-align:middle"></div><div style="width:220px;text-align:center">OTHER APPS</div></div>
+   ${CMP.map(([f,a,b])=>`<div class="row r9" style="height:88px;border-top:1px solid rgba(255,255,255,.12);font-size:29px;font-weight:600">
+     <div style="flex:1">${f}</div>
+     <div style="width:220px;display:flex;justify-content:center"><div class="c9" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(180deg,#FFE58A,#E88A12);display:flex;align-items:center;justify-content:center">${ic('check','width:30px;height:30px;stroke:#0A3D30;stroke-width:3.4')}</div></div>
+     <div style="width:220px;display:flex;justify-content:center"><div class="x9" style="width:54px;height:54px;border-radius:50%;border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center">${ic('x','width:24px;height:24px;stroke:rgba(255,255,255,.45);stroke-width:2.6')}</div></div>
+   </div>`).join('')}
+ </div>
+`,(lt)=>{
+  const a=P(lt,.1,.6);S($('#t9a'),{y:(1-a)*20,op:a});
+  const b=P(lt,.25,1.0,E.out5);S($('#t9b'),{y:(1-b)*50,op:b}); $('#t9b').style.filter=`blur(${(1-b)*10}px)`;
+  const kt=P(lt,.6,1.3,E.out5);S($('#tbl9'),{y:(1-kt)*80,op:kt});
+  $$('.r9').forEach((r,i)=>{const k=P(lt,1.1+i*.28,1.6+i*.28);S(r,{x:(1-k)*-30,op:k});
+    const c=P(lt,1.35+i*.28,1.8+i*.28,E.back);S($('.c9',r),{s:c});S($('.x9',r),{op:P(lt,1.4+i*.28,1.8+i*.28)*.9})});
+});
+
+/* ---------- S10 feature grid ---------- */
+const FT=[['pkg','Parcel delivery'],['cal','Scheduled rides'],['plane','Airport transfers'],['users','Shared rides · split fare'],['gift','Rewards &amp; referrals'],['tag','Promo codes'],['globe','Bangla &amp; English'],['moon','Light &amp; dark mode'],['nav','Live GPS tracking'],['star','Ratings you can trust'],['headset','24/7 support'],['brief','চলো for Business']];
+add(60,65,`
+ <div class="center" id="t10" style="top:110px;font-size:96px;font-weight:900;letter-spacing:-3px">And <span class="goldt">so much more.</span></div>
+ ${FT.map(([i,n],k)=>`<div class="glass ft10" style="left:${238+(k%4)*370}px;top:${300+Math.floor(k/4)*205}px;width:334px;height:172px;border-radius:30px;padding:28px 28px;display:flex;flex-direction:column;justify-content:space-between">
+   <div style="width:60px;height:60px;border-radius:18px;background:rgba(251,191,46,.16);display:flex;align-items:center;justify-content:center">${ic(i,'width:32px;height:32px;stroke:#FBBF2E;stroke-width:2')}</div>
+   <div style="font-size:26px;font-weight:700;white-space:nowrap">${n}</div></div>`).join('')}
+`,(lt)=>{
+  const b=P(lt,.1,.8,E.out5);S($('#t10'),{y:(1-b)*50,op:b}); $('#t10').style.filter=`blur(${(1-b)*10}px)`;
+  $$('.ft10').forEach((t,i)=>{const d=.5+((i%4)+Math.floor(i/4))*.13;const k=P(lt,d,d+.6,E.back);S(t,{s:L(.5,1,k),op:clamp(k*2),y:(1-k)*40});});
+});
+
+/* ---------- S11 outro ---------- */
+add(65,72,`
+ <div class="abs" id="o1" style="left:560px;top:190px;width:800px;height:296px">
+   <img src="logo.svg" style="width:800px;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.5))">
+   <div id="o1s" class="abs" style="inset:0;-webkit-mask:url(logo.svg) center/100% 100% no-repeat;mask:url(logo.svg) center/100% 100% no-repeat;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);background-size:300% 100%"></div>
+ </div>
+ <div class="center" id="o2" style="top:540px;font-size:84px;font-weight:900;letter-spacing:-2px">Let’s go. <span class="goldt" style="font-family:Baloo;font-weight:800">চলো!</span></div>
+ <div class="center" id="o3" style="top:670px;font-size:28px;font-weight:600;letter-spacing:6px;color:rgba(255,255,255,.7)">RIDE SAFE &nbsp;·&nbsp; PAY EASY &nbsp;·&nbsp; EARN MORE</div>
+ <div class="abs row" id="o4" style="left:0;right:0;top:760px;justify-content:center;gap:24px">
+   ${['Coming soon on Android','Coming soon on iOS'].map(s=>`<div style="padding:18px 34px;border-radius:20px;background:#fff;color:#0E261F;font-size:24px;font-weight:800">${s}</div>`).join('')}
+   <div style="padding:18px 34px;border-radius:20px;border:2px solid rgba(251,191,46,.7);color:#FFE58A;font-size:24px;font-weight:800">cholo-cholo7.vercel.app</div>
+ </div>
+`,(lt)=>{
+  const k=P(lt,.2,1.4,E.out5); const o=$('#o1'); o.style.filter=`blur(${(1-k)*16}px)`; S(o,{s:L(1.3,1,k),op:clamp(k*1.5)});
+  $('#o1s').style.backgroundPosition=`${L(120,-60,P(lt,1.4,2.6,E.inOut))}% 0`;
+  const a=P(lt,1.2,2.0,E.out5);S($('#o2'),{y:(1-a)*40,op:a});
+  const b=P(lt,1.7,2.4);S($('#o3'),{y:(1-b)*24,op:b}); $('#o3').style.letterSpacing=`${L(16,6,b)}px`;
+  const c=P(lt,2.2,2.9,E.out5);S($('#o4'),{y:(1-c)*40,op:c});
+},{fade:false});
+
+const TOTAL=72;
+const root=$('#scenes');
+SC.forEach((s,i)=>{const d=document.createElement('section');d.className='scene';d.id='sc'+i;d.innerHTML=s.html;root.appendChild(d);s.el=d;});
+const st=$('#streaks');
+const STK=[...Array(9)].map(()=>({y:rnd()*1080,w:200+rnd()*380,sp:500+rnd()*900,off:rnd()*4000,o:.25+rnd()*.5}));
+STK.forEach(()=>{const d=document.createElement('div');d.className='streak';st.appendChild(d)});
+const CUTS=SC.slice(1).map(s=>s.a);
+const LABELS={1:'',2:'BOOK',3:'WOMEN RIDE',4:'PEAK HOURS',5:'FAVOURITES',6:'SAFETY',7:'PAYMENTS',8:'DRIVERS',9:'WHY চলো',10:'MORE'};
+
+window.render=function(t){
+  S($('#b1'),{x:-200+Math.sin(t*.25)*260,y:-250+Math.cos(t*.2)*160});
+  S($('#b2'),{x:1250+Math.cos(t*.22)*240,y:450+Math.sin(t*.3)*160});
+  const pink=P(t,18,18.8)*(1-P(t,23.4,24.2));
+  S($('#b3'),{x:1000+Math.sin(t*.3)*120,y:200,op:pink*.35});
+  $('#b2').style.opacity=.14*(1-pink);
+  $('#dots').style.transform=`translate(${-(t*18)%46}px,${-(t*9)%46}px)`;
+  [...st.children].forEach((el,i)=>{const s=STK[i];const x=((t*s.sp+s.off)%(1920+s.w*2))-s.w;el.style.width=s.w+'px';S(el,{x,y:s.y+Math.sin(t*.5+i)*20,r:-8,op:s.o*(t>64.5&&t<66?0:1)})});
+  let sw=-1;CUTS.forEach(c=>{if(t>c-.35&&t<c+.35)sw=(t-(c-.35))/.7});
+  $('#sweep').style.display=sw>=0?'block':'none'; if(sw>=0) S($('#sweep'),{x:L(-500,2200,E.inOut(sw)),r:18});
+  SC.forEach((s,i)=>{
+    const on=t>=s.a&&t<s.b; s.el.style.display=on?'block':'none'; if(!on) return;
+    const lt=t-s.a,d=s.b-s.a;
+    if(s.fade){const ki=P(lt,0,.45),ko=P(lt,d-.45,d,E.in);s.el.style.opacity=ki*(1-ko);S(s.el,{s:L(1.035,1,P(lt,0,.7))*(1-ko*.04)});}
+    s.u(lt,d,s.el);
+  });
+  const wmOn=P(t,6,6.6)*(1-P(t,64.4,65));
+  $('#wm').style.opacity=wmOn*.95;
+  let lab='';SC.forEach((s,i)=>{if(t>=s.a&&t<s.b)lab=LABELS[i]||''});
+  $('#wmtxt').textContent=lab; $('#wmtxt').style.opacity=wmOn;
+  $('#black').style.opacity=Math.max(1-P(t,0,.8,E.lin),P(t,70.6,72,E.lin));
+};
+document.fonts.ready.then(()=>{window.READY=true;render(0)});
+</script>
+</body>
+</html>
