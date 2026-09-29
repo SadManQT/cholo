@@ -28,8 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => setUser(null));
   }, []);
 
-  // Who is signed in. A sleeping API (free hosting) answers 502/503/504 or not at all while it wakes, so keep
-  // trying for about a minute instead of treating that as "signed out"; a 401/403 means signed out.
   useEffect(() => {
     let cancelled = false;
     async function bootstrap() {

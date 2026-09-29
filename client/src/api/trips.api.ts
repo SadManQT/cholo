@@ -37,7 +37,6 @@ export async function markArrived(tripCode: string, position?: Position) {
   return response.data.data;
 }
 
-/** Starts the trip if the rider already confirmed; otherwise asks them to (status stays "arrived"). */
 export async function startTrip(tripCode: string) {
   const response = await apiClient.post<ApiSuccess<{ tripCode: string; status: TripStatus; startRequestedAt?: string; awaitingRider?: boolean }>>(
     `/trips/${encodeURIComponent(tripCode)}/start`,
