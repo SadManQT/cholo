@@ -1,7 +1,153 @@
 -- Cholo demo dataset: run after schema.sql, migrations 0001-0013 (0003 only if fn_current_commission is missing) and seed.reference.sql. Safe to re-run.
+CREATE SCHEMA IF NOT EXISTS cholo_demo_seed;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_hav(a1 numeric, o1 numeric, a2 numeric, o2 numeric)
+RETURNS numeric LANGUAGE sql IMMUTABLE AS $f$
+  SELECT (6371 * 2 * asin(sqrt(
+    power(sin(radians(a2 - a1) / 2), 2) +
+    cos(radians(a1)) * cos(radians(a2)) * power(sin(radians(o2 - o1) / 2), 2))))::numeric
+$f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_fare(
+  p_base numeric, p_perkm numeric, p_permin numeric, p_minfare numeric, p_booking numeric,
+  p_waitrate numeric, p_freewait numeric, p_km numeric, p_dur numeric, p_wait numeric, p_mult numeric,
+  OUT o_base numeric, OUT o_dist numeric, OUT o_time numeric, OUT o_wait numeric,
+  OUT o_surge numeric, OUT o_booking numeric, OUT o_total numeric)
+LANGUAGE plpgsql AS $f$
+DECLARE ride numeric; exact numeric; adj numeric;
+BEGIN
+  o_base := round(p_base, 2);
+  o_time := round(p_dur * p_permin, 2);
+  o_wait := round(greatest(0, p_wait - p_freewait) * p_waitrate, 2);
+  o_booking := round(p_booking, 2);
+  o_dist := round(p_km * p_perkm, 2);
+  ride := round(o_base + o_dist + o_time, 2);
+  IF ride < p_minfare THEN
+    o_dist := round(o_dist + (p_minfare - ride), 2);
+    ride := p_minfare;
+  END IF;
+  o_surge := round(ride * (p_mult - 1), 2);
+  exact := round(o_base + o_dist + o_time + o_wait + o_surge + o_booking, 2);
+  o_total := round(exact);
+  adj := round(o_total - exact, 2);
+  IF o_dist + adj >= 0 THEN o_dist := round(o_dist + adj, 2);
+  ELSE o_base := round(o_base + adj, 2);
+  END IF;
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_hour() RETURNS int LANGUAGE plpgsql AS $f$
+DECLARE
+  w numeric[] := ARRAY[0.8,0.5,0.4,0.3,0.4,0.9,2,3,10,10,7,4,4,4,4,4,3,9,11,10,7,3,2,1.2];
+  tot numeric := 0; r numeric; acc numeric := 0; i int;
+BEGIN
+  FOR i IN 1..24 LOOP tot := tot + w[i]; END LOOP;
+  r := random() * tot;
+  FOR i IN 1..24 LOOP
+    acc := acc + w[i];
+    IF r < acc THEN RETURN i - 1; END IF;
+  END LOOP;
+  RETURN 18;
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_ts(p_today date, p_now timestamptz) RETURNS timestamptz
+LANGUAGE plpgsql AS $f$
+DECLARE d int; ts timestamptz; tries int := 0;
+BEGIN
+  LOOP
+    LOOP
+      d := floor(60 * power(random(), 1.35))::int;
+      EXIT WHEN NOT (extract(dow FROM (p_today - d)) = 5 AND random() > 0.6);
+    END LOOP;
+    ts := ((p_today - d)::timestamp
+           + make_interval(hours => cholo_demo_seed.d_hour(), mins => floor(random() * 60)::int, secs => floor(random() * 60)::int))
+          AT TIME ZONE 'Asia/Dhaka';
+    tries := tries + 1;
+    EXIT WHEN ts <= p_now - interval '45 minutes' OR tries > 30;
+  END LOOP;
+  IF ts > p_now - interval '45 minutes' THEN ts := ts - interval '1 day'; END IF;
+  RETURN ts;
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_ts_old(p_today date) RETURNS timestamptz
+LANGUAGE plpgsql AS $f$
+DECLARE d int;
+BEGIN
+  LOOP
+    d := 61 + floor(90 * power(random(), 1.8))::int;
+    EXIT WHEN NOT (extract(dow FROM (p_today - d)) = 5 AND random() > 0.6);
+  END LOOP;
+  RETURN ((p_today - d)::timestamp
+          + make_interval(hours => cholo_demo_seed.d_hour(), mins => floor(random() * 60)::int, secs => floor(random() * 60)::int))
+         AT TIME ZONE 'Asia/Dhaka';
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_txn(
+  p_user bigint, p_ts timestamptz, p_type wallet_txn_type, p_dir wallet_txn_direction, p_amt numeric,
+  p_rt wallet_txn_reference_type, p_ref bigint, p_key text, p_note text)
+RETURNS void LANGUAGE plpgsql AS $f$
+DECLARE b RECORD; ts timestamptz;
+BEGIN
+  IF p_amt IS NULL OR p_amt <= 0 THEN RETURN; END IF;
+  SELECT * INTO b FROM _bal WHERE user_id = p_user;
+  ts := greatest(p_ts, b.last_ts);
+  INSERT INTO wallet_transactions
+    (wallet_id, txn_type, direction, amount, balance_after, reference_type, reference_id, idempotency_key, note, created_at)
+  VALUES (b.wallet_id, p_type, p_dir, p_amt, 0, p_rt, p_ref, p_key, p_note, ts);
+  UPDATE _bal SET bal = bal + CASE WHEN p_dir = 'credit' THEN p_amt ELSE -p_amt END, last_ts = ts WHERE user_id = p_user;
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_topup(p_user bigint, p_amt numeric, p_ts timestamptz)
+RETURNS void LANGUAGE plpgsql AS $f$
+DECLARE pid bigint; m payment_channel; ts timestamptz; b RECORD;
+BEGIN
+  SELECT * INTO b FROM _bal WHERE user_id = p_user;
+  ts := greatest(p_ts, b.last_ts);
+  m := (ARRAY['bkash','nagad','card','bkash','nagad'])[1 + floor(random() * 5)::int]::payment_channel;
+  INSERT INTO payments (purpose, payer_id, method_type, gateway, gateway_txn_id, amount, status, initiated_at, completed_at)
+  VALUES ('wallet_topup', p_user, m, 'sslcommerz',
+          'SSL' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 14)),
+          p_amt, 'succeeded', ts - interval '40 seconds', ts)
+  RETURNING id INTO pid;
+  PERFORM cholo_demo_seed.d_txn(p_user, ts, 'topup', 'credit', p_amt, 'payment', pid, 'topup-payment-' || pid, NULL);
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_fund(p_user bigint, p_need numeric, p_ts timestamptz)
+RETURNS void LANGUAGE plpgsql AS $f$
+DECLARE b RECORD;
+BEGIN
+  SELECT * INTO b FROM _bal WHERE user_id = p_user;
+  IF b.bal >= p_need THEN RETURN; END IF;
+  PERFORM cholo_demo_seed.d_topup(p_user, ceil((p_need - b.bal + 100) / 500.0) * 500, p_ts);
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_mix(p_dhaka smallint, p_ctg smallint, p_syl smallint, p_bike smallint,
+  p_cng smallint, p_car smallint, p_prem smallint, OUT o_city smallint, OUT o_cat smallint)
+LANGUAGE plpgsql AS $f$
+DECLARE r1 numeric := random(); r2 numeric := random();
+BEGIN
+  o_city := CASE WHEN r1 < 0.80 THEN p_dhaka WHEN r1 < 0.92 THEN p_ctg ELSE p_syl END;
+  o_cat := CASE WHEN o_city = p_dhaka THEN
+                  CASE WHEN r2 < 0.40 THEN p_bike WHEN r2 < 0.62 THEN p_cng WHEN r2 < 0.94 THEN p_car ELSE p_prem END
+                WHEN o_city = p_ctg THEN
+                  CASE WHEN r2 < 0.46 THEN p_bike WHEN r2 < 0.74 THEN p_cng ELSE p_car END
+                ELSE CASE WHEN r2 < 0.58 THEN p_bike ELSE p_cng END END;
+END $f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_when(p_today date, p_min_days int, p_span int) RETURNS timestamptz
+LANGUAGE sql VOLATILE AS $f$
+  SELECT ((p_today - (p_min_days + floor(random() * p_span))::int)::timestamp
+          + make_interval(hours => 8 + floor(random() * 13)::int, mins => floor(random() * 60)::int)) AT TIME ZONE 'Asia/Dhaka'
+$f$;
+
+CREATE OR REPLACE FUNCTION cholo_demo_seed.d_addr(p_name text, p_area text, p_city text)
+RETURNS text LANGUAGE sql IMMUTABLE AS $f$
+  SELECT CASE WHEN lower(p_name) = lower(p_area) THEN p_name || ', ' || p_city
+              ELSE p_name || ', ' || p_area || ', ' || p_city END
+$f$;
+
 DO $demo$
 DECLARE
-  c_hash CONSTANT text := '$2b$12$WOaMwC4X4gaEJTpE9DGw/uGTxEDN49DOkjppNvr3z3.gcD4qoF/ce';
+  c_hash CONSTANT text := chr(36) || '2b' || chr(36) || '12' || chr(36) || 'WOaMwC4X4gaEJTpE9DGw/uGTxEDN49DOkjppNvr3z3.gcD4qoF/ce';
   v_now   timestamptz := now();
   v_today date := (now() AT TIME ZONE 'Asia/Dhaka')::date;
   v_dhaka smallint;
@@ -45,85 +191,10 @@ BEGIN
   DROP TABLE IF EXISTS _loc, _pax, _drv, _ev, _bal, _surged, _tk;
 
   -- Helper functions (session-local, dropped at the end)
-  CREATE OR REPLACE FUNCTION pg_temp.d_hav(a1 numeric, o1 numeric, a2 numeric, o2 numeric)
-  RETURNS numeric LANGUAGE sql IMMUTABLE AS $f$
-    SELECT (6371 * 2 * asin(sqrt(
-      power(sin(radians(a2 - a1) / 2), 2) +
-      cos(radians(a1)) * cos(radians(a2)) * power(sin(radians(o2 - o1) / 2), 2))))::numeric
-  $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_fare(
-    p_base numeric, p_perkm numeric, p_permin numeric, p_minfare numeric, p_booking numeric,
-    p_waitrate numeric, p_freewait numeric, p_km numeric, p_dur numeric, p_wait numeric, p_mult numeric,
-    OUT o_base numeric, OUT o_dist numeric, OUT o_time numeric, OUT o_wait numeric,
-    OUT o_surge numeric, OUT o_booking numeric, OUT o_total numeric)
-  LANGUAGE plpgsql AS $f$
-  DECLARE ride numeric; exact numeric; adj numeric;
-  BEGIN
-    o_base := round(p_base, 2);
-    o_time := round(p_dur * p_permin, 2);
-    o_wait := round(greatest(0, p_wait - p_freewait) * p_waitrate, 2);
-    o_booking := round(p_booking, 2);
-    o_dist := round(p_km * p_perkm, 2);
-    ride := round(o_base + o_dist + o_time, 2);
-    IF ride < p_minfare THEN
-      o_dist := round(o_dist + (p_minfare - ride), 2);
-      ride := p_minfare;
-    END IF;
-    o_surge := round(ride * (p_mult - 1), 2);
-    exact := round(o_base + o_dist + o_time + o_wait + o_surge + o_booking, 2);
-    o_total := round(exact);
-    adj := round(o_total - exact, 2);
-    IF o_dist + adj >= 0 THEN o_dist := round(o_dist + adj, 2);
-    ELSE o_base := round(o_base + adj, 2);
-    END IF;
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_hour() RETURNS int LANGUAGE plpgsql AS $f$
-  DECLARE
-    w numeric[] := ARRAY[0.8,0.5,0.4,0.3,0.4,0.9,2,3,10,10,7,4,4,4,4,4,3,9,11,10,7,3,2,1.2];
-    tot numeric := 0; r numeric; acc numeric := 0; i int;
-  BEGIN
-    FOR i IN 1..24 LOOP tot := tot + w[i]; END LOOP;
-    r := random() * tot;
-    FOR i IN 1..24 LOOP
-      acc := acc + w[i];
-      IF r < acc THEN RETURN i - 1; END IF;
-    END LOOP;
-    RETURN 18;
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_ts(p_today date, p_now timestamptz) RETURNS timestamptz
-  LANGUAGE plpgsql AS $f$
-  DECLARE d int; ts timestamptz; tries int := 0;
-  BEGIN
-    LOOP
-      LOOP
-        d := floor(60 * power(random(), 1.35))::int;
-        EXIT WHEN NOT (extract(dow FROM (p_today - d)) = 5 AND random() > 0.6);
-      END LOOP;
-      ts := ((p_today - d)::timestamp
-             + make_interval(hours => pg_temp.d_hour(), mins => floor(random() * 60)::int, secs => floor(random() * 60)::int))
-            AT TIME ZONE 'Asia/Dhaka';
-      tries := tries + 1;
-      EXIT WHEN ts <= p_now - interval '45 minutes' OR tries > 30;
-    END LOOP;
-    IF ts > p_now - interval '45 minutes' THEN ts := ts - interval '1 day'; END IF;
-    RETURN ts;
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_ts_old(p_today date) RETURNS timestamptz
-  LANGUAGE plpgsql AS $f$
-  DECLARE d int;
-  BEGIN
-    LOOP
-      d := 61 + floor(90 * power(random(), 1.8))::int;
-      EXIT WHEN NOT (extract(dow FROM (p_today - d)) = 5 AND random() > 0.6);
-    END LOOP;
-    RETURN ((p_today - d)::timestamp
-            + make_interval(hours => pg_temp.d_hour(), mins => floor(random() * 60)::int, secs => floor(random() * 60)::int))
-           AT TIME ZONE 'Asia/Dhaka';
-  END $f$;
 
   -- Admins
   UPDATE users SET phone = '01510009993' WHERE email = 'admin.demo@cholo.local' AND phone = '01910000003';
@@ -625,44 +696,8 @@ BEGIN
 
   CREATE TEMP TABLE _surged (zone_id bigint, day date, morning boolean, mult numeric, ts timestamptz);
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_txn(
-    p_user bigint, p_ts timestamptz, p_type wallet_txn_type, p_dir wallet_txn_direction, p_amt numeric,
-    p_rt wallet_txn_reference_type, p_ref bigint, p_key text, p_note text)
-  RETURNS void LANGUAGE plpgsql AS $f$
-  DECLARE b RECORD; ts timestamptz;
-  BEGIN
-    IF p_amt IS NULL OR p_amt <= 0 THEN RETURN; END IF;
-    SELECT * INTO b FROM _bal WHERE user_id = p_user;
-    ts := greatest(p_ts, b.last_ts);
-    INSERT INTO wallet_transactions
-      (wallet_id, txn_type, direction, amount, balance_after, reference_type, reference_id, idempotency_key, note, created_at)
-    VALUES (b.wallet_id, p_type, p_dir, p_amt, 0, p_rt, p_ref, p_key, p_note, ts);
-    UPDATE _bal SET bal = bal + CASE WHEN p_dir = 'credit' THEN p_amt ELSE -p_amt END, last_ts = ts WHERE user_id = p_user;
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_topup(p_user bigint, p_amt numeric, p_ts timestamptz)
-  RETURNS void LANGUAGE plpgsql AS $f$
-  DECLARE pid bigint; m payment_channel; ts timestamptz; b RECORD;
-  BEGIN
-    SELECT * INTO b FROM _bal WHERE user_id = p_user;
-    ts := greatest(p_ts, b.last_ts);
-    m := (ARRAY['bkash','nagad','card','bkash','nagad'])[1 + floor(random() * 5)::int]::payment_channel;
-    INSERT INTO payments (purpose, payer_id, method_type, gateway, gateway_txn_id, amount, status, initiated_at, completed_at)
-    VALUES ('wallet_topup', p_user, m, 'sslcommerz',
-            'SSL' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 14)),
-            p_amt, 'succeeded', ts - interval '40 seconds', ts)
-    RETURNING id INTO pid;
-    PERFORM pg_temp.d_txn(p_user, ts, 'topup', 'credit', p_amt, 'payment', pid, 'topup-payment-' || pid, NULL);
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_fund(p_user bigint, p_need numeric, p_ts timestamptz)
-  RETURNS void LANGUAGE plpgsql AS $f$
-  DECLARE b RECORD;
-  BEGIN
-    SELECT * INTO b FROM _bal WHERE user_id = p_user;
-    IF b.bal >= p_need THEN RETURN; END IF;
-    PERFORM pg_temp.d_topup(p_user, ceil((p_need - b.bal + 100) / 500.0) * 500, p_ts);
-  END $f$;
 
   -- Event queue
   CREATE TEMP TABLE _ev (
@@ -670,30 +705,13 @@ BEGIN
     outcome text, city_id smallint, cat_id smallint, data jsonb);
   CREATE INDEX ON _ev (ts, seq);
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_mix(p_dhaka smallint, p_ctg smallint, p_syl smallint, p_bike smallint,
-    p_cng smallint, p_car smallint, p_prem smallint, OUT o_city smallint, OUT o_cat smallint)
-  LANGUAGE plpgsql AS $f$
-  DECLARE r1 numeric := random(); r2 numeric := random();
-  BEGIN
-    o_city := CASE WHEN r1 < 0.80 THEN p_dhaka WHEN r1 < 0.92 THEN p_ctg ELSE p_syl END;
-    o_cat := CASE WHEN o_city = p_dhaka THEN
-                    CASE WHEN r2 < 0.40 THEN p_bike WHEN r2 < 0.62 THEN p_cng WHEN r2 < 0.94 THEN p_car ELSE p_prem END
-                  WHEN o_city = p_ctg THEN
-                    CASE WHEN r2 < 0.46 THEN p_bike WHEN r2 < 0.74 THEN p_cng ELSE p_car END
-                  ELSE CASE WHEN r2 < 0.58 THEN p_bike ELSE p_cng END END;
-  END $f$;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_when(p_today date, p_min_days int, p_span int) RETURNS timestamptz
-  LANGUAGE sql VOLATILE AS $f$
-    SELECT ((p_today - (p_min_days + floor(random() * p_span))::int)::timestamp
-            + make_interval(hours => 8 + floor(random() * 13)::int, mins => floor(random() * 60)::int)) AT TIME ZONE 'Asia/Dhaka'
-  $f$;
 
   INSERT INTO _ev (ts, kind, outcome, city_id, cat_id)
   SELECT x.ts, 'ride', x.outcome, (x.m).o_city, (x.m).o_cat
   FROM (
-    SELECT pg_temp.d_ts(v_today, v_now) AS ts, o.outcome,
-           pg_temp.d_mix(v_dhaka, v_ctg, v_syl, c_bike, c_cng, c_car, c_prem) AS m
+    SELECT cholo_demo_seed.d_ts(v_today, v_now) AS ts, o.outcome,
+           cholo_demo_seed.d_mix(v_dhaka, v_ctg, v_syl, c_bike, c_cng, c_car, c_prem) AS m
     FROM (VALUES ('completed', 600), ('cancel_pax', 30), ('cancel_drv', 14), ('cancel_sys', 3),
                  ('expired', 18), ('cancel_pre', 9)) AS o(outcome, n)
     CROSS JOIN LATERAL generate_series(1, o.n) g
@@ -702,7 +720,7 @@ BEGIN
   INSERT INTO _ev (ts, kind, outcome, city_id, cat_id)
   SELECT x.ts, 'ride', 'completed', (x.m).o_city, (x.m).o_cat
   FROM (
-    SELECT pg_temp.d_ts_old(v_today) AS ts, pg_temp.d_mix(v_dhaka, v_ctg, v_syl, c_bike, c_cng, c_car, c_prem) AS m
+    SELECT cholo_demo_seed.d_ts_old(v_today) AS ts, cholo_demo_seed.d_mix(v_dhaka, v_ctg, v_syl, c_bike, c_cng, c_car, c_prem) AS m
     FROM generate_series(1, 130) g
   ) x;
 
@@ -726,7 +744,7 @@ BEGIN
   INSERT INTO _ev (ts, kind, data)
   SELECT t.ts, 'topup', jsonb_build_object('user', t.user_id, 'amount', t.amount)
   FROM (
-    SELECT p.user_id, p.joined_at, p.active_until, pg_temp.d_when(v_today, 2, 55) AS ts,
+    SELECT p.user_id, p.joined_at, p.active_until, cholo_demo_seed.d_when(v_today, 2, 55) AS ts,
            (ARRAY[500, 1000, 1500, 2000])[1 + floor(random() * 4)::int] AS amount
     FROM _pax p
     CROSS JOIN LATERAL generate_series(1, CASE WHEN p.pref = 'w' THEN 4 WHEN p.pref IN ('b', 'n', 'k') AND p.k % 3 = 0 THEN 1 ELSE 0 END) g
@@ -775,11 +793,6 @@ BEGIN
   ) AS x(k, ago, want, outcome)
   JOIN _drv d ON d.k = x.k;
 
-  CREATE OR REPLACE FUNCTION pg_temp.d_addr(p_name text, p_area text, p_city text)
-  RETURNS text LANGUAGE sql IMMUTABLE AS $f$
-    SELECT CASE WHEN lower(p_name) = lower(p_area) THEN p_name || ', ' || p_city
-                ELSE p_name || ', ' || p_area || ', ' || p_city END
-  $f$;
 
   -- Replay the timeline in order: rides, payments, ledger, withdrawals, refunds
   DECLARE
@@ -824,10 +837,10 @@ BEGIN
       EXIT WHEN NOT FOUND;
 
       IF ev.kind = 'topup' THEN
-        PERFORM pg_temp.d_topup((ev.data->>'user')::bigint, (ev.data->>'amount')::numeric, ev.ts);
+        PERFORM cholo_demo_seed.d_topup((ev.data->>'user')::bigint, (ev.data->>'amount')::numeric, ev.ts);
         CONTINUE;
       ELSIF ev.kind = 'credit' THEN
-        PERFORM pg_temp.d_txn((ev.data->>'user')::bigint, ev.ts, (ev.data->>'type')::wallet_txn_type, 'credit',
+        PERFORM cholo_demo_seed.d_txn((ev.data->>'user')::bigint, ev.ts, (ev.data->>'type')::wallet_txn_type, 'credit',
                               (ev.data->>'amount')::numeric, (ev.data->>'ref')::wallet_txn_reference_type, NULL,
                               'demo-credit-' || ev.seq, ev.data->>'note');
         INSERT INTO notifications (user_id, category, title, body, created_at, read_at)
@@ -835,7 +848,7 @@ BEGIN
                 ev.ts, ev.ts + interval '3 hours');
         CONTINUE;
       ELSIF ev.kind = 'wd_return' THEN
-        PERFORM pg_temp.d_txn((ev.data->>'driver')::bigint, ev.ts, 'adjustment', 'credit', (ev.data->>'amount')::numeric,
+        PERFORM cholo_demo_seed.d_txn((ev.data->>'driver')::bigint, ev.ts, 'adjustment', 'credit', (ev.data->>'amount')::numeric,
                               'withdrawal', (ev.data->>'wid')::bigint, ev.data->>'key', ev.data->>'note');
         CONTINUE;
       ELSIF ev.kind = 'wd_request' THEN
@@ -863,7 +876,7 @@ BEGIN
                               WHEN 'failed' THEN w_fail[1 + floor(random() * 2)::int] END,
                 ev.ts, v_proc)
         RETURNING id INTO v_wid;
-        PERFORM pg_temp.d_txn((ev.data->>'driver')::bigint, ev.ts, 'withdrawal', 'debit', v_amt, 'withdrawal', v_wid,
+        PERFORM cholo_demo_seed.d_txn((ev.data->>'driver')::bigint, ev.ts, 'withdrawal', 'debit', v_amt, 'withdrawal', v_wid,
                               'withdrawal-request-' || v_wid, NULL);
         IF v_status IN ('rejected', 'failed') THEN
           INSERT INTO _ev (ts, kind, data)
@@ -874,12 +887,12 @@ BEGIN
         CONTINUE;
       ELSIF ev.kind = 'refund' THEN
         v_amt := (ev.data->>'amount')::numeric;
-        PERFORM pg_temp.d_txn((ev.data->>'pax')::bigint, ev.ts, 'refund', 'credit', v_amt, 'payment', (ev.data->>'payment')::bigint,
+        PERFORM cholo_demo_seed.d_txn((ev.data->>'pax')::bigint, ev.ts, 'refund', 'credit', v_amt, 'payment', (ev.data->>'payment')::bigint,
                               'dispute-refund-' || (ev.data->>'dispute'), 'Refund for ' || (ev.data->>'dispute_no'));
         v_delta := round(v_amt * (ev.data->>'net')::numeric / (ev.data->>'gross')::numeric, 2);
         IF v_delta > 0 THEN
-          PERFORM pg_temp.d_fund((ev.data->>'driver')::bigint, v_delta, ev.ts);
-          PERFORM pg_temp.d_txn((ev.data->>'driver')::bigint, ev.ts, 'adjustment', 'debit', v_delta, 'payment',
+          PERFORM cholo_demo_seed.d_fund((ev.data->>'driver')::bigint, v_delta, ev.ts);
+          PERFORM cholo_demo_seed.d_txn((ev.data->>'driver')::bigint, ev.ts, 'adjustment', 'debit', v_delta, 'payment',
                                 (ev.data->>'payment')::bigint, 'dispute-clawback-' || (ev.data->>'dispute'),
                                 'Your share of the refund for ' || (ev.data->>'dispute_no'));
         END IF;
@@ -899,26 +912,26 @@ BEGIN
       SELECT * INTO l1 FROM _loc WHERE city_id = v_city ORDER BY -ln(1 - random()) / w LIMIT 1;
       SELECT x.* INTO l2 FROM _loc x
       WHERE x.city_id = v_city AND x.id <> l1.id
-        AND pg_temp.d_hav(l1.lat, l1.lng, x.lat, x.lng) BETWEEN 1.3 AND (CASE WHEN v_cat = c_bike THEN 14 WHEN v_cat = c_cng THEN 12 ELSE 26 END)
-      ORDER BY -ln(1 - random()) / (x.w * exp(-pg_temp.d_hav(l1.lat, l1.lng, x.lat, x.lng) / 7)) LIMIT 1;
+        AND cholo_demo_seed.d_hav(l1.lat, l1.lng, x.lat, x.lng) BETWEEN 1.3 AND (CASE WHEN v_cat = c_bike THEN 14 WHEN v_cat = c_cng THEN 12 ELSE 26 END)
+      ORDER BY -ln(1 - random()) / (x.w * exp(-cholo_demo_seed.d_hav(l1.lat, l1.lng, x.lat, x.lng) / 7)) LIMIT 1;
       IF NOT FOUND THEN
         SELECT x.* INTO l2 FROM _loc x WHERE x.city_id = v_city AND x.id <> l1.id
-          AND pg_temp.d_hav(l1.lat, l1.lng, x.lat, x.lng) >= 1.3 ORDER BY random() LIMIT 1;
+          AND cholo_demo_seed.d_hav(l1.lat, l1.lng, x.lat, x.lng) >= 1.3 ORDER BY random() LIMIT 1;
         IF NOT FOUND THEN CONTINUE; END IF;
       END IF;
       v_plat := round(l1.lat + (random()::numeric - 0.5) * 0.003, 6); v_plng := round(l1.lng + (random()::numeric - 0.5) * 0.003, 6);
       v_dlat := round(l2.lat + (random()::numeric - 0.5) * 0.003, 6); v_dlng := round(l2.lng + (random()::numeric - 0.5) * 0.003, 6);
-      v_hav := pg_temp.d_hav(v_plat, v_plng, v_dlat, v_dlng);
+      v_hav := cholo_demo_seed.d_hav(v_plat, v_plng, v_dlat, v_dlng);
       v_route := v_hav; v_stop := false;
       IF v_out = 'completed' AND v_city = v_dhaka AND v_cat IN (c_car, c_cng) AND v_hav > 3 AND random() < 0.13 THEN
         SELECT x.* INTO l3 FROM _loc x
         WHERE x.city_id = v_city AND x.id NOT IN (l1.id, l2.id)
-          AND pg_temp.d_hav(v_plat, v_plng, x.lat, x.lng) + pg_temp.d_hav(x.lat, x.lng, v_dlat, v_dlng) < 1.5 * v_hav
+          AND cholo_demo_seed.d_hav(v_plat, v_plng, x.lat, x.lng) + cholo_demo_seed.d_hav(x.lat, x.lng, v_dlat, v_dlng) < 1.5 * v_hav
         ORDER BY random() LIMIT 1;
         v_stop := FOUND;
         IF v_stop THEN
-          v_slat := l3.lat; v_slng := l3.lng; v_saddr := pg_temp.d_addr(l3.name, l3.area, v_cityname);
-          v_route := pg_temp.d_hav(v_plat, v_plng, v_slat, v_slng) + pg_temp.d_hav(v_slat, v_slng, v_dlat, v_dlng);
+          v_slat := l3.lat; v_slng := l3.lng; v_saddr := cholo_demo_seed.d_addr(l3.name, l3.area, v_cityname);
+          v_route := cholo_demo_seed.d_hav(v_plat, v_plng, v_slat, v_slng) + cholo_demo_seed.d_hav(v_slat, v_slng, v_dlat, v_dlng);
         END IF;
       END IF;
       v_km := round(v_route * (1.22 + random()::numeric * 0.2), 2);
@@ -1018,9 +1031,9 @@ BEGIN
 
       SELECT * INTO tf FROM fn_current_pricing(v_city, v_cat, v_req);
       IF NOT FOUND THEN CONTINUE; END IF;
-      SELECT * INTO fe FROM pg_temp.d_fare(tf.base_fare, tf.per_km_rate, tf.per_min_rate, tf.minimum_fare, tf.booking_fee,
+      SELECT * INTO fe FROM cholo_demo_seed.d_fare(tf.base_fare, tf.per_km_rate, tf.per_min_rate, tf.minimum_fare, tf.booking_fee,
                                           tf.waiting_per_min, tf.free_wait_minutes, v_km, v_dur, 0, v_mult);
-      SELECT * INTO f FROM pg_temp.d_fare(tf.base_fare, tf.per_km_rate, tf.per_min_rate, tf.minimum_fare, tf.booking_fee,
+      SELECT * INTO f FROM cholo_demo_seed.d_fare(tf.base_fare, tf.per_km_rate, tf.per_min_rate, tf.minimum_fare, tf.booking_fee,
                                          tf.waiting_per_min, tf.free_wait_minutes, v_km_act, v_dur_act, round(v_wait), v_mult);
 
       v_pay := CASE v_out WHEN 'unpaid_bkash' THEN 'bkash' WHEN 'unpaid_wallet' THEN 'wallet' WHEN 'unpaid_card' THEN 'card'
@@ -1059,8 +1072,8 @@ BEGIN
          dropoff_lat, dropoff_lng, dropoff_address, est_distance_km, est_duration_min, est_fare, surge_multiplier,
          payment_intent, promo_code_id, women_only, scheduled_for, status, requested_at, expires_at, cancelled_at, stops)
       VALUES
-        (pax.user_id, v_city, v_cat, v_plat, v_plng, pg_temp.d_addr(l1.name, l1.area, v_cityname), v_zone,
-         v_dlat, v_dlng, pg_temp.d_addr(l2.name, l2.area, v_cityname), v_km, v_dur::smallint, fe.o_total, v_mult,
+        (pax.user_id, v_city, v_cat, v_plat, v_plng, cholo_demo_seed.d_addr(l1.name, l1.area, v_cityname), v_zone,
+         v_dlat, v_dlng, cholo_demo_seed.d_addr(l2.name, l2.area, v_cityname), v_km, v_dur::smallint, fe.o_total, v_mult,
          v_pay::payment_channel, v_promo_id, false,
          CASE WHEN v_out = 'live_scheduled' THEN (ev.data->>'at')::timestamptz END,
          v_rstatus, v_req,
@@ -1200,14 +1213,14 @@ BEGIN
         v_gross := v_pre; v_comm := round(v_gross * cm.commission_pct / 100, 2); v_net := v_gross - v_comm;
         v_pay_at := v_end;
         IF v_pay = 'wallet' THEN
-          PERFORM pg_temp.d_fund(pax.user_id, v_total, v_req - make_interval(mins => 1 + floor(random() * 8)::int));
+          PERFORM cholo_demo_seed.d_fund(pax.user_id, v_total, v_req - make_interval(mins => 1 + floor(random() * 8)::int));
         END IF;
         IF v_pay IN ('cash', 'wallet') THEN
           INSERT INTO payments (purpose, trip_id, payer_id, method_type, gateway, amount, status, initiated_at, completed_at)
           VALUES ('trip', v_tid, pax.user_id, v_pay::payment_channel, 'none', v_total, 'succeeded', v_end, v_end)
           RETURNING id INTO v_pay_id;
           IF v_pay = 'wallet' THEN
-            PERFORM pg_temp.d_txn(pax.user_id, v_end, 'trip_payment', 'debit', v_total, 'trip', v_tid, 'trip-payment-' || v_tid, NULL);
+            PERFORM cholo_demo_seed.d_txn(pax.user_id, v_end, 'trip_payment', 'debit', v_total, 'trip', v_tid, 'trip-payment-' || v_tid, NULL);
           END IF;
         ELSE
           v_pay_at := v_end + make_interval(secs => 40 + random() * 100);
@@ -1229,21 +1242,21 @@ BEGIN
         IF v_pay = 'cash' THEN
           v_delta := v_disc - v_comm;
           IF v_delta > 0 THEN
-            PERFORM pg_temp.d_txn(drv.user_id, v_pay_at, 'trip_earning', 'credit', v_delta, 'trip', v_tid, 'earning-trip-' || v_tid,
+            PERFORM cholo_demo_seed.d_txn(drv.user_id, v_pay_at, 'trip_earning', 'credit', v_delta, 'trip', v_tid, 'earning-trip-' || v_tid,
                                   'Promo discount paid by Cholo, less commission');
           ELSIF v_delta < 0 THEN
-            PERFORM pg_temp.d_fund(drv.user_id, -v_delta, v_pay_at - interval '30 seconds');
-            PERFORM pg_temp.d_txn(drv.user_id, v_pay_at, 'commission', 'debit', -v_delta, 'trip', v_tid, 'commission-trip-' || v_tid, NULL);
+            PERFORM cholo_demo_seed.d_fund(drv.user_id, -v_delta, v_pay_at - interval '30 seconds');
+            PERFORM cholo_demo_seed.d_txn(drv.user_id, v_pay_at, 'commission', 'debit', -v_delta, 'trip', v_tid, 'commission-trip-' || v_tid, NULL);
           END IF;
         ELSE
-          PERFORM pg_temp.d_txn(drv.user_id, v_pay_at, 'trip_earning', 'credit', v_net, 'trip', v_tid, 'earning-trip-' || v_tid, NULL);
+          PERFORM cholo_demo_seed.d_txn(drv.user_id, v_pay_at, 'trip_earning', 'credit', v_net, 'trip', v_tid, 'earning-trip-' || v_tid, NULL);
         END IF;
 
         SELECT id INTO rf FROM referrals WHERE referee_id = pax.user_id AND status = 'pending';
         IF FOUND THEN
-          PERFORM pg_temp.d_txn((SELECT referrer_id FROM referrals WHERE id = rf.id), v_end, 'referral_bonus', 'credit', 50, 'referral', rf.id,
+          PERFORM cholo_demo_seed.d_txn((SELECT referrer_id FROM referrals WHERE id = rf.id), v_end, 'referral_bonus', 'credit', 50, 'referral', rf.id,
                                 'referral-' || rf.id || '-referrer', 'A friend you invited took their first ride');
-          PERFORM pg_temp.d_txn(pax.user_id, v_end, 'referral_bonus', 'credit', 50, 'referral', rf.id,
+          PERFORM cholo_demo_seed.d_txn(pax.user_id, v_end, 'referral_bonus', 'credit', 50, 'referral', rf.id,
                                 'referral-' || rf.id || '-referee', 'Welcome bonus for joining with a referral code');
           UPDATE referrals SET status = 'rewarded', qualifying_trip_id = v_tid, referrer_bonus = 50, referee_bonus = 50, rewarded_at = v_end
           WHERE id = rf.id;
@@ -1746,18 +1759,9 @@ BEGIN
           jsonb_build_object('passengers', (SELECT count(*) FROM _pax), 'drivers', (SELECT count(*) FROM _drv),
                              'trips', (SELECT count(*) FROM trips), 'seededAt', v_now), '127.0.0.1');
 
-  DROP FUNCTION IF EXISTS pg_temp.d_hav(numeric, numeric, numeric, numeric);
-  DROP FUNCTION IF EXISTS pg_temp.d_fare(numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric);
-  DROP FUNCTION IF EXISTS pg_temp.d_hour();
-  DROP FUNCTION IF EXISTS pg_temp.d_ts(date, timestamptz);
-  DROP FUNCTION IF EXISTS pg_temp.d_ts_old(date);
-  DROP FUNCTION IF EXISTS pg_temp.d_mix(smallint, smallint, smallint, smallint, smallint, smallint, smallint);
-  DROP FUNCTION IF EXISTS pg_temp.d_when(date, int, int);
-  DROP FUNCTION IF EXISTS pg_temp.d_addr(text, text, text);
-  DROP FUNCTION IF EXISTS pg_temp.d_txn(bigint, timestamptz, wallet_txn_type, wallet_txn_direction, numeric, wallet_txn_reference_type, bigint, text, text);
-  DROP FUNCTION IF EXISTS pg_temp.d_topup(bigint, numeric, timestamptz);
-  DROP FUNCTION IF EXISTS pg_temp.d_fund(bigint, numeric, timestamptz);
   DROP TABLE IF EXISTS pg_temp._loc, pg_temp._pax, pg_temp._drv, pg_temp._ev, pg_temp._bal, pg_temp._surged, pg_temp._tk;
 
   RAISE NOTICE 'seed.demo.sql: demo dataset loaded.';
 END $demo$;
+
+DROP SCHEMA IF EXISTS cholo_demo_seed CASCADE;
