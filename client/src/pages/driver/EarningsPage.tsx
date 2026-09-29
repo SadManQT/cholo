@@ -71,7 +71,7 @@ export function EarningsPage() {
   const balance = Number(wallet?.balance ?? 0);
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-4rem)] max-w-3xl px-4 py-5 md:px-6">
+    <main className="mx-auto min-h-[calc(100dvh-var(--app-chrome))] max-w-3xl px-4 py-5 md:px-6">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('Earnings')}</h1>
@@ -129,13 +129,13 @@ export function EarningsPage() {
             <Card className="mb-5 p-4">
               <h2 className="font-semibold">{t('Where your money is')}</h2>
               <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Cash you collected from riders (yours to keep)')}</dt><dd className="tabular-nums">{formatBDT(cashKept)}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Commission on cash trips (taken from your wallet)')}</dt><dd className="tabular-nums text-danger-600">−{formatBDT(cashCommission)}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Paid to your wallet from in-app trips')}</dt><dd className="tabular-nums text-cholo-700">+{formatBDT(appCredited)}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Cash you collected from riders (yours to keep)')}</dt><dd className="whitespace-nowrap tabular-nums">{formatBDT(cashKept)}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Commission on cash trips (taken from your wallet)')}</dt><dd className="whitespace-nowrap tabular-nums text-danger-600">−{formatBDT(cashCommission)}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-ink-500">{t('Paid to your wallet from in-app trips')}</dt><dd className="whitespace-nowrap tabular-nums text-cholo-700">+{formatBDT(appCredited)}</dd></div>
                 {wallet && (
                   <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold">
                     <dt>{balance < 0 ? t('You owe Cholo') : t('Available to withdraw')}</dt>
-                    <dd className={`tabular-nums ${balance < 0 ? 'text-danger-600' : ''}`}>{formatBDT(Math.abs(balance))}</dd>
+                    <dd className={`whitespace-nowrap tabular-nums ${balance < 0 ? 'text-danger-600' : ''}`}>{formatBDT(Math.abs(balance))}</dd>
                   </div>
                 )}
               </dl>

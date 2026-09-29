@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { AppHeader } from '../components/layout/AppHeader';
 import { BottomTabs } from '../components/layout/BottomTabs';
 import { BellIcon, CarIcon, CoinIcon, ReceiptIcon, UserIcon } from '../components/layout/icons';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
@@ -14,12 +15,14 @@ const TABS = [
 
 export function DriverLayout() {
   const unread = useUnreadNotifications();
+  const items = TABS.map((tab) => (tab.to === '/driver/notifications' ? { ...tab, badge: unread } : tab));
   return (
     <div className="min-h-screen bg-surface-alt">
-      <div className="pb-16">
+      <AppHeader home="/driver" items={items} badge={t('Driver')} />
+      <div className="pb-16 md:pb-0">
         <Outlet />
       </div>
-      <BottomTabs items={TABS.map((tab) => (tab.to === '/driver/notifications' ? { ...tab, badge: unread } : tab))} />
+      <BottomTabs items={items} />
     </div>
   );
 }

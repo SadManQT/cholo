@@ -5,37 +5,53 @@
 @layer base {
   :root {
     color-scheme: light;
-    --c-cholo-50: 233 245 241;
-    --c-cholo-700: 14 122 95;
-    --c-cholo-800: 10 92 72;
-    --c-ink-500: 90 107 122;
-    --c-ink-900: 11 31 46;
-    --c-marigold-500: 245 166 35;
+    --c-cholo-50: 234 244 238;
+    --c-cholo-700: 12 104 79;
+    --c-cholo-800: 10 61 48;
+    --c-ink-500: 94 108 101;
+    --c-ink-900: 14 38 31;
+    --c-marigold-500: 242 168 29;
+    --c-gold-300: 255 229 138;
+    --c-gold-400: 251 191 46;
+    --c-gold-600: 232 138 18;
     --c-danger-600: 220 38 38;
     --c-info-600: 37 99 235;
     --c-surface: 255 255 255;
-    --c-surface-alt: 245 247 249;
-    --c-border: 227 232 238;
+    --c-surface-alt: 250 247 240;
+    --c-border: 234 227 212;
     --color-cholo-700: rgb(var(--c-cholo-700));
+
+    --app-header: 3.5rem;
+    --app-chrome: 7.625rem;
 
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
+  @media (min-width: 768px) {
+    :root {
+      --app-header: 4rem;
+      --app-chrome: 4.125rem;
+    }
+  }
+
   :root.dark {
     color-scheme: dark;
-    --c-cholo-50: 16 48 40;
-    --c-cholo-700: 22 150 115;
-    --c-cholo-800: 14 122 95;
-    --c-ink-500: 150 166 181;
-    --c-ink-900: 230 237 243;
-    --c-marigold-500: 247 178 64;
+    --c-cholo-50: 17 46 37;
+    --c-cholo-700: 30 150 112;
+    --c-cholo-800: 14 104 79;
+    --c-ink-500: 152 169 160;
+    --c-ink-900: 238 241 233;
+    --c-marigold-500: 246 184 60;
+    --c-gold-300: 255 229 138;
+    --c-gold-400: 251 191 46;
+    --c-gold-600: 232 138 18;
     --c-danger-600: 244 96 96;
     --c-info-600: 88 145 245;
-    --c-surface: 18 30 41;
-    --c-surface-alt: 10 19 27;
-    --c-border: 38 54 68;
+    --c-surface: 20 31 27;
+    --c-surface-alt: 11 20 17;
+    --c-border: 38 56 49;
   }
 
   html,
@@ -49,6 +65,20 @@
 }
 
 @layer components {
+  .cholo-gold {
+    background-image: linear-gradient(180deg, rgb(var(--c-gold-300)) 0%, rgb(var(--c-gold-400)) 55%, rgb(var(--c-gold-600)) 100%);
+    color: rgb(10 61 48);
+    box-shadow: inset 0 0 0 1.5px rgb(10 61 48 / 0.35), 0 1px 0 rgb(255 255 255 / 0.4) inset;
+  }
+
+  .cholo-gold:hover {
+    filter: brightness(1.04) saturate(1.05);
+  }
+
+  .cholo-gold-rule {
+    background-image: linear-gradient(90deg, rgb(var(--c-gold-600)), rgb(var(--c-gold-400)), rgb(var(--c-gold-300)), rgb(var(--c-gold-400)), rgb(var(--c-gold-600)));
+  }
+
   .cholo-map-marker {
     @apply text-ink-900;
     filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));

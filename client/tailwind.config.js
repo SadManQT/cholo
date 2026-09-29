@@ -18,6 +18,11 @@ export default {
         marigold: {
           500: token('marigold-500'),
         },
+        gold: {
+          300: token('gold-300'),
+          400: token('gold-400'),
+          600: token('gold-600'),
+        },
         danger: {
           600: token('danger-600'),
         },
