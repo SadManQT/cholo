@@ -1,0 +1,1526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cholo Next-Level Plan</title>
+<meta name="description" content="Features that take Cholo from a ride-sharing clone to an AI-native mobility platform, and the 52-week roadmap to build them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Bengali:wght@400;600&display=swap">
+<style>
+  :root {
+    --ground: #F4F7F5;
+    --paper: #FFFFFF;
+    --ink: #0B1F2E;
+    --muted: #55677A;
+    --rule: #DDE5E1;
+    --accent: #0E7A5F;
+    --accent-soft: #E3F3EC;
+    --code-bg: #EEF3F0;
+    --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --body: "Figtree", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0C1512;
+      --paper: #121E1A;
+      --ink: #E6EFEB;
+      --muted: #97A9A2;
+      --rule: #22332D;
+      --accent: #4CC9A0;
+      --accent-soft: #15302A;
+      --code-bg: #0F1916;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0C1512;
+    --paper: #121E1A;
+    --ink: #E6EFEB;
+    --muted: #97A9A2;
+    --rule: #22332D;
+    --accent: #4CC9A0;
+    --accent-soft: #15302A;
+    --code-bg: #0F1916;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 16px/1.65 var(--body);
+    padding: 40px 16px 72px;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+
+  .layout {
+    max-width: 1180px; margin: 0 auto;
+    display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 56px;
+  }
+
+  /* Hero */
+  .hero { max-width: 1180px; margin: 0 auto 48px; display: grid; gap: 16px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .hero h1 { font: 700 clamp(36px, 6vw, 60px)/1.02 var(--display); letter-spacing: -.025em; margin: 0; max-width: 18ch; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 64ch; margin: 0; font-size: 18px; }
+  .tally { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .tally span { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--paper); border: 1px solid var(--rule); font-size: 14px; color: var(--muted); }
+  .tally b { font: 700 20px/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .theme-toggle { justify-self: start; font: 500 13px/1 var(--body); color: var(--muted); background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+
+  /* Sidebar */
+  nav.toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .nav-group + .nav-group { margin-top: 24px; }
+  .nav-part { display: block; font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); text-decoration: none; padding-bottom: 10px; border-bottom: 2px solid var(--ink); margin-bottom: 6px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li a { display: block; padding: 5px 0 5px 12px; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; line-height: 1.35; }
+  nav.toc li a:hover { color: var(--ink); }
+  nav.toc li a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+
+  /* Parts */
+  main { display: grid; gap: 72px; min-width: 0; }
+  .part, .prose { min-width: 0; }
+  .part-head { display: grid; gap: 10px; padding: 28px; border-radius: 16px; background: var(--accent-soft); border: 1px solid var(--rule); margin-bottom: 8px; }
+  .part-title { font: 700 clamp(26px, 4vw, 36px)/1.1 var(--display); letter-spacing: -.02em; margin: 0; }
+
+  /* Prose */
+  .prose { max-width: 820px; }
+  .prose > p:first-child { font-size: 17px; }
+  .prose h2 { font: 600 26px/1.2 var(--display); letter-spacing: -.01em; margin: 56px 0 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  .prose h3 { font: 600 19px/1.3 var(--display); margin: 36px 0 10px; }
+  .prose h4 { font: 600 13px/1.3 var(--mono); letter-spacing: .04em; color: var(--accent); margin: 28px 0 8px; }
+  .prose p, .prose ul, .prose ol { margin: 0 0 14px; }
+  .prose ul, .prose ol { padding-left: 22px; }
+  .prose li { margin: 4px 0; }
+  .prose li::marker { color: var(--muted); }
+  .prose strong { font-weight: 650; }
+  .prose hr { border: 0; height: 0; margin: 8px 0; }
+  .prose code { font: 400 .86em/1 var(--mono); background: var(--code-bg); border: 1px solid var(--rule); padding: 2px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+  .prose pre.code { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; overflow-x: auto; font: 400 13px/1.55 var(--mono); }
+  .prose pre.code code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+  /* Task lists */
+  .prose li.task { list-style: none; position: relative; margin-left: -22px; padding-left: 28px; }
+  .box { position: absolute; left: 0; top: .3em; width: 16px; height: 16px; border: 1.5px solid var(--muted); border-radius: 4px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+  tr:last-child td { border-bottom: 0; }
+  th { font: 600 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--ground); }
+  td:first-child { font-weight: 600; }
+
+  /* Diagrams */
+  figure.diagram { margin: 0 0 24px; padding: 20px; background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; overflow-x: auto; }
+  pre.mermaid { margin: 0; font: 400 12px/1.5 var(--mono); color: var(--muted); white-space: pre; text-align: center; }
+  pre.mermaid[data-processed] { white-space: normal; }
+  pre.mermaid svg { max-width: 100%; height: auto; }
+
+  footer { max-width: 1180px; margin: 64px auto 0; color: var(--muted); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 16px; }
+
+  @media (max-width: 900px) {
+    body { padding-top: 24px; }
+    .layout { grid-template-columns: 1fr; gap: 32px; }
+    nav.toc { position: static; max-height: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; }
+    .part-head { padding: 20px; }
+  }
+  @media print {
+    nav.toc, .theme-toggle { display: none; }
+    .layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <span class="eyebrow">Cholo · চলো · ride-sharing for Bangladesh</span>
+  <h1>From ride-sharing app to AI-native mobility platform</h1>
+  <p class="lede">The features that would make Cholo stand out to any mobility company — its own map, its own dispatch brain, a Bangla-speaking assistant and a digital twin of Dhaka — and the 52-week plan to build them.</p>
+  <div class="tally" aria-label="Summary">
+    <span><b>8</b> signature features</span>
+    <span><b>70+</b> features</span>
+    <span><b>9</b> phases</span>
+    <span><b>52</b> weeks</span>
+  </div>
+  <button class="theme-toggle" type="button" id="theme-toggle">Toggle dark mode</button>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Contents"><div class="nav-group"><a class="nav-part" href="#features">Features</a><ol><li><a href="#features-0-build-this-first-the-dhaka-digital-twin-simulator">0. Build this first: the Dhaka Digital Twin (simulator)</a></li><li><a href="#features-1-signature-features">1. Signature features</a></li><li><a href="#features-2-custom-maps-and-geospatial-engine">2. Custom maps and geospatial engine</a></li><li><a href="#features-3-search-and-address-intelligence">3. Search and address intelligence</a></li><li><a href="#features-4-conversational-ai">4. Conversational AI</a></li><li><a href="#features-5-marketplace-intelligence-dispatch-pricing-eta">5. Marketplace intelligence: dispatch, pricing, ETA</a></li><li><a href="#features-6-bangladesh-specific-innovation">6. Bangladesh-specific innovation</a></li><li><a href="#features-7-safety-and-trust-ai">7. Safety and trust AI</a></li><li><a href="#features-8-fraud-and-abuse-defense">8. Fraud and abuse defense</a></li><li><a href="#features-9-ai-for-drivers-earnings-and-wellbeing">9. AI for drivers: earnings and wellbeing</a></li><li><a href="#features-10-beautiful-and-delightful-product">10. Beautiful and delightful product</a></li><li><a href="#features-11-platform-engineering-the-big-company-signals">11. Platform engineering (the "big company" signals)</a></li><li><a href="#features-12-civic-and-open-data">12. Civic and open data</a></li><li><a href="#features-13-future-and-moonshot">13. Future and moonshot</a></li><li><a href="#features-suggested-build-order">Suggested build order</a></li><li><a href="#features-tech-additions-at-a-glance">Tech additions at a glance</a></li><li><a href="#features-how-to-make-companies-notice">How to make companies notice</a></li></ol></div><div class="nav-group"><a class="nav-part" href="#roadmap">Roadmap</a><ol><li><a href="#roadmap-1-where-cholo-is-today">1. Where Cholo is today</a></li><li><a href="#roadmap-2-target-architecture">2. Target architecture</a></li><li><a href="#roadmap-3-timeline">3. Timeline</a></li><li><a href="#roadmap-4-phases-in-detail">4. Phases in detail</a></li><li><a href="#roadmap-5-cross-cutting-tracks-every-phase">5. Cross-cutting tracks (every phase)</a></li><li><a href="#roadmap-6-dependency-map">6. Dependency map</a></li><li><a href="#roadmap-7-data-needs-per-model">7. Data needs per model</a></li><li><a href="#roadmap-8-kpi-scoreboard-show-it-on-the-admin-dashboard-and-in-the-readme">8. KPI scoreboard (show it on the admin dashboard and in the README)</a></li><li><a href="#roadmap-9-risk-register">9. Risk register</a></li><li><a href="#roadmap-10-monthly-infra-cost-estimate">10. Monthly infra cost (estimate)</a></li><li><a href="#roadmap-11-definition-of-done-any-feature">11. Definition of done (any feature)</a></li><li><a href="#roadmap-12-after-week-52-moonshots">12. After week 52 (moonshots)</a></li></ol></div></nav>
+  <main>
+<section class="part" id="features" aria-labelledby="features-title">
+  <header class="part-head"><span class="eyebrow">Part 1 · Features</span><h2 class="part-title" id="features-title">Next-Level Feature Roadmap</h2></header>
+  <div class="prose"><p>Cholo already covers what Uber and Pathao offer: booking, live tracking, driver onboarding, wallet, payouts, surge, zones, disputes and admin tooling. Adding more of the same won&#39;t get it noticed. What gets noticed is solving the problems that Uber, Grab, DiDi and Pathao employ research teams to solve, and solving a few that they haven&#39;t solved for Bangladesh.</p>
+<p><strong>The pitch:</strong> <em>Cholo is an AI-native mobility platform that understands how Dhaka actually moves. It runs its own map, its own traffic model, its own dispatch brain and a Bangla-speaking assistant, and it proves every algorithm in a city-scale simulator before it reaches a real rider.</em></p>
+<p>Each feature below is listed as <strong>What</strong> it is, <strong>Why</strong> it stands out, and <strong>How</strong> to build it.</p>
+<hr>
+<h2 id="features-0-build-this-first-the-dhaka-digital-twin-simulator">0. Build this first: the Dhaka Digital Twin (simulator)</h2>
+<p>Most ideas in this document need data you don&#39;t have yet: millions of trips, GPS traces and demand patterns. The fix is to generate that data.</p>
+<ul>
+<li><strong>What:</strong> An agent-based simulation of Dhaka. Thousands of virtual riders and drivers move on the real road network (OSM). Demand follows realistic patterns: office hours, Friday prayers, rain, Eid exodus, cricket matches at Mirpur, hartals. The simulated riders and drivers call Cholo&#39;s actual API and socket server.</li>
+<li><strong>Why:</strong> Uber, Lyft and DiDi all test dispatch and pricing in simulators before shipping, and almost no portfolio project has one. The simulator also feeds your ML models, load-tests your backend, and makes a strong demo: a live dashboard of 5,000 cars moving around Dhaka.</li>
+<li><strong>How:</strong> Python (Mesa or a custom event loop) or Go workers. Road graph from OSM with <code>osmnx</code>, trips drawn from a spatiotemporal Poisson process over H3 hexagons. Add a replay mode (&quot;replay yesterday at 2x speed&quot;) and a policy comparison mode (&quot;dispatch v1 vs v2, same random seed&quot;).</li>
+</ul>
+<hr>
+<h2 id="features-1-signature-features">1. Signature features</h2>
+<p>If you only build a few things from this document, build these. Each one is a headline on its own.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Feature</th>
+<th>Why it&#39;s a headline</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S1</td>
+<td><strong>Cholo Maps</strong>: your own map stack, traffic layer and routing</td>
+<td>Grab built GrabMaps for the same reason. Owning the map is the moat.</td>
+</tr>
+<tr>
+<td>S2</td>
+<td><strong>Landmark-aware AI address search</strong></td>
+<td>Bangladesh addresses are informal (&quot;behind Rapa Plaza, lane beside the mosque&quot;). Nobody handles this well.</td>
+</tr>
+<tr>
+<td>S3</td>
+<td><strong>Bangla/Banglish voice and chat booking agent</strong></td>
+<td>An LLM agent that books, changes and cancels rides, and supports low-literacy users</td>
+</tr>
+<tr>
+<td>S4</td>
+<td><strong>Batched ML dispatch + demand forecasting + predictive repositioning</strong></td>
+<td>This is the core problem ride-hailing companies hire PhDs to work on</td>
+</tr>
+<tr>
+<td>S5</td>
+<td><strong>Flood- and monsoon-aware routing</strong></td>
+<td>A problem specific to Dhaka that global apps ignore</td>
+</tr>
+<tr>
+<td>S6</td>
+<td><strong>Multimodal trip planner</strong> (Metro Rail + bus + CNG + rickshaw + Cholo)</td>
+<td>Makes Cholo the &quot;Google Maps for Dhaka transit&quot;</td>
+</tr>
+<tr>
+<td>S7</td>
+<td><strong>AI safety layer</strong>: route deviation, crash detection, drowsiness, liveness ID</td>
+<td>Shows responsibility, which matters to large companies</td>
+</tr>
+<tr>
+<td>S8</td>
+<td><strong>Marketplace experimentation platform</strong> (switchback A/B tests)</td>
+<td>A strong signal of senior-level engineering thinking</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="features-2-custom-maps-and-geospatial-engine">2. Custom maps and geospatial engine</h2>
+<h3 id="features-2-1-self-hosted-vector-map-with-a-custom-style">2.1 Self-hosted vector map with a custom style</h3>
+<ul>
+<li><strong>What:</strong> Replace Leaflet raster tiles with <strong>MapLibre GL</strong> and your own vector tiles (OpenMapTiles or Protomaps <code>.pmtiles</code> built from Bangladesh OSM). Design a Cholo map style with Bangla-first labels, a brand color palette, dark/night mode that switches automatically at sunset, 3D building extrusions, and hillshade for Chittagong and Sylhet.</li>
+<li><strong>Why:</strong> The map is the first thing a user sees. A custom map immediately makes the app look like a real product instead of a hobby project.</li>
+<li><strong>How:</strong> <code>planetiler</code> builds the tiles and PMTiles on a CDN serves them (no tile server needed). Design the style in Maputnik.</li>
+</ul>
+<h3 id="features-2-2-smooth-alive-vehicle-rendering">2.2 Smooth, alive vehicle rendering</h3>
+<ul>
+<li><strong>What:</strong> Cars glide instead of jumping between GPS points. They rotate to their bearing, use a different icon per vehicle type (car, bike, CNG, rickshaw), animate along the route polyline, and &quot;breathe&quot; while waiting. The route line draws itself in and the traveled portion fades.</li>
+<li><strong>How:</strong> Dead-reckoning plus interpolation between socket updates, <code>requestAnimationFrame</code>, and bearing from consecutive points. Snap to the road geometry so cars never cut through buildings.</li>
+</ul>
+<h3 id="features-2-3-own-routing-engine-with-a-live-traffic-model">2.3 Own routing engine with a live traffic model</h3>
+<ul>
+<li><strong>What:</strong> Self-host <strong>Valhalla</strong> or <strong>OSRM</strong> and feed it your own speed data. Every driver&#39;s GPS ping is a traffic probe, which gives you a <strong>Cholo Traffic Layer</strong> (green/yellow/red roads) built from your own fleet.</li>
+<li><strong>How:</strong> Map-match raw GPS with a Hidden Markov Model (Valhalla Meili, or implement Newson–Krumm yourself). Aggregate speeds per road segment per 15-minute bucket and push custom speed profiles to the router.</li>
+</ul>
+<h3 id="features-2-4-map-self-healing-find-what-osm-is-missing">2.4 Map self-healing: find what OSM is missing</h3>
+<ul>
+<li><strong>What:</strong> Detect roads that drivers use but that don&#39;t exist in OSM, one-way errors, and new flyovers, by clustering GPS traces that don&#39;t match the map. Show suggested edits in an admin &quot;Map QA&quot; tool and optionally contribute them back to OSM.</li>
+<li><strong>Why:</strong> Map inference from GPS traces is an active research area. It is a strong portfolio piece and a real contribution to Bangladesh&#39;s open map.</li>
+</ul>
+<h3 id="features-2-5-h3-hexagon-spatial-platform">2.5 H3 hexagon spatial platform</h3>
+<ul>
+<li><strong>What:</strong> Index every ping, request and trip into Uber&#39;s <strong>H3</strong> hex grid. Use it for heatmaps, surge cells, demand forecasting and geofencing.</li>
+<li><strong>Why:</strong> Using Uber&#39;s own open-source spatial index shows you speak their language.</li>
+</ul>
+<h3 id="features-2-6-smart-pickup-points">2.6 Smart pickup points</h3>
+<ul>
+<li><strong>What:</strong> Learn the best pickup spots from where trips actually started: legal to stop, reachable, and not on the wrong side of a divider. When a rider drops a pin in the middle of a building, suggest &quot;Gate 2, Bashundhara City (riders usually meet here)&quot;.</li>
+<li><strong>How:</strong> DBSCAN clusters of real pickup locations, ranked by success rate and wait time.</li>
+</ul>
+<h3 id="features-2-7-ar-find-my-ride">2.7 AR &quot;find my ride&quot;</h3>
+<ul>
+<li><strong>What:</strong> At pickup, the rider raises the phone and AR arrows point to the car. The app also recognizes the number plate through the camera (Bangla plate OCR) and confirms &quot;This is your car ✓&quot;.</li>
+<li><strong>How:</strong> WebXR or native ARCore/ARKit, and a small on-device OCR model trained on Bangla number plates.</li>
+</ul>
+<hr>
+<h2 id="features-3-search-and-address-intelligence">3. Search and address intelligence</h2>
+<h3 id="features-3-1-landmark-and-fuzzy-address-understanding-s2">3.1 Landmark and fuzzy address understanding (S2)</h3>
+<ul>
+<li><strong>What:</strong> Riders type the way people talk: <em>&quot;Mirpur 10 golchottor er pashe, Shopno er samne&quot;</em> or <em>&quot;near Dhanmondi 27 Star Kabab&quot;</em>. An LLM parses this into structured parts (area, road, landmark, relation), and a hybrid search (full-text + vector embeddings + geo-distance) resolves it to coordinates.</li>
+<li><strong>Why:</strong> This is a real, unsolved problem in South Asia. A demo of it working is memorable.</li>
+<li><strong>How:</strong> Postgres with <code>pg_trgm</code> + <code>pgvector</code> + PostGIS, multilingual embeddings, and an LLM for query parsing. Every successful drop-off feeds back into the landmark database.</li>
+</ul>
+<h3 id="features-3-2-banglish-and-phonetic-search">3.2 Banglish and phonetic search</h3>
+<ul>
+<li><strong>What:</strong> &quot;gulshan&quot;, &quot;gulsan&quot;, &quot;গুলশান&quot; and &quot;gulshun&quot; all match. Transliteration-aware and typo-tolerant.</li>
+<li><strong>How:</strong> Normalize to a phonetic key (a custom Bangla Soundex/Metaphone), plus Avro-style transliteration in both directions.</li>
+</ul>
+<h3 id="features-3-3-intent-and-semantic-place-search">3.3 Intent and semantic place search</h3>
+<ul>
+<li><strong>What:</strong> <em>&quot;A quiet café to work near Banani&quot;</em>, <em>&quot;hospital with emergency open now&quot;</em>, <em>&quot;cheapest way to the airport before 6pm&quot;</em>. The search understands intent, not just place names.</li>
+<li><strong>How:</strong> Retrieval over a POI database with LLM re-ranking. Opening hours and categories come from OSM and are enriched by drivers and riders.</li>
+</ul>
+<h3 id="features-3-4-predictive-destinations">3.4 Predictive destinations</h3>
+<ul>
+<li><strong>What:</strong> Open the app at 8:45 on a weekday and the first card says &quot;Office · 24 min · ৳180&quot;. Friday afternoon it suggests the mosque or your parents&#39; house.</li>
+<li><strong>How:</strong> A per-user next-destination model (time, day, location, history). A simple gradient-boosted model is enough to start.</li>
+</ul>
+<h3 id="features-3-5-community-verified-addresses-cholo-codes">3.5 Community-verified addresses (&quot;Cholo Codes&quot;)</h3>
+<ul>
+<li><strong>What:</strong> Short, shareable codes for hard-to-find homes, e.g. <code>CHL-7K2P</code>. The code carries the exact gate pin, a photo of the entrance and a voice note (&quot;blue gate, ring twice&quot;). Drivers see all of it.</li>
+<li><strong>Why:</strong> Solves last-50-meters navigation in Bangladeshi alleys.</li>
+</ul>
+<hr>
+<h2 id="features-4-conversational-ai">4. Conversational AI</h2>
+<h3 id="features-4-1-bangla-voice-and-chat-booking-agent-s3">4.1 Bangla voice and chat booking agent (S3)</h3>
+<ul>
+<li><strong>What:</strong> <em>&quot;আমাকে এখন বনানী নিয়ে যাও, সস্তা দেখে&quot;</em> → the agent finds the cheapest option, confirms the fare out loud and books it. It can also cancel, add a stop, share the trip with Ammu, or answer &quot;where is my driver?&quot;</li>
+<li><strong>How:</strong> An LLM with tool use (Claude, e.g. <code>claude-sonnet-5</code> for reasoning and <code>claude-haiku-4-5</code> for fast turns) calls your existing REST API as tools. Add Bangla speech-to-text and text-to-speech, and guardrails so the agent always confirms before spending money.</li>
+</ul>
+<h3 id="features-4-2-book-from-anywhere-whatsapp-messenger-sms-ussd">4.2 Book from anywhere: WhatsApp, Messenger, SMS, USSD</h3>
+<ul>
+<li><strong>What:</strong> The same agent runs on WhatsApp and Messenger. A basic-phone user can dial <code>*CHOLO#</code> (USSD) or send an SMS: &quot;RIDE Mirpur10 to Motijheel&quot;.</li>
+<li><strong>Why:</strong> Financial inclusion and reach for users without a smartphone or data. Big companies care about the &quot;next billion users&quot;.</li>
+</ul>
+<h3 id="features-4-3-driver-hands-free-copilot">4.3 Driver hands-free copilot</h3>
+<ul>
+<li><strong>What:</strong> A voice assistant for drivers: &quot;Accept&quot;, &quot;I&#39;ve arrived&quot;, &quot;Call the rider&quot;, &quot;How much did I earn today?&quot; No touching the phone while driving.</li>
+<li><strong>How:</strong> Wake word on device, a small intent classifier, and text-to-speech replies.</li>
+</ul>
+<h3 id="features-4-4-real-time-translated-chat">4.4 Real-time translated chat</h3>
+<ul>
+<li><strong>What:</strong> A foreign tourist writes in English and the driver reads Bangla, and the reverse. Quick replies are suggested in both languages.</li>
+</ul>
+<h3 id="features-4-5-ai-support-agent-with-real-authority">4.5 AI support agent with real authority</h3>
+<ul>
+<li><strong>What:</strong> &quot;I was overcharged&quot; → the agent reads the trip GPS trace, fare breakdown and route deviation, and within policy it <strong>issues the refund itself</strong> with a clear explanation. It escalates to a human only when needed and hands over a summary.</li>
+<li><strong>Why:</strong> Most &quot;AI support&quot; is an FAQ bot. One that can investigate and act on its own is a big step up.</li>
+<li><strong>How:</strong> Tool-using agent with read access to the trip, pricing and wallet repositories, a policy engine with refund caps, and every action written to the audit log.</li>
+</ul>
+<h3 id="features-4-6-ask-cholo-for-admins">4.6 &quot;Ask Cholo&quot; for admins</h3>
+<ul>
+<li><strong>What:</strong> Ops staff type <em>&quot;Why did cancellations spike in Uttara last Tuesday evening?&quot;</em> → the system writes the SQL, draws the chart, and explains the cause (&quot;rain started 6:10pm, supply dropped 40%&quot;).</li>
+<li><strong>How:</strong> Text-to-SQL over a read-only replica with a semantic layer (metric definitions), plus automatic chart generation.</li>
+</ul>
+<hr>
+<h2 id="features-5-marketplace-intelligence-dispatch-pricing-eta">5. Marketplace intelligence: dispatch, pricing, ETA</h2>
+<h3 id="features-5-1-batched-matching-s4">5.1 Batched matching (S4)</h3>
+<ul>
+<li><strong>What:</strong> Replace &quot;nearest free driver&quot; with <strong>batched global matching</strong>. Collect requests for a 2–5 second window and solve the assignment that minimizes total pickup time across all riders at once.</li>
+<li><strong>Why:</strong> This is how Uber and DiDi actually dispatch. It is measurably better, and you can prove it in the simulator.</li>
+<li><strong>How:</strong> Hungarian algorithm or min-cost flow (OR-Tools). Later, <strong>reinforcement learning dispatch</strong> (see DiDi&#39;s KDD papers) that values a driver&#39;s <em>future</em> position, not just the current pickup.</li>
+</ul>
+<h3 id="features-5-2-demand-forecasting">5.2 Demand forecasting</h3>
+<ul>
+<li><strong>What:</strong> Predict requests per H3 cell for the next 15, 30 and 60 minutes. Inputs: time, weather, holidays, events, and prayer times.</li>
+<li><strong>How:</strong> Start with LightGBM, then move to a spatiotemporal graph neural network (e.g. a Graph WaveNet style model). Show a forecast-vs-actual chart in the admin dashboard.</li>
+</ul>
+<h3 id="features-5-3-predictive-driver-repositioning">5.3 Predictive driver repositioning</h3>
+<ul>
+<li><strong>What:</strong> Tell idle drivers where to go: <em>&quot;Go to Gulshan 1. 12 requests expected in 20 min, ~৳600 potential.&quot;</em> It shows as a glowing demand heatmap on the driver map.</li>
+<li><strong>Why:</strong> Cuts rider wait time and driver idle time. Supply and demand are balanced before a surge happens.</li>
+</ul>
+<h3 id="features-5-4-automatic-explainable-fair-surge">5.4 Automatic, explainable, fair surge</h3>
+<ul>
+<li><strong>What:</strong> Surge set by a model instead of an admin. It is based on the forecast supply/demand gap, smoothed so neighboring cells don&#39;t jump, and capped. Every rider sees <strong>why</strong>: &quot;1.4× because it&#39;s raining and 60% fewer drivers are online nearby.&quot;</li>
+<li><strong>Why:</strong> Explainability and fairness are what companies worry about most with dynamic pricing.</li>
+</ul>
+<h3 id="features-5-5-ml-eta-prediction">5.5 ML ETA prediction</h3>
+<ul>
+<li><strong>What:</strong> Predict pickup and trip ETA with a model trained on your own trips. It corrects the routing engine&#39;s estimate with learned effects such as the Farmgate signal, school traffic and rain.</li>
+<li><strong>How:</strong> Routing ETA + a residual model (Uber&#39;s DeepETA approach). Show the accuracy (MAPE) over time on the admin dashboard.</li>
+</ul>
+<h3 id="features-5-6-shared-rides-cholo-pool">5.6 Shared rides (Cholo Pool)</h3>
+<ul>
+<li><strong>What:</strong> Match riders going the same way in real time with bounded detours, and split the fare fairly.</li>
+<li><strong>How:</strong> Insertion heuristics over candidate routes, with limits on detour and wait. The simulator shows how much distance pooling saves.</li>
+</ul>
+<h3 id="features-5-7-multi-stop-optimizer">5.7 Multi-stop optimizer</h3>
+<ul>
+<li><strong>What:</strong> &quot;Pharmacy, then bank, then home.&quot; Cholo orders the stops optimally and quotes one fare.</li>
+<li><strong>How:</strong> A small TSP with time windows (OR-Tools).</li>
+</ul>
+<h3 id="features-5-8-guaranteed-upfront-fare-with-confidence">5.8 Guaranteed upfront fare with confidence</h3>
+<ul>
+<li><strong>What:</strong> The quoted fare is final. Cholo takes the risk, using an ML model that predicts the actual trip cost distribution.</li>
+</ul>
+<hr>
+<h2 id="features-6-bangladesh-specific-innovation">6. Bangladesh-specific innovation</h2>
+<h3 id="features-6-1-flood-and-waterlogging-aware-routing-s5">6.1 Flood and waterlogging-aware routing (S5)</h3>
+<ul>
+<li><strong>What:</strong> In monsoon, the router avoids waterlogged roads such as Mirpur Road, Shantinagar and Rajarbag. Sources: (a) fleet speed collapse combined with rainfall data, (b) one-tap driver reports (&quot;water here&quot;), (c) a weather API. Show a live <strong>flood layer</strong> on the map.</li>
+<li><strong>Why:</strong> A problem specific to Bangladesh, solved with data. This makes a great story in an interview or talk.</li>
+</ul>
+<h3 id="features-6-2-multimodal-journey-planner-s6">6.2 Multimodal journey planner (S6)</h3>
+<ul>
+<li><strong>What:</strong> &quot;Uttara to Motijheel: Cholo Bike to Uttara North station (8 min) → Metro Rail MRT-6 (35 min) → walk 5 min. ৳140 total, 25 min faster than a car.&quot; Covers the metro, BRTC buses, launch/ferry routes, CNG and rickshaws.</li>
+<li><strong>How:</strong> GTFS feeds you create yourself for Dhaka Metro and major bus routes, and a RAPTOR algorithm for public-transit routing combined with Cholo legs.</li>
+</ul>
+<h3 id="features-6-3-fair-fare-meter-for-street-hailing">6.3 Fair-fare meter for street hailing</h3>
+<ul>
+<li><strong>What:</strong> Negotiating a CNG or rickshaw fare on the street? Open Cholo, enter the destination, and see the <strong>fair price range</strong> from real trip data. Share it with the driver as a card.</li>
+<li><strong>Why:</strong> Useful even to people who don&#39;t book with Cholo, which drives growth.</li>
+</ul>
+<h3 id="features-6-4-women-safe-mode">6.4 Women-safe mode</h3>
+<ul>
+<li><strong>What:</strong> Female riders can choose female drivers, share the trip automatically with chosen contacts, and see safer routes (well-lit, busier roads at night).</li>
+</ul>
+<h3 id="features-6-5-festival-and-exodus-mode">6.5 Festival and exodus mode</h3>
+<ul>
+<li><strong>What:</strong> Eid, Puja and Pohela Boishakh have known demand shocks. Cholo pre-positions supply, runs intercity booking (Dhaka to hometowns), and shows event-aware ETAs.</li>
+</ul>
+<h3 id="features-6-6-low-bandwidth-lite-mode">6.6 Low-bandwidth &quot;Lite&quot; mode</h3>
+<ul>
+<li><strong>What:</strong> Works on 2G: a text-first UI, compressed binary socket updates, and a static map snapshot instead of live tiles. Offline booking queues over SMS.</li>
+</ul>
+<hr>
+<h2 id="features-7-safety-and-trust-ai">7. Safety and trust AI</h2>
+<h3 id="features-7-1-trip-anomaly-detection">7.1 Trip anomaly detection</h3>
+<ul>
+<li><strong>What:</strong> Real-time detection of route deviation, an unexpected long stop, or the phone going offline mid-trip. The rider gets a check-in (&quot;Are you okay?&quot;). If they don&#39;t respond, the case escalates to the SOS board and trusted contacts.</li>
+<li><strong>How:</strong> Compare the live trace against the expected route corridor and dwell-time models.</li>
+</ul>
+<h3 id="features-7-2-crash-detection">7.2 Crash detection</h3>
+<ul>
+<li><strong>What:</strong> Detect a crash from the phone accelerometer (sudden deceleration followed by no movement). Auto-call support, then emergency services.</li>
+</ul>
+<h3 id="features-7-3-driver-drowsiness-and-distraction-detection">7.3 Driver drowsiness and distraction detection</h3>
+<ul>
+<li><strong>What:</strong> An on-device camera model watches eye closure and yawning, and suggests a break after long shifts.</li>
+<li><strong>How:</strong> MediaPipe Face Mesh with the eye aspect ratio. Runs on the device only, never uploaded, which is also good for privacy.</li>
+</ul>
+<h3 id="features-7-4-real-time-id-and-liveness-check">7.4 Real-time ID and liveness check</h3>
+<ul>
+<li><strong>What:</strong> The driver takes a selfie at the start of each shift and it is matched against the approved documents to stop account sharing. Includes liveness detection (blink or head turn).</li>
+</ul>
+<h3 id="features-7-5-driver-behavior-score">7.5 Driver behavior score</h3>
+<ul>
+<li><strong>What:</strong> Harsh braking, speeding and phone use are measured from telemetry. A weekly coaching report with tips, and good drivers get rewards or insurance discounts.</li>
+</ul>
+<h3 id="features-7-6-optional-in-trip-audio-recording">7.6 Optional in-trip audio recording</h3>
+<ul>
+<li><strong>What:</strong> Encrypted recording that only support can decrypt if a report is filed, with an audio emotion/keyword classifier running on the device.</li>
+</ul>
+<hr>
+<h2 id="features-8-fraud-and-abuse-defense">8. Fraud and abuse defense</h2>
+<ul>
+<li><strong>GPS spoofing detection:</strong> impossible speeds, mock-location flags, sensor/GPS mismatch, teleport patterns.</li>
+<li><strong>Collusion detection:</strong> fake trips between the same driver and rider to farm promos or referrals. Build a <strong>graph</strong> of users, devices, payment instruments and IPs and detect suspicious clusters (community detection, GNN).</li>
+<li><strong>Multi-accounting:</strong> device fingerprinting plus graph linking.</li>
+<li><strong>Fare manipulation:</strong> a driver taking long detours. Compare against the optimal route and refund automatically.</li>
+<li><strong>Risk score per trip</strong> is shown in admin with the reasons listed, and nothing is auto-banned without human review.</li>
+</ul>
+<hr>
+<h2 id="features-9-ai-for-drivers-earnings-and-wellbeing">9. AI for drivers: earnings and wellbeing</h2>
+<ul>
+<li><strong>Earnings forecaster:</strong> &quot;If you drive 5–9pm today in Gulshan you&#39;ll likely earn ৳1,400–1,800.&quot;</li>
+<li><strong>AI shift planner:</strong> the best hours and zones for this driver&#39;s goals (&quot;I need ৳20,000 this week&quot;).</li>
+<li><strong>Fuel/CNG cost tracker and true profit view:</strong> earnings minus fuel minus maintenance.</li>
+<li><strong>EV transition calculator:</strong> would switching to an electric bike pay off, based on your real trips?</li>
+<li><strong>Document OCR onboarding:</strong> photograph an NID or driving license, and Bangla OCR fills the form and flags expiry and mismatches.</li>
+<li><strong>Transparent deactivation:</strong> every deactivation comes with the reasons and a human appeal. Worth highlighting, because platform fairness to drivers is a current industry issue.</li>
+</ul>
+<hr>
+<h2 id="features-10-beautiful-and-delightful-product">10. Beautiful and delightful product</h2>
+<ul>
+<li><strong>Design system:</strong> a custom Cholo design language with motion (Framer Motion), skeleton states, haptics, and Bangla typography done properly (Hind Siliguri or Noto Sans Bengali, tuned line heights).</li>
+<li><strong>Live Activity / Dynamic Island-style trip widget</strong> (PWA notification or native): the driver&#39;s progress in the lock screen.</li>
+<li><strong>Cinematic trip recap:</strong> at the end of a trip, an animated replay of the route with distance, CO₂ saved versus a private car, and a shareable card.</li>
+<li><strong>&quot;Cholo Wrapped&quot;:</strong> a yearly summary — kilometers, favorite places, hours saved, the city you &quot;explored&quot;.</li>
+<li><strong>Micro-interactions:</strong> the car icon honks when it arrives, a confetti moment on the first ride, and a pulsing radar while searching.</li>
+<li><strong>Accessibility first:</strong> screen-reader-complete flows, a voice-only mode for visually impaired riders, large-text mode and color-blind-safe map palettes.</li>
+</ul>
+<hr>
+<h2 id="features-11-platform-engineering-the-big-company-signals">11. Platform engineering (the &quot;big company&quot; signals)</h2>
+<p>These show that you can build systems at the scale these companies run.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Feature</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Event streaming</strong></td>
+<td>Every ping, request and state change goes through <strong>Kafka/Redpanda</strong>. Stream processing (Flink or Bytewax) produces live metrics.</td>
+</tr>
+<tr>
+<td><strong>Analytics store</strong></td>
+<td><strong>ClickHouse</strong> for trip and ping analytics, so dashboards over millions of rows load in milliseconds</td>
+</tr>
+<tr>
+<td><strong>Real-time geo store</strong></td>
+<td>Redis GEO / Tile38 for driver locations with geofence webhooks</td>
+</tr>
+<tr>
+<td><strong>Experimentation</strong></td>
+<td>Feature flags + <strong>switchback experiments</strong> (randomize by city-cell × time block, because marketplace A/B tests interfere with each other). Include a stats dashboard with CUPED variance reduction.</td>
+</tr>
+<tr>
+<td><strong>ML platform</strong></td>
+<td>A feature store (Feast), a model registry (MLflow), shadow deployment of new models, and drift monitoring</td>
+</tr>
+<tr>
+<td><strong>Observability</strong></td>
+<td>OpenTelemetry tracing across the API, sockets and jobs, with Grafana dashboards and SLOs (&quot;p99 match time &lt; 3 s&quot;)</td>
+</tr>
+<tr>
+<td><strong>Load testing</strong></td>
+<td>Use the simulator to push 10k concurrent drivers and publish the results</td>
+</tr>
+<tr>
+<td><strong>Privacy</strong></td>
+<td>Phone number masking, data retention policies, and <strong>differential privacy</strong> on public heatmaps</td>
+</tr>
+<tr>
+<td><strong>Chaos testing</strong></td>
+<td>Kill the socket server mid-trip and prove the trip recovers</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="features-12-civic-and-open-data">12. Civic and open data</h2>
+<ul>
+<li><strong>Dhaka Mobility Insights portal:</strong> anonymized, differentially private travel-time and demand data for city planners, researchers and journalists. &quot;Average speed on Mirpur Road dropped 18% this monsoon.&quot;</li>
+<li><strong>Open-source releases:</strong> publish the Bangla address parser, the Banglish search normalizer and the Dhaka GTFS feed as standalone open-source libraries. A GitHub star count on your own library is very visible.</li>
+<li><strong>Research write-ups:</strong> blog posts in the style of engineering blogs, e.g. &quot;How we cut Dhaka pickup times 22% with batched matching (simulated)&quot;.</li>
+</ul>
+<hr>
+<h2 id="features-13-future-and-moonshot">13. Future and moonshot</h2>
+<ul>
+<li><strong>Autonomous-ready dispatch API:</strong> abstract the &quot;driver&quot; as an agent so robotaxis or delivery robots could plug in. Test it in the simulator.</li>
+<li><strong>Super-app expansion:</strong> parcels (Cholo Send), food and grocery through the same dispatch engine (multi-vertical batching).</li>
+<li><strong>Corporate mobility:</strong> company accounts, commute subscriptions, and shuttle route optimization for garment-factory workers.</li>
+<li><strong>EV fleet orchestration:</strong> charge-aware dispatch that sends low-battery EVs to trips ending near chargers.</li>
+<li><strong>Carbon credits:</strong> verified emissions savings from pooling and EVs.</li>
+</ul>
+<hr>
+<h2 id="features-suggested-build-order">Suggested build order</h2>
+<p>The full plan, with milestones, exit criteria, dependencies and risks, is in <a href="#roadmap">next-level-roadmap.md</a>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Build</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1. Foundation</strong></td>
+<td>Simulator (0), H3 indexing (2.5), event streaming + ClickHouse (11), MapLibre custom map (2.1, 2.2)</td>
+<td>Data plus a much better look. The simulator becomes your permanent demo.</td>
+</tr>
+<tr>
+<td><strong>2. Intelligence</strong></td>
+<td>Batched dispatch (5.1), demand forecasting (5.2), repositioning (5.3), ML ETA (5.5), explainable surge (5.4)</td>
+<td>Measurable wins on charts</td>
+</tr>
+<tr>
+<td><strong>3. Understanding</strong></td>
+<td>Landmark address search (3.1), Banglish search (3.2), Bangla booking agent (4.1), AI support agent (4.5)</td>
+<td>The &quot;wow&quot; demo moments</td>
+</tr>
+<tr>
+<td><strong>4. Own the map</strong></td>
+<td>Self-hosted routing + traffic layer (2.3), map matching, flood routing (6.1), map self-healing (2.4)</td>
+<td>The moat story</td>
+</tr>
+<tr>
+<td><strong>5. Trust</strong></td>
+<td>Anomaly detection (7.1), fraud graph (8), liveness ID (7.4), experimentation platform (11)</td>
+<td>Maturity signals</td>
+</tr>
+<tr>
+<td><strong>6. Reach</strong></td>
+<td>Multimodal planner (6.2), WhatsApp/USSD (4.2), Lite mode (6.6), open data portal (12)</td>
+<td>Impact story</td>
+</tr>
+</tbody></table></div>
+<h2 id="features-tech-additions-at-a-glance">Tech additions at a glance</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Tool</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Maps</td>
+<td>MapLibre GL, planetiler, PMTiles, Maputnik</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>Valhalla (map matching built in) or OSRM</td>
+</tr>
+<tr>
+<td>Spatial</td>
+<td>PostGIS, H3 (<code>h3-js</code>, <code>h3-py</code>), Tile38</td>
+</tr>
+<tr>
+<td>Search</td>
+<td>pgvector, pg_trgm, multilingual embeddings</td>
+</tr>
+<tr>
+<td>ML</td>
+<td>Python (FastAPI) service, LightGBM, PyTorch (GNNs), OR-Tools, MLflow, Feast</td>
+</tr>
+<tr>
+<td>LLM</td>
+<td>Claude API with tool use, Bangla speech-to-text and text-to-speech</td>
+</tr>
+<tr>
+<td>On-device AI</td>
+<td>MediaPipe, TensorFlow.js / ONNX Runtime Web</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Redpanda/Kafka, ClickHouse, Flink or Bytewax</td>
+</tr>
+<tr>
+<td>Ops</td>
+<td>OpenTelemetry, Grafana, Prometheus, k6</td>
+</tr>
+</tbody></table></div>
+<h2 id="features-how-to-make-companies-notice">How to make companies notice</h2>
+<ol>
+<li><strong>Numbers beat features.</strong> &quot;Batched dispatch reduced average pickup time from 6.8 to 5.2 min across 100k simulated trips&quot; is worth more than ten screens.</li>
+<li><strong>A 90-second demo video:</strong> the Bangla voice booking agent, the custom map with cars gliding, the flood layer, and the simulator running at 10x speed.</li>
+<li><strong>Engineering blog posts</strong> for each signature feature, written like Uber/Grab engineering blog posts: problem, approach, trade-offs, results.</li>
+<li><strong>Open-source the reusable pieces</strong> (Bangla address parser, Dhaka GTFS, Banglish search).</li>
+<li><strong>A design doc per major system</strong> in the repo. Big companies hire people who write design docs.</li>
+</ol>
+</div>
+</section>
+<section class="part" id="roadmap" aria-labelledby="roadmap-title">
+  <header class="part-head"><span class="eyebrow">Part 2 · Roadmap</span><h2 class="part-title" id="roadmap-title">Complete Roadmap to an AI-Native Mobility Platform</h2></header>
+  <div class="prose"><p>This roadmap is the execution plan for <a href="#features">next-level-features.md</a>. Feature codes like <strong>(5.1)</strong> or <strong>(S3)</strong> refer to sections in that document.</p>
+<ul>
+<li><strong>Duration:</strong> 52 weeks for one full-time developer. With 2–3 people, tracks A and B below run in parallel and it drops to roughly 7–8 months.</li>
+<li><strong>Rule:</strong> every phase ends with something you can <strong>demo</strong> and something you can <strong>measure</strong>.</li>
+</ul>
+<hr>
+<h2 id="roadmap-1-where-cholo-is-today">1. Where Cholo is today</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Current state</th>
+<th>Limitation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Dispatch</td>
+<td><code>fanOutOffers</code> in <code>server/src/services/dispatch.service.js</code>: nearest drivers by haversine distance, radius grows 5 → 10 km, offers time out after 15 s</td>
+<td>Greedy: each request is matched on its own. No forecasting or batching.</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>Public OSRM demo server (<code>OSRM_BASE_URL</code>)</td>
+<td>Rate-limited, no traffic data, not allowed for production use</td>
+</tr>
+<tr>
+<td>Geocoding</td>
+<td>Public Nominatim + Photon</td>
+<td>Weak on Bangla/Banglish and informal addresses. Rate-limited.</td>
+</tr>
+<tr>
+<td>Map</td>
+<td>Leaflet raster tiles</td>
+<td>No custom style, no smooth vehicle animation, no 3D</td>
+</tr>
+<tr>
+<td>Location data</td>
+<td><code>trip_location_pings</code>, partitioned by month in Postgres</td>
+<td>Pings are stored only during trips, and nothing analyzes them</td>
+</tr>
+<tr>
+<td>Spatial</td>
+<td>Latitude/longitude columns with haversine math in JS</td>
+<td>No PostGIS, no spatial index, no H3</td>
+</tr>
+<tr>
+<td>Surge</td>
+<td>Admins create it by hand in the marketplace controller</td>
+<td>Reacts late and can&#39;t explain itself</td>
+</tr>
+<tr>
+<td>Infra</td>
+<td>Render free tier, Supabase Postgres, Vercel</td>
+<td>Can&#39;t run Kafka, ML services, a routing engine or tile builds</td>
+</tr>
+<tr>
+<td>AI</td>
+<td>None</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="roadmap-2-target-architecture">2. Target architecture</h2>
+<figure class="diagram"><pre class="mermaid">flowchart LR
+  subgraph Clients
+    PWA[Rider / Driver PWA&lt;br/&gt;MapLibre]
+    Chat[WhatsApp / SMS / USSD]
+    Admin[Admin console]
+  end
+
+  subgraph Core["Core API (Node/Express, existing)"]
+    API[REST + Socket.io]
+    Outbox[(Outbox table)]
+  end
+
+  subgraph Geo["Geo stack (self-hosted)"]
+    Tiles[PMTiles on CDN]
+    Valhalla[Valhalla routing&lt;br/&gt;+ map matching]
+    Search[Hybrid search&lt;br/&gt;pgvector + trgm + PostGIS]
+  end
+
+  subgraph Stream
+    Bus[[Redpanda / Kafka]]
+    Proc[Stream processor&lt;br/&gt;Bytewax]
+  end
+
+  subgraph Intel["Intelligence (Python/FastAPI)"]
+    Dispatch[Batch matcher]
+    Forecast[Demand forecast]
+    ETA[ETA model]
+    Pricing[Surge engine]
+    Risk[Fraud + safety]
+    Agent[LLM agents]
+  end
+
+  subgraph Data
+    PG[(Postgres + PostGIS)]
+    Redis[(Redis GEO&lt;br/&gt;live drivers)]
+    CH[(ClickHouse)]
+    MLflow[(Model registry)]
+  end
+
+  Sim[Dhaka Digital Twin] --&gt; API
+  PWA --&gt; API
+  Chat --&gt; Agent --&gt; API
+  Admin --&gt; API
+  API --&gt; PG
+  API --&gt; Redis
+  API --&gt; Outbox --&gt; Bus
+  Bus --&gt; Proc --&gt; CH
+  Proc --&gt; Redis
+  API &lt;--&gt; Dispatch
+  API &lt;--&gt; ETA
+  API &lt;--&gt; Pricing
+  Forecast --&gt; Pricing
+  Forecast --&gt; Dispatch
+  Bus --&gt; Risk --&gt; API
+  API --&gt; Valhalla
+  API --&gt; Search
+  PWA --&gt; Tiles
+  Intel --&gt; MLflow</pre></figure>
+<p><strong>Repository layout at the end:</strong></p>
+<pre class="code"><code>cholo/
+├── client/          # existing React PWA (Leaflet → MapLibre)
+├── server/          # existing Express API (gets outbox, flags, ML clients)
+├── ml/              # NEW  Python FastAPI: dispatch, eta, forecast, pricing, risk
+├── agents/          # NEW  LLM agents: booking, support, ask-cholo
+├── sim/             # NEW  Dhaka Digital Twin
+├── maps/            # NEW  tile build, map style, Valhalla config, GTFS
+├── stream/          # NEW  stream processors (pings → traffic, metrics)
+├── infra/           # NEW  docker compose / k8s, Grafana dashboards, k6 scripts
+├── database/        # existing migrations (+ PostGIS, H3, pgvector)
+└── docs/design/     # NEW  one design doc per major system</code></pre>
+<hr>
+<h2 id="roadmap-3-timeline">3. Timeline</h2>
+<figure class="diagram"><pre class="mermaid">gantt
+  title Cholo next-level roadmap (example start date 5 Oct 2026)
+  dateFormat  YYYY-MM-DD
+  axisFormat  %b %Y
+  section Foundation
+  P0 Platform foundation          :p0, 2026-10-05, 4w
+  section Track A · Data &amp; Intelligence
+  P1 Dhaka Digital Twin           :p1, after p0, 6w
+  P3 Marketplace intelligence     :p3, after p1, 10w
+  P6 Safety, fraud, driver AI     :p6, after p3, 9w
+  section Track B · Maps &amp; Experience
+  P2 Cholo Maps                   :p2, after p0, 9w
+  P4 Search &amp; conversational AI   :p4, after p2, 10w
+  P5 Bangladesh-specific          :p5, after p4, 8w
+  P7 Delight &amp; polish             :p7, after p5, 6w
+  section Showcase
+  P8 Launch &amp; showcase            :p8, after p6 p7, 3w</pre></figure>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Weeks (solo, sequential)</th>
+<th>Headline deliverable</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P0 Foundation</td>
+<td>1–4</td>
+<td>PostGIS, H3, event bus, ML service skeleton, observability</td>
+</tr>
+<tr>
+<td>P1 Digital Twin</td>
+<td>5–10</td>
+<td>5,000 simulated cars on a live dashboard and a baseline metrics report</td>
+</tr>
+<tr>
+<td>P2 Cholo Maps</td>
+<td>11–19</td>
+<td>Custom map, own routing, own traffic layer</td>
+</tr>
+<tr>
+<td>P3 Marketplace intelligence</td>
+<td>20–29</td>
+<td>Batched dispatch, forecasting, ML ETA, explainable surge, A/B platform</td>
+</tr>
+<tr>
+<td>P4 Search &amp; conversational AI</td>
+<td>30–37</td>
+<td>Banglish/landmark search, Bangla voice booking agent, AI support agent</td>
+</tr>
+<tr>
+<td>P5 Bangladesh-specific</td>
+<td>38–42</td>
+<td>Flood routing, multimodal planner, fair-fare meter, Lite/USSD</td>
+</tr>
+<tr>
+<td>P6 Safety, fraud, driver AI</td>
+<td>43–47</td>
+<td>Anomaly detection, fraud graph, liveness, earnings forecaster</td>
+</tr>
+<tr>
+<td>P7 Delight &amp; polish</td>
+<td>48–50</td>
+<td>Design system, trip recap, Cholo Wrapped, accessibility</td>
+</tr>
+<tr>
+<td>P8 Showcase</td>
+<td>51–52</td>
+<td>Demo video, blog posts, open-source libraries, open data portal</td>
+</tr>
+</tbody></table></div>
+<p>With a team, run Track A (P1 → P3 → P6) and Track B (P2 → P4 → P5 → P7) at the same time.</p>
+<hr>
+<h2 id="roadmap-4-phases-in-detail">4. Phases in detail</h2>
+<p>Each phase lists its <strong>milestones</strong> (checkbox tasks), <strong>deliverables</strong>, <strong>exit criteria</strong> (measurable) and <strong>risks</strong>.</p>
+<hr>
+<h3 id="roadmap-p0-platform-foundation-weeks-1-4">P0 — Platform foundation (weeks 1–4)</h3>
+<p><strong>Goal:</strong> make the codebase able to hold everything that comes later. Nothing user-visible yet, but every later phase depends on this.</p>
+<h4 id="roadmap-m0-1-infrastructure-move-week-1">M0.1 Infrastructure move (week 1)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Move from the Render free tier to one VPS (e.g. Hetzner CX42 / DigitalOcean 8 GB) running Docker Compose. Keep Vercel for the client.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Put <code>infra/docker-compose.yml</code> services in place: postgres(+PostGIS), redis, redpanda, clickhouse, grafana, prometheus, otel-collector, ml, valhalla (added in P2).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Update <code>.github/workflows/ci.yml</code>: build and test the <code>ml/</code> and <code>sim/</code> Python services, then deploy through SSH or GHCR images.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Nightly <code>pg_dump</code> backup to object storage (extend the existing <code>backup.yml</code>).</li>
+</ul>
+<h4 id="roadmap-m0-2-spatial-database-week-1-2">M0.2 Spatial database (week 1–2)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Migration <code>0014_postgis.sql</code>: <code>CREATE EXTENSION postgis</code>, add <code>geography(Point)</code> columns to drivers, ride requests, trips and saved places, with GiST indexes.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Migration <code>0015_h3.sql</code>: install the <code>h3</code> + <code>h3_postgis</code> extensions and add <code>h3_r8</code> / <code>h3_r9</code> generated columns on requests and trips.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Replace the haversine filter in <code>fanOutOffers</code> with <code>ST_DWithin</code> in <code>offersRepo.findEligibleDrivers</code>, and keep the same behavior.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Store live driver positions in <strong>Redis GEO</strong> (<code>GEOADD drivers:online</code>) in addition to Postgres. <code>recordLocationPing</code> writes to Redis on every ping and to Postgres every Nth ping.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Record pings while drivers are <strong>online without a trip</strong> too (a separate <code>driver_location_pings</code> table, partitioned by month), because traffic and demand models need them.</li>
+</ul>
+<h4 id="roadmap-m0-3-event-backbone-week-2-3">M0.3 Event backbone (week 2–3)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Outbox pattern:</strong> an <code>outbox_events</code> table written in the same transaction as each state change (ride requested, offer sent/accepted/declined, trip status, payment, rating). A relay worker publishes the events to Redpanda.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Topic list and schemas in <code>stream/schemas/</code>: <code>ride.requested</code>, <code>offer.*</code>, <code>trip.*</code>, <code>ping.driver</code>, <code>payment.*</code>, <code>rating.created</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Sink into ClickHouse: raw event tables and materialized views for per-hour, per-H3-cell metrics.</li>
+</ul>
+<h4 id="roadmap-m0-4-ml-service-skeleton-week-3">M0.4 ML service skeleton (week 3)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>ml/</code> FastAPI app with <code>/health</code> and one stub endpoint per model (<code>/eta</code>, <code>/dispatch/batch</code>, <code>/forecast</code>, <code>/surge</code>, <code>/risk/trip</code>).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> The Node API calls it through <code>server/src/services/ml.client.js</code> with a timeout and a <strong>fallback to the current logic</strong> if the ML service is down.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> MLflow for experiment tracking and the model registry.</li>
+</ul>
+<h4 id="roadmap-m0-5-feature-flags-and-observability-week-4">M0.5 Feature flags and observability (week 4)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Feature flags table + admin UI (percentage rollout, per city, per user), so every AI feature ships behind a flag.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> OpenTelemetry in Express and Socket.io. Grafana dashboards for API p50/p95/p99, socket connections, dispatch latency, and match rate.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> SLOs defined: <em>p99 time from request to first offer &lt; 3 s</em>, <em>API availability 99.5%</em>.</li>
+</ul>
+<p><strong>Deliverables:</strong> migrations 0014–0016, <code>infra/</code>, <code>ml/</code> skeleton, Grafana dashboards, <code>docs/design/00-platform.md</code>.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>All existing server tests pass on PostGIS-based dispatch.</li>
+<li>Every ride lifecycle event is visible in ClickHouse within 5 s.</li>
+<li>Killing the ML container doesn&#39;t break booking (the fallback works).</li>
+</ul>
+<p><strong>Risks:</strong> Supabase may not allow the <code>h3</code> extension. Mitigation: self-host Postgres on the VPS, or compute H3 in the app with <code>h3-js</code>.</p>
+<hr>
+<h3 id="roadmap-p1-dhaka-digital-twin-weeks-5-10-feature-0">P1 — Dhaka Digital Twin (weeks 5–10)  · feature 0</h3>
+<p><strong>Goal:</strong> a city-scale simulator that exercises the real system, creates training data, and measures every algorithm afterwards.</p>
+<h4 id="roadmap-m1-1-world-model-week-5">M1.1 World model (week 5)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>sim/world/</code>: load the Dhaka road graph with <code>osmnx</code> and cache it as GraphML.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Zone definitions: residential, commercial and transit hubs across Dhaka&#39;s H3 r8 cells, tagged from OSM land use and POIs.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Calendar: weekdays/weekend (Fri–Sat), prayer times, public holidays, Ramadan hours, Eid.</li>
+</ul>
+<h4 id="roadmap-m1-2-demand-generator-week-6">M1.2 Demand generator (week 6)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Origin-destination matrix: gravity model between zones, with time-of-day profiles (morning peak toward offices, evening peak back).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Non-homogeneous Poisson arrivals per cell, with modifiers for rain (×1.6 demand, ×0.6 supply), events and hartals.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Rider behavior: price elasticity (probability of accepting a surge), wait tolerance before canceling.</li>
+</ul>
+<h4 id="roadmap-m1-3-driver-agents-week-7">M1.3 Driver agents (week 7)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Driver shift patterns (morning/evening/full-day), home locations, and acceptance probability as a function of pickup distance and fare.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Movement: follow Valhalla/OSRM routes with speed noise and emit pings every 4 s through the <strong>real socket API</strong>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Idle behavior: stay put, drift toward home, or follow repositioning hints (used in P3).</li>
+</ul>
+<h4 id="roadmap-m1-4-runner-and-control-week-8">M1.4 Runner and control (week 8)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Discrete-event engine with a simulated clock (1×–60×) and a fixed random seed for reproducibility.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Runs against a disposable Cholo stack: <code>make sim-up</code> starts a fresh DB, seeds 5,000 drivers, and runs the scenario.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Scenario files in YAML: <code>weekday_normal</code>, <code>monsoon_evening</code>, <code>eid_exodus</code>, <code>cricket_match_mirpur</code>.</li>
+</ul>
+<h4 id="roadmap-m1-5-metrics-and-dashboard-week-9-10">M1.5 Metrics and dashboard (week 9–10)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Metrics read from ClickHouse: match rate, rider wait time (p50/p90), pickup ETA, driver utilization, idle km, cancellation rate, revenue, and driver earnings per hour.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Live dashboard (<code>sim/dashboard</code>, deck.gl + MapLibre): moving cars, request dots, H3 heatmaps, and a metrics sidebar.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>A/B mode:</strong> run policy A and policy B on the same seed and produce a comparison report (Markdown + charts).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Baseline report</strong> for the current greedy fan-out dispatch. This is the number every later phase has to beat.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> k6 load test using simulated traffic. Record the max sustained pings/s and requests/s.</li>
+</ul>
+<p><strong>Deliverables:</strong> <code>sim/</code> package, 4 scenarios, a dashboard, <code>docs/design/01-digital-twin.md</code>, <code>reports/baseline-dispatch.md</code>, and a 30-second screen recording.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>5,000 drivers and 20,000 trips per simulated hour on a single VPS.</li>
+<li>The same seed reproduces the same metrics within ±1%.</li>
+<li>≥ 10 million pings and ≥ 1 million trips stored for training.</li>
+</ul>
+<p><strong>Risks:</strong> Socket.io may not handle 5k emitters from one process. Mitigation: shard the sim across worker processes and add the Socket.io Redis adapter (worth doing anyway).</p>
+<hr>
+<h3 id="roadmap-p2-cholo-maps-weeks-11-19-features-2-1-2-6-s1">P2 — Cholo Maps (weeks 11–19)  · features 2.1–2.6, S1</h3>
+<p><strong>Goal:</strong> own the whole map stack: tiles, style, routing, geocoding and traffic.</p>
+<h4 id="roadmap-m2-1-vector-tiles-and-custom-style-week-11-12">M2.1 Vector tiles and custom style (week 11–12)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>maps/tiles/</code>: build Bangladesh tiles with <code>planetiler</code> from the Geofabrik extract, output <code>bangladesh.pmtiles</code>, and upload to a CDN (Cloudflare R2).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Monthly rebuild through a GitHub Action.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>maps/style/</code>: Cholo light and dark styles designed in Maputnik. Bangla-first labels (<code>name:bn</code>, falling back to <code>name</code>), Noto Sans Bengali glyphs, and 3D building extrusion at zoom ≥ 15.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Automatic dark mode at local sunset.</li>
+</ul>
+<h4 id="roadmap-m2-2-maplibre-migration-week-12-13">M2.2 MapLibre migration (week 12–13)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Replace Leaflet with <strong>MapLibre GL JS</strong> behind one shared <code>&lt;CholoMap&gt;</code> component. Migrate each page: passenger booking, live trip, driver home, admin zones, admin SOS board.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Rebuild the zone editor (polygon drawing) with <code>maplibre-gl-draw</code> / Terra Draw.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Remove the <code>leaflet</code> dependency once every page is migrated.</li>
+</ul>
+<h4 id="roadmap-m2-3-vehicle-rendering-week-13">M2.3 Vehicle rendering (week 13)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Interpolate between pings (tweening over the ping interval) and dead-reckon for up to 8 s when pings stop.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Rotate icons to bearing. SVG sprites per vehicle category.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Draw the route line in with an animation, fade the traveled portion, and pulse the pickup marker.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Snap the vehicle to the route geometry while on a trip.</li>
+</ul>
+<h4 id="roadmap-m2-4-self-hosted-routing-and-geocoding-week-14-15">M2.4 Self-hosted routing and geocoding (week 14–15)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Run <strong>Valhalla</strong> in Docker with Bangladesh tiles. Profiles: <code>auto</code>, <code>motorcycle</code>, and a custom <code>cng</code> (speed cap 50 km/h, no expressways).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Point <code>OSRM_BASE_URL</code> / the geo provider at Valhalla by adding <code>server/src/services/providers/valhalla.provider.js</code> next to the existing <code>osm.provider.js</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Self-host Photon (or Pelias) and stop depending on public Nominatim.</li>
+</ul>
+<h4 id="roadmap-m2-5-map-matching-and-traffic-layer-week-16-17">M2.5 Map matching and traffic layer (week 16–17)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>stream/traffic/</code>: consume <code>ping.driver</code>, run Valhalla&#39;s <code>trace_attributes</code> (Meili HMM map matching) on 60 s windows per driver, and emit <code>(edge_id, speed, timestamp)</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Aggregate speeds per edge per 15-minute bucket in ClickHouse (live) and build historical profiles (weekday × 15 min).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Publish the live traffic layer as a GeoJSON/MVT endpoint and show green/yellow/red roads on the map.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Feed historical speed profiles into Valhalla (custom traffic tiles) so routes and ETAs account for traffic.</li>
+</ul>
+<h4 id="roadmap-m2-6-smart-pickup-points-and-map-self-healing-week-18-19">M2.6 Smart pickup points and map self-healing (week 18–19)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Pickup point mining: DBSCAN on actual pickup locations per H3 r10 cell, scored by success rate and wait time. Suggest the nearest good spot when a rider drops a pin.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Missing-road detection: cluster pings that don&#39;t map-match (distance &gt; 25 m from any edge), turn the clusters into candidate road polylines, and list them in the admin <strong>Map QA</strong> page.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> One-way error detection: flag edges often traversed against their direction.</li>
+</ul>
+<p><strong>Deliverables:</strong> <code>maps/</code> (tiles, style, Valhalla config), <code>&lt;CholoMap&gt;</code>, a traffic stream processor, the admin Map QA page, <code>docs/design/02-cholo-maps.md</code>.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>No external map service is called on the critical path (tiles, routing and geocoding are all self-hosted).</li>
+<li>Map first render &lt; 1.5 s on a mid-range Android on 4G. 60 fps car animation.</li>
+<li>Traffic-aware routing ETA error (MAPE) at least 15% lower than public OSRM in the simulator.</li>
+</ul>
+<p><strong>Risks:</strong> Valhalla tile builds need about 8 GB RAM, so build them in CI and ship the artifact. OSM coverage of Bangla names is partial, so fall back to transliteration.</p>
+<hr>
+<h3 id="roadmap-p3-marketplace-intelligence-weeks-20-29-features-5-1-5-8-s4-s8">P3 — Marketplace intelligence (weeks 20–29)  · features 5.1–5.8, S4, S8</h3>
+<p><strong>Goal:</strong> replace every hand-tuned marketplace rule with a model that is measured in the simulator and rolled out through experiments.</p>
+<h4 id="roadmap-m3-1-experimentation-platform-week-20-21-build-first-so-everything-after-it-can-be-measured">M3.1 Experimentation platform (week 20–21) — build first, so everything after it can be measured</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>experiments</code> table: variants, allocation unit (user / driver / <strong>H3 cell × time block</strong>), start and end dates.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Switchback assignment:</strong> randomize by (city cell, 30-minute block), because marketplace changes affect both variants when randomized per user.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Analysis job: difference in means, <strong>CUPED</strong> variance reduction, confidence intervals, and guardrail metrics (cancellations, driver earnings).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Admin Experiments page: create, monitor and stop experiments, and read the results.</li>
+</ul>
+<h4 id="roadmap-m3-2-ml-eta-week-21-23">M3.2 ML ETA (week 21–23)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Training set from simulated and real trips: routing ETA, distance, H3 origin and destination, hour, weekday, rain, and live traffic index → actual duration.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Model: LightGBM that predicts the <strong>residual</strong> on top of Valhalla&#39;s ETA. Later, a small transformer in the style of DeepETA.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Serve through <code>/eta</code>. Show pickup and trip ETAs with an uncertainty range (&quot;12–15 min&quot;).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> An admin chart of ETA MAPE per day.</li>
+</ul>
+<h4 id="roadmap-m3-3-demand-forecasting-week-23-25">M3.3 Demand forecasting (week 23–25)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Target: requests per H3 r8 cell per 15 minutes for the next 15, 30 and 60 minutes.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Features: lags, rolling means, calendar, prayer times, weather (Open-Meteo API) and events.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> v1 LightGBM → v2 spatiotemporal GNN (Graph WaveNet / STGCN over the H3 adjacency graph).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Scheduled job writes forecasts to Redis every 5 minutes. Admin heatmap shows forecast vs actual.</li>
+</ul>
+<h4 id="roadmap-m3-4-batched-dispatch-week-25-27">M3.4 Batched dispatch (week 25–27)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>ml/dispatch/</code>: collect open requests and available drivers every 2 s (configurable) and build a cost matrix of <strong>ETA from the P3.2 model</strong> plus penalties (driver rating, favorites, women-only constraint, commission debt).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Solve with the Hungarian algorithm (<code>scipy.optimize.linear_sum_assignment</code>) or OR-Tools min-cost flow.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Integrate into <code>dispatch.service.js</code>: behind a feature flag, <code>fanOutOffers</code> sends a single targeted offer from the batch result. The current fan-out stays as the fallback and the control variant.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> v2: add a <strong>future value</strong> term for each driver&#39;s drop-off cell (learned by temporal-difference learning over simulated histories, DiDi style).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Simulator A/B against the P1 baseline, then a switchback experiment.</li>
+</ul>
+<h4 id="roadmap-m3-5-repositioning-and-explainable-surge-week-27-28">M3.5 Repositioning and explainable surge (week 27–28)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Supply-demand gap per cell = forecast demand − expected available drivers.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Driver app: a &quot;Hot zones&quot; heatmap layer and a nudge card (&quot;Gulshan 1 · ~12 requests in 20 min · 8 min away&quot;).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Automatic surge: multiplier = f(gap), spatially smoothed across neighboring cells, capped (e.g. 2.0×), with hysteresis so it doesn&#39;t flicker. Admin manual surge remains as an override.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Explanation string</strong> stored with each quote (&quot;1.3× · rain + 45% fewer drivers nearby&quot;) and shown on the fare card.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Fairness check: surge frequency per area compared with income proxies, reported in admin.</li>
+</ul>
+<h4 id="roadmap-m3-6-pool-and-multi-stop-week-28-29">M3.6 Pool and multi-stop (week 28–29)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Cholo Pool: an insertion heuristic. Match a new request into an active pooled trip if every rider&#39;s detour is ≤ 30% and ≤ 8 min. Split the fare by distance share.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Multi-stop optimizer: OR-Tools TSP for up to 5 stops, &quot;Optimize order&quot; button on the booking screen.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Guaranteed upfront fare: quote at the P80 of the predicted cost distribution and track platform margin.</li>
+</ul>
+<p><strong>Deliverables:</strong> <code>ml/</code> models (eta, forecast, dispatch, surge), Experiments admin page, driver hot-zone layer, <code>docs/design/03-marketplace.md</code>, <code>reports/dispatch-v1-vs-baseline.md</code>.</p>
+<p><strong>Exit criteria (all measured in the simulator, same seed)</strong></p>
+<ul>
+<li>Average pickup ETA <strong>≥ 15% lower</strong> than the baseline.</li>
+<li>Match rate <strong>≥ 5 points higher</strong> during monsoon evenings.</li>
+<li>ETA MAPE <strong>&lt; 15%</strong>.</li>
+<li>Demand forecast 30-minute WAPE <strong>&lt; 25%</strong> at H3 r8.</li>
+<li>Batch solve time p99 <strong>&lt; 300 ms</strong> for 2,000 × 2,000.</li>
+</ul>
+<p><strong>Risks:</strong> batching adds up to 2 s of latency. Mitigation: shorter windows when demand is low and immediate dispatch when only one candidate exists.</p>
+<hr>
+<h3 id="roadmap-p4-search-and-conversational-ai-weeks-30-37-features-3-x-4-x-s2-s3">P4 — Search and conversational AI (weeks 30–37)  · features 3.x, 4.x, S2, S3</h3>
+<p><strong>Goal:</strong> Cholo understands how people in Bangladesh actually describe places and talk.</p>
+<h4 id="roadmap-m4-1-banglish-and-phonetic-search-week-30">M4.1 Banglish and phonetic search (week 30)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>packages/bangla-search</code> (to be open-sourced): Unicode normalization, Bangla ↔ Latin transliteration (Avro rules), and a phonetic key (a custom Bangla Metaphone).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Postgres: <code>pg_trgm</code> index on the normalized and phonetic keys of places and landmarks.</li>
+</ul>
+<h4 id="roadmap-m4-2-landmark-database-and-hybrid-search-week-31-32">M4.2 Landmark database and hybrid search (week 31–32)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>landmarks</code> table: name variants (bn/en/banglish), geography, category, popularity, and source (OSM / drivers / riders).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>pgvector</code> embeddings (a multilingual embedding model) of names and descriptions.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Hybrid ranker: <code>score = w1·trigram + w2·vector + w3·geo_proximity + w4·popularity</code>. Start with hand-tuned weights, then learn them from click logs.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Feedback loop: the actual drop-off location updates the landmark&#39;s position (a running median).</li>
+</ul>
+<h4 id="roadmap-m4-3-llm-address-parser-week-32-33">M4.3 LLM address parser (week 32–33)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Parse free text into <code>{area, road, landmark, relation: near|behind|opposite|beside, floor, gate}</code> with a small LLM call (e.g. <code>claude-haiku-4-5</code>) using a strict JSON schema.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Resolve: landmark lookup, then apply the relation offset with a road-side heuristic, and return candidates with confidence scores.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> An evaluation set of 500 real-style Dhaka addresses with ground-truth pins. Report top-1 accuracy within 100 m.</li>
+</ul>
+<h4 id="roadmap-m4-4-cholo-codes-and-predictive-destinations-week-33-34">M4.4 Cholo Codes and predictive destinations (week 33–34)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>address_codes</code>: short code, pin, entrance photo, voice note, and instructions. Share link plus QR code.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Next-destination model per user (LightGBM over time, day, location and history), shown as the first card on the home screen.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Intent/semantic POI search: retrieve candidates, then have the LLM re-rank them against the user&#39;s intent.</li>
+</ul>
+<h4 id="roadmap-m4-5-booking-agent-week-34-36">M4.5 Booking agent (week 34–36)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>agents/booking/</code>: Claude with tool use (<code>claude-sonnet-5</code>). Tools map onto existing endpoints: <code>search_place</code>, <code>get_fare_estimates</code>, <code>create_ride_request</code>, <code>cancel_ride</code>, <code>add_stop</code>, <code>share_trip</code>, <code>get_trip_status</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Guardrails: explicit confirmation before any action that spends money, a per-session spending cap, and the tool call log saved to the audit log.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> In-app chat UI (text) → <strong>voice</strong>: Bangla speech-to-text, text-to-speech playback, and push-to-talk.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Channel adapters: WhatsApp Cloud API and Messenger webhook → the same agent.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> An evaluation suite of 200 scripted conversations in Bangla, English and Banglish, measuring task success rate and wrong-action rate.</li>
+</ul>
+<h4 id="roadmap-m4-6-support-agent-and-ask-cholo-week-36-37">M4.6 Support agent and &quot;Ask Cholo&quot; (week 36–37)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>agents/support/</code>: tools to read the trip trace, fare breakdown and route deviation, and to issue a refund within policy (≤ ৳300 automatically, anything above goes to a human). It writes the dispute summary for admins.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>agents/analyst/</code>: text-to-SQL over a <strong>read-only ClickHouse user</strong>. The semantic layer (metric definitions YAML) is given in the prompt. It returns SQL, a chart spec and an explanation.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Driver hands-free copilot (voice intents: accept, arrived, call rider, today&#39;s earnings).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Translated in-trip chat (bn ↔ en).</li>
+</ul>
+<p><strong>Deliverables:</strong> <code>packages/bangla-search</code>, landmark DB, <code>agents/</code> (booking, support, analyst), chat and voice UI, WhatsApp integration, eval reports, <code>docs/design/04-search.md</code>, <code>docs/design/05-agents.md</code>.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>Address resolution top-1 accuracy within 100 m <strong>≥ 80%</strong> on the evaluation set (versus Nominatim&#39;s baseline, which you also report).</li>
+<li>Booking agent task success <strong>≥ 90%</strong> and wrong-action rate <strong>&lt; 1%</strong>.</li>
+<li>Support agent resolves <strong>≥ 60%</strong> of simulated fare disputes without a human.</li>
+</ul>
+<p><strong>Risks:</strong> LLM cost and latency. Mitigation: Haiku for parsing and routing, Sonnet only for multi-step turns, prompt caching, and a response cache for common queries.</p>
+<hr>
+<h3 id="roadmap-p5-bangladesh-specific-innovation-weeks-38-42-features-6-x-s5-s6">P5 — Bangladesh-specific innovation (weeks 38–42)  · features 6.x, S5, S6</h3>
+<h4 id="roadmap-m5-1-flood-aware-routing-week-38-39">M5.1 Flood-aware routing (week 38–39)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Signals: (a) fleet speed collapse on an edge while it&#39;s raining (from the P2.5 traffic stream, with Open-Meteo precipitation), (b) one-tap &quot;waterlogged&quot; reports from drivers, (c) a list of historically flood-prone roads.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> A per-edge flood score that decays over time. Valhalla routes with high costs on flooded edges.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Map: a blue flood overlay and a &quot;Route avoids 2 waterlogged roads&quot; note.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Simulator scenario <code>monsoon_evening</code> compared with and without flood routing.</li>
+</ul>
+<h4 id="roadmap-m5-2-multimodal-planner-week-39-41">M5.2 Multimodal planner (week 39–41)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <code>maps/gtfs/</code>: hand-build GTFS for <strong>Dhaka Metro MRT-6</strong> (stations, headways, fares) and 10–20 major bus routes. Validate with <code>gtfs-validator</code>. This feed gets open-sourced.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> RAPTOR router (e.g. OpenTripPlanner, or implement RAPTOR in <code>ml/transit</code>) plus Cholo first-mile/last-mile legs.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> UI: compare options side by side (&quot;Car ৳320 · 55 min&quot; vs &quot;Bike + Metro ৳140 · 30 min&quot;) and book the Cholo leg with one tap.</li>
+</ul>
+<h4 id="roadmap-m5-3-fair-fare-meter-women-safe-mode-festival-mode-week-41">M5.3 Fair-fare meter, women-safe mode, festival mode (week 41)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Fair fare: P25–P75 fare range for this origin-destination, vehicle type and time, computed from trip data, shared as a card or image.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Women-safe: extend the existing <code>womenOnly</code> dispatch flag with automatic trip sharing and a night-time safe-route mode (weighted toward busier, lit roads).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Festival mode: an admin toggle that loads the forecast adjustments, enables intercity booking, and shows event-aware ETAs.</li>
+</ul>
+<h4 id="roadmap-m5-4-lite-mode-sms-and-ussd-week-42">M5.4 Lite mode, SMS and USSD (week 42)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Lite client route: text-first, a static map image, and socket updates in a compact binary format.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> SMS booking (<code>RIDE &lt;from&gt; TO &lt;to&gt;</code>) through an SMS gateway, parsed by the P4 address parser.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> USSD menu flow through an aggregator sandbox.</li>
+</ul>
+<p><strong>Deliverables:</strong> flood layer and routing, Dhaka GTFS feed, multimodal UI, fair-fare card, Lite mode, SMS/USSD, <code>docs/design/06-bangladesh.md</code>.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>In the monsoon scenario, flood routing cuts stuck trips (speed &lt; 3 km/h for more than 5 min) by <strong>≥ 30%</strong>.</li>
+<li>The multimodal planner returns a result in <strong>&lt; 800 ms</strong> and the GTFS feed passes validation with zero errors.</li>
+<li>Lite mode is usable on a throttled 2G profile (first usable screen &lt; 5 s).</li>
+</ul>
+<hr>
+<h3 id="roadmap-p6-safety-fraud-and-driver-ai-weeks-43-47-features-7-x-8-9-s7">P6 — Safety, fraud and driver AI (weeks 43–47)  · features 7.x, 8, 9, S7</h3>
+<h4 id="roadmap-m6-1-trip-anomaly-detection-week-43">M6.1 Trip anomaly detection (week 43)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> A stream job compares each live trip with its expected route corridor (buffer 300 m) and dwell-time model.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Triggers: deviation &gt; 1 km, unexpected stop &gt; 6 min, phone offline &gt; 3 min mid-trip.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Rider check-in push (&quot;Are you okay?&quot;). If there&#39;s no response in 2 minutes, the trip goes to the existing SOS board and trusted contacts.</li>
+</ul>
+<h4 id="roadmap-m6-2-on-device-safety-week-44">M6.2 On-device safety (week 44)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Crash detection: DeviceMotion API, deceleration spike &gt; 4 g followed by stillness, then a countdown to auto-SOS.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Drowsiness: MediaPipe Face Mesh with the eye aspect ratio and yawn detection, running entirely on the device. Suggest a break.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Driver behavior score: harsh braking and acceleration and speeding from pings and motion data, delivered as a weekly coaching report.</li>
+</ul>
+<h4 id="roadmap-m6-3-identity-week-45">M6.3 Identity (week 45)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Shift-start selfie: liveness check (a random blink or head-turn challenge) and a face match against the approved profile photo.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Document OCR for NID, driving license and registration (Bangla + English) to fill forms automatically, flag mismatches, and extract expiry dates. This extends the existing <code>documentExpiry.job.js</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Bangla number plate OCR, reused for AR ride confirmation in P7.</li>
+</ul>
+<h4 id="roadmap-m6-4-fraud-defense-week-46">M6.4 Fraud defense (week 46)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> GPS spoofing rules: impossible speed, teleporting, mock-location flag, accuracy anomalies.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Fraud graph:</strong> nodes are users, devices, payment accounts, payout accounts and IPs. Edges come from shared usage. Community detection (Louvain) plus rules finds promo and referral rings and driver-rider collusion.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> A risk score per trip and per account in admin, with the <strong>reasons</strong> listed. Actions always need human confirmation.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Fare manipulation: compare the actual route with the optimal route and refund the difference automatically above a threshold.</li>
+</ul>
+<h4 id="roadmap-m6-5-driver-ai-week-47">M6.5 Driver AI (week 47)</h4>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Earnings forecaster: expected ৳ per hour by zone and time (from the P3 forecast plus historical fares).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Shift planner: given a weekly goal, suggests hours and zones.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> True-profit view: earnings minus a fuel/CNG estimate minus maintenance. An EV calculator based on the driver&#39;s actual trips.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Transparent deactivation: a reason code, the evidence, and an appeal flow.</li>
+</ul>
+<p><strong>Deliverables:</strong> safety stream jobs, on-device ML modules, liveness and OCR onboarding, fraud graph and admin Risk page, driver insights screens, <code>docs/design/07-trust-safety.md</code>.</p>
+<p><strong>Exit criteria</strong></p>
+<ul>
+<li>Anomaly detection: recall <strong>≥ 90%</strong> on injected simulator incidents (the sim injects deviations and stops), false alert rate <strong>&lt; 1 per 200 trips</strong>.</li>
+<li>The fraud graph detects <strong>≥ 85%</strong> of injected promo rings in the simulator.</li>
+<li>On-device models run at ≥ 15 fps on a mid-range Android and never upload frames.</li>
+</ul>
+<hr>
+<h3 id="roadmap-p7-delight-and-polish-weeks-48-50-feature-10-2-7">P7 — Delight and polish (weeks 48–50)  · feature 10, 2.7</h3>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Design system:</strong> tokens (color, spacing, radius, motion), Bangla typography scale, component library (Storybook), and a motion language with Framer Motion.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Skeleton states, haptics (<code>navigator.vibrate</code>), and a &quot;searching&quot; radar animation.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Trip recap:</strong> an animated route replay, stats, CO₂ saved compared with a private car, and a shareable image (canvas render).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Cholo Wrapped:</strong> a yearly story-style summary generated from ClickHouse.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Live trip widget: persistent notification with progress (PWA). Native Live Activity if a native shell is added.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>AR find-my-ride:</strong> WebXR arrow toward the driver plus plate OCR confirmation (from P6.3).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Accessibility audit: complete screen-reader labels, a voice-only mode (reusing the P4 agent), large-text mode, color-blind-safe map palette, and WCAG 2.2 AA checks in CI (axe).</li>
+</ul>
+<p><strong>Exit criteria:</strong> Lighthouse ≥ 95 for performance and accessibility, zero serious axe violations, and every core flow completable with a screen reader alone.</p>
+<hr>
+<h3 id="roadmap-p8-launch-and-showcase-weeks-51-52-feature-12">P8 — Launch and showcase (weeks 51–52)  · feature 12</h3>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Dhaka Mobility Insights</strong> public page: travel times, demand and flood hotspots with <strong>differential privacy</strong> (Laplace noise, k-anonymity threshold of 20 per cell).</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Open-source releases, each with a README, tests and a small demo: <code>bangla-search</code>, <code>bd-address-parser</code>, <code>dhaka-gtfs</code>, and optionally <code>cholo-sim</code>.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Engineering blog series</strong> (one per signature feature), written like the Uber/Grab engineering blogs:<ol>
+<li>Building a digital twin of Dhaka</li>
+<li>Owning the map: tiles, routing and a traffic layer from fleet GPS</li>
+<li>Batched dispatch: from greedy to global matching (with numbers)</li>
+<li>Understanding Dhaka addresses with LLMs and hybrid search</li>
+<li>A Bangla voice agent that books rides safely</li>
+<li>Routing around monsoon floods</li>
+</ol>
+</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Demo video (90 s):</strong> voice booking in Bangla → custom map with gliding cars → flood layer → simulator at 10× → before/after metrics.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> <strong>Load test report:</strong> sustained pings/s, dispatch p99, and infra cost per 1,000 trips.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> README rewrite: architecture diagram, headline metrics, links to design docs and blog posts.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Final security review: rate limits on agent endpoints, prompt injection tests, secrets, and PII in logs.</li>
+</ul>
+<hr>
+<h2 id="roadmap-5-cross-cutting-tracks-every-phase">5. Cross-cutting tracks (every phase)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Track</th>
+<th>What happens every phase</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Design docs</strong></td>
+<td>Before building a system, write <code>docs/design/NN-name.md</code>: context, goals and non-goals, options considered, decision, metrics, rollout, risks</td>
+</tr>
+<tr>
+<td><strong>Testing</strong></td>
+<td>Unit tests for each model&#39;s feature code. Contract tests between Node and the ML service. A simulator regression run in CI (a short 10-minute scenario must not regress beyond thresholds).</td>
+</tr>
+<tr>
+<td><strong>Evaluation</strong></td>
+<td>Each ML or LLM component has a fixed evaluation set and a tracked score in MLflow. No model ships without beating the current one.</td>
+</tr>
+<tr>
+<td><strong>Rollout</strong></td>
+<td>Every feature goes behind a flag: simulator → internal → 5% → 50% → 100%, with a switchback experiment for marketplace features</td>
+</tr>
+<tr>
+<td><strong>Security and privacy</strong></td>
+<td>Data minimization. On-device processing where possible. Agent tools follow least privilege. Every automated action (refund, flag, surge) is written to the audit log.</td>
+</tr>
+<tr>
+<td><strong>i18n</strong></td>
+<td>Every new string in both Bangla and English in <code>client/src/i18n</code> from day one</td>
+</tr>
+<tr>
+<td><strong>Content</strong></td>
+<td>Record a short clip at the end of each phase for the final demo</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="roadmap-6-dependency-map">6. Dependency map</h2>
+<figure class="diagram"><pre class="mermaid">flowchart TD
+  P0[P0 Foundation&lt;br/&gt;PostGIS · H3 · events · ML skeleton] --&gt; P1[P1 Digital Twin]
+  P0 --&gt; P2[P2 Cholo Maps]
+  P1 --&gt; P3[P3 Marketplace intelligence]
+  P2 --&gt;|traffic speeds → ETA| P3
+  P2 --&gt;|Valhalla + map matching| P5a[P5 Flood routing]
+  P2 --&gt; P4[P4 Search &amp; agents]
+  P3 --&gt;|forecast| P6e[P6 Driver earnings AI]
+  P3 --&gt;|experiments| P5a
+  P4 --&gt;|address parser| P5b[P5 SMS/USSD booking]
+  P4 --&gt;|voice agent| P7a[P7 Voice-only accessibility]
+  P1 --&gt;|injected incidents| P6[P6 Safety &amp; fraud]
+  P6 --&gt;|plate OCR| P7b[P7 AR find-my-ride]
+  P3 --&gt; P8[P8 Showcase]
+  P4 --&gt; P8
+  P5a --&gt; P8
+  P6 --&gt; P8</pre></figure>
+<p><strong>Critical path:</strong> P0 → P1 → P3 → P8. If time runs short, cut from P7 and the second half of P5, never from the critical path.</p>
+<hr>
+<h2 id="roadmap-7-data-needs-per-model">7. Data needs per model</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Minimum data</th>
+<th>Source before real users</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ETA</td>
+<td>100k trips with actual durations</td>
+<td>Simulator using P2 traffic profiles</td>
+</tr>
+<tr>
+<td>Demand forecast</td>
+<td>8+ weeks of requests per cell per 15 minutes</td>
+<td>Simulator run at 60× for 8 simulated weeks</td>
+</tr>
+<tr>
+<td>Batched dispatch</td>
+<td>None to train (optimization). Value function: 1M transitions</td>
+<td>Simulator</td>
+</tr>
+<tr>
+<td>Pickup points</td>
+<td>20k pickups</td>
+<td>Simulator with noisy pickup behavior, plus real trips</td>
+</tr>
+<tr>
+<td>Address parser</td>
+<td>500 labeled addresses</td>
+<td>Hand-labeled, plus synthetic LLM-generated variants</td>
+</tr>
+<tr>
+<td>Fraud graph</td>
+<td>Labeled rings</td>
+<td>Simulator injects fraud agents</td>
+</tr>
+<tr>
+<td>Anomaly detection</td>
+<td>Labeled incidents</td>
+<td>Simulator injects deviations and stops</td>
+</tr>
+<tr>
+<td>Booking agent</td>
+<td>200 scripted conversations</td>
+<td>Written by hand plus LLM-generated personas</td>
+</tr>
+</tbody></table></div>
+<p>Always label which numbers come from the simulator and which from real traffic. Being honest about that builds credibility.</p>
+<hr>
+<h2 id="roadmap-8-kpi-scoreboard-show-it-on-the-admin-dashboard-and-in-the-readme">8. KPI scoreboard (show it on the admin dashboard and in the README)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>KPI</th>
+<th>Baseline (P1)</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Avg pickup ETA</td>
+<td>measured in P1</td>
+<td>−15%</td>
+</tr>
+<tr>
+<td>Match rate (monsoon evening)</td>
+<td>measured in P1</td>
+<td>+5 pts</td>
+</tr>
+<tr>
+<td>Rider cancellation rate</td>
+<td>measured in P1</td>
+<td>−20%</td>
+</tr>
+<tr>
+<td>Driver utilization (on-trip time / online time)</td>
+<td>measured in P1</td>
+<td>+10%</td>
+</tr>
+<tr>
+<td>ETA MAPE</td>
+<td>public OSRM</td>
+<td>&lt; 15%</td>
+</tr>
+<tr>
+<td>Demand forecast WAPE (30 min, r8)</td>
+<td>naive last-week</td>
+<td>&lt; 25%</td>
+</tr>
+<tr>
+<td>Address top-1 @100 m</td>
+<td>Nominatim</td>
+<td>≥ 80%</td>
+</tr>
+<tr>
+<td>Booking agent success</td>
+<td>—</td>
+<td>≥ 90%</td>
+</tr>
+<tr>
+<td>Request → first offer p99</td>
+<td>measured in P0</td>
+<td>&lt; 3 s</td>
+</tr>
+<tr>
+<td>Sustained pings/s</td>
+<td>measured in P1</td>
+<td>≥ 2,000 on one VPS</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="roadmap-9-risk-register">9. Risk register</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Likelihood</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Scope is too big for one person</td>
+<td>High</td>
+<td>High</td>
+<td>Stick to the critical path. Each phase ships something usable on its own. Cut P7 first.</td>
+</tr>
+<tr>
+<td>Simulator is unrealistic, so the metrics mean nothing</td>
+<td>High</td>
+<td>Medium</td>
+<td>Calibrate against real Cholo trips and published Dhaka travel-time studies. State the assumptions in the design doc.</td>
+</tr>
+<tr>
+<td>Infra cost grows</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>One VPS to start. Build tiles and Valhalla in CI. Scale to zero in the sim environment. Track cost per 1,000 trips.</td>
+</tr>
+<tr>
+<td>LLM agent takes a wrong action (books or refunds by mistake)</td>
+<td>High</td>
+<td>Low</td>
+<td>Confirmation step, spending caps, tool allowlists, audit log, eval suite in CI</td>
+</tr>
+<tr>
+<td>Prompt injection via chat, WhatsApp or addresses</td>
+<td>High</td>
+<td>Medium</td>
+<td>Treat all user text as data. Agent tools are scoped to the requesting user only. Red-team tests.</td>
+</tr>
+<tr>
+<td>Privacy (location and face data)</td>
+<td>High</td>
+<td>Medium</td>
+<td>On-device face and drowsiness models, differential privacy for public data, retention limits on pings</td>
+</tr>
+<tr>
+<td>OSM data gaps in Bangladesh</td>
+<td>Medium</td>
+<td>High</td>
+<td>Map self-healing (P2.6) and the landmark DB (P4.2) are designed for exactly this</td>
+</tr>
+<tr>
+<td>Supabase/Render limits</td>
+<td>Medium</td>
+<td>High</td>
+<td>P0.1 moves to a VPS early</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="roadmap-10-monthly-infra-cost-estimate">10. Monthly infra cost (estimate)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Setup</th>
+<th>≈ USD/month</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P0–P2</td>
+<td>1 × 8 GB VPS + R2 CDN + Vercel free</td>
+<td>25–40</td>
+</tr>
+<tr>
+<td>P3–P6</td>
+<td>1 × 16 GB VPS (Valhalla, ClickHouse, Redpanda, ML) + LLM API</td>
+<td>60–120</td>
+</tr>
+<tr>
+<td>Showcase</td>
+<td>Same, plus demo traffic</td>
+<td>80–150</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="roadmap-11-definition-of-done-any-feature">11. Definition of done (any feature)</h2>
+<ul>
+<li class="task"><span class="box" aria-hidden="true"></span> Design doc merged</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Behind a feature flag with a fallback path</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Unit and contract tests pass. The sim regression doesn&#39;t regress.</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Metric defined and visible in Grafana or admin</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Compared with the baseline in the simulator (report committed under <code>reports/</code>)</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Bangla and English strings</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Accessible (keyboard, screen reader, contrast)</li>
+<li class="task"><span class="box" aria-hidden="true"></span> Audit-logged if it takes an automated action</li>
+<li class="task"><span class="box" aria-hidden="true"></span> 15-second demo clip recorded</li>
+</ul>
+<hr>
+<h2 id="roadmap-12-after-week-52-moonshots">12. After week 52 (moonshots)</h2>
+<ul>
+<li>Autonomous-ready dispatch API: treat the &quot;driver&quot; as a pluggable agent and test robotaxi fleets in the twin</li>
+<li>Cholo Send (parcels) and multi-vertical batching on the same dispatch engine</li>
+<li>Corporate mobility and garment-worker shuttle route optimization (vehicle routing with time windows)</li>
+<li>Charge-aware EV fleet dispatch</li>
+<li>Verified carbon credits from pooling and EVs</li>
+<li>A native mobile shell (React Native / Capacitor) for background location, Live Activities and native AR</li>
+</ul>
+</div>
+</section>
+  </main>
+</div>
+
+<footer>Generated from <code>docs/next-level-features.md</code> and <code>docs/next-level-roadmap.md</code>.</footer>
+
+<script>
+  // Theme toggle (remembered per browser when storage is available).
+  (function () {
+    var root = document.documentElement;
+    try { var saved = localStorage.getItem('cholo-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+      try { localStorage.setItem('cholo-theme', root.dataset.theme); } catch (e) {}
+      renderDiagrams();
+    });
+  })();
+
+  // Highlight the current section in the sidebar.
+  (function () {
+    var links = {};
+    document.querySelectorAll('nav.toc li a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        document.querySelectorAll('nav.toc a.active').forEach(function (a) { a.classList.remove('active'); });
+        var link = links[entry.target.id];
+        if (link) link.classList.add('active');
+      });
+    }, { rootMargin: '0px 0px -75% 0px' });
+    document.querySelectorAll('.prose h2[id]').forEach(function (h) { observer.observe(h); });
+  })();
+
+  // Mermaid diagrams, themed from the page's colour tokens.
+  var diagramSources = [];
+  document.querySelectorAll('pre.mermaid').forEach(function (el, i) { diagramSources[i] = el.textContent; });
+  function renderDiagrams() {
+    if (!window.mermaid) return;
+    var css = getComputedStyle(document.documentElement);
+    var v = function (name) { return css.getPropertyValue(name).trim(); };
+    var dark = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      darkMode: dark,
+      fontFamily: 'Figtree, system-ui, sans-serif',
+      themeVariables: {
+        background: v('--paper'),
+        primaryColor: v('--accent-soft'),
+        primaryTextColor: v('--ink'),
+        primaryBorderColor: v('--accent'),
+        secondaryColor: v('--ground'),
+        tertiaryColor: v('--paper'),
+        lineColor: v('--muted'),
+        textColor: v('--ink'),
+        clusterBkg: v('--ground'),
+        clusterBorder: v('--rule'),
+        taskBkgColor: v('--accent'),
+        taskBorderColor: v('--accent'),
+        taskTextColor: v('--paper'),
+        taskTextOutsideColor: v('--ink'),
+        sectionBkgColor: v('--accent-soft'),
+        altSectionBkgColor: v('--ground'),
+        gridColor: v('--rule'),
+        todayLineColor: 'transparent'
+      }
+    });
+    var nodes = document.querySelectorAll('pre.mermaid');
+    nodes.forEach(function (el, i) { el.removeAttribute('data-processed'); el.textContent = diagramSources[i]; });
+    mermaid.run({ nodes: nodes }).catch(function () {});
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" onload="renderDiagrams()"></script>
+</body>
+</html>
