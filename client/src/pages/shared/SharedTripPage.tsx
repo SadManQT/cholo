@@ -19,9 +19,11 @@ const HEADLINES: Record<SharedTrip['status'], string> = {
 };
 
 export function SharedTripPage() {
-  const { token } = useParams();
+  // Some share targets glue the message onto the link, so keep only the token itself.
+  const token = useParams().token?.match(/^[\w-]+\.[\w-]+\.[\w-]+/)?.[0];
   const [trip, setTrip] = useState<SharedTrip | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -30,17 +32,23 @@ export function SharedTripPage() {
       setError(null);
     } catch (thrown) {
       const code = getApiErrorCode(thrown);
+      if (code === 'SHARE_LINK_INVALID') setInvalid(true);
       setError(code === 'SHARE_LINK_INVALID' ? t('This link has expired or is not valid.') : getApiErrorMessage(thrown, t('Could not load this trip.')));
     }
   }, [token]);
 
   useEffect(() => {
+    if (!token) {
+      setError(t('This link has expired or is not valid.'));
+      return;
+    }
+    if (invalid) return;
     void load();
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') void load();
     }, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, token, invalid]);
 
   const finished = trip?.status === 'completed' || trip?.status === 'cancelled';
   const vehicleName = trip ? [trip.vehicle.color, trip.vehicle.brand, trip.vehicle.model].filter(Boolean).join(' ') : '';
