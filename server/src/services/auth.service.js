@@ -96,7 +96,8 @@ export async function register({ fullName, phone, password, gender, referralCode
     }, client);
     return created;
   });
-  sendOtpSms(phone, otp);
+  // The account is already saved; if delivery fails the person uses "Resend code".
+  await sendOtpSms(phone, otp).catch(() => {});
 
   return { userId: user.publicId };
 }
@@ -115,7 +116,7 @@ export async function resendOtp({ phone, purpose }) {
     purpose,
     expiresAt: otpExpiresAt(),
   }, client));
-  sendOtpSms(phone, otp);
+  await sendOtpSms(phone, otp);
 }
 
 async function consumeOtp({ phone, otp, purpose }, client) {
@@ -277,7 +278,7 @@ export async function requestPasswordReset({ phone }) {
     { userId: user.id, phone, otpHash: hashOtp(otp), purpose: 'password_reset', expiresAt: otpExpiresAt() },
     client,
   ));
-  sendOtpSms(phone, otp);
+  await sendOtpSms(phone, otp);
 }
 
 export async function verifyPasswordResetCode({ phone, otp }) {

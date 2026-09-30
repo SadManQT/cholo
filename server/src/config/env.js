@@ -40,6 +40,15 @@ const envSchema = z.object({
   SUPABASE_BUCKET: z.string().default('uploads'),
   ARRIVAL_RADIUS_METERS: z.coerce.number().int().min(0).max(5_000).default(300),
   COMMISSION_DEBT_LIMIT: z.coerce.number().min(0).max(1_000_000).default(500),
+
+  SMS_PROVIDER: z.enum(['log', 'bulksmsbd']).default('log'),
+  BULKSMSBD_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  BULKSMSBD_SENDER_ID: z.preprocess(emptyToUndefined, z.string().optional()),
+}).superRefine((config, context) => {
+  if (config.SMS_PROVIDER !== 'bulksmsbd') return;
+  for (const key of ['BULKSMSBD_API_KEY', 'BULKSMSBD_SENDER_ID']) {
+    if (!config[key]) context.addIssue({ code: 'custom', path: [key], message: `${key} is required when SMS_PROVIDER=bulksmsbd` });
+  }
 });
 
 function formatIssues(issues) {

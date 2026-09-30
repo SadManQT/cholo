@@ -50,3 +50,9 @@ services:
         sync: false
       - key: SSLCOMMERZ_STORE_PASSWORD
         sync: false
+      - key: SMS_PROVIDER
+        sync: false
+      - key: BULKSMSBD_API_KEY
+        sync: false
+      - key: BULKSMSBD_SENDER_ID
+        sync: false

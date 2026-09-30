@@ -20,6 +20,7 @@ export const ERROR_MESSAGES = Object.freeze({
   RESET_TOKEN_INVALID: 'This reset link has expired or was already used. Start again to get a new code.',
   OTP_INVALID: 'That code is incorrect.',
   OTP_EXPIRED: 'That code has expired. Request a new one.',
+  SMS_SEND_FAILED: 'We could not send the code. Please try again in a minute.',
   RATE_LIMITED: 'Too many attempts. Please try again later.',
   AUTH_REQUIRED: 'You must be logged in to do that.',
   TOKEN_EXPIRED: 'Your session has expired. Please log in again.',
