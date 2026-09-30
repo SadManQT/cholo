@@ -41,3 +41,16 @@ test('sendOtpSms() throws SMS_SEND_FAILED when the gateway rejects the message',
 
   await assert.rejects(() => sendOtpSms('01712345678', '123456'), { status: 502, code: 'SMS_SEND_FAILED' });
 });
+
+test('sendOtpSms() keeps the API key out of the error log', async () => {
+  const logged = mock.method(console, 'error', () => {});
+  mock.method(globalThis, 'fetch', async () => ({
+    status: 200,
+    json: async () => ({ response_code: 1011, error_message: 'user id not found in this test-key key' }),
+  }));
+
+  await assert.rejects(() => sendOtpSms('01712345678', '123456'));
+  const line = logged.mock.calls[0].arguments[0];
+  assert.doesNotMatch(line, /test-key/);
+  assert.match(line, /\[api key\]/);
+});

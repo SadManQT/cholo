@@ -24,7 +24,9 @@ async function sendViaBulkSmsBd(phone, message) {
   });
   const result = await response.json().catch(() => ({}));
   if (result.response_code !== BULKSMSBD_SUBMITTED) {
-    throw new Error(`BulkSMSBD ${result.response_code ?? response.status}: ${result.error_message || 'unexpected response'}`);
+    // BulkSMSBD echoes the API key in some errors; keep it out of the logs.
+    const reason = (result.error_message || 'unexpected response').replaceAll(env.BULKSMSBD_API_KEY, '[api key]');
+    throw new Error(`BulkSMSBD ${result.response_code ?? response.status}: ${reason}`);
   }
 }
 
