@@ -118,6 +118,23 @@ const SWIPE_THRESHOLD = 50;
 const easeInOutCubic = (value: number) => (value < 0.5 ? 4 * value ** 3 : 1 - (-2 * value + 2) ** 3 / 2);
 const stepNumber = (index: number) => String(index + 1).padStart(2, '0');
 
+const DIGITS = language === 'bn' ? '০১২৩৪৫৬৭৮৯০' : '01234567890';
+
+// A trip meter: each wheel rolls like an odometer, and a wheel only turns over while the one to its right
+// rolls from 9 to 0.
+function setMeter(meter: HTMLElement, progress: number) {
+  const value = progress * 100;
+  const ones = value % 10;
+  const tens = (Math.floor(value / 10) % 10) + Math.max(0, ones - 9);
+  const hundreds = Math.floor(value / 100) + Math.max(0, tens - 9);
+  const wheels = meter.querySelectorAll<HTMLElement>('.home-meter-strip');
+  [hundreds, tens, ones].forEach((position, index) => {
+    wheels[index].style.transform = `translateY(${-position}em)`;
+    wheels[index].parentElement!.classList.toggle('is-idle', index === 0 ? value < 99 : index === 1 ? value < 9 : false);
+  });
+  meter.style.setProperty('--progress', String(progress));
+}
+
 function retrigger(element: HTMLElement, className: string) {
   element.classList.remove(className);
   void element.offsetWidth;
@@ -133,7 +150,6 @@ export function HomePage() {
   const logoRef = useRef<HTMLAnchorElement>(null);
   const routeRef = useRef<SVGPathElement>(null);
   const countRef = useRef<HTMLDivElement>(null);
-  const countValueRef = useRef<HTMLSpanElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const goToRef = useRef<(target: number) => void>(() => {});
 
@@ -295,13 +311,14 @@ export function HomePage() {
       const preloader = preloaderRef.current!;
       const route = routeRef.current!;
       await animateValue((progress) => {
-        countValueRef.current!.textContent = String(Math.round(progress * 100));
+        setMeter(countRef.current!, progress);
         route.style.strokeDashoffset = String(1 - progress);
         preloader.style.opacity = String(1 - 0.5 * progress);
       }, PRELOAD_MS, (value) => value);
       if (disposed) return;
 
-      countValueRef.current!.textContent = '100';
+      setMeter(countRef.current!, 1);
+      countRef.current!.classList.add('is-arrived');
       route.style.strokeDashoffset = '0';
       countRef.current!.classList.add('is-leaving');
       logo.classList.add('is-arrived');
@@ -502,8 +519,22 @@ export function HomePage() {
         </svg>
       </Link>
       <div ref={countRef} className="home-count" aria-hidden="true">
-        <span ref={countValueRef}>0</span>
-        <span className="percent">%</span>
+        <div className="home-meter">
+          {[0, 1, 2].map((wheel) => (
+            <span key={wheel} className="home-meter-wheel is-idle">
+              <span className="home-meter-strip">
+                {[...DIGITS].map((digit, place) => <span key={place}>{digit}</span>)}
+              </span>
+            </span>
+          ))}
+          <span className="home-meter-unit">%</span>
+        </div>
+        <div className="home-meter-road">
+          <span className="home-meter-ring" />
+          <span className="home-meter-fill" />
+          <span className="home-meter-car" />
+          <svg className="home-meter-pin" viewBox="0 0 20 26"><path d="M10 26C8 20 0 15 0 9a10 10 0 0 1 20 0c0 6-8 11-10 17Z" /><circle cx="10" cy="9" r="3.6" /></svg>
+        </div>
       </div>
 
       <header className="home-header home-chrome">
