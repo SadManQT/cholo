@@ -7,6 +7,7 @@ Built from `marketing/walkthrough-video-prompt.md`. Acts 1–4 are real screen r
 | File | What |
 |---|---|
 | `cholo-walkthrough.mp4` | Master, 1920×1080, 30 fps, H.264 + AAC, −14 LUFS, English captions burned in (kept out of git; too large) |
+| `cholo-walkthrough-720p.mp4` | The same master at 720p (51 MB) for sharing |
 | `cholo-90s.mp4` | 90 s 16:9 cut |
 | `cholo-60s-vertical.mp4` | 60 s 1080×1920 cut for Reels / Shorts / TikTok |
 | `cholo-15s-teaser.mp4` | 15 s teaser |
