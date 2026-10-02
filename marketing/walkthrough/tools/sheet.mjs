@@ -1,0 +1,15 @@
+import fs from 'node:fs'; import path from 'node:path'; import { execFileSync } from 'node:child_process';
+const RAW = '/tmp/claude-0/-home-user-cholo/0fa3d96b-ff87-52da-968b-41d83cf82665/scratchpad/raw';
+const FF = fs.readFileSync('/tmp/claude-0/-home-user-cholo/0fa3d96b-ff87-52da-968b-41d83cf82665/scratchpad/ffpath', 'utf8').trim();
+const [name, out, cols = '4', ...specs] = process.argv.slice(2);
+const idx = JSON.parse(fs.readFileSync(path.join(RAW, name, 'index.json')));
+const marks = Object.fromEntries(idx.events.filter((e) => e.kind === 'mark').map((e) => [e.label, e.t]));
+const pick = (t) => { let best = idx.frames[0]; for (const f of idx.frames) { if (f[0] <= t) best = f; else break; } return path.join(RAW, name, best[1]); };
+const files = specs.map((s) => { const [m, off = '0'] = s.split('+'); return pick((marks[m] ?? idx.frames[0][0]) + Number(off)); });
+const c = Number(cols), rows = Math.ceil(files.length / c);
+const args = ['-loglevel', 'error', '-y']; files.forEach((f) => args.push('-i', f));
+const h = 600; const parts = files.map((_, i) => `[${i}]scale=-2:${h}[v${i}]`).join(';');
+const lay = files.map((_, i) => `${(i % c) ? Array.from({ length: i % c }, (_, k) => `w${k}`).join('+') : '0'}_${Math.floor(i / c) ? Array.from({ length: Math.floor(i / c) }, () => 'h0').join('+') : '0'}`).join('|');
+args.push('-filter_complex', `${parts};${files.map((_, i) => `[v${i}]`).join('')}xstack=inputs=${files.length}:layout=${lay}:fill=black`, '-q:v', '4', out);
+if (files.length === 1) { execFileSync(FF, ['-loglevel', 'error', '-y', '-i', files[0], '-vf', `scale=-2:${h}`, out]); } else execFileSync(FF, args);
+console.log(out, rows, 'rows');
