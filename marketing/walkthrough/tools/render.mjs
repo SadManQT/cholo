@@ -22,6 +22,9 @@ const [mode, ...rest] = process.argv.slice(2);
 const stage = await page.$('#stage');
 if (mode === 'timeline') {
   const tl = await page.evaluate(() => window.TIMELINE); fs.writeFileSync(rest[0], JSON.stringify(tl, null, 1)); console.log('total', tl.total.toFixed(2), 'scenes', tl.scenes.length, 'caps', tl.caps.length, 'cues', tl.cues.length);
+} else if (mode === 'capcheck') {
+  const bad = await page.evaluate(() => { const el = document.querySelector('#cap span'); el.parentElement.style.opacity = 1; return window.TIMELINE.caps.filter((c) => { el.textContent = c.text; return el.getBoundingClientRect().height > 75; }).map((c) => `${c.a.toFixed(1)} ${c.text}`); });
+  console.log(bad.join('\n') || 'all captions fit on one line');
 } else if (mode === 'preview') {
   const out = path.join(SCR, 'prev'); fs.mkdirSync(out, { recursive: true });
   for (const spec of rest) {

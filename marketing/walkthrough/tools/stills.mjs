@@ -34,7 +34,7 @@ await page.evaluate(({ enroute }) => {
   <div class="abs" style="left:96px;top:250px;width:860px">
     <img src="logo-light.svg" style="height:230px;display:block;margin-left:-8px">
     <div style="margin-top:44px;font:900 108px/1.0 Inter;letter-spacing:-3px;color:#fff">Ride. Safe.<br><span style="color:var(--gold)">Smart.</span></div>
-    <div style="margin-top:38px;display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:40px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font:700 30px Inter;color:#fff">Full walkthrough<span style="opacity:.5">·</span><span style="color:var(--gold2)">10 min</span></div>
+    <div style="margin-top:38px;display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:40px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font:700 30px Inter;color:#fff">Full walkthrough<span style="opacity:.5">·</span><span style="color:var(--gold2)">11 min</span></div>
   </div>
   <div style="position:absolute;left:1180px;top:40px;transform:rotate(6deg) scale(1.08);transform-origin:50% 50%">${phone('tp', { scale: 1, clip: false, inner: `<img src="${enroute}" style="position:absolute;left:0;top:38px;width:374px;height:809px;object-fit:cover">` })}</div>
   <div class="abs" style="left:960px;top:770px;width:420px;padding:22px 26px;border-radius:26px;background:#fff;color:var(--ink);box-shadow:0 40px 80px -20px rgba(0,0,0,.6);transform:rotate(-3deg)">

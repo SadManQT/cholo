@@ -11,378 +11,438 @@ This is চলো — built for how Bangladesh really moves.
 A walkthrough of the whole platform — the real app first, then the next generation.
 
 4
-00:00:25,300 --> 00:00:30,900
+00:00:25,300 --> 00:00:29,300
 Everything starts on cholo-cholo7.vercel.app.
 
 5
-00:00:31,100 --> 00:00:36,050
+00:00:29,400 --> 00:00:33,550
 The home page tells one ride, step by step — from booking to rating.
 
 6
-00:00:36,700 --> 00:00:44,700
+00:00:34,200 --> 00:00:40,000
 On a phone, swipe through all eleven moments of a চলো ride.
 
 7
-00:00:44,900 --> 00:00:51,550
+00:00:40,100 --> 00:00:46,050
 Book, match, women-only, arrive, board, ride, detour, pay, rate, Metro and the digital twin.
 
 8
-00:00:52,200 --> 00:01:00,550
+00:00:46,700 --> 00:00:55,050
 Dark mode, and a fully Bangla interface — every screen, every label.
 
 9
-00:01:04,100 --> 00:01:12,550
+00:00:58,600 --> 00:01:04,550
 Create an account with your phone number. A six-digit code arrives by SMS.
 
 10
-00:01:13,100 --> 00:01:19,200
+00:01:05,100 --> 00:01:10,000
 Type where you’re going — suggestions appear as you type.
 
 11
-00:01:19,400 --> 00:01:24,550
+00:01:10,100 --> 00:01:14,550
 The route is drawn on real roads. Need a stop on the way? Add it.
 
 12
-00:01:25,100 --> 00:01:33,550
+00:01:15,100 --> 00:01:22,550
 Every vehicle shows its fare before you book. No haggling, no surprises.
 
 13
-00:01:34,100 --> 00:01:43,050
+00:01:23,100 --> 00:01:31,050
 Add a promo code, schedule for tomorrow morning, or ask for a woman driver.
 
 14
-00:01:43,600 --> 00:01:48,600
+00:01:31,600 --> 00:01:36,600
 Nusrat confirms. Rahim’s phone lights up with the offer: ৳182, 7.2 km.
 
 15
-00:01:48,800 --> 00:01:53,550
+00:01:36,800 --> 00:01:41,550
 He accepts — and Nusrat sees her driver straight away.
 
 16
-00:01:54,100 --> 00:02:01,050
+00:01:42,100 --> 00:01:49,050
 Rahim drives to the pickup. Every move shows live on Nusrat’s map.
 
 17
-00:02:01,600 --> 00:02:05,400
+00:01:49,600 --> 00:01:53,400
 Rahim slides “I’ve arrived”. But the trip can’t start yet.
 
 18
-00:02:05,500 --> 00:02:10,100
+00:01:53,500 --> 00:01:58,100
 If he isn’t really there, Nusrat taps “My driver isn’t here” — and he’s sent back.
 
 19
-00:02:10,200 --> 00:02:14,800
+00:01:58,200 --> 00:02:02,800
 When he’s truly at the pickup, Nusrat confirms she’s in the car.
 
 20
-00:02:14,900 --> 00:02:17,550
+00:02:02,900 --> 00:02:05,550
 Only then can the trip start. No fake pickups, ever.
 
 21
-00:02:18,100 --> 00:02:22,300
+00:02:06,100 --> 00:02:10,300
 Nusrat taps “Share trip”. The link is copied.
 
 22
-00:02:22,400 --> 00:02:28,550
-Ammu opens it at home and watches the CNG move, live.
+00:02:10,400 --> 00:02:16,550
+Ammu opens it at home: the CNG, the driver, the plate and the ETA — all live.
 
 23
-00:02:29,100 --> 00:02:35,300
+00:02:17,100 --> 00:02:23,300
 Feel unsafe? The red SOS button is always on the trip screen.
 
 24
-00:02:35,500 --> 00:02:43,050
-One tap: family, the safety team and police 999 are alerted with your live location.
+00:02:23,500 --> 00:02:31,050
+One tap: Cholo auto-calls your SOS contact and 999, and sends your live location to family.
 
 25
-00:02:43,600 --> 00:02:48,800
-Nusrat wants to get out early. She taps “Stop here”.
+00:02:31,600 --> 00:02:35,800
+Tap SOS and Cholo instantly places an automated call to your saved SOS contact.
 
 26
-00:02:49,000 --> 00:02:54,050
-Rahim ends the trip where they are — and the fare covers only the distance driven.
+00:02:35,900 --> 00:02:40,600
+A voice reads out where you are — the street, the landmark, the car and its plate.
 
 27
-00:02:54,600 --> 00:03:00,400
-Nusrat chose bKash. She’s taken to the secure checkout.
+00:02:40,700 --> 00:02:45,500
+At the same moment, 999 gets an automated call with your exact live location.
 
 28
-00:03:00,600 --> 00:03:05,050
-Account number, PIN, confirm — paid. Rahim’s earnings land in his wallet.
+00:02:46,100 --> 00:02:51,300
+Nusrat wants to get out early. She taps “Stop here”.
 
 29
-00:03:05,600 --> 00:03:13,550
-A clear receipt for every trip. Five stars for Rahim — and he’s a favourite now.
+00:02:51,500 --> 00:02:56,550
+Rahim ends the trip where they are — and the fare covers only the distance driven.
 
 30
-00:03:14,100 --> 00:03:23,550
-Trip history, wallet top-ups, promos, inbox and saved places — all one tap away.
+00:02:57,100 --> 00:03:02,900
+Nusrat chose bKash. She’s taken to the secure checkout.
 
 31
-00:03:27,100 --> 00:03:32,900
-Any rider can apply to drive: NID, licence number and expiry date.
+00:03:03,100 --> 00:03:07,550
+Account number, PIN, confirm — paid. Rahim’s earnings land in his wallet.
 
 32
-00:03:33,100 --> 00:03:37,550
-An expired licence or document is rejected on the spot, before it ever reaches review.
+00:03:08,100 --> 00:03:15,050
+A clear receipt for every trip. Five stars for Rahim — and he’s a favourite now.
 
 33
-00:03:38,100 --> 00:03:42,100
-Rahim’s green CNG is approved and on duty. He goes online.
+00:03:15,600 --> 00:03:23,050
+Trip history, wallet top-ups, promos, inbox and saved places — all one tap away.
 
 34
-00:03:42,300 --> 00:03:48,550
-A ride offer slides in — fare, distance, pickup — with fourteen seconds to accept.
+00:03:26,600 --> 00:03:30,600
+Any rider can apply to drive: NID, licence number and expiry date.
 
 35
-00:03:49,100 --> 00:03:59,050
-Rahim earned ৳5,064 in thirty days. Every trip and every commission is listed.
+00:03:30,700 --> 00:03:34,550
+An expired licence or document is rejected on the spot, before it ever reaches review.
 
 36
-00:03:59,600 --> 00:04:07,050
-A statement for every month: trips, fares, the 15% commission and what he kept.
+00:03:35,100 --> 00:03:39,100
+Rahim’s green CNG is approved and on duty. He goes online.
 
 37
-00:04:07,600 --> 00:04:16,050
-Rahim withdraws ৳2,000 to his bKash. He can follow it in his history.
+00:03:39,300 --> 00:03:45,550
+A ride offer slides in — fare, distance, pickup — with fourteen seconds to accept.
 
 38
-00:04:19,600 --> 00:04:28,550
-The operations dashboard: today’s trips, active drivers, revenue and live SOS — per city or all of them.
+00:03:46,100 --> 00:03:51,300
+Farhana drives for Cholo. One switch turns on “Women riders only”.
 
 39
-00:04:29,100 --> 00:04:36,600
-Monthly revenue, where the money goes, busiest hours, best days, top drivers and riders.
+00:03:51,400 --> 00:03:57,550
+Every offer she gets is from a verified woman rider — requests from men never reach her.
 
 40
-00:04:37,582 --> 00:04:45,982
-The commissions report: search any date range or city for rides, ride cost and commission earned.
+00:03:58,100 --> 00:04:03,100
+She picks her own hours and gets paid every day, straight to her own bKash.
 
 41
-00:04:46,993 --> 00:04:54,793
-Review each licence, NID and photo — then approve the driver or vehicle in one click.
+00:04:03,200 --> 00:04:08,550
+Earning on her own terms and feeling safe in Dhaka is still rare. Cholo makes it normal.
 
 42
-00:04:55,568 --> 00:05:00,968
-Zones for every city: regular areas, airports, stations and restricted no-go areas.
+00:04:09,100 --> 00:04:17,550
+Rahim earned ৳5,064 in thirty days. Every trip and every commission is listed.
 
 43
-00:05:01,168 --> 00:05:04,518
-Draw a new zone right on the map — it’s live the moment you save.
+00:04:18,100 --> 00:04:23,550
+A statement for every month: trips, fares, the 15% commission and what he kept.
 
 44
-00:05:05,068 --> 00:05:12,968
-Driver withdrawals wait for finance: approve to send, or reject with a reason.
+00:04:24,100 --> 00:04:31,050
+Rahim withdraws ৳2,000 to his bKash. He can follow it in his history.
 
 45
-00:05:13,781 --> 00:05:20,731
-Effective-dated rate cards for every city and vehicle, and surge you can start or end per zone.
+00:04:34,600 --> 00:04:41,550
+The operations dashboard: today’s trips, drivers, revenue and live SOS — per city or all.
 
 46
-00:05:21,281 --> 00:05:28,231
-The SOS board shows live alerts on a map. Disputes and refunds are handled in one queue.
+00:04:42,100 --> 00:04:48,062
+Monthly revenue, where the money goes, busiest hours, best days, top drivers and riders.
 
 47
-00:05:28,781 --> 00:05:35,731
-Support tickets for every rider and driver — and an audit log no one can edit or delete.
+00:04:48,612 --> 00:04:55,182
+The commissions report: search any date range or city for rides, ride cost and commission earned.
 
 48
-00:05:38,481 --> 00:05:41,681
-Everything you’ve seen is live. Now meet the intelligence behind চলো.
+00:04:55,732 --> 00:05:01,098
+Review each licence, NID and photo — then approve the driver or vehicle in one click.
 
 49
-00:05:42,281 --> 00:05:47,881
-The Dhaka Digital Twin: 5,000 simulated drivers and riders on the real road network.
+00:05:01,648 --> 00:05:05,148
+Zones for every city: regular areas, airports, stations and restricted no-go areas.
 
 50
-00:05:48,081 --> 00:05:52,731
-Every algorithm is tested here first — the new dispatch cuts pickup time by 22%.
+00:05:05,248 --> 00:05:08,598
+Draw a new zone right on the map — it’s live the moment you save.
 
 51
-00:05:53,281 --> 00:05:57,881
-Cholo Maps: our own vector map, with Bangla labels and 3D buildings.
+00:05:09,148 --> 00:05:14,382
+Driver withdrawals wait for finance: approve to send, or reject with a reason.
 
 52
-00:05:58,081 --> 00:06:02,231
-Every driver’s GPS becomes a traffic probe — the Cholo Traffic Layer, live.
+00:05:14,932 --> 00:05:20,882
+Effective-dated rate cards for every city and vehicle, and surge you can start or end per zone.
 
 53
-00:06:02,781 --> 00:06:06,581
-Drop a pin inside a building and Cholo moves it to the gate riders actually use.
+00:05:21,432 --> 00:05:27,382
+The SOS board shows live alerts on a map. Disputes and refunds are handled in one queue.
 
 54
-00:06:06,681 --> 00:06:10,081
-Driver GPS traces reveal roads the map is missing — and Cholo adds them.
+00:05:27,932 --> 00:05:33,882
+Support tickets for every rider and driver — and an audit log no one can edit or delete.
 
 55
-00:06:10,781 --> 00:06:18,081
-At a crowded pickup, AR arrows lead you to your CNG — and the camera reads its Bangla plate.
+00:05:36,632 --> 00:05:39,832
+Everything you’ve seen is live. Now meet the intelligence behind চলো.
 
 56
-00:06:18,781 --> 00:06:23,981
-“Mirpur 10 golchottor er pashe, Shopno er samne” — Cholo finds exactly that spot.
+00:05:40,432 --> 00:05:46,032
+The Dhaka Digital Twin: 5,000 simulated drivers and riders on the real road network.
 
 57
-00:06:24,181 --> 00:06:27,231
-Gulshan, gulsan, গুলশান or gulshun — every spelling lands in the same place.
+00:05:46,232 --> 00:05:50,882
+Every algorithm is tested here first — the new dispatch cuts pickup time by 22%.
 
 58
-00:06:27,781 --> 00:06:30,381
-“Hospital with emergency open now” — results ranked by what’s open.
+00:05:51,432 --> 00:05:56,032
+Cholo Maps: our own vector map, with Bangla labels and 3D buildings.
 
 59
-00:06:30,481 --> 00:06:32,981
-At 8:45 on a weekday, Office is already waiting, priced and one tap away.
+00:05:56,232 --> 00:06:00,382
+Every driver’s GPS becomes a traffic probe — the Cholo Traffic Layer, live.
 
 60
-00:06:33,081 --> 00:06:35,231
-Cholo Codes: a short code with the gate photo, exact pin and a voice note for the driver.
+00:06:00,932 --> 00:06:04,732
+Drop a pin inside a building and Cholo moves it to the gate riders actually use.
 
 61
-00:06:35,781 --> 00:06:40,381
-“আমাকে এখন বনানী নিয়ে যাও, সস্তা দেখে” — take me to Banani now, the cheap option.
+00:06:04,832 --> 00:06:08,232
+Driver GPS traces reveal roads the map is missing — and Cholo adds them.
 
 62
-00:06:40,481 --> 00:06:44,731
-The agent finds the cheapest ride, reads back the fare, and books it when you say yes.
+00:06:08,932 --> 00:06:16,232
+At a crowded pickup, AR arrows lead you to your CNG — and the camera reads its Bangla plate.
 
 63
-00:06:45,281 --> 00:06:53,231
-Book on WhatsApp, Messenger or SMS — or dial *CHOLO# on any basic phone, no internet needed.
+00:06:16,932 --> 00:06:22,132
+“Mirpur 10 golchottor er pashe, Shopno er samne” — Cholo finds exactly that spot.
 
 64
-00:06:53,781 --> 00:06:57,381
-Drivers keep both hands on the wheel: “Accept”, “I’ve arrived” — done by voice.
+00:06:22,332 --> 00:06:25,382
+Gulshan, gulsan, গুলশান or gulshun — every spelling lands in the same place.
 
 65
-00:06:57,481 --> 00:07:01,231
-A tourist types in English, Rahim reads Bangla — and replies, translated back instantly.
+00:06:25,932 --> 00:06:28,532
+“Hospital with emergency open now” — results ranked by what’s open.
 
 66
-00:07:01,781 --> 00:07:05,781
-“I was overcharged.” The agent replays the GPS trace and finds a 2.4 km detour.
+00:06:28,632 --> 00:06:31,132
+At 8:45 on a weekday, Office is already waiting, priced and one tap away.
 
 67
-00:07:05,881 --> 00:07:09,731
-Within policy, it refunds ৳60 by itself — and every action goes into the audit log.
+00:06:31,232 --> 00:06:33,382
+Cholo Codes: a short code with the gate photo, exact pin and a voice note for the driver.
 
 68
-00:07:10,281 --> 00:07:18,231
-“Why did cancellations spike in Uttara last Tuesday?” Cholo writes the SQL, draws the chart and explains.
+00:06:33,932 --> 00:06:38,532
+“আমাকে এখন বনানী নিয়ে যাও, সস্তা দেখে” — take me to Banani now, the cheap option.
 
 69
-00:07:18,781 --> 00:07:22,781
-Nearest-driver dispatch makes some riders wait far too long.
+00:06:38,632 --> 00:06:42,882
+The agent finds the cheapest ride, reads back the fare, and books it when you say yes.
 
 70
-00:07:22,881 --> 00:07:27,081
-Batched matching solves for everyone at once — total waiting drops by a third.
+00:06:43,432 --> 00:06:51,382
+Book on WhatsApp, Messenger or SMS — or dial *CHOLO# on any basic phone, no internet needed.
 
 71
-00:07:27,781 --> 00:07:31,881
-Cholo forecasts demand for every hexagon of Dhaka — 15, 30 and 60 minutes ahead.
+00:06:51,932 --> 00:06:55,532
+Drivers keep both hands on the wheel: “Accept”, “I’ve arrived” — done by voice.
 
 72
-00:07:31,981 --> 00:07:36,081
-Idle drivers are told where to go before the rush, so riders wait less and drivers earn more.
+00:06:55,632 --> 00:06:59,382
+A tourist types in English, Rahim reads Bangla — and replies, translated back instantly.
 
 73
-00:07:36,781 --> 00:07:40,381
-When prices rise, Cholo says why — and surge is smooth between areas and always capped.
+00:06:59,932 --> 00:07:03,932
+“I was overcharged.” The agent replays the GPS trace and finds a 2.4 km detour.
 
 74
-00:07:40,481 --> 00:07:44,081
-ETAs are learned from real trips, so “5 minutes” really means five minutes.
+00:07:04,032 --> 00:07:07,882
+Within policy, it refunds ৳60 by itself — and every action goes into the audit log.
 
 75
-00:07:44,781 --> 00:07:47,581
-Cholo Pool: two riders going the same way share one car and each pays less.
+00:07:08,432 --> 00:07:16,382
+“Why did cancellations spike in Uttara?” Cholo writes the SQL, draws the chart, explains.
 
 76
-00:07:47,681 --> 00:07:50,481
-Add three stops and Cholo puts them in the fastest order — one fare.
+00:07:16,932 --> 00:07:20,932
+Nearest-driver dispatch makes some riders wait far too long.
 
 77
-00:07:50,581 --> 00:07:53,081
-And the upfront fare is guaranteed, whatever the traffic does.
+00:07:21,032 --> 00:07:25,232
+Batched matching solves for everyone at once — total waiting drops by a third.
 
 78
-00:07:53,781 --> 00:08:01,081
-See Dhaka’s peak hours, lock a fare for ten minutes, and get pinged when your route gets cheaper.
+00:07:25,932 --> 00:07:30,032
+Cholo forecasts demand for every hexagon of Dhaka — 15, 30 and 60 minutes ahead.
 
 79
-00:08:01,781 --> 00:08:05,381
-Monsoon rain: when the fleet slows to a crawl and drivers tap “water here”, Cholo knows.
+00:07:30,132 --> 00:07:34,232
+Idle drivers are told where to go before the rush, so riders wait less and drivers earn more.
 
 80
-00:08:05,481 --> 00:08:10,081
-Routes re-draw around waterlogged roads, so you arrive a little later — but never stuck.
+00:07:34,932 --> 00:07:38,532
+When prices rise, Cholo says why — and surge is smooth between areas and always capped.
 
 81
-00:08:10,781 --> 00:08:13,381
-Uttara to Motijheel at rush hour. A car takes 55 minutes and ৳320.
+00:07:38,632 --> 00:07:42,232
+ETAs are learned from real trips, so “5 minutes” really means five minutes.
 
 82
-00:08:13,481 --> 00:08:19,981
-Cholo plans it smarter: a bike to Uttara North, then MRT Line 6 straight across the city.
+00:07:42,932 --> 00:07:45,732
+Cholo Pool: two riders going the same way share one car and each pays less.
 
 83
-00:08:20,081 --> 00:08:24,231
-A short walk and you’re there — 25 minutes sooner, for less than half the price.
+00:07:45,832 --> 00:07:48,632
+Add three stops and Cholo puts them in the fastest order — one fare.
 
 84
-00:08:24,781 --> 00:08:27,781
-A fair-fare meter for street CNGs. Women-safe night routes with women drivers.
+00:07:48,732 --> 00:07:51,232
+And the upfront fare is guaranteed, whatever the traffic does.
 
 85
-00:08:27,881 --> 00:08:33,231
-Eid mode for the exodus, and a Lite mode that books a ride over a 2G connection.
+00:07:51,932 --> 00:07:59,232
+See Dhaka’s peak hours, lock a fare for ten minutes, and get pinged when your route gets cheaper.
 
 86
-00:08:33,781 --> 00:08:37,781
-If a car leaves its route or stops for too long, Cholo checks in. No answer? It escalates.
+00:07:59,932 --> 00:08:03,532
+Monsoon rain: when the fleet slows to a crawl and drivers tap “water here”, Cholo knows.
 
 87
-00:08:37,881 --> 00:08:41,731
-A sudden crash shows up in the phone’s motion sensors — help is called automatically.
+00:08:03,632 --> 00:08:08,232
+Routes re-draw around waterlogged roads, so you arrive a little later — but never stuck.
 
 88
-00:08:42,281 --> 00:08:44,881
-An on-device camera model spots tired eyes and tells the driver to rest.
+00:08:08,932 --> 00:08:11,532
+Uttara to Motijheel at rush hour. A car takes 55 minutes and ৳320.
 
 89
-00:08:44,981 --> 00:08:47,581
-A selfie liveness check at every shift stops account sharing.
+00:08:11,632 --> 00:08:18,132
+Cholo plans it smarter: a bike to Uttara North, then MRT Line 6 straight across the city.
 
 90
-00:08:47,681 --> 00:08:50,081
-And a weekly driving score rewards the safest drivers.
+00:08:18,232 --> 00:08:22,382
+A short walk and you’re there — 25 minutes sooner, for less than half the price.
 
 91
-00:08:50,781 --> 00:08:58,081
-A graph of users, devices and wallets exposes fake-trip rings and spoofed GPS — every flag reviewed by a person.
+00:08:22,932 --> 00:08:25,932
+A fair-fare meter for street CNGs. Women-safe night routes with women drivers.
 
 92
-00:08:58,781 --> 00:09:06,081
-Earnings forecasts, a shift planner, true profit after fuel, an EV calculator, instant document scanning — and fair, explained decisions.
+00:08:26,032 --> 00:08:31,382
+Eid mode for the exodus, and a Lite mode that books a ride over a 2G connection.
 
 93
-00:09:06,781 --> 00:09:14,581
-Animated trip recaps, a yearly Cholo Wrapped, live lock-screen progress — and accessibility built in from day one.
+00:08:31,932 --> 00:08:35,932
+If a car leaves its route or stops for too long, Cholo checks in. No answer? It escalates.
 
 94
-00:09:15,281 --> 00:09:23,081
-Streaming every ping, matching in about two seconds — and sharing anonymised insights with the city.
+00:08:36,032 --> 00:08:39,882
+A sudden crash shows up in the phone’s motion sensors — help is called automatically.
 
 95
-00:09:23,781 --> 00:09:30,081
-Parcels, food, airport rides, business accounts, rewards, electric fleets — one platform for everything that moves.
+00:08:40,432 --> 00:08:43,032
+An on-device camera model spots tired eyes and tells the driver to rest.
 
 96
-00:09:33,781 --> 00:09:44,231
-Built for Bangladesh, from Bangla voice booking to the Metro — and fairer to the drivers who move the city.
+00:08:43,132 --> 00:08:45,732
+A selfie liveness check at every shift stops account sharing.
 
 97
-00:09:44,781 --> 00:09:51,581
+00:08:45,832 --> 00:08:48,232
+And a weekly driving score rewards the safest drivers.
+
+98
+00:08:48,932 --> 00:08:56,232
+A graph of users, devices and wallets exposes fake trips and spoofed GPS.
+
+99
+00:08:56,932 --> 00:09:04,232
+Earnings forecasts, a shift planner, true profit after fuel, an EV calculator and instant document scans.
+
+100
+00:09:04,932 --> 00:09:12,732
+Animated trip recaps, a yearly Cholo Wrapped, lock-screen progress — and accessibility built in.
+
+101
+00:09:13,432 --> 00:09:21,232
+Every ping streamed, matching in two seconds, and anonymised insights for the city.
+
+102
+00:09:21,932 --> 00:09:28,232
+Parcels, food, airport rides, business accounts, rewards, EV fleets — one platform for all of it.
+
+103
+00:09:31,932 --> 00:09:38,732
 Everything a city needs to move — in one app.
+
+104
+00:09:42,432 --> 00:09:47,632
+Cholo runs on a lean, serverless stack — open maps, no licence fees, and you pay as you grow.
+
+105
+00:09:47,732 --> 00:09:53,382
+Launch for about ৳6,300 a month instead of lakhs. No map bills, no servers to babysit.
+
+106
+00:09:53,932 --> 00:09:59,132
+Why start up with Cholo? Rider, driver and admin apps, payments, safety and AI are all built.
+
+107
+00:09:59,232 --> 00:10:04,382
+Open a new city in a day: draw the zones, set the rate card, approve drivers — and go live.
+
+108
+00:10:04,932 --> 00:10:10,432
+Cholo versus Uber: drivers keep more — 15% commission instead of around 25%.
+
+109
+00:10:10,532 --> 00:10:16,382
+Women-only matching, SOS auto-calls, Metro and flood routing — and profits stay in Bangladesh.
+
+110
+00:10:16,932 --> 00:10:22,432
+Revenue from day one: 15% on every trip, plus deliveries, business accounts and partner promos.
+
+111
+00:10:22,532 --> 00:10:28,882
+Just 1,000 drivers doing 12 trips a day brings in about ৳97 lakh a month, on a ৳6,300 stack.
+
+112
+00:10:29,432 --> 00:10:37,232
+Ready to launch, cheap to run, built for Bangladesh. Cholo is the startup Dhaka is waiting for.
 

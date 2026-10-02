@@ -1,7 +1,7 @@
-# চলো — full feature walkthrough (10 min)
+# চলো — full feature walkthrough (11 min)
 
 Built from `marketing/walkthrough-video-prompt.md`. Acts 1–4 are real screen recordings of the app
-(`origin/main`, demo seed) and Act 5 is animated. Everything is rendered from code; nothing is edited by hand.
+(`origin/main`, demo seed). Act 5, the women-driver scenes, the SOS auto-call, the family live view and Act 7 (for founders) are animated. Everything is rendered from code; nothing is edited by hand.
 
 ## Deliverables (`deliver/`)
 | File | What |
@@ -24,7 +24,7 @@ Built from `marketing/walkthrough-video-prompt.md`. Acts 1–4 are real screen r
 3. **Cut.** `tools/clips.mjs` lists each clip as a pair of raw recording and mark range. `tools/cut.mjs` turns them into 30 fps frame folders.
 4. **Compose.** `scenes/index.html` and `scenes/*.js` hold the scenes, rendered deterministically by `render(t)`.
 5. **Render.** Run `tools/render.mjs segment <from> <to> out.mp4` in parallel workers. `tools/music.py` writes the score and SFX
-   from the timeline (`render.mjs timeline tl.json`). `tools/cuts.py` assembles the master and the short cuts.
+   from the timeline (`render.mjs timeline tl.json`). `tools/cuts.py` assembles the master and the short cuts. `render.mjs capcheck` flags any caption that wraps.
    `tools/subs.py` writes the SRTs, chapters and VO script, and `tools/stills.mjs` makes the thumbnail and vertical overlay.
 
-Cast: Nusrat Jahan (passenger), Rahim Hossain (driver, green Bajaj CNG, DHAKA METRO-THA 11-2345) and Ayesha Rahman (admin).
+Cast: Nusrat Jahan (passenger), Rahim Hossain (driver, green Bajaj CNG, DHAKA METRO-THA 11-2345) Farhana Akter (woman driver, white Axio, DHAKA METRO-GA 27-4512) and Ayesha Rahman (admin).

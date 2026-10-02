@@ -28,11 +28,11 @@ SEC = [  # (start, end, energy, progression)
     (0, at('kinetic'), 0, 'A'), (at('kinetic'), at('card1'), 2.5, 'A'),
     (at('home-desk'), at('card2'), 1, 'B'),
     (at('signup'), at('sos'), 2, 'A'), (at('sos'), at('stop'), -1, 'T'), (at('stop'), at('card3'), 2, 'A'),
-    (at('d-join'), at('card4'), 2, 'C'),
+    (at('d-join'), at('d-women'), 2, 'C'), (at('d-women'), at('d-earn'), 1.5, 'B'), (at('d-earn'), at('card4'), 2, 'C'),
     (at('a-dash'), at('x-reveal'), 1.5, 'B'),
     (at('x-reveal'), at('x-reveal') + 2.4, 0, 'A'), (at('x-reveal') + 2.4, at('x-flood'), 3, 'A'),
     (at('x-flood'), at('x-metro'), 1, 'B'), (at('x-metro'), at('card6'), 3, 'C'),
-    (at('why'), at('outro'), 2, 'A'), (at('outro'), T, 0, 'END'),
+    (at('more'), at('card7'), 2, 'A'), (at('biz-cost'), at('biz-pitch'), 2, 'C'), (at('biz-pitch'), at('outro'), 2.5, 'A'), (at('outro'), T, 0, 'END'),
 ]
 for c in cards: SEC.append((c['a'], c['b'], 0, 'A'))
 def sec(tm):
@@ -138,7 +138,14 @@ def metro():
     s = (rum + clack) * env * 0.5
     for i, m in enumerate([79, 76]): s[int((1.0 + i * 0.5) * SR):int((1.0 + i * 0.5) * SR) + int(1.5 * SR)] += bell(note(m), 1.5) * 1.3
     return s
-SFX = {'tick': tick, 'ding': ding, 'coin': coin, 'whoosh': whoosh, 'impact': impact, 'bells': bells, 'alarm': alarm, 'alert2': alert2,
+def ring():
+    o = np.zeros(int(1.2 * SR), np.float32)
+    for k in range(2):
+        i = int(k * 0.45 * SR); L2 = int(0.38 * SR); x = ar(L2)
+        s = (np.sin(2 * np.pi * 1318.5 * x) + np.sin(2 * np.pi * 1661.2 * x)) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 22 * x))) * np.minimum(1, (0.38 - x) / 0.03) * 0.11
+        o[i:i + L2] += s
+    return o
+SFX = {'ring': ring, 'tick': tick, 'ding': ding, 'coin': coin, 'whoosh': whoosh, 'impact': impact, 'bells': bells, 'alarm': alarm, 'alert2': alert2,
        'chime': chime, 'metro': metro, 'rain': rain, 'riser2': lambda: riser(2.4), 'riser6': lambda: riser(4.8), 'hit': hit}
 cache = {}
 fx = np.zeros(N, np.float32)

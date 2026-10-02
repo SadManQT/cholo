@@ -189,6 +189,9 @@ function build() {
     s.a = t; s.b = t + s.dur; t = s.b;
     const el = document.createElement('section'); el.className = 'scene'; el.id = 'sc-' + s.id; el.innerHTML = typeof s.html === 'function' ? s.html() : s.html; root.appendChild(el); s.el = el;
     (s.play ?? []).forEach((pl) => { if (pl.fit) { const m = CLIPS[pl.clip]; if (m) pl.rate = Math.max(0.6, (m.dur - (pl.from ?? 0)) / Math.max(1, (pl.end ?? s.dur) - (pl.start ?? 0) - 0.35)); } });
+    (s.play ?? []).forEach((pl) => { if ((pl.rate ?? 1) < 1.6) return; const dev = $('#' + pl.el, el); if (!dev) return; pl.ff = true;
+      if (!$('.ffb', dev)) dev.insertAdjacentHTML('beforeend', `<div class="ffb"><svg viewBox="0 0 24 24"><path d="M3 5l9 7-9 7zM12 5l9 7-9 7z"/></svg><span></span></div>`);
+      $('.ffb span', dev).textContent = `${Math.max(2, Math.round(pl.rate))}×`; });
     (s.caps ?? []).forEach(([c0, c1, text]) => { if (c0 < s.dur - 0.3) caps.push({ a: s.a + c0, b: s.a + Math.min(c1, s.dur - 0.15), text }); });
     (s.sfx ?? []).forEach(([c, name, gain = 1]) => { if (c < s.dur) CUE.push({ t: +(s.a + c).toFixed(3), name, gain }); });
     (s.play ?? []).forEach((pl) => { const m = CLIPS[pl.clip]; if (!m) return; const rate = pl.rate ?? 1, st = pl.start ?? 0, from = pl.from ?? 0, end = pl.end ?? s.dur;
@@ -226,7 +229,9 @@ async function render(t) {
     const on = t >= s.a && t < s.b; s.el.style.display = on ? 'block' : 'none'; if (!on) continue; cur = s;
     const lt = t - s.a, d = s.dur;
     if (s.fade !== false) { const ki = P(lt, 0, 0.4), ko = P(lt, d - 0.4, d, E.in); s.el.style.opacity = ki * (1 - ko); S(s.el, { s: L(1.03, 1, P(lt, 0, 0.7)) * (1 - ko * 0.035) }); }
-    (s.play ?? []).forEach((pl) => { const dev = $('#' + pl.el, s.el); if (!dev) return; if (lt < (pl.start ?? 0) - 0.05 && pl.hideBefore) return; if (pl.end !== undefined && lt > pl.end) return; setClip(dev, pl.clip, lt, pl); });
+    $$('.ffb', s.el).forEach((b) => { b.style.opacity = 0; });
+    (s.play ?? []).forEach((pl) => { const dev = $('#' + pl.el, s.el); if (!dev) return;
+      if (pl.ff && lt >= (pl.start ?? 0) + 0.3 && lt <= (pl.end ?? d) - 0.2) { const b = $('.ffb', dev); b.style.opacity = 0.75 + 0.25 * Math.abs(Math.sin(lt * 3)); } if (lt < (pl.start ?? 0) - 0.05 && pl.hideBefore) return; if (pl.end !== undefined && lt > pl.end) return; setClip(dev, pl.clip, lt, pl); });
     s.update?.(lt, d, s.el);
   }
   const showWm = cur && !cur.noWm;

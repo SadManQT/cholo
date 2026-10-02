@@ -1,5 +1,5 @@
 # Assemble the master and make the short cuts.
-# usage: python3 cuts.py <segdir> <music.wav> <stills dir> <outdir>
+# usage: python3 cuts.py <segdir> <music.wav> <stills dir> <outdir> <tl.json>
 import subprocess, sys, os, json
 SEG, MUSIC, STILLS, OUT = sys.argv[1:5]; os.makedirs(OUT, exist_ok=True)
 FF = open('/tmp/claude-0/-home-user-cholo/0fa3d96b-ff87-52da-968b-41d83cf82665/scratchpad/ffpath').read().strip()
@@ -38,7 +38,9 @@ def cut(name, parts, vertical=False):
     run(*ins, '-filter_complex', ';'.join(fc), '-map', f'[{vo}]', '-map', '[af]', *ENC, out)
     print(name, round(total, 2), 's')
 
-cut('cholo-90s.mp4', [(0, 10.4), (36.5, 44.8), (103.4, 108.7), (148.9, 163.1), (222.2, 228.6), (259.4, 268.6),
-                      (337.6, 341.8), (395.6, 404.8), (490.6, 504.3), (591.7, 600.85)])
-cut('cholo-60s-vertical.mp4', [(0, 10.4), (103.4, 108.7), (148.9, 163.1), (395.6, 404.8), (490.6, 504.3), (591.7, 600.85)], vertical=True)
-cut('cholo-15s-teaser.mp4', [(1.0, 5.6), (155.3, 159.6), (338.0, 340.5), (595.5, 600.4)])
+TL = json.load(open(sys.argv[5])); AT = {x['id']: x['a'] for x in TL['scenes']}
+def sc(parts): return [(round(AT[i] + a, 3), round(AT[i] + b, 3)) for i, a, b in parts]
+cut('cholo-90s.mp4', sc([('cold', 0, 10.4), ('home-mob', 0.3, 6.3), ('match', 0.4, 5.6), ('sos', 6.4, 14.4), ('sos-call', 0.3, 9.4), ('d-women', 0.3, 12.0),
+                         ('x-reveal', 1.7, 5.9), ('x-voice', 0.3, 9.4), ('x-metro', 0.3, 13.9), ('biz-uber', 0.4, 6.0), ('outro', 0, 8.95)]))
+cut('cholo-60s-vertical.mp4', sc([('cold', 0, 10.4), ('sos', 6.4, 14.4), ('sos-call', 0.3, 9.4), ('d-women', 5.5, 12.0), ('x-metro', 0.3, 13.9), ('biz-pitch', 0.2, 6.0), ('outro', 0, 8.95)]), vertical=True)
+cut('cholo-15s-teaser.mp4', sc([('cold', 1.0, 5.6), ('sos', 6.6, 10.4), ('x-reveal', 2.2, 4.6), ('outro', 3.6, 8.5)]))

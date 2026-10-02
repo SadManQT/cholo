@@ -3,7 +3,8 @@
 import json, sys, os
 TL = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(OUT, exist_ok=True)
 BN = json.load(open(os.path.join(os.path.dirname(__file__), 'bn.json')))
-assert len(BN) == len(TL['caps']), (len(BN), len(TL['caps']))
+missing = [c['text'] for c in TL['caps'] if c['text'] not in BN]; assert not missing, missing
+BN = [BN[c['text']] for c in TL['caps']]
 def ts(x):
     ms = int(round(x * 1000)); return '%02d:%02d:%02d,%03d' % (ms // 3600000, ms // 60000 % 60, ms // 1000 % 60, ms % 1000)
 def mmss(x): x = int(x); return '%d:%02d' % (x // 60, x % 60)
